@@ -1,0 +1,14 @@
+appId: com.coopsync.app
+productName: CoopSync
+directories:
+  output: dist
+  buildResources: build
+files:
+  - out/**/*
+  - package.json
+win:
+  target: nsis
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true

@@ -4,7 +4,8 @@ import type {
   DeviceCodeInfo,
   SavesRepoStatus,
   PendingInvite,
-  Collaborator
+  Collaborator,
+  DetectedGame
 } from '../shared/types'
 
 // API, доступне в renderer як window.api.
@@ -36,6 +37,10 @@ const api = {
     listInvitations: (): Promise<PendingInvite[]> => ipcRenderer.invoke('repo:invitations'),
     /** Список співавторів, які вже прийняли. */
     listCollaborators: (): Promise<Collaborator[]> => ipcRenderer.invoke('repo:collaborators')
+  },
+  games: {
+    /** Список встановлених підтримуваних ігор. */
+    list: (): Promise<DetectedGame[]> => ipcRenderer.invoke('games:list')
   },
   /** Відкрити URL у системному браузері. */
   openExternal: (url: string): Promise<void> => ipcRenderer.invoke('shell:open-external', url),

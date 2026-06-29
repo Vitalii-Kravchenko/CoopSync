@@ -9,12 +9,14 @@ import {
   listInvitations,
   listCollaborators
 } from './services/github'
+import { detectGames } from './services/steam'
 import { saveToken, loadToken, clearToken } from './services/tokenStore'
 import type {
   AuthStatus,
   SavesRepoStatus,
   PendingInvite,
-  Collaborator
+  Collaborator,
+  DetectedGame
 } from '../shared/types'
 
 // Кеш ніку користувача, щоб не питати GitHub при кожному запиті (важливо для поллінгу).
@@ -113,4 +115,9 @@ export function registerIpcHandlers(): void {
     const { token, owner } = await requireAuth()
     return listCollaborators(token, owner)
   })
+
+  // --- Ігри ---
+
+  // Які підтримувані ігри встановлені та чи знайдено їхні сейви.
+  ipcMain.handle('games:list', async (): Promise<DetectedGame[]> => detectGames())
 }

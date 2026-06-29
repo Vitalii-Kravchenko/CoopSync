@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { AuthStatus, DeviceCodeInfo } from '../../shared/types'
 import SavesRepo from './components/SavesRepo'
+import GamesList from './components/GamesList'
 
 function App(): React.JSX.Element {
   const [status, setStatus] = useState<AuthStatus | null>(null) // null = ще завантажуємо
@@ -63,6 +64,7 @@ function App(): React.JSX.Element {
             </button>
           </p>
           <SavesRepo />
+          <GamesList />
         </div>
       )}
 

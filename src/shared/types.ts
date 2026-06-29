@@ -44,3 +44,13 @@ export interface PendingInvite {
 export interface Collaborator {
   login: string
 }
+
+/** Виявлена встановлена гра, яку підтримує CoopSync. */
+export interface DetectedGame {
+  appId: string
+  name: string
+  /** Абсолютний шлях до папки сейвів. */
+  savePath: string
+  /** Чи реально існує папка сейвів на диску. */
+  saveFound: boolean
+}

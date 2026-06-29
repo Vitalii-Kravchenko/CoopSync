@@ -1,5 +1,7 @@
-import { GITHUB_CLIENT_ID, GITHUB_SCOPE } from '../config'
-import type { DeviceCodeInfo, AuthUser } from '../../shared/types'
+import { GITHUB_CLIENT_ID, GITHUB_SCOPE, SAVES_REPO_NAME } from '../config'
+import type { DeviceCodeInfo, AuthUser, SavesRepo, PendingInvite } from '../../shared/types'
+
+const API = 'https://api.github.com'
 
 // --- Device Flow: 3 кроки ---
 // 1) requestDeviceCode — попросити в GitHub код для користувача
@@ -18,6 +20,15 @@ interface AccessTokenResponse {
   access_token?: string
   error?: string
   error_description?: string
+}
+
+/** Заголовки для авторизованих запитів до GitHub API. */
+function authHeaders(token: string): Record<string, string> {
+  return {
+    Authorization: `Bearer ${token}`,
+    Accept: 'application/vnd.github+json',
+    'Content-Type': 'application/json'
+  }
 }
 
 /** Крок 1: отримати device code + код для користувача. */
@@ -80,17 +91,81 @@ export async function pollForToken(deviceCode: string, interval: number): Promis
 
 /** Крок 3: дізнатись логін користувача за токеном. */
 export async function fetchUser(token: string): Promise<AuthUser> {
-  const res = await fetch('https://api.github.com/user', {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: 'application/vnd.github+json'
-    }
-  })
+  const res = await fetch(`${API}/user`, { headers: authHeaders(token) })
   if (!res.ok) {
     throw new Error(`Не вдалось отримати дані користувача (${res.status})`)
   }
   const data = (await res.json()) as { login: string }
   return { login: data.login }
+}
+
+// --- Спільне сховище сейвів ---
+
+interface RepoResponse {
+  full_name: string
+  html_url: string
+}
+
+/** Перевірити, чи існує репо сейвів. Повертає його дані або null. */
+export async function getSavesRepo(token: string, owner: string): Promise<SavesRepo | null> {
+  const res = await fetch(`${API}/repos/${owner}/${SAVES_REPO_NAME}`, {
+    headers: authHeaders(token)
+  })
+  if (res.status === 404) return null
+  if (!res.ok) throw new Error(`Не вдалось перевірити сховище (${res.status})`)
+  const data = (await res.json()) as RepoResponse
+  return { fullName: data.full_name, url: data.html_url }
+}
+
+/** Створити приватне репо сейвів. Якщо вже існує — повернути наявне. */
+export async function createSavesRepo(token: string, owner: string): Promise<SavesRepo> {
+  const existing = await getSavesRepo(token, owner)
+  if (existing) return existing
+
+  const res = await fetch(`${API}/user/repos`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify({
+      name: SAVES_REPO_NAME,
+      private: true,
+      auto_init: true, // одразу з README, щоб репо не був порожній
+      description: 'CoopSync — спільне сховище сейвів'
+    })
+  })
+  if (!res.ok) throw new Error(`Не вдалось створити сховище (${res.status})`)
+  const data = (await res.json()) as RepoResponse
+  return { fullName: data.full_name, url: data.html_url }
+}
+
+/** Запросити друга у співавтори репо сейвів (право push). */
+export async function inviteCollaborator(
+  token: string,
+  owner: string,
+  username: string
+): Promise<void> {
+  const res = await fetch(
+    `${API}/repos/${owner}/${SAVES_REPO_NAME}/collaborators/${username}`,
+    {
+      method: 'PUT',
+      headers: authHeaders(token),
+      body: JSON.stringify({ permission: 'push' })
+    }
+  )
+  // 201 — запрошення створено, 204 — вже співавтор.
+  if (res.status === 201 || res.status === 204) return
+  if (res.status === 422) throw new Error(`Користувача "${username}" не знайдено на GitHub`)
+  if (res.status === 404) throw new Error('Сховище не знайдено — спершу створи його')
+  throw new Error(`Не вдалось надіслати запрошення (${res.status})`)
+}
+
+/** Список запрошень, які ще не прийняті. */
+export async function listInvitations(token: string, owner: string): Promise<PendingInvite[]> {
+  const res = await fetch(`${API}/repos/${owner}/${SAVES_REPO_NAME}/invitations`, {
+    headers: authHeaders(token)
+  })
+  if (!res.ok) return []
+  const data = (await res.json()) as Array<{ invitee: { login: string } }>
+  return data.map((item) => ({ login: item.invitee.login }))
 }
 
 function sleep(ms: number): Promise<void> {

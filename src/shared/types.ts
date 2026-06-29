@@ -21,3 +21,21 @@ export interface AuthUser {
 export type AuthStatus =
   | { state: 'logged-out' }
   | { state: 'logged-in'; user: AuthUser }
+
+/** Спільне сховище сейвів (окремий приватний репозиторій). */
+export interface SavesRepo {
+  /** owner/назва, напр. "Vitalii-Kravchenko/coopsync-saves". */
+  fullName: string
+  /** Посилання на репо на github.com. */
+  url: string
+}
+
+/** Стан спільного сховища. */
+export type SavesRepoStatus =
+  | { state: 'none' } // ще не створене
+  | { state: 'ready'; repo: SavesRepo }
+
+/** Запрошений, але ще не підтверджений співавтор. */
+export interface PendingInvite {
+  login: string
+}

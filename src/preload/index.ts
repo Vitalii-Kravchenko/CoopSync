@@ -1,5 +1,10 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { AuthStatus, DeviceCodeInfo } from '../shared/types'
+import type {
+  AuthStatus,
+  DeviceCodeInfo,
+  SavesRepoStatus,
+  PendingInvite
+} from '../shared/types'
 
 // API, доступне в renderer як window.api.
 // Це єдиний "місток" — renderer не має прямого доступу до системи,
@@ -18,6 +23,16 @@ const api = {
       ipcRenderer.on('auth:device-code', listener)
       return () => ipcRenderer.removeListener('auth:device-code', listener)
     }
+  },
+  repo: {
+    /** Поточний стан спільного сховища. */
+    getStatus: (): Promise<SavesRepoStatus> => ipcRenderer.invoke('repo:get-status'),
+    /** Створити (або підключити наявне) сховище. */
+    create: (): Promise<SavesRepoStatus> => ipcRenderer.invoke('repo:create'),
+    /** Запросити друга у співавтори. */
+    invite: (username: string): Promise<void> => ipcRenderer.invoke('repo:invite', username),
+    /** Список ще не прийнятих запрошень. */
+    listInvitations: (): Promise<PendingInvite[]> => ipcRenderer.invoke('repo:invitations')
   },
   /** Відкрити URL у системному браузері. */
   openExternal: (url: string): Promise<void> => ipcRenderer.invoke('shell:open-external', url),

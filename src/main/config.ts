@@ -9,3 +9,7 @@ export const GITHUB_CLIENT_ID = 'Ov23liThtglJqUxY4Kh0'
 // Права, які запитуємо. 'repo' — щоб створювати приватні репо, пушити сейви
 // і додавати друга у співавтори.
 export const GITHUB_SCOPE = 'repo read:org'
+
+// Назва репозиторію для сейвів. Унікальність дає namespace (owner/назва),
+// тому нік користувача в саму назву додавати не треба.
+export const SAVES_REPO_NAME = 'coopsync-saves'

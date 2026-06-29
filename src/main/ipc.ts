@@ -1,7 +1,23 @@
 import { ipcMain, shell, clipboard } from 'electron'
-import { requestDeviceCode, pollForToken, fetchUser } from './services/github'
+import {
+  requestDeviceCode,
+  pollForToken,
+  fetchUser,
+  getSavesRepo,
+  createSavesRepo,
+  inviteCollaborator,
+  listInvitations
+} from './services/github'
 import { saveToken, loadToken, clearToken } from './services/tokenStore'
-import type { AuthStatus } from '../shared/types'
+import type { AuthStatus, SavesRepoStatus, PendingInvite } from '../shared/types'
+
+// Перевіряє, що користувач залогінений, і повертає токен + його нік (owner).
+async function requireAuth(): Promise<{ token: string; owner: string }> {
+  const token = loadToken()
+  if (!token) throw new Error('Спершу залогінься в GitHub')
+  const user = await fetchUser(token)
+  return { token, owner: user.login }
+}
 
 // Реєструє всі IPC-канали (виклики з renderer у main).
 export function registerIpcHandlers(): void {
@@ -49,5 +65,33 @@ export function registerIpcHandlers(): void {
   // Скопіювати текст у буфер обміну.
   ipcMain.handle('clipboard:write', (_event, text: string): void => {
     clipboard.writeText(text)
+  })
+
+  // --- Спільне сховище сейвів ---
+
+  // Поточний стан сховища: створене чи ні.
+  ipcMain.handle('repo:get-status', async (): Promise<SavesRepoStatus> => {
+    const { token, owner } = await requireAuth()
+    const repo = await getSavesRepo(token, owner)
+    return repo ? { state: 'ready', repo } : { state: 'none' }
+  })
+
+  // Створити (або підключити наявне) сховище.
+  ipcMain.handle('repo:create', async (): Promise<SavesRepoStatus> => {
+    const { token, owner } = await requireAuth()
+    const repo = await createSavesRepo(token, owner)
+    return { state: 'ready', repo }
+  })
+
+  // Запросити друга у співавтори.
+  ipcMain.handle('repo:invite', async (_event, username: string): Promise<void> => {
+    const { token, owner } = await requireAuth()
+    await inviteCollaborator(token, owner, username.trim())
+  })
+
+  // Список ще не прийнятих запрошень.
+  ipcMain.handle('repo:invitations', async (): Promise<PendingInvite[]> => {
+    const { token, owner } = await requireAuth()
+    return listInvitations(token, owner)
   })
 }

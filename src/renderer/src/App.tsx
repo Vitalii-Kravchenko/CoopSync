@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { AuthStatus, DeviceCodeInfo } from '../../shared/types'
+import SavesRepo from './components/SavesRepo'
 
 function App(): React.JSX.Element {
   const [status, setStatus] = useState<AuthStatus | null>(null) // null = ще завантажуємо
@@ -56,11 +57,12 @@ function App(): React.JSX.Element {
       {status?.state === 'logged-in' && (
         <div style={styles.card}>
           <p style={styles.ok}>
-            ✅ Залогінено як <b>{status.user.login}</b>
+            ✅ Залогінено як <b>{status.user.login}</b>{' '}
+            <button style={styles.btnLink} onClick={handleLogout}>
+              (вийти)
+            </button>
           </p>
-          <button style={styles.btnSecondary} onClick={handleLogout}>
-            Вийти
-          </button>
+          <SavesRepo />
         </div>
       )}
 
@@ -148,14 +150,14 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
     fontWeight: 600
   },
-  btnSecondary: {
+  btnLink: {
     fontSize: 14,
-    padding: '8px 18px',
-    border: '1px solid #585b70',
-    borderRadius: 8,
+    padding: 0,
+    border: 'none',
     background: 'transparent',
-    color: '#e8e8e8',
-    cursor: 'pointer'
+    color: '#89b4fa',
+    cursor: 'pointer',
+    textDecoration: 'underline'
   },
   code: {
     fontSize: 32,

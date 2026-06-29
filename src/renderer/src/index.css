@@ -1,5 +1,11 @@
 /* Глобальний скид: прибираємо дефолтні відступи браузера і
    заповнюємо все вікно темним фоном без білих щілин по краях. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 html,
 body,
 #root {
@@ -10,4 +16,124 @@ body,
 
 body {
   background: #1e1e2e;
+  overflow: hidden; /* прокрутку дають внутрішні контейнери, не вся сторінка */
+}
+
+/* Скролбари в нашому стилі (Chromium / Electron). */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #45475a;
+  border-radius: 8px;
+  border: 2px solid #1e1e2e;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #585b70;
+}
+
+/* Зони перетягування вікна для власного titlebar (frameless). */
+.drag {
+  -webkit-app-region: drag;
+}
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* Перевикористовувані кнопки — єдиний стиль + справжні :hover. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 14px;
+  height: 40px;
+  padding: 0 18px;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s,
+    opacity 0.15s;
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.btn-primary {
+  background: #89b4fa;
+  color: #11111b;
+  font-weight: 700;
+}
+.btn-primary:not(:disabled):hover {
+  background: #a6c8ff;
+}
+.btn-success {
+  background: #a6e3a1;
+  color: #11111b;
+  font-weight: 700;
+}
+.btn-success:not(:disabled):hover {
+  background: #b8e8b4;
+}
+.btn-secondary {
+  background: #313244;
+  color: #e8e8e8;
+  border: 1px solid #45475a;
+}
+.btn-secondary:not(:disabled):hover {
+  border-color: #585b70;
+  background: #3a3c4e;
+}
+.btn-ghost {
+  background: transparent;
+  color: #e8e8e8;
+  border: 1px solid #45475a;
+}
+.btn-ghost:not(:disabled):hover {
+  border-color: #89b4fa;
+  color: #89b4fa;
+}
+.btn-danger {
+  background: transparent;
+  color: #f38ba8;
+  border: 1px solid rgba(243, 139, 168, 0.4);
+}
+.btn-danger:not(:disabled):hover {
+  background: rgba(243, 139, 168, 0.12);
+}
+
+/* Кнопки керування вікном. */
+.win-ctrl {
+  width: 46px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: #9399b2;
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition:
+    background 0.12s,
+    color 0.12s;
+  -webkit-app-region: no-drag;
+}
+.win-ctrl:hover {
+  background: #313244;
+  color: #e8e8e8;
+}
+.win-ctrl.win-close:hover {
+  background: #f38ba8;
+  color: #ffffff;
 }

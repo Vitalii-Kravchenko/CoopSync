@@ -1,4 +1,4 @@
-import { ipcMain, shell, clipboard } from 'electron'
+import { ipcMain, shell, clipboard, BrowserWindow } from 'electron'
 import {
   requestDeviceCode,
   pollForToken,
@@ -10,13 +10,15 @@ import {
   listCollaborators
 } from './services/github'
 import { detectGames } from './services/steam'
+import { SUPPORTED_GAMES } from './games/catalog'
 import { saveToken, loadToken, clearToken } from './services/tokenStore'
 import type {
   AuthStatus,
   SavesRepoStatus,
   PendingInvite,
   Collaborator,
-  DetectedGame
+  DetectedGame,
+  CatalogGame
 } from '../shared/types'
 
 // Кеш ніку користувача, щоб не питати GitHub при кожному запиті (важливо для поллінгу).
@@ -120,4 +122,35 @@ export function registerIpcHandlers(): void {
 
   // Які підтримувані ігри встановлені та чи знайдено їхні сейви.
   ipcMain.handle('games:list', async (): Promise<DetectedGame[]> => detectGames())
+
+  // Повний каталог підтримуваних ігор (для розділу "Усі ігри" та пошуку).
+  ipcMain.handle('games:catalog', (): CatalogGame[] =>
+    SUPPORTED_GAMES.map((g) => ({ appId: g.appId, name: g.name }))
+  )
+
+  // --- Керування вікном (для власного titlebar) ---
+
+  ipcMain.handle('window:minimize', (event): void => {
+    BrowserWindow.fromWebContents(event.sender)?.minimize()
+  })
+
+  ipcMain.handle('window:toggle-maximize', (event): void => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (!win) return
+    if (win.isMaximized()) win.unmaximize()
+    else win.maximize()
+  })
+
+  // Розгорнути на весь екран (викликаємо після onboarding).
+  ipcMain.handle('window:maximize', (event): void => {
+    BrowserWindow.fromWebContents(event.sender)?.maximize()
+  })
+
+  ipcMain.handle('window:close', (event): void => {
+    BrowserWindow.fromWebContents(event.sender)?.close()
+  })
+
+  ipcMain.handle('window:is-maximized', (event): boolean => {
+    return BrowserWindow.fromWebContents(event.sender)?.isMaximized() ?? false
+  })
 }

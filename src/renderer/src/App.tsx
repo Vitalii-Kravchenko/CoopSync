@@ -1,177 +1,102 @@
 import { useEffect, useState } from 'react'
-import type { AuthStatus, DeviceCodeInfo } from '../../shared/types'
-import SavesRepo from './components/SavesRepo'
-import GamesList from './components/GamesList'
+import { colors } from './theme'
+import TitleBar from './components/TitleBar'
+import Sidebar, { type Screen } from './components/Sidebar'
+import OnboardingScreen from './screens/OnboardingScreen'
+import MainScreen from './screens/MainScreen'
+import SettingsScreen from './screens/SettingsScreen'
+import type { AuthUser } from '../../shared/types'
+
+type Phase = 'loading' | 'onboarding' | 'app'
 
 function App(): React.JSX.Element {
-  const [status, setStatus] = useState<AuthStatus | null>(null) // null = ще завантажуємо
-  const [deviceCode, setDeviceCode] = useState<DeviceCodeInfo | null>(null)
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [copied, setCopied] = useState(false)
+  const [phase, setPhase] = useState<Phase>('loading')
+  const [screen, setScreen] = useState<Screen>('main')
+  const [user, setUser] = useState<AuthUser | null>(null)
 
-  // При старті: перевірити, чи вже залогінені, і підписатись на код device flow.
+  // При старті визначаємо: чи все вже налаштовано (повторний запуск),
+  // чи треба показати майстер налаштування.
   useEffect(() => {
-    window.api.auth.getStatus().then(setStatus)
-    const unsubscribe = window.api.auth.onDeviceCode(setDeviceCode)
-    return unsubscribe
+    void init()
   }, [])
 
-  async function handleLogin(): Promise<void> {
-    setBusy(true)
-    setError(null)
-    setCopied(false)
-    try {
-      const result = await window.api.auth.login()
-      setStatus(result)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Помилка логіну')
-    } finally {
-      setBusy(false)
-      setDeviceCode(null)
+  async function init(): Promise<void> {
+    const auth = await window.api.auth.getStatus()
+    if (auth.state !== 'logged-in') {
+      setPhase('onboarding')
+      return
+    }
+    setUser(auth.user)
+    const repo = await window.api.repo.getStatus()
+    if (repo.state === 'ready') {
+      setPhase('app')
+      setScreen('main')
+      void window.api.window.maximize()
+    } else {
+      setPhase('onboarding')
     }
   }
 
-  async function handleLogout(): Promise<void> {
-    const result = await window.api.auth.logout()
-    setStatus(result)
+  async function handleOnboardingComplete(): Promise<void> {
+    const auth = await window.api.auth.getStatus()
+    if (auth.state === 'logged-in') setUser(auth.user)
+    setPhase('app')
+    setScreen('main')
+    void window.api.window.maximize()
   }
 
-  async function handleCopy(): Promise<void> {
-    if (!deviceCode) return
-    await window.api.copyToClipboard(deviceCode.userCode)
-    setCopied(true)
-  }
-
-  function handleOpenGitHub(): void {
-    if (!deviceCode) return
-    window.api.openExternal(deviceCode.verificationUri)
+  function handleLoggedOut(): void {
+    setUser(null)
+    setPhase('onboarding')
   }
 
   return (
-    <main style={styles.main}>
-      <h1 style={styles.title}>CoopSync ☁️</h1>
-      <p style={styles.subtitle}>Синхронізатор кооп-сейвів через GitHub</p>
+    <div style={styles.root}>
+      <TitleBar user={phase === 'app' ? user : null} />
 
-      {status === null && <p style={styles.muted}>Завантаження…</p>}
+      {phase === 'loading' && <div style={styles.center}>Завантаження…</div>}
 
-      {status?.state === 'logged-in' && (
-        <div style={styles.card}>
-          <p style={styles.ok}>
-            ✅ Залогінено як <b>{status.user.login}</b>{' '}
-            <button style={styles.btnLink} onClick={handleLogout}>
-              (вийти)
-            </button>
-          </p>
-          <SavesRepo />
-          <GamesList />
+      {phase === 'onboarding' && (
+        <div style={styles.onboarding}>
+          <OnboardingScreen onComplete={handleOnboardingComplete} />
         </div>
       )}
 
-      {status?.state === 'logged-out' && (
-        <div style={styles.card}>
-          {!busy && (
-            <button style={styles.btn} onClick={handleLogin}>
-              Login with GitHub
-            </button>
-          )}
-
-          {busy && !deviceCode && <p style={styles.muted}>Запитую код у GitHub…</p>}
-
-          {busy && deviceCode && (
-            <div style={styles.deviceBox}>
-              <p style={styles.step}>1. Скопіюй код:</p>
-              <div style={styles.code}>{deviceCode.userCode}</div>
-              <button style={styles.btnSmall} onClick={handleCopy}>
-                {copied ? '✓ Скопійовано' : 'Копіювати код'}
-              </button>
-
-              <p style={styles.step}>2. Відкрий сторінку GitHub:</p>
-              <button style={styles.btn} onClick={handleOpenGitHub}>
-                Відкрити GitHub →
-              </button>
-
-              <p style={styles.step}>3. Встав код на сторінці й підтверди доступ.</p>
-              <p style={styles.muted}>⏳ Чекаю підтвердження…</p>
-            </div>
-          )}
+      {phase === 'app' && user && (
+        <div style={styles.appBody}>
+          <Sidebar active={screen} onNavigate={setScreen} />
+          {/* Обидва екрани лишаються змонтованими — перемикаємо лише видимість,
+              щоб Settings не перезавантажував дані при кожному вході. */}
+          <div style={{ flex: 1, display: screen === 'main' ? 'flex' : 'none', minHeight: 0 }}>
+            <MainScreen />
+          </div>
+          <div style={{ flex: 1, display: screen === 'settings' ? 'flex' : 'none', minHeight: 0 }}>
+            <SettingsScreen user={user} onLoggedOut={handleLoggedOut} />
+          </div>
         </div>
       )}
-
-      {error && <p style={styles.error}>⚠️ {error}</p>}
-    </main>
+    </div>
   )
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  main: {
-    fontFamily: 'system-ui, sans-serif',
+  root: {
+    height: '100vh',
     display: 'flex',
     flexDirection: 'column',
+    color: colors.text,
+    fontFamily: 'system-ui, sans-serif',
+    overflow: 'hidden'
+  },
+  center: {
+    flex: 1,
+    display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: '100vh',
-    margin: 0,
-    color: '#e8e8e8'
+    color: colors.muted
   },
-  title: { margin: 0, fontSize: 42 },
-  subtitle: { opacity: 0.7, marginTop: 4 },
-  muted: { opacity: 0.7, margin: '8px 0' },
-  card: {
-    marginTop: 24,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: 12
-  },
-  deviceBox: {
-    textAlign: 'center',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: 8
-  },
-  step: { margin: '8px 0 0', fontWeight: 600, opacity: 0.9 },
-  btn: {
-    fontSize: 16,
-    padding: '12px 24px',
-    border: 'none',
-    borderRadius: 8,
-    background: '#89b4fa',
-    color: '#1e1e2e',
-    cursor: 'pointer',
-    fontWeight: 600
-  },
-  btnSmall: {
-    fontSize: 14,
-    padding: '8px 18px',
-    border: 'none',
-    borderRadius: 8,
-    background: '#a6e3a1',
-    color: '#1e1e2e',
-    cursor: 'pointer',
-    fontWeight: 600
-  },
-  btnLink: {
-    fontSize: 14,
-    padding: 0,
-    border: 'none',
-    background: 'transparent',
-    color: '#89b4fa',
-    cursor: 'pointer',
-    textDecoration: 'underline'
-  },
-  code: {
-    fontSize: 32,
-    letterSpacing: 4,
-    fontFamily: 'monospace',
-    background: '#313244',
-    padding: '12px 20px',
-    borderRadius: 8,
-    margin: '4px 0'
-  },
-  ok: { color: '#a6e3a1', fontSize: 18 },
-  error: { color: '#f38ba8', marginTop: 16 }
+  onboarding: { flex: 1, overflowY: 'auto', display: 'flex', alignItems: 'flex-start' },
+  appBody: { flex: 1, display: 'flex', minHeight: 0 }
 }
 
 export default App

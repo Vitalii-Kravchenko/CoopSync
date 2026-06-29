@@ -54,3 +54,9 @@ export interface DetectedGame {
   /** Чи реально існує папка сейвів на диску. */
   saveFound: boolean
 }
+
+/** Гра з каталогу підтримуваних (незалежно від того, чи встановлена). */
+export interface CatalogGame {
+  appId: string
+  name: string
+}

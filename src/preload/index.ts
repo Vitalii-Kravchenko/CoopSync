@@ -5,7 +5,8 @@ import type {
   SavesRepoStatus,
   PendingInvite,
   Collaborator,
-  DetectedGame
+  DetectedGame,
+  CatalogGame
 } from '../shared/types'
 
 // API, доступне в renderer як window.api.
@@ -40,7 +41,27 @@ const api = {
   },
   games: {
     /** Список встановлених підтримуваних ігор. */
-    list: (): Promise<DetectedGame[]> => ipcRenderer.invoke('games:list')
+    list: (): Promise<DetectedGame[]> => ipcRenderer.invoke('games:list'),
+    /** Повний каталог підтримуваних ігор. */
+    catalog: (): Promise<CatalogGame[]> => ipcRenderer.invoke('games:catalog')
+  },
+  window: {
+    /** Згорнути вікно. */
+    minimize: (): Promise<void> => ipcRenderer.invoke('window:minimize'),
+    /** Розгорнути/відновити вікно (кнопка ▢). */
+    toggleMaximize: (): Promise<void> => ipcRenderer.invoke('window:toggle-maximize'),
+    /** Розгорнути на весь екран (після onboarding). */
+    maximize: (): Promise<void> => ipcRenderer.invoke('window:maximize'),
+    /** Закрити вікно. */
+    close: (): Promise<void> => ipcRenderer.invoke('window:close'),
+    /** Чи вікно зараз розгорнуте. */
+    isMaximized: (): Promise<boolean> => ipcRenderer.invoke('window:is-maximized'),
+    /** Підписка на зміну стану розгортання. Повертає функцію відписки. */
+    onMaximizeChange: (callback: (maximized: boolean) => void): (() => void) => {
+      const listener = (_event: unknown, maximized: boolean): void => callback(maximized)
+      ipcRenderer.on('window:maximized-change', listener)
+      return () => ipcRenderer.removeListener('window:maximized-change', listener)
+    }
   },
   /** Відкрити URL у системному браузері. */
   openExternal: (url: string): Promise<void> => ipcRenderer.invoke('shell:open-external', url),

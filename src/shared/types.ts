@@ -39,3 +39,8 @@ export type SavesRepoStatus =
 export interface PendingInvite {
   login: string
 }
+
+/** Співавтор, який уже прийняв запрошення і має доступ. */
+export interface Collaborator {
+  login: string
+}

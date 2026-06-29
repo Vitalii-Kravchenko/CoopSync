@@ -1,5 +1,11 @@
 import { GITHUB_CLIENT_ID, GITHUB_SCOPE, SAVES_REPO_NAME } from '../config'
-import type { DeviceCodeInfo, AuthUser, SavesRepo, PendingInvite } from '../../shared/types'
+import type {
+  DeviceCodeInfo,
+  AuthUser,
+  SavesRepo,
+  PendingInvite,
+  Collaborator
+} from '../../shared/types'
 
 const API = 'https://api.github.com'
 
@@ -166,6 +172,18 @@ export async function listInvitations(token: string, owner: string): Promise<Pen
   if (!res.ok) return []
   const data = (await res.json()) as Array<{ invitee: { login: string } }>
   return data.map((item) => ({ login: item.invitee.login }))
+}
+
+/** Список співавторів, які вже мають доступ (без власника). */
+export async function listCollaborators(token: string, owner: string): Promise<Collaborator[]> {
+  const res = await fetch(`${API}/repos/${owner}/${SAVES_REPO_NAME}/collaborators`, {
+    headers: authHeaders(token)
+  })
+  if (!res.ok) return []
+  const data = (await res.json()) as Array<{ login: string }>
+  return data
+    .filter((c) => c.login.toLowerCase() !== owner.toLowerCase())
+    .map((c) => ({ login: c.login }))
 }
 
 function sleep(ms: number): Promise<void> {

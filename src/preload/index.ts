@@ -3,7 +3,8 @@ import type {
   AuthStatus,
   DeviceCodeInfo,
   SavesRepoStatus,
-  PendingInvite
+  PendingInvite,
+  Collaborator
 } from '../shared/types'
 
 // API, доступне в renderer як window.api.
@@ -32,7 +33,9 @@ const api = {
     /** Запросити друга у співавтори. */
     invite: (username: string): Promise<void> => ipcRenderer.invoke('repo:invite', username),
     /** Список ще не прийнятих запрошень. */
-    listInvitations: (): Promise<PendingInvite[]> => ipcRenderer.invoke('repo:invitations')
+    listInvitations: (): Promise<PendingInvite[]> => ipcRenderer.invoke('repo:invitations'),
+    /** Список співавторів, які вже прийняли. */
+    listCollaborators: (): Promise<Collaborator[]> => ipcRenderer.invoke('repo:collaborators')
   },
   /** Відкрити URL у системному браузері. */
   openExternal: (url: string): Promise<void> => ipcRenderer.invoke('shell:open-external', url),

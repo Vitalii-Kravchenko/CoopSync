@@ -6,17 +6,29 @@ import {
   getSavesRepo,
   createSavesRepo,
   inviteCollaborator,
-  listInvitations
+  listInvitations,
+  listCollaborators
 } from './services/github'
 import { saveToken, loadToken, clearToken } from './services/tokenStore'
-import type { AuthStatus, SavesRepoStatus, PendingInvite } from '../shared/types'
+import type {
+  AuthStatus,
+  SavesRepoStatus,
+  PendingInvite,
+  Collaborator
+} from '../shared/types'
+
+// Кеш ніку користувача, щоб не питати GitHub при кожному запиті (важливо для поллінгу).
+let cachedOwner: string | null = null
 
 // Перевіряє, що користувач залогінений, і повертає токен + його нік (owner).
 async function requireAuth(): Promise<{ token: string; owner: string }> {
   const token = loadToken()
   if (!token) throw new Error('Спершу залогінься в GitHub')
-  const user = await fetchUser(token)
-  return { token, owner: user.login }
+  if (!cachedOwner) {
+    const user = await fetchUser(token)
+    cachedOwner = user.login
+  }
+  return { token, owner: cachedOwner }
 }
 
 // Реєструє всі IPC-канали (виклики з renderer у main).
@@ -54,6 +66,7 @@ export function registerIpcHandlers(): void {
   // Вийти: стерти збережений токен.
   ipcMain.handle('auth:logout', async (): Promise<AuthStatus> => {
     clearToken()
+    cachedOwner = null
     return { state: 'logged-out' }
   })
 
@@ -93,5 +106,11 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('repo:invitations', async (): Promise<PendingInvite[]> => {
     const { token, owner } = await requireAuth()
     return listInvitations(token, owner)
+  })
+
+  // Список співавторів, які вже прийняли запрошення.
+  ipcMain.handle('repo:collaborators', async (): Promise<Collaborator[]> => {
+    const { token, owner } = await requireAuth()
+    return listCollaborators(token, owner)
   })
 }

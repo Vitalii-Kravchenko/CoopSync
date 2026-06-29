@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
-import type { SavesRepoStatus, PendingInvite } from '../../../shared/types'
+import type { SavesRepoStatus, PendingInvite, Collaborator } from '../../../shared/types'
 
 function SavesRepo(): React.JSX.Element {
   const [status, setStatus] = useState<SavesRepoStatus | null>(null) // null = завантаження
   const [invites, setInvites] = useState<PendingInvite[]>([])
+  const [collaborators, setCollaborators] = useState<Collaborator[]>([])
   const [friend, setFriend] = useState('')
   const [busy, setBusy] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [inviteMsg, setInviteMsg] = useState<string | null>(null)
 
@@ -13,11 +15,30 @@ function SavesRepo(): React.JSX.Element {
     void refresh()
   }, [])
 
+  // Поки хтось очікує підтвердження — автоматично оновлюємо стан кожні 5 секунд.
+  // Коли всі прийняли (invites порожній) — інтервал зупиняється сам.
+  useEffect(() => {
+    if (invites.length === 0) return
+    const id = setInterval(() => void refresh(), 5000)
+    return () => clearInterval(id)
+  }, [invites.length])
+
   async function refresh(): Promise<void> {
-    const s = await window.api.repo.getStatus()
-    setStatus(s)
-    if (s.state === 'ready') {
-      setInvites(await window.api.repo.listInvitations())
+    setRefreshing(true)
+    try {
+      const s = await window.api.repo.getStatus()
+      setStatus(s)
+      if (s.state === 'ready') {
+        // Тягнемо обидва списки: хто вже прийняв і хто ще очікує.
+        const [inv, collab] = await Promise.all([
+          window.api.repo.listInvitations(),
+          window.api.repo.listCollaborators()
+        ])
+        setInvites(inv)
+        setCollaborators(collab)
+      }
+    } finally {
+      setRefreshing(false)
     }
   }
 
@@ -25,8 +46,8 @@ function SavesRepo(): React.JSX.Element {
     setBusy(true)
     setError(null)
     try {
-      const s = await window.api.repo.create()
-      setStatus(s)
+      await window.api.repo.create()
+      await refresh()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Не вдалось створити сховище')
     } finally {
@@ -43,7 +64,7 @@ function SavesRepo(): React.JSX.Element {
       await window.api.repo.invite(friend)
       setInviteMsg(`Запрошення надіслано: ${friend.trim()}`)
       setFriend('')
-      setInvites(await window.api.repo.listInvitations())
+      await refresh()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Не вдалось надіслати запрошення')
     } finally {
@@ -99,16 +120,35 @@ function SavesRepo(): React.JSX.Element {
 
           {inviteMsg && <p style={styles.ok}>{inviteMsg}</p>}
 
-          {invites.length > 0 && (
-            <div style={styles.invites}>
-              <p style={styles.muted}>Очікують підтвердження:</p>
+          {collaborators.length > 0 && (
+            <div style={styles.section}>
+              <p style={styles.sectionTitle}>Учасники (мають доступ):</p>
               <ul style={styles.list}>
-                {invites.map((i) => (
-                  <li key={i.login}>{i.login}</li>
+                {collaborators.map((c) => (
+                  <li key={c.login} style={styles.member}>
+                    👤 {c.login}
+                  </li>
                 ))}
               </ul>
             </div>
           )}
+
+          {invites.length > 0 && (
+            <div style={styles.section}>
+              <p style={styles.sectionTitle}>Очікують підтвердження:</p>
+              <ul style={styles.list}>
+                {invites.map((i) => (
+                  <li key={i.login} style={styles.pending}>
+                    ⏳ {i.login}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <button style={styles.btnLink} onClick={refresh} disabled={refreshing}>
+            {refreshing ? 'Оновлюю…' : '↻ Оновити'}
+          </button>
         </>
       )}
 
@@ -152,8 +192,20 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
     fontWeight: 600
   },
-  invites: { width: '100%' },
-  list: { margin: '4px 0', paddingLeft: 20, opacity: 0.85 },
+  btnLink: {
+    fontSize: 13,
+    padding: 0,
+    border: 'none',
+    background: 'transparent',
+    color: '#89b4fa',
+    cursor: 'pointer',
+    textDecoration: 'underline'
+  },
+  section: { width: '100%' },
+  sectionTitle: { fontWeight: 600, margin: '4px 0', opacity: 0.9 },
+  list: { margin: '4px 0', paddingLeft: 8, listStyle: 'none' },
+  member: { color: '#a6e3a1', margin: '2px 0' },
+  pending: { opacity: 0.75, margin: '2px 0' },
   error: { color: '#f38ba8', margin: '4px 0' }
 }
 

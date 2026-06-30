@@ -27,12 +27,22 @@ function App(): React.JSX.Element {
       return
     }
     setUser(auth.user)
-    const repo = await window.api.repo.getStatus()
-    if (repo.state === 'ready') {
-      enterApp()
-    } else {
+
+    // Роль ще не вибрана → онбординг.
+    const cfg = await window.api.role.get()
+    if (!cfg) {
       setPhase('onboarding')
+      return
     }
+    // Host без готового сховища — теж онбординг.
+    if (cfg.role === 'host') {
+      const repo = await window.api.repo.getStatus()
+      if (repo.state !== 'ready') {
+        setPhase('onboarding')
+        return
+      }
+    }
+    enterApp()
   }
 
   // Перехід у робочий застосунок + запуск автосинхронізації.

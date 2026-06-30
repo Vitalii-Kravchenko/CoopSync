@@ -9,7 +9,8 @@ import type {
   CatalogGame,
   GameSyncStatus,
   AutoSyncEvent,
-  StartupSettings
+  StartupSettings,
+  RoleConfig
 } from '../shared/types'
 
 // API, доступне в renderer як window.api.
@@ -92,6 +93,14 @@ const api = {
     /** Змінити налаштування запуску. */
     setStartup: (patch: Partial<StartupSettings>): Promise<StartupSettings> =>
       ipcRenderer.invoke('settings:set-startup', patch)
+  },
+  role: {
+    /** Поточна роль (або null, якщо ще не вибрано). */
+    get: (): Promise<RoleConfig | null> => ipcRenderer.invoke('role:get'),
+    /** Стати хостом (синхронізувати власне сховище). */
+    setHost: (): Promise<RoleConfig> => ipcRenderer.invoke('role:set-host'),
+    /** Підключитися до сховища друга-хоста. */
+    join: (hostLogin: string): Promise<RoleConfig> => ipcRenderer.invoke('role:join', hostLogin)
   },
   /** Відкрити URL у системному браузері. */
   openExternal: (url: string): Promise<void> => ipcRenderer.invoke('shell:open-external', url),

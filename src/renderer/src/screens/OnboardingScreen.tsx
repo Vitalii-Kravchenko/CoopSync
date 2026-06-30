@@ -7,21 +7,24 @@ import type {
   DeviceCodeInfo,
   SavesRepoStatus,
   PendingInvite,
-  Collaborator
+  Collaborator,
+  UserRole
 } from '../../../shared/types'
 
 interface Props {
-  /** Викликається, коли все налаштовано і користувач тисне "Перейти до ігор". */
+  /** Викликається, коли все налаштовано і можна переходити до ігор. */
   onComplete: () => void
 }
 
 function OnboardingScreen({ onComplete }: Props): React.JSX.Element {
   const [auth, setAuth] = useState<AuthStatus | null>(null)
+  const [role, setRole] = useState<UserRole | null>(null)
   const [repo, setRepo] = useState<SavesRepoStatus | null>(null)
   const [deviceCode, setDeviceCode] = useState<DeviceCodeInfo | null>(null)
   const [invites, setInvites] = useState<PendingInvite[]>([])
   const [collaborators, setCollaborators] = useState<Collaborator[]>([])
   const [friend, setFriend] = useState('')
+  const [hostLogin, setHostLogin] = useState('')
   const [busy, setBusy] = useState(false)
   const [copied, setCopied] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -29,7 +32,13 @@ function OnboardingScreen({ onComplete }: Props): React.JSX.Element {
   useEffect(() => {
     window.api.auth.getStatus().then(async (a) => {
       setAuth(a)
-      if (a.state === 'logged-in') await loadRepo()
+      if (a.state === 'logged-in') {
+        const cfg = await window.api.role.get()
+        if (cfg) {
+          setRole(cfg.role)
+          if (cfg.role === 'host') await loadRepo()
+        }
+      }
     })
     return window.api.auth.onDeviceCode(setDeviceCode)
   }, [])
@@ -50,7 +59,6 @@ function OnboardingScreen({ onComplete }: Props): React.JSX.Element {
     try {
       const result = await window.api.auth.login()
       setAuth(result)
-      await loadRepo()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Помилка логіну')
     } finally {
@@ -59,12 +67,39 @@ function OnboardingScreen({ onComplete }: Props): React.JSX.Element {
     }
   }
 
+  async function handleSetHost(): Promise<void> {
+    setBusy(true)
+    setError(null)
+    try {
+      await window.api.role.setHost()
+      setRole('host')
+      await loadRepo()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Помилка')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleJoin(): Promise<void> {
+    if (!hostLogin.trim()) return
+    setBusy(true)
+    setError(null)
+    try {
+      await window.api.role.join(hostLogin)
+      onComplete()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не вдалось підключитися')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   async function handleCreateRepo(): Promise<void> {
     setBusy(true)
     setError(null)
     try {
-      const r = await window.api.repo.create()
-      setRepo(r)
+      await window.api.repo.create()
       await loadRepo()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Не вдалось створити сховище')
@@ -90,13 +125,13 @@ function OnboardingScreen({ onComplete }: Props): React.JSX.Element {
 
   const loggedIn = auth?.state === 'logged-in'
   const repoReady = repo?.state === 'ready'
-  const ready = loggedIn && repoReady
+  const hostReady = loggedIn && role === 'host' && repoReady
 
   return (
     <div style={styles.screen}>
       <div style={styles.head}>
         <div style={styles.title}>Ласкаво просимо до CoopSync!</div>
-        <div style={styles.subtitle}>Налаштуємо все за 3 прості кроки</div>
+        <div style={styles.subtitle}>Налаштуймо синхронізацію за кілька кроків</div>
       </div>
 
       {/* КРОК 1 — логін */}
@@ -119,10 +154,7 @@ function OnboardingScreen({ onComplete }: Props): React.JSX.Element {
               >
                 {copied ? '✓ Скопійовано' : 'Копіювати'}
               </Button>
-              <Button
-                variant="primary"
-                onClick={() => window.api.openExternal(deviceCode.verificationUri)}
-              >
+              <Button variant="primary" onClick={() => window.api.openExternal(deviceCode.verificationUri)}>
                 Відкрити GitHub →
               </Button>
             </div>
@@ -139,75 +171,122 @@ function OnboardingScreen({ onComplete }: Props): React.JSX.Element {
         )}
       </Step>
 
-      {/* КРОК 2 — сховище */}
-      <Step n={2} done={repoReady} title="Створити спільне сховище" disabled={!loggedIn}>
-        {!repoReady ? (
-          <Button
-            variant="primary"
-            style={{ alignSelf: 'flex-start' }}
-            onClick={handleCreateRepo}
-            disabled={busy || !loggedIn}
-          >
-            {busy ? 'Створюю…' : 'Створити репозиторій'}
-          </Button>
-        ) : (
+      {/* КРОК 2 — вибір ролі */}
+      <Step n={2} done={role !== null} title="Хто ти в цьому коопі?" disabled={!loggedIn} last={role === 'join'}>
+        {role === null && (
+          <div style={styles.roleRow}>
+            <button style={styles.roleCard} onClick={handleSetHost} disabled={busy}>
+              <div style={styles.roleIcon}>👑</div>
+              <div style={styles.roleTitle}>Я головний</div>
+              <div style={styles.roleDesc}>Створю спільне сховище, друг підключиться до мене</div>
+            </button>
+            <button style={styles.roleCard} onClick={() => setRole('join')} disabled={busy}>
+              <div style={styles.roleIcon}>🤝</div>
+              <div style={styles.roleTitle}>Підключитися до друга</div>
+              <div style={styles.roleDesc}>Друг уже створив сховище і запросив мене</div>
+            </button>
+          </div>
+        )}
+        {role === 'host' && (
           <div style={styles.okRow}>
-            <span style={{ color: colors.success }}>✓</span>
-            <span style={styles.okName}>{repo.repo.fullName}</span>
-            <span style={{ fontSize: 13 }}>🔒</span>
+            <span style={{ color: colors.success }}>👑</span>
+            <span style={styles.okName}>Ти головний</span>
+            <button style={styles.changeLink} onClick={() => setRole(null)}>
+              змінити
+            </button>
+          </div>
+        )}
+        {role === 'join' && (
+          <div style={styles.joinBox}>
+            <div style={styles.row}>
+              <input
+                style={styles.input}
+                placeholder="Нік друга-хоста на GitHub"
+                value={hostLogin}
+                onChange={(e) => setHostLogin(e.target.value)}
+                disabled={busy}
+              />
+              <Button variant="primary" onClick={handleJoin} disabled={busy || !hostLogin.trim()}>
+                {busy ? 'Перевіряю…' : 'Підключитися'}
+              </Button>
+            </div>
+            <button style={styles.changeLink} onClick={() => setRole(null)}>
+              ← обрати іншу роль
+            </button>
           </div>
         )}
       </Step>
 
-      {/* КРОК 3 — друг */}
-      <Step n={3} done={collaborators.length > 0} title="Запросити друга" disabled={!repoReady} last>
-        <div style={styles.row}>
-          <input
-            style={styles.input}
-            placeholder="Нік друга на GitHub"
-            value={friend}
-            onChange={(e) => setFriend(e.target.value)}
-            disabled={busy || !repoReady}
-          />
-          <Button variant="primary" onClick={handleInvite} disabled={busy || !friend.trim()}>
-            Запросити
-          </Button>
-        </div>
-        {collaborators.length > 0 && (
-          <div style={styles.members}>
-            {collaborators.map((c) => (
-              <span key={c.login} style={styles.memberOk}>
-                👤 {c.login}
-              </span>
-            ))}
-          </div>
-        )}
-        {invites.length > 0 && (
-          <div style={styles.members}>
-            {invites.map((i) => (
-              <span key={i.login} style={styles.memberPending}>
-                ⏳ {i.login} (очікує)
-              </span>
-            ))}
-          </div>
-        )}
-      </Step>
+      {/* КРОК 3 (тільки host) — сховище + друг */}
+      {role === 'host' && (
+        <>
+          <Step n={3} done={repoReady} title="Створити спільне сховище">
+            {!repoReady ? (
+              <Button variant="primary" style={{ alignSelf: 'flex-start' }} onClick={handleCreateRepo} disabled={busy}>
+                {busy ? 'Створюю…' : 'Створити репозиторій'}
+              </Button>
+            ) : (
+              <div style={styles.okRow}>
+                <span style={{ color: colors.success }}>✓</span>
+                <span style={styles.okName}>{repo.repo.fullName}</span>
+                <span style={{ fontSize: 13 }}>🔒</span>
+              </div>
+            )}
+          </Step>
+
+          <Step n={4} done={collaborators.length > 0} title="Запросити друга" disabled={!repoReady} last>
+            <div style={styles.row}>
+              <input
+                style={styles.input}
+                placeholder="Нік друга на GitHub"
+                value={friend}
+                onChange={(e) => setFriend(e.target.value)}
+                disabled={busy || !repoReady}
+              />
+              <Button variant="primary" onClick={handleInvite} disabled={busy || !friend.trim()}>
+                Запросити
+              </Button>
+            </div>
+            {collaborators.length > 0 && (
+              <div style={styles.members}>
+                {collaborators.map((c) => (
+                  <span key={c.login} style={styles.memberOk}>
+                    👤 {c.login}
+                  </span>
+                ))}
+              </div>
+            )}
+            {invites.length > 0 && (
+              <div style={styles.members}>
+                {invites.map((i) => (
+                  <span key={i.login} style={styles.memberPending}>
+                    ⏳ {i.login} (очікує)
+                  </span>
+                ))}
+              </div>
+            )}
+          </Step>
+        </>
+      )}
 
       {error && <div style={styles.error}>⚠️ {error}</div>}
 
-      <div style={styles.footer}>
-        <div style={styles.muted}>
-          {ready ? '✓ Усе готово! Можна переходити до ігор.' : 'Заверши кроки вище'}
+      {/* Кнопка "до ігор" — лише для host (join переходить одразу після підключення) */}
+      {role === 'host' && (
+        <div style={styles.footer}>
+          <div style={styles.muted}>
+            {hostReady ? '✓ Усе готово! Можна переходити до ігор.' : 'Заверши кроки вище'}
+          </div>
+          <Button
+            variant="primary"
+            style={{ height: 46, padding: '0 26px', fontSize: 15 }}
+            onClick={onComplete}
+            disabled={!hostReady}
+          >
+            Перейти до ігор →
+          </Button>
         </div>
-        <Button
-          variant="primary"
-          style={{ height: 46, padding: '0 26px', fontSize: 15 }}
-          onClick={onComplete}
-          disabled={!ready}
-        >
-          Перейти до ігор →
-        </Button>
-      </div>
+      )}
     </div>
   )
 }
@@ -257,7 +336,7 @@ function Step({
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  screen: { padding: '26px 34px', maxWidth: 720, margin: '0 auto', width: '100%' },
+  screen: { padding: '26px 34px', maxWidth: 760, margin: '0 auto', width: '100%' },
   head: { textAlign: 'center', marginBottom: 24 },
   title: { fontSize: 24, fontWeight: 800, color: colors.text },
   subtitle: { fontSize: 14, color: colors.muted, marginTop: 6 },
@@ -272,6 +351,34 @@ const styles: Record<string, React.CSSProperties> = {
   },
   stepTitle: { fontSize: 15, fontWeight: 600, color: colors.text },
   row: { display: 'flex', gap: 10 },
+  roleRow: { display: 'flex', gap: 12 },
+  roleCard: {
+    flex: 1,
+    textAlign: 'left',
+    padding: '14px 16px',
+    border: `1px solid ${colors.border}`,
+    borderRadius: 10,
+    background: colors.surface,
+    color: colors.text,
+    cursor: 'pointer',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 4
+  },
+  roleIcon: { fontSize: 24 },
+  roleTitle: { fontSize: 15, fontWeight: 700 },
+  roleDesc: { fontSize: 12.5, color: colors.muted },
+  joinBox: { display: 'flex', flexDirection: 'column', gap: 8 },
+  changeLink: {
+    alignSelf: 'flex-start',
+    background: 'transparent',
+    border: 'none',
+    color: colors.accent,
+    cursor: 'pointer',
+    fontSize: 12.5,
+    padding: 0,
+    textDecoration: 'underline'
+  },
   device: { display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-start' },
   deviceCode: {
     fontSize: 26,
@@ -308,43 +415,6 @@ const styles: Record<string, React.CSSProperties> = {
   members: { display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 4 },
   memberOk: { fontSize: 13, color: colors.success },
   memberPending: { fontSize: 13, color: colors.muted },
-  btnGhost: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 10,
-    height: 42,
-    padding: '0 18px',
-    border: `1px solid ${colors.border}`,
-    borderRadius: 8,
-    background: colors.surface,
-    color: colors.text,
-    fontWeight: 600,
-    fontSize: 13.5,
-    cursor: 'pointer',
-    alignSelf: 'flex-start'
-  },
-  btnPrimary: {
-    height: 40,
-    padding: '0 18px',
-    border: 'none',
-    borderRadius: 8,
-    background: colors.accent,
-    color: colors.bgDarker,
-    fontWeight: 700,
-    fontSize: 13.5,
-    cursor: 'pointer'
-  },
-  btnSmall: {
-    height: 40,
-    padding: '0 16px',
-    border: 'none',
-    borderRadius: 8,
-    background: colors.success,
-    color: colors.bgDarker,
-    fontWeight: 700,
-    fontSize: 13.5,
-    cursor: 'pointer'
-  },
   muted: { fontSize: 13, color: colors.muted },
   error: { color: colors.error, fontSize: 13, marginTop: 8 },
   footer: {
@@ -354,16 +424,6 @@ const styles: Record<string, React.CSSProperties> = {
     marginTop: 18,
     paddingTop: 18,
     borderTop: `1px solid ${colors.surface}`
-  },
-  btnGo: {
-    height: 46,
-    padding: '0 26px',
-    border: 'none',
-    borderRadius: 9,
-    background: colors.accent,
-    color: colors.bgDarker,
-    fontWeight: 700,
-    fontSize: 15
   }
 }
 

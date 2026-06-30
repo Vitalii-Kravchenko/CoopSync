@@ -95,3 +95,13 @@ export interface StartupSettings {
   /** Стартувати згорнутим у трей. */
   startMinimized: boolean
 }
+
+/** Роль користувача в коопі. */
+export type UserRole = 'host' | 'join'
+
+/** Конфіг ролі: хто головний і чиє сховище синхронізуємо. */
+export interface RoleConfig {
+  role: UserRole
+  /** Логін власника сховища (host'а). Для ролі host = я сам. */
+  hostOwner: string
+}

@@ -1,4 +1,5 @@
-import { ipcMain, shell, clipboard, BrowserWindow } from 'electron'
+import { app, ipcMain, shell, clipboard, BrowserWindow } from 'electron'
+import { readSettings, writeSettings } from './services/settingsStore'
 import {
   requestDeviceCode,
   pollForToken,
@@ -21,7 +22,8 @@ import type {
   Collaborator,
   DetectedGame,
   CatalogGame,
-  GameSyncStatus
+  GameSyncStatus,
+  StartupSettings
 } from '../shared/types'
 
 // Кеш ніку користувача, щоб не питати GitHub при кожному запиті (важливо для поллінгу).
@@ -188,4 +190,32 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('window:is-maximized', (event): boolean => {
     return BrowserWindow.fromWebContents(event.sender)?.isMaximized() ?? false
   })
+
+  // --- Налаштування запуску ---
+
+  ipcMain.handle('settings:get-startup', (): StartupSettings => {
+    return {
+      openAtLogin: app.getLoginItemSettings().openAtLogin,
+      startMinimized: readSettings().startMinimized
+    }
+  })
+
+  ipcMain.handle(
+    'settings:set-startup',
+    (_event, patch: Partial<StartupSettings>): StartupSettings => {
+      const current: StartupSettings = {
+        openAtLogin: app.getLoginItemSettings().openAtLogin,
+        startMinimized: readSettings().startMinimized
+      }
+      const next: StartupSettings = { ...current, ...patch }
+
+      writeSettings({ startMinimized: next.startMinimized })
+      app.setLoginItemSettings({
+        openAtLogin: next.openAtLogin,
+        // На Windows запуск згорнутим робимо через аргумент.
+        args: next.startMinimized ? ['--hidden'] : []
+      })
+      return next
+    }
+  )
 }

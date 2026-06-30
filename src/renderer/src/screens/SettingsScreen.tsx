@@ -2,7 +2,13 @@ import { useEffect, useState } from 'react'
 import { colors } from '../theme'
 import { GitHubIcon } from '../components/icons'
 import Button from '../components/Button'
-import type { AuthUser, SavesRepoStatus, PendingInvite, Collaborator } from '../../../shared/types'
+import type {
+  AuthUser,
+  SavesRepoStatus,
+  PendingInvite,
+  Collaborator,
+  StartupSettings
+} from '../../../shared/types'
 
 interface Props {
   user: AuthUser
@@ -18,14 +24,20 @@ function SettingsScreen({ user, onLoggedOut }: Props): React.JSX.Element {
   const [collaborators, setCollaborators] = useState<Collaborator[]>([])
   const [friend, setFriend] = useState('')
   const [busy, setBusy] = useState(false)
-  // Перемикачі поки візуальні — реальна логіка автозапуску/трею буде в кроці 4.
-  const [autostart, setAutostart] = useState(true)
-  const [tray, setTray] = useState(true)
+  const [startup, setStartup] = useState<StartupSettings>({
+    openAtLogin: false,
+    startMinimized: false
+  })
   const [language, setLanguage] = useState('uk')
 
   useEffect(() => {
     void loadRepo()
+    window.api.settings.getStartup().then(setStartup)
   }, [])
+
+  async function handleStartup(patch: Partial<StartupSettings>): Promise<void> {
+    setStartup(await window.api.settings.setStartup(patch))
+  }
 
   async function loadRepo(): Promise<void> {
     const r = await window.api.repo.getStatus()
@@ -164,12 +176,17 @@ function SettingsScreen({ user, onLoggedOut }: Props): React.JSX.Element {
             </select>
           </div>
           <div style={styles.divider} />
-          <Toggle label="Запускати разом із Windows" value={autostart} onChange={setAutostart} />
+          <Toggle
+            label="Запускати разом із Windows"
+            value={startup.openAtLogin}
+            onChange={(v) => handleStartup({ openAtLogin: v })}
+          />
           <div style={styles.divider} />
-          <Toggle label="Працювати у фоні (трей)" value={tray} onChange={setTray} />
-          <div style={{ ...styles.muted, marginTop: 10, fontSize: 12 }}>
-            Перемикачі поки демонстраційні — запрацюють у кроці «фон + автозапуск».
-          </div>
+          <Toggle
+            label="Стартувати згорнутим у трей"
+            value={startup.startMinimized}
+            onChange={(v) => handleStartup({ startMinimized: v })}
+          />
         </div>
 
         {/* Про програму */}

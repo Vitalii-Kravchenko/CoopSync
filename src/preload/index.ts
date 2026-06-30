@@ -8,7 +8,8 @@ import type {
   DetectedGame,
   CatalogGame,
   GameSyncStatus,
-  AutoSyncEvent
+  AutoSyncEvent,
+  StartupSettings
 } from '../shared/types'
 
 // API, доступне в renderer як window.api.
@@ -84,6 +85,13 @@ const api = {
       ipcRenderer.on('window:maximized-change', listener)
       return () => ipcRenderer.removeListener('window:maximized-change', listener)
     }
+  },
+  settings: {
+    /** Поточні налаштування запуску. */
+    getStartup: (): Promise<StartupSettings> => ipcRenderer.invoke('settings:get-startup'),
+    /** Змінити налаштування запуску. */
+    setStartup: (patch: Partial<StartupSettings>): Promise<StartupSettings> =>
+      ipcRenderer.invoke('settings:set-startup', patch)
   },
   /** Відкрити URL у системному браузері. */
   openExternal: (url: string): Promise<void> => ipcRenderer.invoke('shell:open-external', url),

@@ -87,3 +87,11 @@ export interface AutoSyncEvent {
   ok: boolean
   message: string
 }
+
+/** Налаштування запуску. */
+export interface StartupSettings {
+  /** Запускати разом із Windows. */
+  openAtLogin: boolean
+  /** Стартувати згорнутим у трей. */
+  startMinimized: boolean
+}

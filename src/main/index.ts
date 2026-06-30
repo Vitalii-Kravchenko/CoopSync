@@ -26,8 +26,11 @@ function createWindow(): void {
     }
   })
 
+  // Якщо запущено з автозапуску згорнутим (--hidden) — не показуємо вікно,
+  // лишаємо програму в треї.
+  const startHidden = process.argv.includes('--hidden')
   mainWindow.on('ready-to-show', () => {
-    mainWindow?.show()
+    if (!startHidden) mainWindow?.show()
   })
 
   // Повідомляємо renderer про зміну стану розгортання (для іконки кнопки вікна).

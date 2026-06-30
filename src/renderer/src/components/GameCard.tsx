@@ -1,30 +1,65 @@
 import { useState } from 'react'
 import { colors, steamPoster } from '../theme'
 import Button from './Button'
+import type { SyncStatus } from '../../../shared/types'
 
 interface Props {
   appId: string
   name: string
   installed: boolean
-  /** Чи знайдено папку сейвів (тільки для встановлених). */
-  saveFound?: boolean
+  /** Статус синку (тільки для встановлених). undefined = ще перевіряємо. */
+  syncStatus?: SyncStatus
+  /** Версія локальних сейвів. */
+  localVersion?: number
+  /** Версія сейвів на GitHub. */
+  remoteVersion?: number
+  /** Триває синхронізація саме цієї гри. */
+  busy?: boolean
   onUpload?: () => void
   onDownload?: () => void
 }
 
-function GameCard({ appId, name, installed, saveFound, onUpload, onDownload }: Props): React.JSX.Element {
+// "1" → "v1.001", 0/undefined → "—".
+function fmtVersion(n: number | undefined): string {
+  return n && n > 0 ? `v1.${String(n).padStart(3, '0')}` : '—'
+}
+
+// Як показати статус синку: колір, іконка, текст.
+function syncDisplay(s: SyncStatus | undefined): { color: string; icon: string; text: string } {
+  switch (s) {
+    case 'synced':
+      return { color: colors.success, icon: '✓', text: 'Синхронізовано' }
+    case 'local-newer':
+      return { color: colors.warning, icon: '⬆️', text: 'Локальна новіша' }
+    case 'remote-newer':
+      return { color: colors.accent, icon: '⬇️', text: 'Є новіша в хмарі' }
+    case 'not-uploaded':
+      return { color: colors.muted, icon: '☁️', text: 'Не вивантажено' }
+    case 'cloud-only':
+      return { color: colors.accent, icon: '⬇️', text: 'Тільки в хмарі' }
+    case 'no-saves':
+      return { color: colors.muted, icon: '—', text: 'Сейвів нема' }
+    default:
+      return { color: colors.muted, icon: '…', text: 'Перевіряю…' }
+  }
+}
+
+function GameCard({
+  appId,
+  name,
+  installed,
+  syncStatus,
+  localVersion,
+  remoteVersion,
+  busy,
+  onUpload,
+  onDownload
+}: Props): React.JSX.Element {
   const [hover, setHover] = useState(false)
   const [imgError, setImgError] = useState(false)
 
-  const showOverlay = hover && installed
-
-  // Статус під карткою.
-  let status: { color: string; icon: string; text: string } | null = null
-  if (installed) {
-    status = saveFound
-      ? { color: colors.success, icon: '✓', text: 'Сейви знайдено' }
-      : { color: colors.warning, icon: '⚠️', text: 'Сейви не знайдено' }
-  }
+  const showOverlay = (hover || busy) && installed
+  const status = installed ? syncDisplay(syncStatus) : null
 
   return (
     <div
@@ -52,12 +87,18 @@ function GameCard({ appId, name, installed, saveFound, onUpload, onDownload }: P
 
         {showOverlay && (
           <div style={styles.overlay}>
-            <Button variant="primary" style={{ width: '100%' }} onClick={onUpload}>
-              ⬆️ Вивантажити
-            </Button>
-            <Button variant="secondary" style={{ width: '100%' }} onClick={onDownload}>
-              ⬇️ Завантажити
-            </Button>
+            {busy ? (
+              <div style={styles.syncing}>⏳ Синхронізую…</div>
+            ) : (
+              <>
+                <Button variant="primary" style={{ width: '100%' }} onClick={onUpload}>
+                  ⬆️ Вивантажити
+                </Button>
+                <Button variant="secondary" style={{ width: '100%' }} onClick={onDownload}>
+                  ⬇️ Завантажити
+                </Button>
+              </>
+            )}
           </div>
         )}
       </div>
@@ -68,6 +109,11 @@ function GameCard({ appId, name, installed, saveFound, onUpload, onDownload }: P
           <div style={{ ...styles.status, color: status.color }}>
             <span>{status.icon}</span>
             <span>{status.text}</span>
+          </div>
+        )}
+        {installed && (
+          <div style={styles.versions}>
+            Локально {fmtVersion(localVersion)} · Хмара {fmtVersion(remoteVersion)}
           </div>
         )}
         {!installed && <div style={styles.notInstalled}>не встановлено</div>}
@@ -141,7 +187,9 @@ const styles: Record<string, React.CSSProperties> = {
     textOverflow: 'ellipsis'
   },
   status: { display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, fontSize: 12.5 },
-  notInstalled: { marginTop: 4, fontSize: 12.5, color: colors.muted }
+  notInstalled: { marginTop: 4, fontSize: 12.5, color: colors.muted },
+  versions: { marginTop: 3, fontSize: 11, color: colors.muted },
+  syncing: { color: colors.text, fontWeight: 600, fontSize: 14, textAlign: 'center' }
 }
 
 export default GameCard

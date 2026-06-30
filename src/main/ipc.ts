@@ -10,6 +10,7 @@ import {
   listCollaborators
 } from './services/github'
 import { detectGames } from './services/steam'
+import { uploadGame, downloadGame, getSyncStatuses } from './services/sync'
 import { SUPPORTED_GAMES } from './games/catalog'
 import { saveToken, loadToken, clearToken } from './services/tokenStore'
 import type {
@@ -18,7 +19,8 @@ import type {
   PendingInvite,
   Collaborator,
   DetectedGame,
-  CatalogGame
+  CatalogGame,
+  GameSyncStatus
 } from '../shared/types'
 
 // Кеш ніку користувача, щоб не питати GitHub при кожному запиті (важливо для поллінгу).
@@ -127,6 +129,26 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('games:catalog', (): CatalogGame[] =>
     SUPPORTED_GAMES.map((g) => ({ appId: g.appId, name: g.name }))
   )
+
+  // --- Синхронізація сейвів ---
+
+  // Вивантажити сейви гри на GitHub.
+  ipcMain.handle('sync:upload', async (_event, appId: string): Promise<string> => {
+    const { token, owner } = await requireAuth()
+    return uploadGame(token, owner, appId)
+  })
+
+  // Завантажити сейви гри з GitHub.
+  ipcMain.handle('sync:download', async (_event, appId: string): Promise<string> => {
+    const { token, owner } = await requireAuth()
+    return downloadGame(token, owner, appId)
+  })
+
+  // Статус синку для всіх ігор (порівняння локального з GitHub).
+  ipcMain.handle('sync:statuses', async (): Promise<GameSyncStatus[]> => {
+    const { token, owner } = await requireAuth()
+    return getSyncStatuses(token, owner)
+  })
 
   // --- Керування вікном (для власного titlebar) ---
 

@@ -60,3 +60,21 @@ export interface CatalogGame {
   appId: string
   name: string
 }
+
+/** Стан синхронізації сейвів гри (порівняння локального з GitHub). */
+export type SyncStatus =
+  | 'synced' // локальне = хмара
+  | 'local-newer' // локальне новіше → вивантажити
+  | 'remote-newer' // у хмарі новіше → завантажити
+  | 'not-uploaded' // локальне є, у хмарі ще нема
+  | 'cloud-only' // у хмарі є, локально нема
+  | 'no-saves' // нема ні там, ні там
+
+export interface GameSyncStatus {
+  appId: string
+  status: SyncStatus
+  /** Версія локальних сейвів (0 = ще не синхронізовано). */
+  localVersion: number
+  /** Версія сейвів на GitHub (0 = ще не вивантажено). */
+  remoteVersion: number
+}

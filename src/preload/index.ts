@@ -6,7 +6,8 @@ import type {
   PendingInvite,
   Collaborator,
   DetectedGame,
-  CatalogGame
+  CatalogGame,
+  GameSyncStatus
 } from '../shared/types'
 
 // API, доступне в renderer як window.api.
@@ -44,6 +45,14 @@ const api = {
     list: (): Promise<DetectedGame[]> => ipcRenderer.invoke('games:list'),
     /** Повний каталог підтримуваних ігор. */
     catalog: (): Promise<CatalogGame[]> => ipcRenderer.invoke('games:catalog')
+  },
+  sync: {
+    /** Вивантажити сейви гри на GitHub. */
+    upload: (appId: string): Promise<string> => ipcRenderer.invoke('sync:upload', appId),
+    /** Завантажити сейви гри з GitHub. */
+    download: (appId: string): Promise<string> => ipcRenderer.invoke('sync:download', appId),
+    /** Статус синку всіх ігор. */
+    statuses: (): Promise<GameSyncStatus[]> => ipcRenderer.invoke('sync:statuses')
   },
   window: {
     /** Згорнути вікно. */

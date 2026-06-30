@@ -1,13 +1,18 @@
 import { useEffect, useMemo, useState } from 'react'
 import { colors } from '../theme'
 import GameCard from '../components/GameCard'
-import type { DetectedGame, CatalogGame } from '../../../shared/types'
+import type { DetectedGame, CatalogGame, GameSyncStatus } from '../../../shared/types'
 
 function MainScreen(): React.JSX.Element {
   const [installed, setInstalled] = useState<DetectedGame[]>([])
   const [catalog, setCatalog] = useState<CatalogGame[]>([])
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(true)
+  const [syncing, setSyncing] = useState<string | null>(null)
+  const [banner, setBanner] = useState<{ text: string; kind: 'success' | 'info' | 'error' } | null>(
+    null
+  )
+  const [syncStatuses, setSyncStatuses] = useState<Record<string, GameSyncStatus>>({})
 
   useEffect(() => {
     Promise.all([window.api.games.list(), window.api.games.catalog()]).then(([list, cat]) => {
@@ -15,7 +20,20 @@ function MainScreen(): React.JSX.Element {
       setCatalog(cat)
       setLoading(false)
     })
+    // Статуси тягнемо окремо — вони повільніші (clone/pull сховища).
+    void loadStatuses()
   }, [])
+
+  async function loadStatuses(): Promise<void> {
+    try {
+      const list = await window.api.sync.statuses()
+      const map: Record<string, GameSyncStatus> = {}
+      for (const s of list) map[s.appId] = s
+      setSyncStatuses(map)
+    } catch {
+      // Статуси не критичні для показу карток — мовчки ігноруємо.
+    }
+  }
 
   // Невстановлені = каталог мінус встановлені.
   const notInstalled = useMemo(() => {
@@ -27,12 +45,49 @@ function MainScreen(): React.JSX.Element {
   const filteredInstalled = installed.filter((g) => g.name.toLowerCase().includes(q))
   const filteredNotInstalled = notInstalled.filter((g) => g.name.toLowerCase().includes(q))
 
-  function handleUpload(name: string): void {
-    // Реальна логіка — наступний крок (3a). Поки заглушка.
-    console.log('upload', name)
-  }
-  function handleDownload(name: string): void {
-    console.log('download', name)
+  // Банер сам зникає через 5 секунд.
+  useEffect(() => {
+    if (!banner) return
+    const t = setTimeout(() => setBanner(null), 5000)
+    return () => clearTimeout(t)
+  }, [banner])
+
+  async function handleSync(appId: string, action: 'upload' | 'download'): Promise<void> {
+    const status = syncStatuses[appId]?.status
+
+    // Випадки, коли діяти не треба — лише акуратно повідомляємо (без виклику синку).
+    if (status === 'synced') {
+      setBanner({ text: 'Версії збігаються — синхронізувати не потрібно', kind: 'info' })
+      return
+    }
+    if (action === 'download' && (status === 'not-uploaded' || status === 'no-saves')) {
+      setBanner({ text: 'У сховищі ще немає сейвів цієї гри', kind: 'error' })
+      return
+    }
+    if (action === 'upload' && (status === 'cloud-only' || status === 'no-saves')) {
+      setBanner({ text: 'Локально немає сейвів для вивантаження', kind: 'error' })
+      return
+    }
+
+    setSyncing(appId)
+    setBanner(null)
+    try {
+      const msg =
+        action === 'upload'
+          ? await window.api.sync.upload(appId)
+          : await window.api.sync.download(appId)
+      setBanner({ text: msg, kind: 'success' })
+      // Сейви могли змінитися — оновлюємо ігри та статуси.
+      setInstalled(await window.api.games.list())
+      await loadStatuses()
+    } catch (e) {
+      const raw = e instanceof Error ? e.message : 'Помилка синхронізації'
+      // Прибираємо технічний префікс "Error invoking remote method '...': Error:".
+      const clean = raw.replace(/^Error invoking remote method '[^']+':\s*(Error:\s*)?/, '')
+      setBanner({ text: clean, kind: 'error' })
+    } finally {
+      setSyncing(null)
+    }
   }
 
   return (
@@ -60,9 +115,12 @@ function MainScreen(): React.JSX.Element {
                   appId={g.appId}
                   name={g.name}
                   installed
-                  saveFound={g.saveFound}
-                  onUpload={() => handleUpload(g.name)}
-                  onDownload={() => handleDownload(g.name)}
+                  syncStatus={syncStatuses[g.appId]?.status}
+                  localVersion={syncStatuses[g.appId]?.localVersion}
+                  remoteVersion={syncStatuses[g.appId]?.remoteVersion}
+                  busy={syncing === g.appId}
+                  onUpload={() => handleSync(g.appId, 'upload')}
+                  onDownload={() => handleSync(g.appId, 'download')}
                 />
               ))}
             </div>
@@ -81,6 +139,22 @@ function MainScreen(): React.JSX.Element {
             <div style={styles.muted}>Нічого не знайдено</div>
           )}
         </>
+      )}
+
+      {banner && (
+        <div
+          style={{
+            ...styles.banner,
+            background:
+              banner.kind === 'error'
+                ? colors.error
+                : banner.kind === 'info'
+                  ? colors.accent
+                  : colors.success
+          }}
+        >
+          {banner.text}
+        </div>
       )}
     </div>
   )
@@ -114,7 +188,20 @@ const styles: Record<string, React.CSSProperties> = {
     gridTemplateColumns: 'repeat(auto-fill, minmax(168px, 1fr))',
     gap: 20
   },
-  muted: { color: colors.muted, fontSize: 14 }
+  muted: { color: colors.muted, fontSize: 14 },
+  banner: {
+    position: 'fixed',
+    bottom: 22,
+    left: '50%',
+    transform: 'translateX(-50%)',
+    padding: '12px 22px',
+    borderRadius: 10,
+    color: '#11111b',
+    fontWeight: 600,
+    fontSize: 14,
+    boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+    zIndex: 100
+  }
 }
 
 export default MainScreen

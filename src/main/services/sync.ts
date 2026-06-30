@@ -22,9 +22,16 @@ function remoteUrl(token: string, owner: string): string {
   return `https://x-access-token:${token}@github.com/${owner}/${SAVES_REPO_NAME}.git`
 }
 
+// Прапори, що вимикають системний credential helper (gh/GCM) — інакше при
+// push/pull вискакує вікно "вибери акаунт GitHub". Так git бере токен з URL.
+const NO_HELPER = ['-c', 'credential.helper=']
+
 // Запустити git у вже клонованому репо.
 async function git(args: string[]): Promise<string> {
-  const { stdout } = await exec('git', args, { cwd: repoDir(), maxBuffer: BIG_BUFFER })
+  const { stdout } = await exec('git', [...NO_HELPER, ...args], {
+    cwd: repoDir(),
+    maxBuffer: BIG_BUFFER
+  })
   return stdout
 }
 
@@ -35,7 +42,7 @@ async function ensureRepo(token: string, owner: string): Promise<void> {
 
   if (!existsSync(join(dir, '.git'))) {
     await mkdir(app.getPath('userData'), { recursive: true })
-    await exec('git', ['clone', url, dir], { maxBuffer: BIG_BUFFER })
+    await exec('git', [...NO_HELPER, 'clone', url, dir], { maxBuffer: BIG_BUFFER })
   } else {
     // Оновлюємо токен у remote (міг змінитись) і підтягуємо свіже.
     await git(['remote', 'set-url', 'origin', url])

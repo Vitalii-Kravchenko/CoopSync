@@ -11,6 +11,7 @@ import {
 } from './services/github'
 import { detectGames } from './services/steam'
 import { uploadGame, downloadGame, getSyncStatuses } from './services/sync'
+import { startWatcher, stopWatcher } from './services/watcher'
 import { SUPPORTED_GAMES } from './games/catalog'
 import { saveToken, loadToken, clearToken } from './services/tokenStore'
 import type {
@@ -148,6 +149,18 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('sync:statuses', async (): Promise<GameSyncStatus[]> => {
     const { token, owner } = await requireAuth()
     return getSyncStatuses(token, owner)
+  })
+
+  // --- Автосинхронізація (спостерігач процесів) ---
+
+  // Запустити: стежимо за іграми, шлемо renderer події 'sync:auto'.
+  ipcMain.handle('watcher:start', async (event): Promise<void> => {
+    const { token, owner } = await requireAuth()
+    startWatcher(token, owner, (e) => event.sender.send('sync:auto', e))
+  })
+
+  ipcMain.handle('watcher:stop', (): void => {
+    stopWatcher()
   })
 
   // --- Керування вікном (для власного titlebar) ---

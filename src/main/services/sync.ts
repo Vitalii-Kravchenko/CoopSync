@@ -4,7 +4,7 @@ import { promisify } from 'util'
 import { createHash } from 'crypto'
 import { join } from 'path'
 import { existsSync } from 'fs'
-import { cp, rm, mkdir, readdir, readFile, writeFile, stat } from 'fs/promises'
+import { cp, rm, mkdir, readdir, readFile, writeFile } from 'fs/promises'
 import { SUPPORTED_GAMES } from '../games/catalog'
 import { SAVES_REPO_NAME } from '../config'
 import type { SyncStatus, GameSyncStatus } from '../../shared/types'
@@ -60,7 +60,9 @@ async function readRemoteVersion(name: string): Promise<number> {
   const p = remoteMetaPath(name)
   if (!existsSync(p)) return 0
   try {
-    const data = JSON.parse(await readFile(p, 'utf8')) as { version?: number }
+    // Прибираємо можливий BOM на початку — інакше JSON.parse падає.
+    const raw = (await readFile(p, 'utf8')).replace(/^﻿/, '')
+    const data = JSON.parse(raw) as { version?: number }
     return data.version ?? 0
   } catch {
     return 0
@@ -81,7 +83,8 @@ async function readLocalVersions(): Promise<Record<string, number>> {
   const p = localVersionsPath()
   if (!existsSync(p)) return {}
   try {
-    return JSON.parse(await readFile(p, 'utf8')) as Record<string, number>
+    const raw = (await readFile(p, 'utf8')).replace(/^﻿/, '')
+    return JSON.parse(raw) as Record<string, number>
   } catch {
     return {}
   }
@@ -109,29 +112,10 @@ export async function uploadGame(token: string, owner: string, appId: string): P
   await rm(dest, { recursive: true, force: true })
   await cp(game.savePath, dest, { recursive: true })
 
-  // Чи змінилися самі сейви (без урахування мета-файлу)?
-  await git(['add', game.name])
-  const status = await git(['status', '--porcelain', '--', game.name])
-
-  const currentVersion = await readRemoteVersion(game.name)
-  if (!status.trim()) {
-    // Сейви не змінилися. Якщо версія вже є — нічого робити не треба.
-    if (currentVersion > 0) {
-      await setLocalVersion(appId, currentVersion)
-      return 'Уже актуально — змін немає'
-    }
-    // Legacy: гра в сховищі без версії (вивантажена до версіонування) —
-    // ініціалізуємо стартову версію.
-    await writeRemoteMeta(game.name, 1, owner)
-    await git(['add', '-A'])
-    await git(['commit', '-m', `meta: ${game.name} ${formatVersion(1)} (${owner})`])
-    await git(['push', 'origin', 'main'])
-    await setLocalVersion(appId, 1)
-    return `Вивантажено на GitHub ✓ (${formatVersion(1)})`
-  }
-
-  // Сейви змінилися → піднімаємо версію.
-  const newVersion = currentVersion + 1
+  // Завжди створюємо нову версію — навіть якщо файли начебто ті самі
+  // (могли змінитися дрібниці: координати персонажа, час у грі тощо).
+  // Мета-файл оновлюється щоразу, тож коміт ніколи не буде порожнім.
+  const newVersion = (await readRemoteVersion(game.name)) + 1
   await writeRemoteMeta(game.name, newVersion, owner)
 
   await git(['add', '-A'])
@@ -183,35 +167,6 @@ async function folderHash(dir: string): Promise<string> {
   return createHash('sha1').update(parts.join('\n')).digest('hex')
 }
 
-// Час останньої зміни найсвіжішого файлу в папці (мс).
-async function newestMtime(dir: string): Promise<number> {
-  let newest = 0
-  async function walk(d: string): Promise<void> {
-    for (const e of await readdir(d, { withFileTypes: true })) {
-      if (e.name === '.git') continue
-      const full = join(d, e.name)
-      if (e.isDirectory()) await walk(full)
-      else {
-        const s = await stat(full)
-        if (s.mtimeMs > newest) newest = s.mtimeMs
-      }
-    }
-  }
-  await walk(dir)
-  return newest
-}
-
-// Дата останнього коміту, що чіпав папку гри (коли востаннє вивантажили).
-async function remoteCommitDate(name: string): Promise<number> {
-  try {
-    const out = await git(['log', '-1', '--format=%cI', '--', name])
-    const t = Date.parse(out.trim())
-    return Number.isNaN(t) ? 0 : t
-  } catch {
-    return 0
-  }
-}
-
 /** Статус синку для всіх підтримуваних ігор (один pull на всі). */
 export async function getSyncStatuses(token: string, owner: string): Promise<GameSyncStatus[]> {
   await ensureRepo(token, owner)
@@ -224,6 +179,9 @@ export async function getSyncStatuses(token: string, owner: string): Promise<Gam
     const localExists = existsSync(savePath)
     const remoteExists = existsSync(repoPath)
 
+    const localVer = localVersions[g.appId] ?? 0
+    const remoteVer = await readRemoteVersion(g.name)
+
     let status: SyncStatus
     if (!localExists && !remoteExists) {
       status = 'no-saves'
@@ -231,27 +189,19 @@ export async function getSyncStatuses(token: string, owner: string): Promise<Gam
       status = 'not-uploaded'
     } else if (!localExists && remoteExists) {
       status = 'cloud-only'
+    } else if (remoteVer > localVer) {
+      // У хмарі новіша версія → треба завантажити.
+      status = 'remote-newer'
     } else {
+      // Версія не новіша — перевіряємо, чи є незбережені локальні зміни.
       const [localHash, remoteHash] = await Promise.all([
         folderHash(savePath),
         folderHash(repoPath)
       ])
-      if (localHash === remoteHash) {
-        status = 'synced'
-      } else {
-        const [localTime, remoteTime] = await Promise.all([
-          newestMtime(savePath),
-          remoteCommitDate(g.name)
-        ])
-        status = localTime > remoteTime ? 'local-newer' : 'remote-newer'
-      }
+      status = localHash === remoteHash ? 'synced' : 'local-newer'
     }
-    result.push({
-      appId: g.appId,
-      status,
-      localVersion: localVersions[g.appId] ?? 0,
-      remoteVersion: await readRemoteVersion(g.name)
-    })
+
+    result.push({ appId: g.appId, status, localVersion: localVer, remoteVersion: remoteVer })
   }
   return result
 }

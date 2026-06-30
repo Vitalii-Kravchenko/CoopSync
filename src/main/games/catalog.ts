@@ -12,22 +12,27 @@ export interface SupportedGame {
   name: string
   /** Абсолютний шлях до папки сейвів (залежить від системних змінних). */
   getSavePath: () => string
+  /** Можливі назви процесів гри (.exe) — для детекту запуску/виходу. */
+  processNames: string[]
 }
 
 export const SUPPORTED_GAMES: SupportedGame[] = [
   {
     appId: '526870',
     name: 'Satisfactory',
-    getSavePath: () => join(process.env.LOCALAPPDATA ?? '', 'FactoryGame', 'Saved', 'SaveGames')
+    getSavePath: () => join(process.env.LOCALAPPDATA ?? '', 'FactoryGame', 'Saved', 'SaveGames'),
+    processNames: ['FactoryGame.exe', 'FactoryGameSteam.exe', 'FactoryGameEGS.exe']
   },
   {
     appId: '413150',
     name: 'Stardew Valley',
-    getSavePath: () => join(process.env.APPDATA ?? '', 'StardewValley', 'Saves')
+    getSavePath: () => join(process.env.APPDATA ?? '', 'StardewValley', 'Saves'),
+    processNames: ['Stardew Valley.exe', 'StardewValley.exe', 'StardewModdingAPI.exe']
   },
   {
     appId: '105600',
     name: 'Terraria',
-    getSavePath: () => join(homedir(), 'Documents', 'My Games', 'Terraria')
+    getSavePath: () => join(homedir(), 'Documents', 'My Games', 'Terraria'),
+    processNames: ['Terraria.exe', 'tModLoader.exe']
   }
 ]

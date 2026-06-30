@@ -35,6 +35,20 @@ function MainScreen(): React.JSX.Element {
     }
   }
 
+  // Реакція на автосинхронізацію (запуск/вихід гри у фоні).
+  useEffect(() => {
+    return window.api.watcher.onAutoSync((e) => {
+      if (e.ok) {
+        // Показуємо реальний результат синку, а не фіксований текст.
+        const prefix = e.action === 'pull' ? '⬇️' : '⬆️'
+        setBanner({ text: `${prefix} ${e.name}: ${e.message}`, kind: 'success' })
+      }
+      // Стан міг змінитися — оновлюємо ігри та статуси.
+      void loadStatuses()
+      window.api.games.list().then(setInstalled)
+    })
+  }, [])
+
   // Невстановлені = каталог мінус встановлені.
   const notInstalled = useMemo(() => {
     const installedIds = new Set(installed.map((g) => g.appId))

@@ -29,23 +29,28 @@ function App(): React.JSX.Element {
     setUser(auth.user)
     const repo = await window.api.repo.getStatus()
     if (repo.state === 'ready') {
-      setPhase('app')
-      setScreen('main')
-      void window.api.window.maximize()
+      enterApp()
     } else {
       setPhase('onboarding')
     }
   }
 
-  async function handleOnboardingComplete(): Promise<void> {
-    const auth = await window.api.auth.getStatus()
-    if (auth.state === 'logged-in') setUser(auth.user)
+  // Перехід у робочий застосунок + запуск автосинхронізації.
+  function enterApp(): void {
     setPhase('app')
     setScreen('main')
     void window.api.window.maximize()
+    void window.api.watcher.start()
+  }
+
+  async function handleOnboardingComplete(): Promise<void> {
+    const auth = await window.api.auth.getStatus()
+    if (auth.state === 'logged-in') setUser(auth.user)
+    enterApp()
   }
 
   function handleLoggedOut(): void {
+    void window.api.watcher.stop()
     setUser(null)
     setPhase('onboarding')
   }

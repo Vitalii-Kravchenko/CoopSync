@@ -78,3 +78,12 @@ export interface GameSyncStatus {
   /** Версія сейвів на GitHub (0 = ще не вивантажено). */
   remoteVersion: number
 }
+
+/** Подія автосинхронізації (запуск гри → pull, вихід → push). */
+export interface AutoSyncEvent {
+  appId: string
+  name: string
+  action: 'pull' | 'push'
+  ok: boolean
+  message: string
+}

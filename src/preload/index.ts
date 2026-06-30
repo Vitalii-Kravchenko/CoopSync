@@ -7,7 +7,8 @@ import type {
   Collaborator,
   DetectedGame,
   CatalogGame,
-  GameSyncStatus
+  GameSyncStatus,
+  AutoSyncEvent
 } from '../shared/types'
 
 // API, доступне в renderer як window.api.
@@ -53,6 +54,18 @@ const api = {
     download: (appId: string): Promise<string> => ipcRenderer.invoke('sync:download', appId),
     /** Статус синку всіх ігор. */
     statuses: (): Promise<GameSyncStatus[]> => ipcRenderer.invoke('sync:statuses')
+  },
+  watcher: {
+    /** Запустити автосинхронізацію (стеження за процесами ігор). */
+    start: (): Promise<void> => ipcRenderer.invoke('watcher:start'),
+    /** Зупинити автосинхронізацію. */
+    stop: (): Promise<void> => ipcRenderer.invoke('watcher:stop'),
+    /** Підписка на події авто-синку. Повертає функцію відписки. */
+    onAutoSync: (callback: (event: AutoSyncEvent) => void): (() => void) => {
+      const listener = (_e: unknown, event: AutoSyncEvent): void => callback(event)
+      ipcRenderer.on('sync:auto', listener)
+      return () => ipcRenderer.removeListener('sync:auto', listener)
+    }
   },
   window: {
     /** Згорнути вікно. */

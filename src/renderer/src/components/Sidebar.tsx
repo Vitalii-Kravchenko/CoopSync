@@ -1,4 +1,6 @@
-import { colors } from '../theme'
+import { useState } from 'react'
+import { colors, fonts, gradients, radii, shadows } from '../theme'
+import { LibraryIcon, SettingsIcon } from './icons'
 
 export type Screen = 'main' | 'settings'
 
@@ -7,16 +9,22 @@ interface Props {
   onNavigate: (screen: Screen) => void
 }
 
-// Ліва панель (Варіант Б): зверху розділи, кнопка "Налаштування" — внизу.
+// Ліва панель: зверху розділи, "Налаштування" — внизу.
+// Активний пункт має фірмову акцентну смужку зліва + м'який градієнтний фон.
 function Sidebar({ active, onNavigate }: Props): React.JSX.Element {
   return (
     <div style={styles.rail}>
       <div style={styles.top}>
-        <RailButton icon="🎮" label="Ігри" active={active === 'main'} onClick={() => onNavigate('main')} />
+        <NavItem
+          icon={<LibraryIcon size={16} />}
+          label="Ігри"
+          active={active === 'main'}
+          onClick={() => onNavigate('main')}
+        />
       </div>
 
-      <RailButton
-        icon="⚙️"
+      <NavItem
+        icon={<SettingsIcon size={16} />}
         label="Налаштування"
         active={active === 'settings'}
         onClick={() => onNavigate('settings')}
@@ -25,55 +33,75 @@ function Sidebar({ active, onNavigate }: Props): React.JSX.Element {
   )
 }
 
-function RailButton({
+function NavItem({
   icon,
   label,
   active,
   onClick
 }: {
-  icon: string
+  icon: React.ReactNode
   label: string
   active: boolean
   onClick: () => void
 }): React.JSX.Element {
+  const [hover, setHover] = useState(false)
+
   return (
     <button
-      title={label}
       onClick={onClick}
-      style={{ ...styles.railBtn, ...(active ? styles.railBtnActive : {}) }}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        ...styles.item,
+        background: active ? gradients.energySoft : hover ? colors.bgHover : 'transparent',
+        color: active ? colors.text1 : hover ? colors.text1 : colors.text3
+      }}
     >
-      {icon}
+      {active && <span style={styles.accentBar} />}
+      <span style={{ display: 'flex' }}>{icon}</span>
+      {label}
     </button>
   )
 }
 
 const styles: Record<string, React.CSSProperties> = {
   rail: {
-    width: 64,
-    background: colors.bgDark,
-    borderRight: `1px solid ${colors.surface}`,
+    width: 196,
+    background: colors.bgBase,
+    borderRight: `1px solid ${colors.borderSubtle}`,
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '16px 0',
+    padding: 10,
     flexShrink: 0
   },
-  top: { display: 'flex', flexDirection: 'column', gap: 6 },
-  railBtn: {
-    width: 46,
-    height: 46,
-    borderRadius: 12,
-    border: 'none',
-    background: 'transparent',
-    color: colors.muted,
-    fontSize: 20,
-    cursor: 'pointer',
+  top: { display: 'flex', flexDirection: 'column', gap: 2 },
+  item: {
+    position: 'relative',
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center'
+    gap: 10,
+    height: 38,
+    padding: '0 12px',
+    border: 'none',
+    borderRadius: radii.sm,
+    fontFamily: fonts.body,
+    fontSize: 13.5,
+    fontWeight: 500,
+    cursor: 'pointer',
+    textAlign: 'left',
+    transition: 'background .12s, color .12s'
   },
-  railBtnActive: { background: colors.surface, color: colors.accent }
+  accentBar: {
+    position: 'absolute',
+    left: 0,
+    top: 7,
+    bottom: 7,
+    width: 3,
+    borderRadius: 2,
+    background: gradients.energy,
+    boxShadow: shadows.glowCy
+  }
 }
 
 export default Sidebar

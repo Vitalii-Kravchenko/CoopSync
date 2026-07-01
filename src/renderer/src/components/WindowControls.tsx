@@ -11,7 +11,7 @@ function WindowControls(): React.JSX.Element {
   }, [])
 
   return (
-    <div style={{ display: 'flex' }}>
+    <div style={{ display: 'flex', height: '100%' }}>
       <button className="win-ctrl" title="Згорнути" onClick={() => window.api.window.minimize()}>
         —
       </button>

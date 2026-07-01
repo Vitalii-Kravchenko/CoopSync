@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { colors } from '../theme'
+import { colors, fonts, gradients, radii, shadows } from '../theme'
 import { GitHubIcon } from '../components/icons'
 import Button from '../components/Button'
 import type {
@@ -13,12 +13,15 @@ import type {
 interface Props {
   user: AuthUser
   onLoggedOut: () => void
+  /** Кастомний аватар (data URL) — спільний з titlebar і онбордингом. */
+  avatarDataUrl: string | null
+  onAvatarChange: (dataUrl: string) => void
 }
 
 // Доступні мови. Поки одна — список розшириться в майбутньому.
 const LANGUAGES = [{ code: 'uk', label: 'Українська', flag: '🇺🇦' }]
 
-function SettingsScreen({ user, onLoggedOut }: Props): React.JSX.Element {
+function SettingsScreen({ user, onLoggedOut, avatarDataUrl, onAvatarChange }: Props): React.JSX.Element {
   const [repo, setRepo] = useState<SavesRepoStatus | null>(null)
   const [invites, setInvites] = useState<PendingInvite[]>([])
   const [collaborators, setCollaborators] = useState<Collaborator[]>([])
@@ -29,16 +32,12 @@ function SettingsScreen({ user, onLoggedOut }: Props): React.JSX.Element {
     startMinimized: false
   })
   const [language, setLanguage] = useState('uk')
-  const [avatarDataUrl, setAvatarDataUrl] = useState<string | null>(null)
   const [avatarError, setAvatarError] = useState<string | null>(null)
 
   useEffect(() => {
     void loadRepo()
     window.api.settings.getStartup().then(setStartup)
-    window.api.settings.getGeneral().then((g) => {
-      setLanguage(g.language)
-      setAvatarDataUrl(g.avatarDataUrl)
-    })
+    window.api.settings.getGeneral().then((g) => setLanguage(g.language))
   }, [])
 
   async function handleStartup(patch: Partial<StartupSettings>): Promise<void> {
@@ -54,7 +53,7 @@ function SettingsScreen({ user, onLoggedOut }: Props): React.JSX.Element {
     setAvatarError(null)
     try {
       const dataUrl = await window.api.settings.pickAvatar()
-      if (dataUrl) setAvatarDataUrl(dataUrl)
+      if (dataUrl) onAvatarChange(dataUrl)
     } catch (e) {
       setAvatarError(e instanceof Error ? e.message : 'Не вдалося завантажити зображення')
     }
@@ -114,7 +113,7 @@ function SettingsScreen({ user, onLoggedOut }: Props): React.JSX.Element {
           <div style={styles.muted}>GitHub користувач</div>
         </div>
         <Button variant="danger" onClick={handleLogout}>
-          <GitHubIcon size={14} color={colors.error} /> Вийти
+          <GitHubIcon size={14} color={colors.danger} /> Вийти
         </Button>
       </div>
 
@@ -140,6 +139,7 @@ function SettingsScreen({ user, onLoggedOut }: Props): React.JSX.Element {
               <div style={{ ...styles.muted, marginTop: 14, marginBottom: 8 }}>Запросити ще друга</div>
               <div style={styles.row}>
                 <input
+                  className="input-field"
                   style={styles.input}
                   placeholder="Нік друга на GitHub"
                   value={friend}
@@ -161,7 +161,7 @@ function SettingsScreen({ user, onLoggedOut }: Props): React.JSX.Element {
           <div style={styles.h2}>Учасники ({collaborators.length + 1})</div>
           <div style={styles.memberRow}>
             <div style={styles.memberAvatar}>
-              <GitHubIcon size={16} />
+              {avatarDataUrl ? <img src={avatarDataUrl} alt="" style={styles.memberAvatarImg} /> : <GitHubIcon size={16} />}
             </div>
             <span style={styles.memberName}>{user.login}</span>
             <span style={styles.muted}>(власник)</span>
@@ -192,7 +192,7 @@ function SettingsScreen({ user, onLoggedOut }: Props): React.JSX.Element {
         <div style={styles.card2}>
           <div style={styles.h2}>Загальне</div>
           <div style={styles.langRow}>
-            <span style={{ fontSize: 14, color: colors.text }}>Мова</span>
+            <span style={{ fontSize: 14, color: colors.text1 }}>Мова</span>
             <select
               style={styles.langSelect}
               value={language}
@@ -223,7 +223,7 @@ function SettingsScreen({ user, onLoggedOut }: Props): React.JSX.Element {
         <div style={styles.card2}>
           <div style={styles.h2}>Про програму</div>
           <div style={styles.aboutRow}>
-            <div style={styles.aboutLogo}>🎮</div>
+            <div style={styles.aboutLogo} />
             <div>
               <div style={styles.repoName}>CoopSync</div>
               <div style={styles.muted}>Версія 0.1.0</div>
@@ -255,17 +255,19 @@ function Toggle({
 }): React.JSX.Element {
   return (
     <div style={styles.toggleRow}>
-      <span style={{ fontSize: 14, color: colors.text }}>{label}</span>
+      <span style={{ fontSize: 14, color: colors.text1 }}>{label}</span>
       <div
         onClick={() => onChange(!value)}
         style={{
-          width: 46,
-          height: 26,
-          borderRadius: 13,
-          background: value ? colors.accent : colors.border,
+          width: 44,
+          height: 25,
+          borderRadius: radii.pill,
+          background: value ? gradients.energy : colors.bgRaised,
+          border: value ? 'none' : `1px solid ${colors.borderDefault}`,
+          boxShadow: value ? shadows.glowCy : 'none',
           position: 'relative',
           cursor: 'pointer',
-          transition: 'background .15s',
+          transition: 'background .15s, box-shadow .15s',
           flexShrink: 0
         }}
       >
@@ -273,13 +275,13 @@ function Toggle({
           style={{
             position: 'absolute',
             top: 2,
-            left: 2,
-            width: 22,
-            height: 22,
+            left: value ? 21 : 2,
+            width: 19,
+            height: 19,
             borderRadius: '50%',
-            background: '#fff',
-            transform: value ? 'translateX(20px)' : 'translateX(0)',
-            transition: 'transform .15s'
+            background: value ? '#fff' : colors.text3,
+            boxShadow: shadows.sh1,
+            transition: 'left .15s'
           }}
         />
       </div>
@@ -289,12 +291,13 @@ function Toggle({
 
 const styles: Record<string, React.CSSProperties> = {
   screen: { flex: 1, overflowY: 'auto', padding: '28px 36px 40px' },
-  h1: { fontSize: 22, fontWeight: 700, color: colors.text, marginBottom: 18 },
-  h2: { fontSize: 17, fontWeight: 700, color: colors.text, marginBottom: 16 },
+  h1: { fontFamily: fonts.display, fontSize: 22, fontWeight: 700, color: colors.text1, marginBottom: 18 },
+  h2: { fontFamily: fonts.display, fontSize: 16, fontWeight: 600, color: colors.text1, marginBottom: 16 },
   card: {
-    background: colors.surface,
-    border: `1px solid ${colors.border}`,
-    borderRadius: 12,
+    background: colors.bgSurface,
+    border: `1px solid ${colors.borderSubtle}`,
+    borderRadius: radii.lg,
+    boxShadow: shadows.sheen,
     padding: '20px 24px',
     display: 'flex',
     alignItems: 'center',
@@ -303,9 +306,10 @@ const styles: Record<string, React.CSSProperties> = {
   },
   cols: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 22, marginBottom: 22 },
   card2: {
-    background: colors.surface,
-    border: `1px solid ${colors.border}`,
-    borderRadius: 12,
+    background: colors.bgSurface,
+    border: `1px solid ${colors.borderSubtle}`,
+    borderRadius: radii.lg,
+    boxShadow: shadows.sheen,
     padding: '20px 24px'
   },
   profileLeft: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 },
@@ -313,85 +317,56 @@ const styles: Record<string, React.CSSProperties> = {
     width: 72,
     height: 72,
     borderRadius: '50%',
-    background: colors.bgDarker,
+    background: colors.bgInset,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    border: `1px solid ${colors.border}`,
+    border: `1px solid ${colors.borderDefault}`,
     overflow: 'hidden'
   },
   avatarImg: { width: '100%', height: '100%', objectFit: 'cover' },
-  avatarError: { fontSize: 11, color: colors.error, maxWidth: 100, textAlign: 'center' },
-  userName: { fontSize: 22, fontWeight: 700, color: colors.text },
-  muted: { fontSize: 13, color: colors.muted },
+  avatarError: { fontSize: 11, color: colors.danger, maxWidth: 100, textAlign: 'center' },
+  userName: { fontFamily: fonts.display, fontSize: 20, fontWeight: 700, color: colors.text1 },
+  muted: { fontSize: 13, color: colors.text3 },
   row: { display: 'flex', gap: 10 },
   input: {
     flex: 1,
     height: 40,
     padding: '0 14px',
-    border: `1px solid ${colors.border}`,
-    borderRadius: 8,
-    background: colors.bg,
-    color: colors.text,
+    border: `1px solid ${colors.borderDefault}`,
+    borderRadius: radii.md,
+    background: colors.bgInset,
+    boxShadow: 'inset 0 1px 2px rgba(0,0,0,.3)',
+    color: colors.text1,
+    fontFamily: fonts.body,
     fontSize: 13,
     outline: 'none'
-  },
-  btnPrimary: {
-    height: 40,
-    padding: '0 18px',
-    border: 'none',
-    borderRadius: 8,
-    background: colors.accent,
-    color: colors.bgDarker,
-    fontWeight: 700,
-    fontSize: 13.5,
-    cursor: 'pointer'
-  },
-  btnGhostSmall: {
-    fontSize: 11.5,
-    padding: '5px 10px',
-    border: `1px solid ${colors.border}`,
-    borderRadius: 7,
-    background: colors.bg,
-    color: colors.text,
-    cursor: 'pointer'
-  },
-  btnDanger: {
-    height: 42,
-    padding: '0 18px',
-    border: `1px solid rgba(243,139,168,0.4)`,
-    borderRadius: 9,
-    background: 'transparent',
-    color: colors.error,
-    fontWeight: 600,
-    fontSize: 14,
-    cursor: 'pointer'
   },
   repoRow: { display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 },
   repoIcon: {
     width: 36,
     height: 36,
-    borderRadius: 9,
-    background: colors.bg,
-    border: `1px solid ${colors.border}`,
+    borderRadius: radii.md,
+    background: colors.bgInset,
+    border: `1px solid ${colors.borderDefault}`,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     fontSize: 16
   },
-  repoName: { fontSize: 15, fontWeight: 600, color: colors.text },
+  repoName: { fontFamily: fonts.display, fontSize: 15, fontWeight: 600, color: colors.text1 },
   linkBtn: {
     display: 'block',
     width: '100%',
     textAlign: 'left',
     fontSize: 12.5,
-    color: colors.accent,
-    background: colors.bg,
-    border: `1px solid ${colors.border}`,
-    borderRadius: 8,
+    color: colors.cy,
+    background: colors.bgInset,
+    border: `1px solid ${colors.borderDefault}`,
+    borderRadius: radii.md,
     padding: '10px 12px',
     cursor: 'pointer',
-    fontFamily: 'ui-monospace, monospace',
+    fontFamily: fonts.mono,
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis'
@@ -401,21 +376,25 @@ const styles: Record<string, React.CSSProperties> = {
     width: 30,
     height: 30,
     borderRadius: '50%',
-    background: colors.bg,
-    border: `1px solid ${colors.border}`,
+    background: colors.bgInset,
+    border: `1px solid ${colors.borderDefault}`,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: 13
+    fontSize: 13,
+    overflow: 'hidden'
   },
-  memberName: { fontSize: 14, color: colors.text },
+  memberAvatarImg: { width: '100%', height: '100%', objectFit: 'cover' },
+  memberName: { fontSize: 14, color: colors.text1 },
   badge: {
+    fontFamily: fonts.display,
     fontSize: 10.5,
+    fontWeight: 600,
     color: colors.warning,
-    background: 'rgba(249,226,175,0.12)',
-    border: '1px solid rgba(249,226,175,0.35)',
+    background: colors.warningBg,
+    border: `1px solid ${colors.warningBd}`,
     padding: '3px 10px',
-    borderRadius: 11
+    borderRadius: radii.pill
   },
   toggleRow: {
     display: 'flex',
@@ -432,25 +411,23 @@ const styles: Record<string, React.CSSProperties> = {
   langSelect: {
     height: 36,
     padding: '0 12px',
-    borderRadius: 8,
-    border: `1px solid ${colors.border}`,
-    background: colors.bg,
-    color: colors.text,
+    borderRadius: radii.md,
+    border: `1px solid ${colors.borderDefault}`,
+    background: colors.bgInset,
+    color: colors.text1,
+    fontFamily: fonts.body,
     fontSize: 13,
     cursor: 'pointer',
     outline: 'none'
   },
-  divider: { height: 1, background: colors.border, margin: '6px 0' },
+  divider: { height: 1, background: colors.borderSubtle, margin: '6px 0' },
   aboutRow: { display: 'flex', alignItems: 'center', gap: 13, marginBottom: 14 },
   aboutLogo: {
     width: 42,
     height: 42,
-    borderRadius: 10,
-    background: 'linear-gradient(135deg,#89b4fa,#cba6f7)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: 22
+    borderRadius: radii.md,
+    background: gradients.energy,
+    boxShadow: shadows.glowCy
   }
 }
 

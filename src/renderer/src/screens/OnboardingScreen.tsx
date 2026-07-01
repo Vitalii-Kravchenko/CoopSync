@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { colors } from '../theme'
-import { GitHubIcon } from '../components/icons'
+import { colors, fonts, gradients, radii, shadows } from '../theme'
+import { GitHubIcon, CheckIcon } from '../components/icons'
 import Button from '../components/Button'
 import type {
   AuthStatus,
@@ -14,9 +14,11 @@ import type {
 interface Props {
   /** Викликається, коли все налаштовано і можна переходити до ігор. */
   onComplete: () => void
+  /** Кастомний аватар (data URL) — спільний з titlebar і Settings. */
+  avatarDataUrl?: string | null
 }
 
-function OnboardingScreen({ onComplete }: Props): React.JSX.Element {
+function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Element {
   const [auth, setAuth] = useState<AuthStatus | null>(null)
   const [role, setRole] = useState<UserRole | null>(null)
   const [repo, setRepo] = useState<SavesRepoStatus | null>(null)
@@ -138,7 +140,7 @@ function OnboardingScreen({ onComplete }: Props): React.JSX.Element {
       <Step n={1} done={loggedIn} title="Увійти через GitHub">
         {!loggedIn && !deviceCode && (
           <Button variant="ghost" style={{ alignSelf: 'flex-start' }} onClick={handleLogin} disabled={busy}>
-            <GitHubIcon size={17} color={colors.text} /> Увійти через GitHub
+            <GitHubIcon size={17} color={colors.text1} /> Увійти через GitHub
           </Button>
         )}
         {!loggedIn && deviceCode && (
@@ -158,13 +160,17 @@ function OnboardingScreen({ onComplete }: Props): React.JSX.Element {
                 Відкрити GitHub →
               </Button>
             </div>
-            <div style={styles.muted}>Встав код на сторінці й підтверди. ⏳ Чекаю…</div>
+            <div style={styles.muted}>Встав код на сторінці й підтверди. Чекаю…</div>
           </div>
         )}
         {loggedIn && (
           <div style={styles.okRow}>
             <div style={styles.avatar}>
-              <GitHubIcon size={18} />
+              {avatarDataUrl ? (
+                <img src={avatarDataUrl} alt="" style={styles.avatarImg} />
+              ) : (
+                <GitHubIcon size={18} />
+              )}
             </div>
             <span style={styles.okName}>{auth.user.login}</span>
           </div>
@@ -200,6 +206,7 @@ function OnboardingScreen({ onComplete }: Props): React.JSX.Element {
           <div style={styles.joinBox}>
             <div style={styles.row}>
               <input
+                className="input-field"
                 style={styles.input}
                 placeholder="Нік друга-хоста на GitHub"
                 value={hostLogin}
@@ -237,6 +244,7 @@ function OnboardingScreen({ onComplete }: Props): React.JSX.Element {
           <Step n={4} done={collaborators.length > 0} title="Запросити друга" disabled={!repoReady} last>
             <div style={styles.row}>
               <input
+                className="input-field"
                 style={styles.input}
                 placeholder="Нік друга на GitHub"
                 value={friend}
@@ -269,7 +277,7 @@ function OnboardingScreen({ onComplete }: Props): React.JSX.Element {
         </>
       )}
 
-      {error && <div style={styles.error}>⚠️ {error}</div>}
+      {error && <div style={styles.error}>⚠ {error}</div>}
 
       {/* Кнопка "до ігор" — лише для host (join переходить одразу після підключення) */}
       {role === 'host' && (
@@ -314,18 +322,20 @@ function Step({
             width: 28,
             height: 28,
             borderRadius: '50%',
-            background: done ? colors.success : colors.accent,
-            color: colors.bgDarker,
+            background: done ? colors.success : gradients.energy,
+            color: colors.textOnAccent,
+            fontFamily: fonts.display,
             fontWeight: 700,
-            fontSize: 14,
+            fontSize: 13,
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            boxShadow: done ? `0 0 12px ${colors.success}` : shadows.glowCy
           }}
         >
-          {done ? '✓' : n}
+          {done ? <CheckIcon size={14} /> : n}
         </div>
-        {!last && <div style={{ width: 2, flex: 1, background: colors.surface, marginTop: 6 }} />}
+        {!last && <div style={{ width: 2, flex: 1, background: colors.borderSubtle, marginTop: 6 }} />}
       </div>
       <div style={styles.stepBody}>
         <div style={styles.stepTitle}>{title}</div>
@@ -338,92 +348,103 @@ function Step({
 const styles: Record<string, React.CSSProperties> = {
   screen: { padding: '26px 34px', maxWidth: 760, margin: '0 auto', width: '100%' },
   head: { textAlign: 'center', marginBottom: 24 },
-  title: { fontSize: 24, fontWeight: 800, color: colors.text },
-  subtitle: { fontSize: 14, color: colors.muted, marginTop: 6 },
+  title: { fontFamily: fonts.display, fontSize: 26, fontWeight: 700, color: colors.text1 },
+  subtitle: { fontSize: 14, color: colors.text3, marginTop: 6 },
   stepBody: {
-    border: `1px solid ${colors.surface}`,
-    borderRadius: 10,
+    border: `1px solid ${colors.borderSubtle}`,
+    borderRadius: radii.lg,
+    background: colors.bgSurface,
+    boxShadow: shadows.sheen,
     padding: '14px 18px 16px',
     marginBottom: 14,
     display: 'flex',
     flexDirection: 'column',
     gap: 10
   },
-  stepTitle: { fontSize: 15, fontWeight: 600, color: colors.text },
+  stepTitle: { fontFamily: fonts.display, fontSize: 14.5, fontWeight: 600, color: colors.text1 },
   row: { display: 'flex', gap: 10 },
   roleRow: { display: 'flex', gap: 12 },
   roleCard: {
     flex: 1,
     textAlign: 'left',
     padding: '14px 16px',
-    border: `1px solid ${colors.border}`,
-    borderRadius: 10,
-    background: colors.surface,
-    color: colors.text,
+    border: `1px solid ${colors.borderSubtle}`,
+    borderRadius: radii.lg,
+    background: colors.bgRaised,
+    boxShadow: shadows.sheen,
+    color: colors.text1,
     cursor: 'pointer',
     display: 'flex',
     flexDirection: 'column',
-    gap: 4
+    gap: 4,
+    transition: 'transform .15s, box-shadow .15s, border-color .15s'
   },
   roleIcon: { fontSize: 24 },
-  roleTitle: { fontSize: 15, fontWeight: 700 },
-  roleDesc: { fontSize: 12.5, color: colors.muted },
+  roleTitle: { fontFamily: fonts.display, fontSize: 14.5, fontWeight: 700 },
+  roleDesc: { fontSize: 12.5, color: colors.text3 },
   joinBox: { display: 'flex', flexDirection: 'column', gap: 8 },
   changeLink: {
     alignSelf: 'flex-start',
     background: 'transparent',
     border: 'none',
-    color: colors.accent,
+    color: colors.cy,
     cursor: 'pointer',
     fontSize: 12.5,
     padding: 0,
     textDecoration: 'underline'
   },
-  device: { display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-start' },
+  device: { display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'flex-start' },
   deviceCode: {
+    fontFamily: fonts.mono,
     fontSize: 26,
+    fontWeight: 700,
     letterSpacing: 4,
-    fontFamily: 'monospace',
-    background: colors.bgDarker,
-    padding: '8px 16px',
-    borderRadius: 8,
-    color: colors.text
+    background: colors.bgInset,
+    border: `1px solid ${colors.borderAccent}`,
+    boxShadow: 'inset 0 1px 2px rgba(0,0,0,.3), 0 0 18px rgba(54,226,232,.18)',
+    padding: '8px 18px',
+    borderRadius: radii.md,
+    color: colors.cy
   },
   okRow: { display: 'flex', alignItems: 'center', gap: 9 },
   avatar: {
     width: 30,
     height: 30,
     borderRadius: '50%',
-    background: colors.bgDarker,
+    background: colors.bgInset,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    border: `1px solid ${colors.border}`
+    border: `1px solid ${colors.borderDefault}`,
+    overflow: 'hidden'
   },
-  okName: { fontSize: 14, fontWeight: 600, color: colors.text },
+  avatarImg: { width: '100%', height: '100%', objectFit: 'cover' },
+  okName: { fontSize: 14, fontWeight: 600, color: colors.text1 },
   input: {
     flex: 1,
-    height: 40,
+    height: 42,
     padding: '0 14px',
-    border: `1px solid ${colors.border}`,
-    borderRadius: 8,
-    background: colors.bgDarker,
-    color: colors.text,
-    fontSize: 13,
+    border: `1px solid ${colors.borderDefault}`,
+    borderRadius: radii.md,
+    background: colors.bgInset,
+    boxShadow: 'inset 0 1px 2px rgba(0,0,0,.3)',
+    color: colors.text1,
+    fontFamily: fonts.body,
+    fontSize: 13.5,
     outline: 'none'
   },
   members: { display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 4 },
   memberOk: { fontSize: 13, color: colors.success },
-  memberPending: { fontSize: 13, color: colors.muted },
-  muted: { fontSize: 13, color: colors.muted },
-  error: { color: colors.error, fontSize: 13, marginTop: 8 },
+  memberPending: { fontSize: 13, color: colors.text3 },
+  muted: { fontSize: 13, color: colors.text3 },
+  error: { color: colors.danger, fontSize: 13, marginTop: 8 },
   footer: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginTop: 18,
     paddingTop: 18,
-    borderTop: `1px solid ${colors.surface}`
+    borderTop: `1px solid ${colors.borderSubtle}`
   }
 }
 

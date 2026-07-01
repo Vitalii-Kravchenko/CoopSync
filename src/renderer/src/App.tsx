@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { colors } from './theme'
+import { colors, fonts } from './theme'
 import TitleBar from './components/TitleBar'
 import Sidebar, { type Screen } from './components/Sidebar'
 import OnboardingScreen from './screens/OnboardingScreen'
@@ -13,11 +13,15 @@ function App(): React.JSX.Element {
   const [phase, setPhase] = useState<Phase>('loading')
   const [screen, setScreen] = useState<Screen>('main')
   const [user, setUser] = useState<AuthUser | null>(null)
+  const [avatarDataUrl, setAvatarDataUrl] = useState<string | null>(null)
 
   // При старті визначаємо: чи все вже налаштовано (повторний запуск),
   // чи треба показати майстер налаштування.
   useEffect(() => {
     void init()
+    // Аватар — окреме локальне налаштування, не пов'язане з логіном,
+    // тож тягнемо його паралельно і показуємо всюди (titlebar, onboarding, учасники).
+    window.api.settings.getGeneral().then((g) => setAvatarDataUrl(g.avatarDataUrl))
   }, [])
 
   async function init(): Promise<void> {
@@ -67,13 +71,13 @@ function App(): React.JSX.Element {
 
   return (
     <div style={styles.root}>
-      <TitleBar user={phase === 'app' ? user : null} />
+      <TitleBar user={phase === 'app' ? user : null} avatarDataUrl={avatarDataUrl} />
 
       {phase === 'loading' && <div style={styles.center}>Завантаження…</div>}
 
       {phase === 'onboarding' && (
         <div style={styles.onboarding}>
-          <OnboardingScreen onComplete={handleOnboardingComplete} />
+          <OnboardingScreen onComplete={handleOnboardingComplete} avatarDataUrl={avatarDataUrl} />
         </div>
       )}
 
@@ -86,7 +90,12 @@ function App(): React.JSX.Element {
             <MainScreen />
           </div>
           <div style={{ flex: 1, display: screen === 'settings' ? 'flex' : 'none', minHeight: 0 }}>
-            <SettingsScreen user={user} onLoggedOut={handleLoggedOut} />
+            <SettingsScreen
+              user={user}
+              onLoggedOut={handleLoggedOut}
+              avatarDataUrl={avatarDataUrl}
+              onAvatarChange={setAvatarDataUrl}
+            />
           </div>
         </div>
       )}
@@ -99,8 +108,8 @@ const styles: Record<string, React.CSSProperties> = {
     height: '100vh',
     display: 'flex',
     flexDirection: 'column',
-    color: colors.text,
-    fontFamily: 'system-ui, sans-serif',
+    color: colors.text1,
+    fontFamily: fonts.body,
     overflow: 'hidden'
   },
   center: {
@@ -108,7 +117,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: colors.muted
+    color: colors.text3
   },
   onboarding: { flex: 1, overflowY: 'auto', display: 'flex', alignItems: 'flex-start' },
   appBody: { flex: 1, display: 'flex', minHeight: 0 }

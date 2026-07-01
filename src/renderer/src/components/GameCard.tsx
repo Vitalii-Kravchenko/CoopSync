@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { colors, steamPoster } from '../theme'
-import Button from './Button'
+import { colors, fonts, gradients, radii, shadows, steamPoster } from '../theme'
+import { UploadIcon, DownloadIcon } from './icons'
 import type { SyncStatus } from '../../../shared/types'
 
 interface Props {
@@ -26,23 +26,23 @@ function fmtVersion(n: number | undefined): string {
   return n && n > 0 ? `v1.${String(n).padStart(3, '0')}` : '—'
 }
 
-// Як показати статус синку: колір, іконка, текст.
-function syncDisplay(s: SyncStatus | undefined): { color: string; icon: string; text: string } {
+// Як показати статус синку: колір, крапка, текст (бейдж-пілюля).
+function syncDisplay(s: SyncStatus | undefined): { color: string; bg: string; bd: string; text: string } {
   switch (s) {
     case 'synced':
-      return { color: colors.success, icon: '✓', text: 'Синхронізовано' }
+      return { color: colors.success, bg: colors.successBg, bd: colors.successBd, text: 'Синхронізовано' }
     case 'local-newer':
-      return { color: colors.warning, icon: '⬆️', text: 'Локальна новіша' }
+      return { color: colors.warning, bg: colors.warningBg, bd: colors.warningBd, text: 'Локальна новіша' }
     case 'remote-newer':
-      return { color: colors.accent, icon: '⬇️', text: 'Є новіша в хмарі' }
+      return { color: colors.info, bg: colors.infoBg, bd: colors.infoBd, text: 'Є новіша в хмарі' }
     case 'not-uploaded':
-      return { color: colors.muted, icon: '☁️', text: 'Не вивантажено' }
+      return { color: colors.text3, bg: 'rgba(255,255,255,.04)', bd: colors.borderDefault, text: 'Не вивантажено' }
     case 'cloud-only':
-      return { color: colors.accent, icon: '⬇️', text: 'Тільки в хмарі' }
+      return { color: colors.info, bg: colors.infoBg, bd: colors.infoBd, text: 'Тільки в хмарі' }
     case 'no-saves':
-      return { color: colors.muted, icon: '—', text: 'Сейвів нема' }
+      return { color: colors.text3, bg: 'rgba(255,255,255,.04)', bd: colors.borderDefault, text: 'Сейвів нема' }
     default:
-      return { color: colors.muted, icon: '…', text: 'Перевіряю…' }
+      return { color: colors.text3, bg: 'rgba(255,255,255,.04)', bd: colors.borderDefault, text: 'Перевіряю…' }
   }
 }
 
@@ -76,7 +76,8 @@ function GameCard({
         style={{
           ...styles.poster,
           filter: playable ? 'none' : 'grayscale(0.6) brightness(0.5)',
-          boxShadow: showOverlay ? '0 14px 34px rgba(0,0,0,0.6)' : '0 2px 6px rgba(0,0,0,0.35)'
+          borderColor: showOverlay ? colors.borderAccent : colors.borderSubtle,
+          boxShadow: showOverlay ? `${shadows.sh4}, ${shadows.glowCy}` : shadows.sh2
         }}
       >
         {!imgError ? (
@@ -95,15 +96,15 @@ function GameCard({
         {showOverlay && (
           <div style={styles.overlay}>
             {busy ? (
-              <div style={styles.syncing}>⏳ Синхронізую…</div>
+              <div style={styles.syncing}>Синхронізую…</div>
             ) : (
               <>
-                <Button variant="primary" style={{ width: '100%' }} onClick={onUpload}>
-                  ⬆️ Вивантажити
-                </Button>
-                <Button variant="secondary" style={{ width: '100%' }} onClick={onDownload}>
-                  ⬇️ Завантажити
-                </Button>
+                <button title="Вивантажити" style={styles.circleBtnPrimary} onClick={onUpload}>
+                  <UploadIcon size={16} color={colors.textOnAccent} />
+                </button>
+                <button title="Завантажити" style={styles.circleBtnSecondary} onClick={onDownload}>
+                  <DownloadIcon size={16} color={colors.text1} />
+                </button>
               </>
             )}
           </div>
@@ -113,10 +114,10 @@ function GameCard({
       <div style={styles.caption}>
         <div style={styles.name}>{name}</div>
         {status && (
-          <div style={{ ...styles.status, color: status.color }}>
-            <span>{status.icon}</span>
-            <span>{status.text}</span>
-          </div>
+          <span style={{ ...styles.badge, color: status.color, background: status.bg, borderColor: status.bd }}>
+            <span style={{ ...styles.badgeDot, background: status.color }} />
+            {status.text}
+          </span>
         )}
         {playable && (
           <div style={styles.versions}>
@@ -135,11 +136,11 @@ const styles: Record<string, React.CSSProperties> = {
   poster: {
     position: 'relative',
     aspectRatio: '2 / 3',
-    borderRadius: 10,
+    borderRadius: radii.lg,
     overflow: 'hidden',
-    background: 'linear-gradient(160deg,#313244,#1e1e2e)',
-    border: `1px solid ${colors.border}`,
-    transition: 'box-shadow .18s ease'
+    background: `linear-gradient(160deg,${colors.bgRaised},${colors.bgBase})`,
+    border: '1px solid',
+    transition: 'box-shadow .18s ease, border-color .18s ease'
   },
   img: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
   fallback: {
@@ -150,68 +151,92 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     textAlign: 'center',
     padding: 12,
-    fontWeight: 800,
-    fontSize: 18,
+    fontFamily: fonts.display,
+    fontWeight: 700,
+    fontSize: 17,
     textTransform: 'uppercase',
-    color: '#fff'
+    color: colors.text1
   },
   overlay: {
     position: 'absolute',
     inset: 0,
-    background: 'rgba(17,17,27,0.88)',
+    background: 'linear-gradient(180deg,rgba(6,8,13,.35),rgba(6,8,13,.92))',
     display: 'flex',
-    flexDirection: 'column',
+    alignItems: 'center',
     justifyContent: 'center',
-    gap: 11,
-    padding: 16
+    gap: 12
   },
-  btnPrimary: {
-    height: 40,
+  circleBtnPrimary: {
+    width: 42,
+    height: 42,
+    borderRadius: '50%',
     border: 'none',
-    borderRadius: 8,
-    background: colors.accent,
-    color: colors.bgDarker,
-    fontWeight: 700,
-    fontSize: 14,
+    background: gradients.energy,
+    boxShadow: shadows.glowCy,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
     cursor: 'pointer'
   },
-  btnSecondary: {
-    height: 40,
-    border: `1px solid ${colors.border}`,
-    borderRadius: 8,
-    background: 'transparent',
-    color: colors.text,
-    fontWeight: 600,
-    fontSize: 14,
+  circleBtnSecondary: {
+    width: 42,
+    height: 42,
+    borderRadius: '50%',
+    border: `1px solid ${colors.borderStrong}`,
+    background: 'rgba(255,255,255,.08)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
     cursor: 'pointer'
   },
   caption: { minWidth: 0 },
   name: {
+    fontFamily: fonts.display,
     fontWeight: 600,
-    fontSize: 14.5,
-    color: colors.text,
+    fontSize: 14,
+    color: colors.text1,
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis'
   },
-  status: { display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, fontSize: 12.5 },
-  notInstalled: { marginTop: 4, fontSize: 12.5, color: colors.muted },
-  versions: { marginTop: 3, fontSize: 11, color: colors.muted },
-  syncing: { color: colors.text, fontWeight: 600, fontSize: 14, textAlign: 'center' },
+  badge: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 6,
+    height: 22,
+    padding: '0 9px',
+    marginTop: 6,
+    fontFamily: fonts.display,
+    fontWeight: 600,
+    fontSize: 10.5,
+    letterSpacing: '.03em',
+    borderRadius: radii.pill,
+    border: '1px solid'
+  },
+  badgeDot: { width: 5, height: 5, borderRadius: '50%', flexShrink: 0 },
+  notInstalled: { marginTop: 6, fontSize: 12.5, color: colors.text3 },
+  versions: {
+    marginTop: 5,
+    fontFamily: fonts.mono,
+    fontSize: 10.5,
+    color: colors.text3
+  },
+  syncing: { color: colors.text1, fontFamily: fonts.display, fontWeight: 600, fontSize: 13, textAlign: 'center' },
   unsupported: {
     position: 'absolute',
     top: '50%',
     left: '50%',
     transform: 'translate(-50%, -50%) rotate(-8deg)',
     background: colors.warning,
-    color: '#1e1e2e',
-    fontSize: 13,
-    fontWeight: 800,
+    color: colors.bgVoid,
+    fontFamily: fonts.display,
+    fontSize: 12.5,
+    fontWeight: 700,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     padding: '7px 16px',
-    borderRadius: 8,
-    boxShadow: '0 6px 18px rgba(0,0,0,0.55)',
+    borderRadius: radii.sm,
+    boxShadow: shadows.sh4,
     whiteSpace: 'nowrap'
   }
 }

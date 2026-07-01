@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { colors } from '../theme'
+import { colors, fonts, radii, shadows } from '../theme'
 import GameCard from '../components/GameCard'
+import { SearchIcon } from '../components/icons'
 import type { InstalledGame, CatalogGame, GameSyncStatus } from '../../../shared/types'
 
 function MainScreen(): React.JSX.Element {
@@ -109,8 +110,11 @@ function MainScreen(): React.JSX.Element {
   return (
     <div style={styles.screen}>
       <div style={styles.searchWrap}>
-        <span style={styles.searchIcon}>🔍</span>
+        <span style={styles.searchIcon}>
+          <SearchIcon size={16} color={colors.text3} />
+        </span>
         <input
+          className="input-field"
           style={styles.search}
           placeholder="Пошук гри..."
           value={query}
@@ -162,14 +166,17 @@ function MainScreen(): React.JSX.Element {
         <div
           style={{
             ...styles.banner,
-            background:
-              banner.kind === 'error'
-                ? colors.error
-                : banner.kind === 'info'
-                  ? colors.accent
-                  : colors.success
+            borderColor:
+              banner.kind === 'error' ? colors.dangerBd : banner.kind === 'info' ? colors.infoBd : colors.successBd
           }}
         >
+          <span
+            style={{
+              ...styles.bannerDot,
+              background:
+                banner.kind === 'error' ? colors.danger : banner.kind === 'info' ? colors.info : colors.success
+            }}
+          />
           {banner.text}
         </div>
       )}
@@ -185,40 +192,54 @@ const styles: Record<string, React.CSSProperties> = {
     left: 18,
     top: '50%',
     transform: 'translateY(-50%)',
-    color: colors.muted,
-    fontSize: 16
+    display: 'flex'
   },
   search: {
     width: '100%',
-    height: 52,
-    padding: '0 18px 0 50px',
-    border: `1px solid ${colors.border}`,
-    borderRadius: 11,
-    background: colors.bgDark,
-    color: colors.text,
-    fontSize: 15,
+    height: 48,
+    padding: '0 18px 0 46px',
+    border: `1px solid ${colors.borderDefault}`,
+    borderRadius: radii.md,
+    background: colors.bgInset,
+    color: colors.text1,
+    fontFamily: fonts.body,
+    fontSize: 14,
+    boxShadow: 'inset 0 1px 2px rgba(0,0,0,.3)',
     outline: 'none'
   },
-  sectionTitle: { fontSize: 18, fontWeight: 700, color: colors.text, marginBottom: 16 },
+  sectionTitle: {
+    fontFamily: fonts.display,
+    fontSize: 17,
+    fontWeight: 600,
+    color: colors.text1,
+    marginBottom: 16
+  },
   grid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(168px, 1fr))',
     gap: 20
   },
-  muted: { color: colors.muted, fontSize: 14 },
+  muted: { color: colors.text3, fontSize: 14 },
   banner: {
     position: 'fixed',
     bottom: 22,
     left: '50%',
     transform: 'translateX(-50%)',
-    padding: '12px 22px',
-    borderRadius: 10,
-    color: '#11111b',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    padding: '12px 20px',
+    borderRadius: radii.md,
+    border: '1px solid',
+    background: colors.bgOverlay,
+    color: colors.text1,
+    fontFamily: fonts.body,
     fontWeight: 600,
-    fontSize: 14,
-    boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+    fontSize: 13.5,
+    boxShadow: shadows.sh3,
     zIndex: 100
-  }
+  },
+  bannerDot: { width: 6, height: 6, borderRadius: '50%', flexShrink: 0 }
 }
 
 export default MainScreen

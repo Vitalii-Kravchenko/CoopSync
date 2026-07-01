@@ -1,33 +1,40 @@
-import { colors } from '../theme'
+import { colors, fonts, gradients, radii, shadows } from '../theme'
 import { GitHubIcon } from './icons'
 import WindowControls from './WindowControls'
 import type { AuthUser } from '../../../shared/types'
 
 interface Props {
   user: AuthUser | null
+  /** Кастомний аватар (data URL) — той самий, що обраний у Settings. */
+  avatarDataUrl?: string | null
 }
 
 // Власний titlebar (вікно frameless). Уся смуга — зона перетягування,
 // інтерактивні елементи позначені класом no-drag.
-function TitleBar({ user }: Props): React.JSX.Element {
+function TitleBar({ user, avatarDataUrl }: Props): React.JSX.Element {
   return (
     <div className="drag" style={styles.bar}>
       <div style={styles.left}>
-        <div style={styles.logo}>🎮</div>
+        <div style={styles.logo} />
         <span style={styles.brand}>CoopSync</span>
       </div>
 
       <div style={styles.right}>
         {user && (
           <div className="no-drag" style={styles.userPill}>
+            <div style={styles.onlineDot} />
             <div style={styles.avatar}>
-              <GitHubIcon size={16} />
+              {avatarDataUrl ? (
+                <img src={avatarDataUrl} alt="" style={styles.avatarImg} />
+              ) : (
+                <GitHubIcon size={16} />
+              )}
             </div>
             <span style={styles.userName}>{user.login}</span>
           </div>
         )}
 
-        <div className="no-drag">
+        <div className="no-drag" style={{ display: 'flex', height: '100%' }}>
           <WindowControls />
         </div>
       </div>
@@ -38,47 +45,60 @@ function TitleBar({ user }: Props): React.JSX.Element {
 const styles: Record<string, React.CSSProperties> = {
   bar: {
     display: 'flex',
-    alignItems: 'center',
+    alignItems: 'stretch',
     justifyContent: 'space-between',
-    height: 56,
-    padding: '0 8px 0 18px',
-    background: colors.bgDark,
-    borderBottom: `1px solid ${colors.surface}`,
+    height: 52,
+    padding: '0 0 0 18px',
+    background: colors.bgBase,
+    borderBottom: `1px solid ${colors.borderSubtle}`,
     flexShrink: 0
   },
   left: { display: 'flex', alignItems: 'center', gap: 11 },
   logo: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    background: 'linear-gradient(135deg,#89b4fa,#cba6f7)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: 16
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    background: gradients.energy
   },
-  brand: { fontWeight: 700, fontSize: 16, color: colors.text },
+  brand: {
+    fontFamily: fonts.display,
+    fontWeight: 700,
+    fontSize: 15,
+    letterSpacing: '.02em',
+    color: colors.text1
+  },
   right: { display: 'flex', alignItems: 'center', gap: 12 },
   userPill: {
     display: 'flex',
     alignItems: 'center',
     gap: 9,
-    height: 38,
-    padding: '0 16px 0 5px',
-    background: colors.surface,
-    border: `1px solid ${colors.border}`,
-    borderRadius: 19
+    height: 34,
+    padding: '0 14px 0 5px',
+    background: colors.bgRaised,
+    border: `1px solid ${colors.borderDefault}`,
+    borderRadius: radii.pill,
+    boxShadow: shadows.sheen
+  },
+  onlineDot: {
+    width: 6,
+    height: 6,
+    borderRadius: '50%',
+    background: colors.success,
+    boxShadow: `0 0 8px ${colors.success}`,
+    marginLeft: 6
   },
   avatar: {
-    width: 28,
-    height: 28,
+    width: 24,
+    height: 24,
     borderRadius: '50%',
-    background: colors.bgDarker,
+    background: colors.bgInset,
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    overflow: 'hidden'
   },
-  userName: { fontSize: 13, color: colors.text, fontWeight: 500 }
+  avatarImg: { width: '100%', height: '100%', objectFit: 'cover' },
+  userName: { fontSize: 12.5, color: colors.text1, fontWeight: 500 }
 }
 
 export default TitleBar

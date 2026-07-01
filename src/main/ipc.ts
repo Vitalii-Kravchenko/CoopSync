@@ -10,10 +10,10 @@ import {
   listInvitations,
   listCollaborators
 } from './services/github'
-import { detectGames } from './services/steam'
+import { detectGames, detectAllInstalled } from './services/steam'
 import { uploadGame, downloadGame, getSyncStatuses } from './services/sync'
 import { startWatcher, stopWatcher } from './services/watcher'
-import { SUPPORTED_GAMES } from './games/catalog'
+import { READY_GAMES } from './games/catalog'
 import { saveToken, loadToken, clearToken } from './services/tokenStore'
 import type {
   AuthStatus,
@@ -24,7 +24,8 @@ import type {
   CatalogGame,
   GameSyncStatus,
   StartupSettings,
-  RoleConfig
+  RoleConfig,
+  InstalledGame
 } from '../shared/types'
 
 // Кеш ніку користувача, щоб не питати GitHub при кожному запиті (важливо для поллінгу).
@@ -143,9 +144,12 @@ export function registerIpcHandlers(): void {
   // Які підтримувані ігри встановлені та чи знайдено їхні сейви.
   ipcMain.handle('games:list', async (): Promise<DetectedGame[]> => detectGames())
 
-  // Повний каталог підтримуваних ігор (для розділу "Усі ігри" та пошуку).
+  // Усі встановлені Steam-ігри (з позначкою, чи підтримуються).
+  ipcMain.handle('games:all-installed', async (): Promise<InstalledGame[]> => detectAllInstalled())
+
+  // Каталог ГОТОВИХ до синку ігор (для розділу "Усі підтримувані" та пошуку).
   ipcMain.handle('games:catalog', (): CatalogGame[] =>
-    SUPPORTED_GAMES.map((g) => ({ appId: g.appId, name: g.name }))
+    READY_GAMES.map((g) => ({ appId: g.appId, name: g.name }))
   )
 
   // --- Синхронізація сейвів ---

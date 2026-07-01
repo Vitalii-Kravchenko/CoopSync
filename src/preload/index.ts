@@ -10,7 +10,8 @@ import type {
   GameSyncStatus,
   AutoSyncEvent,
   StartupSettings,
-  RoleConfig
+  RoleConfig,
+  InstalledGame
 } from '../shared/types'
 
 // API, доступне в renderer як window.api.
@@ -46,6 +47,8 @@ const api = {
   games: {
     /** Список встановлених підтримуваних ігор. */
     list: (): Promise<DetectedGame[]> => ipcRenderer.invoke('games:list'),
+    /** Усі встановлені Steam-ігри (+ чи підтримуються). */
+    allInstalled: (): Promise<InstalledGame[]> => ipcRenderer.invoke('games:all-installed'),
     /** Повний каталог підтримуваних ігор. */
     catalog: (): Promise<CatalogGame[]> => ipcRenderer.invoke('games:catalog')
   },

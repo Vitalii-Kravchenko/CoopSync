@@ -14,6 +14,12 @@ export interface SupportedGame {
   getSavePath: () => string
   /** Можливі назви процесів гри (.exe) — для детекту запуску/виходу. */
   processNames: string[]
+  /**
+   * Чи готова повноцінна підтримка синку цієї гри.
+   * false = ми знаємо гру, але ще не доопрацювали її специфіку
+   * (структура сейвів, персонажі тощо) → показуємо "не підтримується".
+   */
+  ready: boolean
 }
 
 export const SUPPORTED_GAMES: SupportedGame[] = [
@@ -21,18 +27,24 @@ export const SUPPORTED_GAMES: SupportedGame[] = [
     appId: '526870',
     name: 'Satisfactory',
     getSavePath: () => join(process.env.LOCALAPPDATA ?? '', 'FactoryGame', 'Saved', 'SaveGames'),
-    processNames: ['FactoryGame.exe', 'FactoryGameSteam.exe', 'FactoryGameEGS.exe']
+    processNames: ['FactoryGame.exe', 'FactoryGameSteam.exe', 'FactoryGameEGS.exe'],
+    ready: false
   },
   {
     appId: '413150',
     name: 'Stardew Valley',
     getSavePath: () => join(process.env.APPDATA ?? '', 'StardewValley', 'Saves'),
-    processNames: ['Stardew Valley.exe', 'StardewValley.exe', 'StardewModdingAPI.exe']
+    processNames: ['Stardew Valley.exe', 'StardewValley.exe', 'StardewModdingAPI.exe'],
+    ready: false
   },
   {
     appId: '105600',
     name: 'Terraria',
     getSavePath: () => join(homedir(), 'Documents', 'My Games', 'Terraria'),
-    processNames: ['Terraria.exe', 'tModLoader.exe']
+    processNames: ['Terraria.exe', 'tModLoader.exe'],
+    ready: false
   }
 ]
+
+// Лише ігри з готовою підтримкою синку (для синку/автосинку/статусів).
+export const READY_GAMES = SUPPORTED_GAMES.filter((g) => g.ready)

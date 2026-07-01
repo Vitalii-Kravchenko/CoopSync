@@ -7,6 +7,8 @@ interface Props {
   appId: string
   name: string
   installed: boolean
+  /** Чи підтримує CoopSync цю гру (default true). */
+  supported?: boolean
   /** Статус синку (тільки для встановлених). undefined = ще перевіряємо. */
   syncStatus?: SyncStatus
   /** Версія локальних сейвів. */
@@ -48,6 +50,7 @@ function GameCard({
   appId,
   name,
   installed,
+  supported = true,
   syncStatus,
   localVersion,
   remoteVersion,
@@ -58,8 +61,10 @@ function GameCard({
   const [hover, setHover] = useState(false)
   const [imgError, setImgError] = useState(false)
 
-  const showOverlay = (hover || busy) && installed
-  const status = installed ? syncDisplay(syncStatus) : null
+  // Грати/синхронізувати можна лише встановлену + підтримувану гру.
+  const playable = installed && supported
+  const showOverlay = (hover || busy) && playable
+  const status = playable ? syncDisplay(syncStatus) : null
 
   return (
     <div
@@ -70,7 +75,7 @@ function GameCard({
       <div
         style={{
           ...styles.poster,
-          filter: installed ? 'none' : 'grayscale(0.6) brightness(0.5)',
+          filter: playable ? 'none' : 'grayscale(0.6) brightness(0.5)',
           boxShadow: showOverlay ? '0 14px 34px rgba(0,0,0,0.6)' : '0 2px 6px rgba(0,0,0,0.35)'
         }}
       >
@@ -84,6 +89,8 @@ function GameCard({
         ) : (
           <div style={styles.fallback}>{name}</div>
         )}
+
+        {installed && !supported && <div style={styles.unsupported}>Не підтримується</div>}
 
         {showOverlay && (
           <div style={styles.overlay}>
@@ -111,11 +118,12 @@ function GameCard({
             <span>{status.text}</span>
           </div>
         )}
-        {installed && (
+        {playable && (
           <div style={styles.versions}>
             Локально {fmtVersion(localVersion)} · Хмара {fmtVersion(remoteVersion)}
           </div>
         )}
+        {installed && !supported && <div style={styles.notInstalled}>гра не підтримується</div>}
         {!installed && <div style={styles.notInstalled}>не встановлено</div>}
       </div>
     </div>
@@ -189,7 +197,23 @@ const styles: Record<string, React.CSSProperties> = {
   status: { display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, fontSize: 12.5 },
   notInstalled: { marginTop: 4, fontSize: 12.5, color: colors.muted },
   versions: { marginTop: 3, fontSize: 11, color: colors.muted },
-  syncing: { color: colors.text, fontWeight: 600, fontSize: 14, textAlign: 'center' }
+  syncing: { color: colors.text, fontWeight: 600, fontSize: 14, textAlign: 'center' },
+  unsupported: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%) rotate(-8deg)',
+    background: colors.warning,
+    color: '#1e1e2e',
+    fontSize: 13,
+    fontWeight: 800,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    padding: '7px 16px',
+    borderRadius: 8,
+    boxShadow: '0 6px 18px rgba(0,0,0,0.55)',
+    whiteSpace: 'nowrap'
+  }
 }
 
 export default GameCard

@@ -1,6 +1,6 @@
 import { execFile } from 'child_process'
 import { promisify } from 'util'
-import { SUPPORTED_GAMES, type SupportedGame } from '../games/catalog'
+import { READY_GAMES, type SupportedGame } from '../games/catalog'
 import { uploadGame, downloadGame, getSyncStatuses } from './sync'
 import type { AutoSyncEvent } from '../../shared/types'
 
@@ -43,7 +43,7 @@ async function tick(
   busy = true
   try {
     const procs = await getRunningProcesses()
-    for (const game of SUPPORTED_GAMES) {
+    for (const game of READY_GAMES) {
       const now = isGameRunning(game, procs)
       const was = running[game.appId] ?? false
       running[game.appId] = now

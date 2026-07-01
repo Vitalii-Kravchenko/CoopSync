@@ -5,7 +5,7 @@ import { createHash } from 'crypto'
 import { join } from 'path'
 import { existsSync } from 'fs'
 import { cp, rm, mkdir, readdir, readFile, writeFile } from 'fs/promises'
-import { SUPPORTED_GAMES } from '../games/catalog'
+import { SUPPORTED_GAMES, READY_GAMES } from '../games/catalog'
 import { SAVES_REPO_NAME } from '../config'
 import type { SyncStatus, GameSyncStatus } from '../../shared/types'
 
@@ -194,7 +194,7 @@ export async function getSyncStatuses(token: string, owner: string): Promise<Gam
 
   const localVersions = await readLocalVersions()
   const result: GameSyncStatus[] = []
-  for (const g of SUPPORTED_GAMES) {
+  for (const g of READY_GAMES) {
     const savePath = g.getSavePath()
     const repoPath = join(repoDir(), g.name)
     const localExists = existsSync(savePath)

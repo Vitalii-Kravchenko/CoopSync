@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { colors } from '../theme'
 import GameCard from '../components/GameCard'
-import type { DetectedGame, CatalogGame, GameSyncStatus } from '../../../shared/types'
+import type { InstalledGame, CatalogGame, GameSyncStatus } from '../../../shared/types'
 
 function MainScreen(): React.JSX.Element {
-  const [installed, setInstalled] = useState<DetectedGame[]>([])
+  const [installed, setInstalled] = useState<InstalledGame[]>([])
   const [catalog, setCatalog] = useState<CatalogGame[]>([])
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(true)
@@ -15,11 +15,13 @@ function MainScreen(): React.JSX.Element {
   const [syncStatuses, setSyncStatuses] = useState<Record<string, GameSyncStatus>>({})
 
   useEffect(() => {
-    Promise.all([window.api.games.list(), window.api.games.catalog()]).then(([list, cat]) => {
-      setInstalled(list)
-      setCatalog(cat)
-      setLoading(false)
-    })
+    Promise.all([window.api.games.allInstalled(), window.api.games.catalog()]).then(
+      ([list, cat]) => {
+        setInstalled(list)
+        setCatalog(cat)
+        setLoading(false)
+      }
+    )
     // Статуси тягнемо окремо — вони повільніші (clone/pull сховища).
     void loadStatuses()
   }, [])
@@ -45,7 +47,7 @@ function MainScreen(): React.JSX.Element {
       }
       // Стан міг змінитися — оновлюємо ігри та статуси.
       void loadStatuses()
-      window.api.games.list().then(setInstalled)
+      window.api.games.allInstalled().then(setInstalled)
     })
   }, [])
 
@@ -92,7 +94,7 @@ function MainScreen(): React.JSX.Element {
           : await window.api.sync.download(appId)
       setBanner({ text: msg, kind: 'success' })
       // Сейви могли змінитися — оновлюємо ігри та статуси.
-      setInstalled(await window.api.games.list())
+      setInstalled(await window.api.games.allInstalled())
       await loadStatuses()
     } catch (e) {
       const raw = e instanceof Error ? e.message : 'Помилка синхронізації'
@@ -129,6 +131,7 @@ function MainScreen(): React.JSX.Element {
                   appId={g.appId}
                   name={g.name}
                   installed
+                  supported={g.supported}
                   syncStatus={syncStatuses[g.appId]?.status}
                   localVersion={syncStatuses[g.appId]?.localVersion}
                   remoteVersion={syncStatuses[g.appId]?.remoteVersion}

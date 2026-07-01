@@ -61,6 +61,13 @@ export interface CatalogGame {
   name: string
 }
 
+/** Будь-яка встановлена Steam-гра + чи підтримує її CoopSync. */
+export interface InstalledGame {
+  appId: string
+  name: string
+  supported: boolean
+}
+
 /** Стан синхронізації сейвів гри (порівняння локального з GitHub). */
 export type SyncStatus =
   | 'synced' // локальне = хмара

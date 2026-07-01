@@ -29,14 +29,35 @@ function SettingsScreen({ user, onLoggedOut }: Props): React.JSX.Element {
     startMinimized: false
   })
   const [language, setLanguage] = useState('uk')
+  const [avatarDataUrl, setAvatarDataUrl] = useState<string | null>(null)
+  const [avatarError, setAvatarError] = useState<string | null>(null)
 
   useEffect(() => {
     void loadRepo()
     window.api.settings.getStartup().then(setStartup)
+    window.api.settings.getGeneral().then((g) => {
+      setLanguage(g.language)
+      setAvatarDataUrl(g.avatarDataUrl)
+    })
   }, [])
 
   async function handleStartup(patch: Partial<StartupSettings>): Promise<void> {
     setStartup(await window.api.settings.setStartup(patch))
+  }
+
+  async function handleLanguageChange(next: string): Promise<void> {
+    setLanguage(next)
+    await window.api.settings.setLanguage(next)
+  }
+
+  async function handlePickAvatar(): Promise<void> {
+    setAvatarError(null)
+    try {
+      const dataUrl = await window.api.settings.pickAvatar()
+      if (dataUrl) setAvatarDataUrl(dataUrl)
+    } catch (e) {
+      setAvatarError(e instanceof Error ? e.message : 'Не вдалося завантажити зображення')
+    }
   }
 
   async function loadRepo(): Promise<void> {
@@ -73,11 +94,20 @@ function SettingsScreen({ user, onLoggedOut }: Props): React.JSX.Element {
       <div style={styles.card}>
         <div style={styles.profileLeft}>
           <div style={styles.avatar}>
-            <GitHubIcon size={40} />
+            {avatarDataUrl ? (
+              <img src={avatarDataUrl} alt="" style={styles.avatarImg} />
+            ) : (
+              <GitHubIcon size={40} />
+            )}
           </div>
-          <Button variant="ghost" style={{ height: 30, padding: '0 12px', fontSize: 12 }}>
+          <Button
+            variant="ghost"
+            style={{ height: 30, padding: '0 12px', fontSize: 12 }}
+            onClick={handlePickAvatar}
+          >
             Змінити зображення
           </Button>
+          {avatarError && <div style={styles.avatarError}>{avatarError}</div>}
         </div>
         <div style={{ flex: 1 }}>
           <div style={styles.userName}>{user.login}</div>
@@ -166,7 +196,7 @@ function SettingsScreen({ user, onLoggedOut }: Props): React.JSX.Element {
             <select
               style={styles.langSelect}
               value={language}
-              onChange={(e) => setLanguage(e.target.value)}
+              onChange={(e) => handleLanguageChange(e.target.value)}
             >
               {LANGUAGES.map((l) => (
                 <option key={l.code} value={l.code}>
@@ -287,8 +317,11 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    border: `1px solid ${colors.border}`
+    border: `1px solid ${colors.border}`,
+    overflow: 'hidden'
   },
+  avatarImg: { width: '100%', height: '100%', objectFit: 'cover' },
+  avatarError: { fontSize: 11, color: colors.error, maxWidth: 100, textAlign: 'center' },
   userName: { fontSize: 22, fontWeight: 700, color: colors.text },
   muted: { fontSize: 13, color: colors.muted },
   row: { display: 'flex', gap: 10 },

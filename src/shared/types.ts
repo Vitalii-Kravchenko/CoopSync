@@ -103,6 +103,13 @@ export interface StartupSettings {
   startMinimized: boolean
 }
 
+/** Загальні налаштування (мова, аватар). */
+export interface GeneralSettings {
+  language: string
+  /** Кастомний аватар (data URL) або null, якщо не завантажений. */
+  avatarDataUrl: string | null
+}
+
 /** Роль користувача в коопі. */
 export type UserRole = 'host' | 'join'
 

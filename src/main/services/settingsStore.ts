@@ -11,9 +11,13 @@ interface AppSettings {
   role?: UserRole
   /** Чиє сховище синхронізуємо (логін host'а). */
   hostOwner?: string
+  /** Мова інтерфейсу. */
+  language: string
+  /** Кастомний аватар користувача (data URL), якщо завантажив свій. */
+  avatarDataUrl?: string
 }
 
-const DEFAULTS: AppSettings = { startMinimized: false }
+const DEFAULTS: AppSettings = { startMinimized: false, language: 'uk' }
 
 function settingsPath(): string {
   return join(app.getPath('userData'), 'app-settings.json')

@@ -1,4 +1,6 @@
-import { app, ipcMain, shell, clipboard, BrowserWindow } from 'electron'
+import { app, ipcMain, shell, clipboard, BrowserWindow, dialog } from 'electron'
+import { readFileSync, statSync } from 'fs'
+import { extname } from 'path'
 import { readSettings, writeSettings } from './services/settingsStore'
 import {
   requestDeviceCode,
@@ -25,8 +27,19 @@ import type {
   GameSyncStatus,
   StartupSettings,
   RoleConfig,
-  InstalledGame
+  InstalledGame,
+  GeneralSettings
 } from '../shared/types'
+
+// Максимальний розмір файлу аватара — щоб не роздувати settings.json.
+const MAX_AVATAR_BYTES = 2 * 1024 * 1024
+const AVATAR_MIME: Record<string, string> = {
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.webp': 'image/webp'
+}
 
 // Кеш ніку користувача, щоб не питати GitHub при кожному запиті (важливо для поллінгу).
 let cachedOwner: string | null = null
@@ -237,6 +250,41 @@ export function registerIpcHandlers(): void {
       return next
     }
   )
+
+  // --- Загальні налаштування (мова, аватар) ---
+
+  ipcMain.handle('settings:get-general', (): GeneralSettings => {
+    const s = readSettings()
+    return { language: s.language, avatarDataUrl: s.avatarDataUrl ?? null }
+  })
+
+  ipcMain.handle('settings:set-language', (_event, language: string): void => {
+    writeSettings({ language })
+  })
+
+  // Відкрити діалог вибору файлу, зчитати картинку і зберегти як data URL.
+  // Повертає null, якщо користувач скасував вибір.
+  ipcMain.handle('settings:pick-avatar', async (event): Promise<string | null> => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    const options: Electron.OpenDialogOptions = {
+      title: 'Обери зображення профілю',
+      filters: [{ name: 'Зображення', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'] }],
+      properties: ['openFile']
+    }
+    const result = await (win ? dialog.showOpenDialog(win, options) : dialog.showOpenDialog(options))
+    if (result.canceled || result.filePaths.length === 0) return null
+
+    const filePath = result.filePaths[0]
+    const mime = AVATAR_MIME[extname(filePath).toLowerCase()]
+    if (!mime) throw new Error('Непідтримуваний формат зображення')
+    if (statSync(filePath).size > MAX_AVATAR_BYTES) {
+      throw new Error('Файл занадто великий (максимум 2 МБ)')
+    }
+
+    const dataUrl = `data:${mime};base64,${readFileSync(filePath).toString('base64')}`
+    writeSettings({ avatarDataUrl: dataUrl })
+    return dataUrl
+  })
 
   // --- Роль (host / join) ---
 

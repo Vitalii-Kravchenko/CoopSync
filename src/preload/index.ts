@@ -11,7 +11,8 @@ import type {
   AutoSyncEvent,
   StartupSettings,
   RoleConfig,
-  InstalledGame
+  InstalledGame,
+  GeneralSettings
 } from '../shared/types'
 
 // API, доступне в renderer як window.api.
@@ -95,7 +96,14 @@ const api = {
     getStartup: (): Promise<StartupSettings> => ipcRenderer.invoke('settings:get-startup'),
     /** Змінити налаштування запуску. */
     setStartup: (patch: Partial<StartupSettings>): Promise<StartupSettings> =>
-      ipcRenderer.invoke('settings:set-startup', patch)
+      ipcRenderer.invoke('settings:set-startup', patch),
+    /** Мова та аватар. */
+    getGeneral: (): Promise<GeneralSettings> => ipcRenderer.invoke('settings:get-general'),
+    /** Змінити мову інтерфейсу. */
+    setLanguage: (language: string): Promise<void> =>
+      ipcRenderer.invoke('settings:set-language', language),
+    /** Відкрити діалог вибору файлу аватара. null = скасовано. */
+    pickAvatar: (): Promise<string | null> => ipcRenderer.invoke('settings:pick-avatar')
   },
   role: {
     /** Поточна роль (або null, якщо ще не вибрано). */

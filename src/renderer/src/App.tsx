@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { colors, fonts } from './theme'
+import { useI18n } from './i18n'
 import TitleBar from './components/TitleBar'
 import Sidebar, { type Screen } from './components/Sidebar'
 import OnboardingScreen from './screens/OnboardingScreen'
@@ -10,6 +11,7 @@ import type { AuthUser } from '../../shared/types'
 type Phase = 'loading' | 'onboarding' | 'app'
 
 function App(): React.JSX.Element {
+  const { t } = useI18n()
   const [phase, setPhase] = useState<Phase>('loading')
   const [screen, setScreen] = useState<Screen>('main')
   const [user, setUser] = useState<AuthUser | null>(null)
@@ -46,21 +48,24 @@ function App(): React.JSX.Element {
         return
       }
     }
-    enterApp()
+    void enterApp()
   }
 
   // Перехід у робочий застосунок + запуск автосинхронізації.
-  function enterApp(): void {
+  async function enterApp(): Promise<void> {
     setPhase('app')
     setScreen('main')
-    void window.api.window.maximize()
+    // maximize() у Electron завжди показує вікно, навіть приховане — тож при
+    // автозапуску "у трей" його викликати не можна, інакше вікно вилазить саме.
+    const hidden = await window.api.window.wasStartedHidden()
+    if (!hidden) void window.api.window.maximize()
     void window.api.watcher.start()
   }
 
   async function handleOnboardingComplete(): Promise<void> {
     const auth = await window.api.auth.getStatus()
     if (auth.state === 'logged-in') setUser(auth.user)
-    enterApp()
+    void enterApp()
   }
 
   function handleLoggedOut(): void {
@@ -73,7 +78,7 @@ function App(): React.JSX.Element {
     <div style={styles.root}>
       <TitleBar user={phase === 'app' ? user : null} avatarDataUrl={avatarDataUrl} />
 
-      {phase === 'loading' && <div style={styles.center}>Завантаження…</div>}
+      {phase === 'loading' && <div style={styles.center}>{t.app.loading}</div>}
 
       {phase === 'onboarding' && (
         <div style={styles.onboarding}>

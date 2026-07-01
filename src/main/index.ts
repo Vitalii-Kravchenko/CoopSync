@@ -1,18 +1,18 @@
-import { app, BrowserWindow, Tray, Menu, nativeImage, shell, nativeTheme } from 'electron'
+import { app, BrowserWindow, shell, nativeTheme } from 'electron'
 import { join } from 'path'
 import { registerIpcHandlers } from './ipc'
-import { TRAY_ICON_BASE64 } from './trayIcon'
+import { createTray } from './trayIcon'
+import { consumeInstallerLanguage, readSettings, writeSettings } from './services/settingsStore'
 
 let mainWindow: BrowserWindow | null = null
-let tray: Tray | null = null
 let isQuitting = false // true лише коли користувач справді виходить (через трей)
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 960,
-    height: 680,
+    height: 840,
     minWidth: 880,
-    minHeight: 600,
+    minHeight: 700,
     show: false,
     // 'hidden' (а не frame:false): ховаємо рідний titlebar, але лишаємо
     // системну рамку вікна — інакше на Windows 11 з'являються світлі смуги
@@ -64,31 +64,10 @@ function showWindow(): void {
     createWindow()
     return
   }
-  if (mainWindow.isMinimized()) mainWindow.restore()
-  mainWindow.show()
+  // maximize() і показує вікно, і розгортає його — саме те, що треба після
+  // прихованого автозапуску (де ми свідомо не викликали maximize() раніше).
+  mainWindow.maximize()
   mainWindow.focus()
-}
-
-function createTray(): void {
-  const icon = nativeImage.createFromDataURL(`data:image/png;base64,${TRAY_ICON_BASE64}`)
-  tray = new Tray(icon)
-  tray.setToolTip('CoopSync — синхронізація кооп-сейвів')
-
-  const menu = Menu.buildFromTemplate([
-    { label: 'Відкрити CoopSync', click: showWindow },
-    { type: 'separator' },
-    {
-      label: 'Вийти',
-      click: () => {
-        isQuitting = true
-        app.quit()
-      }
-    }
-  ])
-  tray.setContextMenu(menu)
-
-  // Клік по іконці трею — показати вікно.
-  tray.on('click', showWindow)
 }
 
 app.whenReady().then(() => {
@@ -96,9 +75,29 @@ app.whenReady().then(() => {
   // системна рамка вікна світла (білі смуги по краях).
   nativeTheme.themeSource = 'dark'
 
+  // Маркер від NSIS-інсталятора (build/installer.nsh) з'являється щоразу, коли
+  // інсталятор щойно відпрацював — і при першому встановленні, і при
+  // перевстановленні поверх наявних налаштувань (без деінсталяції). Раніше
+  // автозапуск+трей вмикались лише за isFirstRun() (відсутність app-settings.json),
+  // тому збивались при повторних встановленнях — тепер прив'язано до того ж
+  // маркера, що й мова, щоб обидва завжди узгоджено вмикались одразу після
+  // роботи інсталятора.
+  const installerLanguage = consumeInstallerLanguage()
+  const justInstalled = installerLanguage !== null
+  if (installerLanguage) {
+    writeSettings({ language: installerLanguage })
+  }
+  if (justInstalled) {
+    writeSettings({ startMinimized: true })
+    app.setLoginItemSettings({ openAtLogin: true, args: ['--hidden'] })
+  }
+
   registerIpcHandlers()
   createWindow()
-  createTray()
+  createTray(readSettings().language, showWindow, () => {
+    isQuitting = true
+    app.quit()
+  })
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

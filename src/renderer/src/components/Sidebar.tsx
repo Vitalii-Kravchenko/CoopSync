@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { colors, fonts, gradients, radii, shadows } from '../theme'
+import { useI18n } from '../i18n'
 import { LibraryIcon, SettingsIcon } from './icons'
 
 export type Screen = 'main' | 'settings'
@@ -12,12 +13,13 @@ interface Props {
 // Ліва панель: зверху розділи, "Налаштування" — внизу.
 // Активний пункт має фірмову акцентну смужку зліва + м'який градієнтний фон.
 function Sidebar({ active, onNavigate }: Props): React.JSX.Element {
+  const { t } = useI18n()
   return (
     <div style={styles.rail}>
       <div style={styles.top}>
         <NavItem
           icon={<LibraryIcon size={16} />}
-          label="Ігри"
+          label={t.sidebar.games}
           active={active === 'main'}
           onClick={() => onNavigate('main')}
         />
@@ -25,7 +27,7 @@ function Sidebar({ active, onNavigate }: Props): React.JSX.Element {
 
       <NavItem
         icon={<SettingsIcon size={16} />}
-        label="Налаштування"
+        label={t.sidebar.settings}
         active={active === 'settings'}
         onClick={() => onNavigate('settings')}
       />

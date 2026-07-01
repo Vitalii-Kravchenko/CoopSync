@@ -1,0 +1,15 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="logoBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#171B27"/>
+      <stop offset="1" stop-color="#06080D"/>
+    </linearGradient>
+    <clipPath id="logoLeftClip">
+      <circle cx="36" cy="50" r="23"/>
+    </clipPath>
+  </defs>
+  <path d="M0,0 L82,0 L100,18 L100,100 L18,100 L0,82 Z" fill="url(#logoBg)"/>
+  <circle cx="36" cy="50" r="23" fill="#36E2E8"/>
+  <circle cx="64" cy="50" r="23" fill="#8A6CFF"/>
+  <circle cx="64" cy="50" r="23" fill="#5AB6F2" clip-path="url(#logoLeftClip)"/>
+</svg>

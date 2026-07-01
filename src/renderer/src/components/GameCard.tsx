@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { colors, fonts, gradients, radii, shadows, steamPoster } from '../theme'
+import { useI18n } from '../i18n'
+import type { Translation } from '../i18n'
 import { UploadIcon, DownloadIcon } from './icons'
 import type { SyncStatus } from '../../../shared/types'
 
@@ -27,22 +29,40 @@ function fmtVersion(n: number | undefined): string {
 }
 
 // Як показати статус синку: колір, крапка, текст (бейдж-пілюля).
-function syncDisplay(s: SyncStatus | undefined): { color: string; bg: string; bd: string; text: string } {
+function syncDisplay(
+  s: SyncStatus | undefined,
+  t: Translation
+): { color: string; bg: string; bd: string; text: string } {
   switch (s) {
     case 'synced':
-      return { color: colors.success, bg: colors.successBg, bd: colors.successBd, text: 'Синхронізовано' }
+      return { color: colors.success, bg: colors.successBg, bd: colors.successBd, text: t.gameCard.statusSynced }
     case 'local-newer':
-      return { color: colors.warning, bg: colors.warningBg, bd: colors.warningBd, text: 'Локальна новіша' }
+      return { color: colors.warning, bg: colors.warningBg, bd: colors.warningBd, text: t.gameCard.statusLocalNewer }
     case 'remote-newer':
-      return { color: colors.info, bg: colors.infoBg, bd: colors.infoBd, text: 'Є новіша в хмарі' }
+      return { color: colors.info, bg: colors.infoBg, bd: colors.infoBd, text: t.gameCard.statusRemoteNewer }
     case 'not-uploaded':
-      return { color: colors.text3, bg: 'rgba(255,255,255,.04)', bd: colors.borderDefault, text: 'Не вивантажено' }
+      return {
+        color: colors.text3,
+        bg: 'rgba(255,255,255,.04)',
+        bd: colors.borderDefault,
+        text: t.gameCard.statusNotUploaded
+      }
     case 'cloud-only':
-      return { color: colors.info, bg: colors.infoBg, bd: colors.infoBd, text: 'Тільки в хмарі' }
+      return { color: colors.info, bg: colors.infoBg, bd: colors.infoBd, text: t.gameCard.statusCloudOnly }
     case 'no-saves':
-      return { color: colors.text3, bg: 'rgba(255,255,255,.04)', bd: colors.borderDefault, text: 'Сейвів нема' }
+      return {
+        color: colors.text3,
+        bg: 'rgba(255,255,255,.04)',
+        bd: colors.borderDefault,
+        text: t.gameCard.statusNoSaves
+      }
     default:
-      return { color: colors.text3, bg: 'rgba(255,255,255,.04)', bd: colors.borderDefault, text: 'Перевіряю…' }
+      return {
+        color: colors.text3,
+        bg: 'rgba(255,255,255,.04)',
+        bd: colors.borderDefault,
+        text: t.gameCard.statusChecking
+      }
   }
 }
 
@@ -58,13 +78,14 @@ function GameCard({
   onUpload,
   onDownload
 }: Props): React.JSX.Element {
+  const { t } = useI18n()
   const [hover, setHover] = useState(false)
   const [imgError, setImgError] = useState(false)
 
   // Грати/синхронізувати можна лише встановлену + підтримувану гру.
   const playable = installed && supported
   const showOverlay = (hover || busy) && playable
-  const status = playable ? syncDisplay(syncStatus) : null
+  const status = playable ? syncDisplay(syncStatus, t) : null
 
   return (
     <div
@@ -91,18 +112,18 @@ function GameCard({
           <div style={styles.fallback}>{name}</div>
         )}
 
-        {installed && !supported && <div style={styles.unsupported}>Не підтримується</div>}
+        {installed && !supported && <div style={styles.unsupported}>{t.gameCard.unsupported}</div>}
 
         {showOverlay && (
           <div style={styles.overlay}>
             {busy ? (
-              <div style={styles.syncing}>Синхронізую…</div>
+              <div style={styles.syncing}>{t.gameCard.syncing}</div>
             ) : (
               <>
-                <button title="Вивантажити" style={styles.circleBtnPrimary} onClick={onUpload}>
+                <button title={t.gameCard.upload} style={styles.circleBtnPrimary} onClick={onUpload}>
                   <UploadIcon size={16} color={colors.textOnAccent} />
                 </button>
-                <button title="Завантажити" style={styles.circleBtnSecondary} onClick={onDownload}>
+                <button title={t.gameCard.download} style={styles.circleBtnSecondary} onClick={onDownload}>
                   <DownloadIcon size={16} color={colors.text1} />
                 </button>
               </>
@@ -121,11 +142,11 @@ function GameCard({
         )}
         {playable && (
           <div style={styles.versions}>
-            Локально {fmtVersion(localVersion)} · Хмара {fmtVersion(remoteVersion)}
+            {t.gameCard.versions(fmtVersion(localVersion), fmtVersion(remoteVersion))}
           </div>
         )}
-        {installed && !supported && <div style={styles.notInstalled}>гра не підтримується</div>}
-        {!installed && <div style={styles.notInstalled}>не встановлено</div>}
+        {installed && !supported && <div style={styles.notInstalled}>{t.gameCard.gameNotSupported}</div>}
+        {!installed && <div style={styles.notInstalled}>{t.gameCard.notInstalled}</div>}
       </div>
     </div>
   )

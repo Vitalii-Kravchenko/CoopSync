@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { colors, fonts, radii, shadows } from '../theme'
+import { useI18n } from '../i18n'
 import GameCard from '../components/GameCard'
 import { SearchIcon } from '../components/icons'
 import type { InstalledGame, CatalogGame, GameSyncStatus } from '../../../shared/types'
 
 function MainScreen(): React.JSX.Element {
+  const { t } = useI18n()
   const [installed, setInstalled] = useState<InstalledGame[]>([])
   const [catalog, setCatalog] = useState<CatalogGame[]>([])
   const [query, setQuery] = useState('')
@@ -74,15 +76,15 @@ function MainScreen(): React.JSX.Element {
 
     // Випадки, коли діяти не треба — лише акуратно повідомляємо (без виклику синку).
     if (status === 'synced') {
-      setBanner({ text: 'Версії збігаються — синхронізувати не потрібно', kind: 'info' })
+      setBanner({ text: t.main.alreadySynced, kind: 'info' })
       return
     }
     if (action === 'download' && (status === 'not-uploaded' || status === 'no-saves')) {
-      setBanner({ text: 'У сховищі ще немає сейвів цієї гри', kind: 'error' })
+      setBanner({ text: t.main.noSavesInCloud, kind: 'error' })
       return
     }
     if (action === 'upload' && (status === 'cloud-only' || status === 'no-saves')) {
-      setBanner({ text: 'Локально немає сейвів для вивантаження', kind: 'error' })
+      setBanner({ text: t.main.noLocalSaves, kind: 'error' })
       return
     }
 
@@ -98,7 +100,7 @@ function MainScreen(): React.JSX.Element {
       setInstalled(await window.api.games.allInstalled())
       await loadStatuses()
     } catch (e) {
-      const raw = e instanceof Error ? e.message : 'Помилка синхронізації'
+      const raw = e instanceof Error ? e.message : t.main.syncErrorFallback
       // Прибираємо технічний префікс "Error invoking remote method '...': Error:".
       const clean = raw.replace(/^Error invoking remote method '[^']+':\s*(Error:\s*)?/, '')
       setBanner({ text: clean, kind: 'error' })
@@ -116,17 +118,17 @@ function MainScreen(): React.JSX.Element {
         <input
           className="input-field"
           style={styles.search}
-          placeholder="Пошук гри..."
+          placeholder={t.main.searchPlaceholder}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
       </div>
 
-      {loading && <div style={styles.muted}>Шукаю ігри…</div>}
+      {loading && <div style={styles.muted}>{t.main.loadingGames}</div>}
 
       {!loading && (
         <>
-          <div style={styles.sectionTitle}>Встановлені ігри</div>
+          <div style={styles.sectionTitle}>{t.main.installedGames}</div>
           {filteredInstalled.length > 0 ? (
             <div style={styles.grid}>
               {filteredInstalled.map((g) => (
@@ -146,10 +148,10 @@ function MainScreen(): React.JSX.Element {
               ))}
             </div>
           ) : (
-            <div style={styles.muted}>Нічого не знайдено</div>
+            <div style={styles.muted}>{t.main.nothingFound}</div>
           )}
 
-          <div style={{ ...styles.sectionTitle, marginTop: 34 }}>Усі підтримувані ігри</div>
+          <div style={{ ...styles.sectionTitle, marginTop: 34 }}>{t.main.allSupportedGames}</div>
           {filteredNotInstalled.length > 0 ? (
             <div style={styles.grid}>
               {filteredNotInstalled.map((g) => (
@@ -157,7 +159,7 @@ function MainScreen(): React.JSX.Element {
               ))}
             </div>
           ) : (
-            <div style={styles.muted}>Нічого не знайдено</div>
+            <div style={styles.muted}>{t.main.nothingFound}</div>
           )}
         </>
       )}
@@ -216,7 +218,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   grid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(168px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))',
     gap: 20
   },
   muted: { color: colors.text3, fontSize: 14 },

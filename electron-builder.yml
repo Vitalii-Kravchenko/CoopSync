@@ -12,3 +12,16 @@ nsis:
   oneClick: false
   perMachine: false
   allowToChangeInstallationDirectory: true
+  deleteAppDataOnUninstall: true
+  displayLanguageSelector: true
+  installerLanguages:
+    - en_US
+    - uk_UA
+    - de_DE
+    - fr_FR
+    - pl_PL
+    - ru_RU
+    - es_ES
+    - pt_BR
+    - tr_TR
+    - zh_CN

@@ -84,6 +84,8 @@ const api = {
     close: (): Promise<void> => ipcRenderer.invoke('window:close'),
     /** Чи вікно зараз розгорнуте. */
     isMaximized: (): Promise<boolean> => ipcRenderer.invoke('window:is-maximized'),
+    /** Чи запущено з автозапуску приховано (--hidden) — тоді maximize() викликати не можна. */
+    wasStartedHidden: (): Promise<boolean> => ipcRenderer.invoke('window:was-started-hidden'),
     /** Підписка на зміну стану розгортання. Повертає функцію відписки. */
     onMaximizeChange: (callback: (maximized: boolean) => void): (() => void) => {
       const listener = (_event: unknown, maximized: boolean): void => callback(maximized)

@@ -1,5 +1,5 @@
-import { colors, fonts, gradients, radii, shadows } from '../theme'
-import { GitHubIcon } from './icons'
+import { colors, fonts, radii, shadows } from '../theme'
+import { GitHubIcon, Logo } from './icons'
 import WindowControls from './WindowControls'
 import type { AuthUser } from '../../../shared/types'
 
@@ -15,7 +15,7 @@ function TitleBar({ user, avatarDataUrl }: Props): React.JSX.Element {
   return (
     <div className="drag" style={styles.bar}>
       <div style={styles.left}>
-        <div style={styles.logo} />
+        <Logo size={22} />
         <span style={styles.brand}>CoopSync</span>
       </div>
 
@@ -54,12 +54,6 @@ const styles: Record<string, React.CSSProperties> = {
     flexShrink: 0
   },
   left: { display: 'flex', alignItems: 'center', gap: 11 },
-  logo: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
-    background: gradients.energy
-  },
   brand: {
     fontFamily: fonts.display,
     fontWeight: 700,

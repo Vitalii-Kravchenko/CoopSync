@@ -14,6 +14,30 @@ interface IconProps {
   color?: string
 }
 
+// Лого CoopSync: два кола (двоє друзів), що перетинаються, на темному тлі з
+// фірмовою зрізаною фаскою (The Cut). Та сама форма, що й в іконці застосунку
+// та треї (build/logo.svg, src/main/trayIcon.ts) — тримати проміжний колір
+// перетину #5AB6F2 синхронним, якщо міняти градієнт.
+export function Logo({ size = 24 }: { size?: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="logoBg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#171B27" />
+          <stop offset="1" stopColor="#06080D" />
+        </linearGradient>
+        <clipPath id="logoLeftClip">
+          <circle cx="36" cy="50" r="23" />
+        </clipPath>
+      </defs>
+      <path d="M0,0 L82,0 L100,18 L100,100 L18,100 L0,82 Z" fill="url(#logoBg)" />
+      <circle cx="36" cy="50" r="23" fill="#36E2E8" />
+      <circle cx="64" cy="50" r="23" fill="#8A6CFF" />
+      <circle cx="64" cy="50" r="23" fill="#5AB6F2" clipPath="url(#logoLeftClip)" />
+    </svg>
+  )
+}
+
 function base(size: number): React.SVGProps<SVGSVGElement> {
   return {
     width: size,
@@ -85,6 +109,26 @@ export function CheckIcon({ size = 16, color }: IconProps): React.JSX.Element {
   return (
     <svg {...base(size)} style={{ color }}>
       <polyline points="20 6 9 17 4 12" />
+    </svg>
+  )
+}
+
+export function CrownIcon({ size = 16, color }: IconProps): React.JSX.Element {
+  return (
+    <svg {...base(size)} style={{ color }}>
+      <path d="M4 18h16l1.4-9-5.1 3.2L12 6l-4.3 6.2L2.6 9 4 18Z" />
+      <path d="M5 21h14" />
+    </svg>
+  )
+}
+
+export function UsersIcon({ size = 16, color }: IconProps): React.JSX.Element {
+  return (
+    <svg {...base(size)} style={{ color }}>
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
     </svg>
   )
 }

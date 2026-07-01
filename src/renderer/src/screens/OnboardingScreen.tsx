@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { colors, fonts, gradients, radii, shadows } from '../theme'
-import { GitHubIcon, CheckIcon } from '../components/icons'
+import { useI18n } from '../i18n'
+import { GitHubIcon, CheckIcon, CrownIcon, UsersIcon } from '../components/icons'
 import Button from '../components/Button'
 import type {
   AuthStatus,
@@ -19,6 +20,7 @@ interface Props {
 }
 
 function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Element {
+  const { t } = useI18n()
   const [auth, setAuth] = useState<AuthStatus | null>(null)
   const [role, setRole] = useState<UserRole | null>(null)
   const [repo, setRepo] = useState<SavesRepoStatus | null>(null)
@@ -62,7 +64,7 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
       const result = await window.api.auth.login()
       setAuth(result)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Помилка логіну')
+      setError(e instanceof Error ? e.message : t.onboarding.loginError)
     } finally {
       setBusy(false)
       setDeviceCode(null)
@@ -77,7 +79,7 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
       setRole('host')
       await loadRepo()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Помилка')
+      setError(e instanceof Error ? e.message : t.onboarding.genericError)
     } finally {
       setBusy(false)
     }
@@ -91,7 +93,7 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
       await window.api.role.join(hostLogin)
       onComplete()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не вдалось підключитися')
+      setError(e instanceof Error ? e.message : t.onboarding.joinError)
     } finally {
       setBusy(false)
     }
@@ -104,7 +106,7 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
       await window.api.repo.create()
       await loadRepo()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не вдалось створити сховище')
+      setError(e instanceof Error ? e.message : t.onboarding.createRepoError)
     } finally {
       setBusy(false)
     }
@@ -119,7 +121,7 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
       setFriend('')
       await loadRepo()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не вдалось запросити')
+      setError(e instanceof Error ? e.message : t.onboarding.inviteError)
     } finally {
       setBusy(false)
     }
@@ -132,15 +134,15 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
   return (
     <div style={styles.screen}>
       <div style={styles.head}>
-        <div style={styles.title}>Ласкаво просимо до CoopSync!</div>
-        <div style={styles.subtitle}>Налаштуймо синхронізацію за кілька кроків</div>
+        <div style={styles.title}>{t.onboarding.welcomeTitle}</div>
+        <div style={styles.subtitle}>{t.onboarding.welcomeSubtitle}</div>
       </div>
 
       {/* КРОК 1 — логін */}
-      <Step n={1} done={loggedIn} title="Увійти через GitHub">
+      <Step n={1} done={loggedIn} title={t.onboarding.step1Title}>
         {!loggedIn && !deviceCode && (
           <Button variant="ghost" style={{ alignSelf: 'flex-start' }} onClick={handleLogin} disabled={busy}>
-            <GitHubIcon size={17} color={colors.text1} /> Увійти через GitHub
+            <GitHubIcon size={17} color={colors.text1} /> {t.onboarding.loginButton}
           </Button>
         )}
         {!loggedIn && deviceCode && (
@@ -154,13 +156,13 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
                   setCopied(true)
                 }}
               >
-                {copied ? '✓ Скопійовано' : 'Копіювати'}
+                {copied ? `✓ ${t.onboarding.copied}` : t.onboarding.copy}
               </Button>
               <Button variant="primary" onClick={() => window.api.openExternal(deviceCode.verificationUri)}>
-                Відкрити GitHub →
+                {t.onboarding.openGithub}
               </Button>
             </div>
-            <div style={styles.muted}>Встав код на сторінці й підтверди. Чекаю…</div>
+            <div style={styles.muted}>{t.onboarding.pasteCodeHint}</div>
           </div>
         )}
         {loggedIn && (
@@ -178,27 +180,31 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
       </Step>
 
       {/* КРОК 2 — вибір ролі */}
-      <Step n={2} done={role !== null} title="Хто ти в цьому коопі?" disabled={!loggedIn} last={role === 'join'}>
+      <Step n={2} done={role !== null} title={t.onboarding.step2Title} disabled={!loggedIn} last={role === 'join'}>
         {role === null && (
           <div style={styles.roleRow}>
             <button style={styles.roleCard} onClick={handleSetHost} disabled={busy}>
-              <div style={styles.roleIcon}>👑</div>
-              <div style={styles.roleTitle}>Я головний</div>
-              <div style={styles.roleDesc}>Створю спільне сховище, друг підключиться до мене</div>
+              <div style={styles.roleIconBox}>
+                <CrownIcon size={18} color={colors.cy} />
+              </div>
+              <div style={styles.roleTitle}>{t.onboarding.hostTitle}</div>
+              <div style={styles.roleDesc}>{t.onboarding.hostDesc}</div>
             </button>
             <button style={styles.roleCard} onClick={() => setRole('join')} disabled={busy}>
-              <div style={styles.roleIcon}>🤝</div>
-              <div style={styles.roleTitle}>Підключитися до друга</div>
-              <div style={styles.roleDesc}>Друг уже створив сховище і запросив мене</div>
+              <div style={styles.roleIconBox}>
+                <UsersIcon size={18} color={colors.cy} />
+              </div>
+              <div style={styles.roleTitle}>{t.onboarding.joinTitle}</div>
+              <div style={styles.roleDesc}>{t.onboarding.joinDesc}</div>
             </button>
           </div>
         )}
         {role === 'host' && (
           <div style={styles.okRow}>
-            <span style={{ color: colors.success }}>👑</span>
-            <span style={styles.okName}>Ти головний</span>
+            <CrownIcon size={16} color={colors.success} />
+            <span style={styles.okName}>{t.onboarding.youAreHost}</span>
             <button style={styles.changeLink} onClick={() => setRole(null)}>
-              змінити
+              {t.onboarding.change}
             </button>
           </div>
         )}
@@ -208,17 +214,17 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
               <input
                 className="input-field"
                 style={styles.input}
-                placeholder="Нік друга-хоста на GitHub"
+                placeholder={t.onboarding.hostLoginPlaceholder}
                 value={hostLogin}
                 onChange={(e) => setHostLogin(e.target.value)}
                 disabled={busy}
               />
               <Button variant="primary" onClick={handleJoin} disabled={busy || !hostLogin.trim()}>
-                {busy ? 'Перевіряю…' : 'Підключитися'}
+                {busy ? t.onboarding.checking : t.onboarding.connect}
               </Button>
             </div>
             <button style={styles.changeLink} onClick={() => setRole(null)}>
-              ← обрати іншу роль
+              {t.onboarding.chooseOtherRole}
             </button>
           </div>
         )}
@@ -227,10 +233,10 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
       {/* КРОК 3 (тільки host) — сховище + друг */}
       {role === 'host' && (
         <>
-          <Step n={3} done={repoReady} title="Створити спільне сховище">
+          <Step n={3} done={repoReady} title={t.onboarding.step3Title}>
             {!repoReady ? (
               <Button variant="primary" style={{ alignSelf: 'flex-start' }} onClick={handleCreateRepo} disabled={busy}>
-                {busy ? 'Створюю…' : 'Створити репозиторій'}
+                {busy ? t.onboarding.creating : t.onboarding.createRepo}
               </Button>
             ) : (
               <div style={styles.okRow}>
@@ -241,18 +247,18 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
             )}
           </Step>
 
-          <Step n={4} done={collaborators.length > 0} title="Запросити друга" disabled={!repoReady} last>
+          <Step n={4} done={collaborators.length > 0} title={t.onboarding.step4Title} disabled={!repoReady} last>
             <div style={styles.row}>
               <input
                 className="input-field"
                 style={styles.input}
-                placeholder="Нік друга на GitHub"
+                placeholder={t.onboarding.friendPlaceholder}
                 value={friend}
                 onChange={(e) => setFriend(e.target.value)}
                 disabled={busy || !repoReady}
               />
               <Button variant="primary" onClick={handleInvite} disabled={busy || !friend.trim()}>
-                Запросити
+                {t.onboarding.invite}
               </Button>
             </div>
             {collaborators.length > 0 && (
@@ -268,7 +274,7 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
               <div style={styles.members}>
                 {invites.map((i) => (
                   <span key={i.login} style={styles.memberPending}>
-                    ⏳ {i.login} (очікує)
+                    ⏳ {i.login} {t.onboarding.pending}
                   </span>
                 ))}
               </div>
@@ -283,7 +289,7 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
       {role === 'host' && (
         <div style={styles.footer}>
           <div style={styles.muted}>
-            {hostReady ? '✓ Усе готово! Можна переходити до ігор.' : 'Заверши кроки вище'}
+            {hostReady ? `✓ ${t.onboarding.allReady}` : t.onboarding.finishStepsAbove}
           </div>
           <Button
             variant="primary"
@@ -291,7 +297,7 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
             onClick={onComplete}
             disabled={!hostReady}
           >
-            Перейти до ігор →
+            {t.onboarding.goToGames}
           </Button>
         </div>
       )}
@@ -367,7 +373,7 @@ const styles: Record<string, React.CSSProperties> = {
   roleCard: {
     flex: 1,
     textAlign: 'left',
-    padding: '14px 16px',
+    padding: '16px',
     border: `1px solid ${colors.borderSubtle}`,
     borderRadius: radii.lg,
     background: colors.bgRaised,
@@ -376,10 +382,19 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
     display: 'flex',
     flexDirection: 'column',
-    gap: 4,
+    gap: 8,
     transition: 'transform .15s, box-shadow .15s, border-color .15s'
   },
-  roleIcon: { fontSize: 24 },
+  roleIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: radii.md,
+    background: gradients.energySoft,
+    border: `1px solid ${colors.borderAccent}`,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
   roleTitle: { fontFamily: fonts.display, fontSize: 14.5, fontWeight: 700 },
   roleDesc: { fontSize: 12.5, color: colors.text3 },
   joinBox: { display: 'flex', flexDirection: 'column', gap: 8 },

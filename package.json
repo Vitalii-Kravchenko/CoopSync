@@ -1,6 +1,6 @@
 {
   "name": "coopsync",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Безкоштовний синхронізатор кооп-сейвів ігор через приватний GitHub-репозиторій",
   "main": "./out/main/index.js",
   "author": "Vitalii Kravchenko",

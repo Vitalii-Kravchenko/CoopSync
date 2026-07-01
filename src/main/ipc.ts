@@ -2,6 +2,7 @@ import { app, ipcMain, shell, clipboard, BrowserWindow, dialog } from 'electron'
 import { readFileSync, statSync } from 'fs'
 import { extname } from 'path'
 import { readSettings, writeSettings } from './services/settingsStore'
+import { updateTrayLanguage } from './trayIcon'
 import {
   requestDeviceCode,
   pollForToken,
@@ -223,21 +224,36 @@ export function registerIpcHandlers(): void {
     return BrowserWindow.fromWebContents(event.sender)?.isMaximized() ?? false
   })
 
+  // Чи запущено з автозапуску Windows приховано (--hidden). Якщо так, renderer
+  // не повинен викликати maximize() — це примусово показує вікно (документована
+  // поведінка Electron), що ламає "стартувати згорнутим у трей".
+  ipcMain.handle('window:was-started-hidden', (): boolean => process.argv.includes('--hidden'))
+
   // --- Налаштування запуску ---
 
+  // На Windows getLoginItemSettings() звіряє ТОЧНИЙ збіг шляху+аргументів —
+  // тож перевіряти треба з тими самими args, з якими реєстрували автозапуск
+  // (--hidden, якщо увімкнено "стартувати в трей"), інакше openAtLogin хибно
+  // повертає false, навіть коли запис у реєстрі насправді є.
+  function loginItemArgs(startMinimized: boolean): string[] {
+    return startMinimized ? ['--hidden'] : []
+  }
+
   ipcMain.handle('settings:get-startup', (): StartupSettings => {
+    const saved = readSettings()
     return {
-      openAtLogin: app.getLoginItemSettings().openAtLogin,
-      startMinimized: readSettings().startMinimized
+      openAtLogin: app.getLoginItemSettings({ args: loginItemArgs(saved.startMinimized) }).openAtLogin,
+      startMinimized: saved.startMinimized
     }
   })
 
   ipcMain.handle(
     'settings:set-startup',
     (_event, patch: Partial<StartupSettings>): StartupSettings => {
+      const saved = readSettings()
       const current: StartupSettings = {
-        openAtLogin: app.getLoginItemSettings().openAtLogin,
-        startMinimized: readSettings().startMinimized
+        openAtLogin: app.getLoginItemSettings({ args: loginItemArgs(saved.startMinimized) }).openAtLogin,
+        startMinimized: saved.startMinimized
       }
       const next: StartupSettings = { ...current, ...patch }
 
@@ -260,6 +276,7 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle('settings:set-language', (_event, language: string): void => {
     writeSettings({ language })
+    updateTrayLanguage(language)
   })
 
   // Відкрити діалог вибору файлу, зчитати картинку і зберегти як data URL.

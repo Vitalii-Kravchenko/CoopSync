@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { colors, fonts, gradients, radii, shadows } from '../theme'
-import { GitHubIcon } from '../components/icons'
+import { LANGUAGES, useI18n, type LanguageCode } from '../i18n'
+import { GitHubIcon, Logo } from '../components/icons'
 import Button from '../components/Button'
 import type {
   AuthUser,
@@ -18,10 +19,8 @@ interface Props {
   onAvatarChange: (dataUrl: string) => void
 }
 
-// Доступні мови. Поки одна — список розшириться в майбутньому.
-const LANGUAGES = [{ code: 'uk', label: 'Українська', flag: '🇺🇦' }]
-
 function SettingsScreen({ user, onLoggedOut, avatarDataUrl, onAvatarChange }: Props): React.JSX.Element {
+  const { t, language, setLanguage } = useI18n()
   const [repo, setRepo] = useState<SavesRepoStatus | null>(null)
   const [invites, setInvites] = useState<PendingInvite[]>([])
   const [collaborators, setCollaborators] = useState<Collaborator[]>([])
@@ -31,22 +30,15 @@ function SettingsScreen({ user, onLoggedOut, avatarDataUrl, onAvatarChange }: Pr
     openAtLogin: false,
     startMinimized: false
   })
-  const [language, setLanguage] = useState('uk')
   const [avatarError, setAvatarError] = useState<string | null>(null)
 
   useEffect(() => {
     void loadRepo()
     window.api.settings.getStartup().then(setStartup)
-    window.api.settings.getGeneral().then((g) => setLanguage(g.language))
   }, [])
 
   async function handleStartup(patch: Partial<StartupSettings>): Promise<void> {
     setStartup(await window.api.settings.setStartup(patch))
-  }
-
-  async function handleLanguageChange(next: string): Promise<void> {
-    setLanguage(next)
-    await window.api.settings.setLanguage(next)
   }
 
   async function handlePickAvatar(): Promise<void> {
@@ -55,7 +47,7 @@ function SettingsScreen({ user, onLoggedOut, avatarDataUrl, onAvatarChange }: Pr
       const dataUrl = await window.api.settings.pickAvatar()
       if (dataUrl) onAvatarChange(dataUrl)
     } catch (e) {
-      setAvatarError(e instanceof Error ? e.message : 'Не вдалося завантажити зображення')
+      setAvatarError(e instanceof Error ? e.message : t.settings.avatarError)
     }
   }
 
@@ -87,7 +79,7 @@ function SettingsScreen({ user, onLoggedOut, avatarDataUrl, onAvatarChange }: Pr
 
   return (
     <div style={styles.screen}>
-      <div style={styles.h1}>Налаштування</div>
+      <div style={styles.h1}>{t.settings.title}</div>
 
       {/* Профіль */}
       <div style={styles.card}>
@@ -104,30 +96,30 @@ function SettingsScreen({ user, onLoggedOut, avatarDataUrl, onAvatarChange }: Pr
             style={{ height: 30, padding: '0 12px', fontSize: 12 }}
             onClick={handlePickAvatar}
           >
-            Змінити зображення
+            {t.settings.changeAvatar}
           </Button>
           {avatarError && <div style={styles.avatarError}>{avatarError}</div>}
         </div>
         <div style={{ flex: 1 }}>
           <div style={styles.userName}>{user.login}</div>
-          <div style={styles.muted}>GitHub користувач</div>
+          <div style={styles.muted}>{t.settings.githubUser}</div>
         </div>
         <Button variant="danger" onClick={handleLogout}>
-          <GitHubIcon size={14} color={colors.danger} /> Вийти
+          <GitHubIcon size={14} color={colors.danger} /> {t.settings.logout}
         </Button>
       </div>
 
       <div style={styles.cols}>
         {/* Сховище */}
         <div style={styles.card2}>
-          <div style={styles.h2}>Сховище</div>
+          <div style={styles.h2}>{t.settings.storage}</div>
           {repo?.state === 'ready' ? (
             <>
               <div style={styles.repoRow}>
                 <div style={styles.repoIcon}>🔒</div>
                 <div>
                   <div style={styles.repoName}>{repo.repo.fullName}</div>
-                  <div style={styles.muted}>Приватний репозиторій</div>
+                  <div style={styles.muted}>{t.settings.privateRepo}</div>
                 </div>
               </div>
               <button
@@ -136,35 +128,35 @@ function SettingsScreen({ user, onLoggedOut, avatarDataUrl, onAvatarChange }: Pr
               >
                 {repo.repo.url} ⧉
               </button>
-              <div style={{ ...styles.muted, marginTop: 14, marginBottom: 8 }}>Запросити ще друга</div>
+              <div style={{ ...styles.muted, marginTop: 14, marginBottom: 8 }}>{t.settings.inviteMoreFriend}</div>
               <div style={styles.row}>
                 <input
                   className="input-field"
                   style={styles.input}
-                  placeholder="Нік друга на GitHub"
+                  placeholder={t.settings.friendPlaceholder}
                   value={friend}
                   onChange={(e) => setFriend(e.target.value)}
                   disabled={busy}
                 />
                 <Button variant="primary" onClick={handleInvite} disabled={busy || !friend.trim()}>
-                  Запросити
+                  {t.settings.invite}
                 </Button>
               </div>
             </>
           ) : (
-            <div style={styles.muted}>Сховище не налаштоване</div>
+            <div style={styles.muted}>{t.settings.storageNotSet}</div>
           )}
         </div>
 
         {/* Учасники */}
         <div style={styles.card2}>
-          <div style={styles.h2}>Учасники ({collaborators.length + 1})</div>
+          <div style={styles.h2}>{t.settings.members(collaborators.length + 1)}</div>
           <div style={styles.memberRow}>
             <div style={styles.memberAvatar}>
               {avatarDataUrl ? <img src={avatarDataUrl} alt="" style={styles.memberAvatarImg} /> : <GitHubIcon size={16} />}
             </div>
             <span style={styles.memberName}>{user.login}</span>
-            <span style={styles.muted}>(власник)</span>
+            <span style={styles.muted}>{t.settings.owner}</span>
           </div>
           {collaborators.map((c) => (
             <div key={c.login} style={styles.memberRow}>
@@ -174,12 +166,12 @@ function SettingsScreen({ user, onLoggedOut, avatarDataUrl, onAvatarChange }: Pr
           ))}
           {invites.length > 0 && (
             <>
-              <div style={{ ...styles.muted, marginTop: 12, marginBottom: 8 }}>Очікують підтвердження</div>
+              <div style={{ ...styles.muted, marginTop: 12, marginBottom: 8 }}>{t.settings.pendingConfirmation}</div>
               {invites.map((i) => (
                 <div key={i.login} style={styles.memberRow}>
                   <div style={styles.memberAvatar}>👤</div>
                   <span style={{ ...styles.memberName, flex: 1 }}>{i.login}</span>
-                  <span style={styles.badge}>Очікує</span>
+                  <span style={styles.badge}>{t.settings.pendingBadge}</span>
                 </div>
               ))}
             </>
@@ -190,13 +182,13 @@ function SettingsScreen({ user, onLoggedOut, avatarDataUrl, onAvatarChange }: Pr
       <div style={styles.cols}>
         {/* Загальне */}
         <div style={styles.card2}>
-          <div style={styles.h2}>Загальне</div>
+          <div style={styles.h2}>{t.settings.general}</div>
           <div style={styles.langRow}>
-            <span style={{ fontSize: 14, color: colors.text1 }}>Мова</span>
+            <span style={{ fontSize: 14, color: colors.text1 }}>{t.settings.language}</span>
             <select
               style={styles.langSelect}
               value={language}
-              onChange={(e) => handleLanguageChange(e.target.value)}
+              onChange={(e) => setLanguage(e.target.value as LanguageCode)}
             >
               {LANGUAGES.map((l) => (
                 <option key={l.code} value={l.code}>
@@ -207,13 +199,13 @@ function SettingsScreen({ user, onLoggedOut, avatarDataUrl, onAvatarChange }: Pr
           </div>
           <div style={styles.divider} />
           <Toggle
-            label="Запускати разом із Windows"
+            label={t.settings.autostart}
             value={startup.openAtLogin}
             onChange={(v) => handleStartup({ openAtLogin: v })}
           />
           <div style={styles.divider} />
           <Toggle
-            label="Стартувати згорнутим у трей"
+            label={t.settings.startMinimized}
             value={startup.startMinimized}
             onChange={(v) => handleStartup({ startMinimized: v })}
           />
@@ -221,22 +213,22 @@ function SettingsScreen({ user, onLoggedOut, avatarDataUrl, onAvatarChange }: Pr
 
         {/* Про програму */}
         <div style={styles.card2}>
-          <div style={styles.h2}>Про програму</div>
+          <div style={styles.h2}>{t.settings.about}</div>
           <div style={styles.aboutRow}>
-            <div style={styles.aboutLogo} />
+            <Logo size={42} />
             <div>
               <div style={styles.repoName}>CoopSync</div>
-              <div style={styles.muted}>Версія 0.1.0</div>
+              <div style={styles.muted}>{t.settings.version('0.1.0')}</div>
             </div>
           </div>
           <div style={{ ...styles.muted, lineHeight: 1.5, margin: '4px 0 14px' }}>
-            Синхронізація збережень кооперативних ігор між друзями через GitHub.
+            {t.settings.aboutDescription}
           </div>
           <button
             style={styles.linkBtn}
             onClick={() => window.api.openExternal('https://github.com/Vitalii-Kravchenko/CoopSync')}
           >
-            GitHub репозиторій →
+            {t.settings.githubRepoLink}
           </button>
         </div>
       </div>
@@ -263,7 +255,9 @@ function Toggle({
           height: 25,
           borderRadius: radii.pill,
           background: value ? gradients.energy : colors.bgRaised,
-          border: value ? 'none' : `1px solid ${colors.borderDefault}`,
+          // Завжди 1px рамки (прозора при "увімкнено") — щоб внутрішня висота
+          // не змінювалась між станами і кружечок лишався по центру.
+          border: value ? '1px solid transparent' : `1px solid ${colors.borderDefault}`,
           boxShadow: value ? shadows.glowCy : 'none',
           position: 'relative',
           cursor: 'pointer',
@@ -421,14 +415,7 @@ const styles: Record<string, React.CSSProperties> = {
     outline: 'none'
   },
   divider: { height: 1, background: colors.borderSubtle, margin: '6px 0' },
-  aboutRow: { display: 'flex', alignItems: 'center', gap: 13, marginBottom: 14 },
-  aboutLogo: {
-    width: 42,
-    height: 42,
-    borderRadius: radii.md,
-    background: gradients.energy,
-    boxShadow: shadows.glowCy
-  }
+  aboutRow: { display: 'flex', alignItems: 'center', gap: 13, marginBottom: 14 }
 }
 
 export default SettingsScreen

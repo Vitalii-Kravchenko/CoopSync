@@ -1,4 +1,8 @@
-# CoopSync ☁️
+<p align="center">
+  <img src="build/logo.svg" width="88" alt="CoopSync">
+</p>
+
+<h1 align="center">CoopSync</h1>
 
 Безкоштовний синхронізатор кооп-сейвів для ігор через приватний GitHub-репозиторій.
 

@@ -62,6 +62,7 @@ export interface Translation {
     title: string
     message: string
     instructions: string
+    settingsHint: string
     dismiss: string
   }
   onboarding: {

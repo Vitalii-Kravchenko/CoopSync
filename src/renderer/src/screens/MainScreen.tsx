@@ -66,15 +66,15 @@ function MainScreen(): React.JSX.Element {
     })
   }, [])
 
-  // Невстановлені = каталог мінус встановлені.
-  const notInstalled = useMemo(() => {
-    const installedIds = new Set(installed.map((g) => g.appId))
-    return catalog.filter((g) => !installedIds.has(g.appId))
-  }, [installed, catalog])
+  // Множина встановлених appId — щоб картки каталогу нижче показували правильний
+  // стан незалежно від того, чи гра вже встановлена (раніше секцію "Усі підтримувані"
+  // фільтрували, виключаючи встановлені — через це встановлена (єдина) ready-гра
+  // зникала з неї повністю, що бентежило: ніби вона там "не підтримується").
+  const installedIds = useMemo(() => new Set(installed.map((g) => g.appId)), [installed])
 
   const q = query.trim().toLowerCase()
   const filteredInstalled = installed.filter((g) => g.name.toLowerCase().includes(q))
-  const filteredNotInstalled = notInstalled.filter((g) => g.name.toLowerCase().includes(q))
+  const filteredCatalog = catalog.filter((g) => g.name.toLowerCase().includes(q))
 
   // Банер сам зникає через 5 секунд.
   useEffect(() => {
@@ -166,11 +166,27 @@ function MainScreen(): React.JSX.Element {
           )}
 
           <div style={{ ...styles.sectionTitle, marginTop: 34 }}>{t.main.allSupportedGames}</div>
-          {filteredNotInstalled.length > 0 ? (
+          {filteredCatalog.length > 0 ? (
             <div style={styles.grid}>
-              {filteredNotInstalled.map((g) => (
-                <GameCard key={g.appId} appId={g.appId} name={g.name} installed={false} />
-              ))}
+              {filteredCatalog.map((g) =>
+                installedIds.has(g.appId) ? (
+                  <GameCard
+                    key={g.appId}
+                    appId={g.appId}
+                    name={g.name}
+                    installed
+                    supported
+                    syncStatus={syncStatuses[g.appId]?.status}
+                    localVersion={syncStatuses[g.appId]?.localVersion}
+                    remoteVersion={syncStatuses[g.appId]?.remoteVersion}
+                    busy={syncing === g.appId}
+                    onUpload={() => handleSync(g.appId, 'upload')}
+                    onDownload={() => handleSync(g.appId, 'download')}
+                  />
+                ) : (
+                  <GameCard key={g.appId} appId={g.appId} name={g.name} installed={false} />
+                )
+              )}
             </div>
           ) : (
             <div style={styles.muted}>{t.main.nothingFound}</div>

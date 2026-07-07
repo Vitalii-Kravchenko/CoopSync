@@ -8,7 +8,7 @@ export const uk: Translation = {
     searchPlaceholder: 'Пошук гри...',
     loadingGames: 'Шукаю ігри…',
     installedGames: 'Встановлені ігри',
-    allSupportedGames: 'Інші підтримувані ігри',
+    allSupportedGames: 'Усі підтримувані ігри',
     nothingFound: 'Нічого не знайдено',
     alreadySynced: 'Версії збігаються — синхронізувати не потрібно',
     noSavesInCloud: 'У сховищі ще немає сейвів цієї гри',
@@ -37,6 +37,7 @@ export const uk: Translation = {
       'CoopSync сам керує сейвами ігор, які синхронізує. Якщо Steam Cloud теж синкає ту саму папку — вони можуть конфліктувати й перезаписувати одне одного.',
     instructions:
       'У Steam: Бібліотека → ПКМ на грі → Властивості → Загальне → вимкни «Синхронізація Steam Cloud».',
+    settingsHint: 'Це попередження можна вимкнути в Налаштуваннях → Загальне.',
     dismiss: 'Закрити'
   },
   onboarding: {

@@ -8,7 +8,7 @@ export const pl: Translation = {
     searchPlaceholder: 'Szukaj gry...',
     loadingGames: 'Szukam gier…',
     installedGames: 'Zainstalowane gry',
-    allSupportedGames: 'Inne obsługiwane gry',
+    allSupportedGames: 'Wszystkie obsługiwane gry',
     nothingFound: 'Nic nie znaleziono',
     alreadySynced: 'Wersje się zgadzają — synchronizacja niepotrzebna',
     noSavesInCloud: 'W magazynie nie ma jeszcze zapisów tej gry',
@@ -37,6 +37,7 @@ export const pl: Translation = {
       'CoopSync sam zarządza zapisami gier, które synchronizuje. Jeśli Steam Cloud też synchronizuje ten sam folder, mogą wystąpić konflikty i wzajemne nadpisywanie.',
     instructions:
       'W Steam: Biblioteka → PPM na grze → Właściwości → Ogólne → wyłącz „Synchronizacja Steam Cloud”.',
+    settingsHint: 'Możesz wyłączyć to ostrzeżenie w Ustawieniach → Ogólne.',
     dismiss: 'Zamknij'
   },
   onboarding: {

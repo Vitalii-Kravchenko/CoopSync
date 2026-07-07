@@ -8,7 +8,7 @@ export const de: Translation = {
     searchPlaceholder: 'Spiel suchen...',
     loadingGames: 'Suche nach Spielen…',
     installedGames: 'Installierte Spiele',
-    allSupportedGames: 'Weitere unterstützte Spiele',
+    allSupportedGames: 'Alle unterstützten Spiele',
     nothingFound: 'Nichts gefunden',
     alreadySynced: 'Versionen stimmen überein — keine Synchronisierung nötig',
     noSavesInCloud: 'Für dieses Spiel gibt es noch keine Spielstände im Speicher',
@@ -37,6 +37,7 @@ export const de: Translation = {
       'CoopSync verwaltet die Spielstände der Spiele, die es synchronisiert. Wenn Steam Cloud denselben Ordner ebenfalls synchronisiert, können sich beide gegenseitig überschreiben.',
     instructions:
       'In Steam: Bibliothek → Rechtsklick auf das Spiel → Eigenschaften → Allgemein → "Steam Cloud-Synchronisierung" deaktivieren.',
+    settingsHint: 'Du kannst diese Warnung in Einstellungen → Allgemein deaktivieren.',
     dismiss: 'Schließen'
   },
   onboarding: {

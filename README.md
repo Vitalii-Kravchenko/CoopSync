@@ -10,7 +10,7 @@
   <img src="https://img.shields.io/badge/version-0.3.0-36E2E8?style=flat-square" alt="version 0.3.0">
   <img src="https://img.shields.io/badge/platform-Windows-0078D6?style=flat-square&logo=windows11&logoColor=white" alt="platform Windows">
   <img src="https://img.shields.io/badge/stack-Electron%20%2B%20TS-8A6CFF?style=flat-square&logo=electron&logoColor=white" alt="stack Electron + TypeScript">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-6b7280?style=flat-square" alt="license MIT"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Noncommercial-6b7280?style=flat-square" alt="license PolyForm Noncommercial 1.0.0"></a>
 </p>
 
 Free co-op save sync for games, through your own private GitHub repository.

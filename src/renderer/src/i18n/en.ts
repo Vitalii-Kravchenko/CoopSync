@@ -8,7 +8,7 @@ export const en: Translation = {
     searchPlaceholder: 'Search for a game...',
     loadingGames: 'Looking for games…',
     installedGames: 'Installed games',
-    allSupportedGames: 'Other supported games',
+    allSupportedGames: 'All supported games',
     nothingFound: 'Nothing found',
     alreadySynced: 'Versions match — no need to sync',
     noSavesInCloud: 'There are no saves for this game in storage yet',
@@ -37,6 +37,7 @@ export const en: Translation = {
       'CoopSync manages saves for the games it syncs. If Steam Cloud is also syncing the same folder, the two can conflict and overwrite each other.',
     instructions:
       'In Steam: Library → right-click the game → Properties → General → turn off "Steam Cloud synchronization".',
+    settingsHint: 'You can turn off this warning in Settings → General.',
     dismiss: 'Dismiss'
   },
   onboarding: {

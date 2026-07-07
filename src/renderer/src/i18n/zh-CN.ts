@@ -8,7 +8,7 @@ export const zhCN: Translation = {
     searchPlaceholder: '搜索游戏...',
     loadingGames: '正在查找游戏…',
     installedGames: '已安装的游戏',
-    allSupportedGames: '其他支持的游戏',
+    allSupportedGames: '所有支持的游戏',
     nothingFound: '未找到任何内容',
     alreadySynced: '版本一致 — 无需同步',
     noSavesInCloud: '存储中还没有这个游戏的存档',
@@ -35,6 +35,7 @@ export const zhCN: Translation = {
     title: '为已同步的游戏关闭 Steam 云存储',
     message: 'CoopSync 会自行管理它同步的游戏存档。如果 Steam Cloud 也在同步同一个文件夹，两者可能发生冲突并互相覆盖。',
     instructions: '在 Steam 中：库 → 右键点击游戏 → 属性 → 常规 → 关闭"Steam 云同步"。',
+    settingsHint: '你可以在 设置 → 通用 中关闭此提示。',
     dismiss: '关闭'
   },
   onboarding: {

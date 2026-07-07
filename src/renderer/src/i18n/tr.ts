@@ -8,7 +8,7 @@ export const tr: Translation = {
     searchPlaceholder: 'Oyun ara...',
     loadingGames: 'Oyunlar aranıyor…',
     installedGames: 'Yüklü oyunlar',
-    allSupportedGames: 'Diğer desteklenen oyunlar',
+    allSupportedGames: 'Desteklenen tüm oyunlar',
     nothingFound: 'Hiçbir şey bulunamadı',
     alreadySynced: 'Sürümler eşleşiyor — senkronizasyona gerek yok',
     noSavesInCloud: 'Depoda bu oyuna ait kayıt henüz yok',
@@ -37,6 +37,7 @@ export const tr: Translation = {
       'CoopSync, senkronize ettiği oyunların kayıtlarını kendisi yönetir. Steam Cloud da aynı klasörü senkronize ediyorsa, ikisi çakışıp birbirinin üzerine yazabilir.',
     instructions:
       'Steam\'de: Kitaplık → oyuna sağ tık → Özellikler → Genel → "Steam Cloud senkronizasyonu"nu kapat.',
+    settingsHint: 'Bu uyarıyı Ayarlar → Genel bölümünden kapatabilirsin.',
     dismiss: 'Kapat'
   },
   onboarding: {

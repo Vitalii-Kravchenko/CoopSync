@@ -15,6 +15,7 @@ function CloudWarningBanner({ onDismiss }: Props): React.JSX.Element {
         <div style={styles.title}>⚠️ {t.cloudWarning.title}</div>
         <div style={styles.message}>{t.cloudWarning.message}</div>
         <div style={styles.instructions}>{t.cloudWarning.instructions}</div>
+        <div style={styles.settingsHint}>{t.cloudWarning.settingsHint}</div>
       </div>
       <button
         style={styles.closeBtn}
@@ -59,7 +60,13 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: fonts.mono,
     fontSize: 12,
     color: colors.text2,
-    lineHeight: 1.5
+    lineHeight: 1.5,
+    marginBottom: 6
+  },
+  settingsHint: {
+    fontFamily: fonts.body,
+    fontSize: 11.5,
+    color: colors.text3
   },
   closeBtn: {
     background: 'transparent',

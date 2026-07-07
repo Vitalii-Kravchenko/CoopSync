@@ -6,7 +6,23 @@
 
 <p align="center">🇺🇸 English · <a href="README.uk.md">🇺🇦 Українська</a></p>
 
+<p align="center">
+  <img src="https://img.shields.io/badge/version-0.3.0-36E2E8?style=flat-square" alt="version 0.3.0">
+  <img src="https://img.shields.io/badge/platform-Windows-0078D6?style=flat-square&logo=windows11&logoColor=white" alt="platform Windows">
+  <img src="https://img.shields.io/badge/stack-Electron%20%2B%20TS-8A6CFF?style=flat-square&logo=electron&logoColor=white" alt="stack Electron + TypeScript">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-6b7280?style=flat-square" alt="license MIT"></a>
+</p>
+
 Free co-op save sync for games, through your own private GitHub repository.
+
+## Requirements
+
+- Windows 10 or 11
+- Steam (CoopSync detects your installed Steam games)
+- **[Git for Windows](https://git-scm.com/download/win)** installed and available in
+  `PATH` — CoopSync uses your system's Git to push/pull saves, it isn't bundled with
+  the app
+- A free [GitHub](https://github.com) account
 
 ## Idea
 
@@ -29,6 +45,15 @@ works.
 >
 > This is safe and doesn't harm your system — since the April 2026 Windows update
 > (KB5083769), you can freely turn it back on afterward, no Windows reinstall required.
+
+> [!IMPORTANT]
+> **Turn off Steam Cloud for any game you sync with CoopSync.**
+> CoopSync manages saves for the games it syncs through its own GitHub-based system. If
+> Steam Cloud is also syncing the same save folder, the two can conflict and overwrite
+> each other's changes.
+>
+> In Steam: **Library → right-click the game → Properties → General → turn off "Steam
+> Cloud synchronization"**.
 
 Download the latest `CoopSync-Setup-x.x.x.exe` from [Releases](../../releases) and run the
 installer — the same warning appears on the installer's first screen too.

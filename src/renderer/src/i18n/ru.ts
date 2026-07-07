@@ -8,7 +8,7 @@ export const ru: Translation = {
     searchPlaceholder: 'Поиск игры...',
     loadingGames: 'Ищу игры…',
     installedGames: 'Установленные игры',
-    allSupportedGames: 'Все поддерживаемые игры',
+    allSupportedGames: 'Другие поддерживаемые игры',
     nothingFound: 'Ничего не найдено',
     alreadySynced: 'Версии совпадают — синхронизация не нужна',
     noSavesInCloud: 'В хранилище пока нет сейвов этой игры',

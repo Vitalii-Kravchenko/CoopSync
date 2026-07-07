@@ -8,7 +8,7 @@ export const uk: Translation = {
     searchPlaceholder: 'Пошук гри...',
     loadingGames: 'Шукаю ігри…',
     installedGames: 'Встановлені ігри',
-    allSupportedGames: 'Усі підтримувані ігри',
+    allSupportedGames: 'Інші підтримувані ігри',
     nothingFound: 'Нічого не знайдено',
     alreadySynced: 'Версії збігаються — синхронізувати не потрібно',
     noSavesInCloud: 'У сховищі ще немає сейвів цієї гри',

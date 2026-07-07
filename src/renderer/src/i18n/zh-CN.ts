@@ -8,7 +8,7 @@ export const zhCN: Translation = {
     searchPlaceholder: '搜索游戏...',
     loadingGames: '正在查找游戏…',
     installedGames: '已安装的游戏',
-    allSupportedGames: '所有支持的游戏',
+    allSupportedGames: '其他支持的游戏',
     nothingFound: '未找到任何内容',
     alreadySynced: '版本一致 — 无需同步',
     noSavesInCloud: '存储中还没有这个游戏的存档',

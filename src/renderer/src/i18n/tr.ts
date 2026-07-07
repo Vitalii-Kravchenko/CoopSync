@@ -8,7 +8,7 @@ export const tr: Translation = {
     searchPlaceholder: 'Oyun ara...',
     loadingGames: 'Oyunlar aranıyor…',
     installedGames: 'Yüklü oyunlar',
-    allSupportedGames: 'Desteklenen tüm oyunlar',
+    allSupportedGames: 'Diğer desteklenen oyunlar',
     nothingFound: 'Hiçbir şey bulunamadı',
     alreadySynced: 'Sürümler eşleşiyor — senkronizasyona gerek yok',
     noSavesInCloud: 'Depoda bu oyuna ait kayıt henüz yok',

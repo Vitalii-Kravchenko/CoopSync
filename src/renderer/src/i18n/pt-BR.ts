@@ -8,7 +8,7 @@ export const ptBR: Translation = {
     searchPlaceholder: 'Buscar um jogo...',
     loadingGames: 'Procurando jogos…',
     installedGames: 'Jogos instalados',
-    allSupportedGames: 'Todos os jogos suportados',
+    allSupportedGames: 'Outros jogos suportados',
     nothingFound: 'Nada encontrado',
     alreadySynced: 'As versões coincidem — não é necessário sincronizar',
     noSavesInCloud: 'Ainda não há saves deste jogo no armazenamento',

@@ -8,7 +8,7 @@ export const pl: Translation = {
     searchPlaceholder: 'Szukaj gry...',
     loadingGames: 'Szukam gier…',
     installedGames: 'Zainstalowane gry',
-    allSupportedGames: 'Wszystkie obsługiwane gry',
+    allSupportedGames: 'Inne obsługiwane gry',
     nothingFound: 'Nic nie znaleziono',
     alreadySynced: 'Wersje się zgadzają — synchronizacja niepotrzebna',
     noSavesInCloud: 'W magazynie nie ma jeszcze zapisów tej gry',

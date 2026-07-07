@@ -4,54 +4,58 @@
 
 <h1 align="center">CoopSync</h1>
 
-Безкоштовний синхронізатор кооп-сейвів для ігор через приватний GitHub-репозиторій.
+<p align="center">🇺🇸 English · <a href="README.uk.md">🇺🇦 Українська</a></p>
 
-## Ідея
+Free co-op save sync for games, through your own private GitHub repository.
 
-Двоє друзів грають в одну гру — разом (хост + клієнт) або окремо в різний час — і завжди мають
-**однакові, найсвіжіші збереження**. Після кожного виходу з гри сейви автоматично вивантажуються на
-GitHub; перед запуском — підтягуються найновіші. Жодного Steam Cloud, жодної оплати: один раз логін
-у GitHub — і працює.
+## Idea
 
-## Встановлення
+Two friends play the same game — together (host + client) or separately at different
+times — and always have **the same, latest saves**. Every time you quit the game, saves
+are automatically uploaded to GitHub; every time you launch it, the newest version is
+pulled down first. No Steam Cloud, no subscription: log in to GitHub once, and it just
+works.
+
+## Installation
 
 > [!WARNING]
-> **Windows 11 (версія 22H2 і новіша) може заблокувати встановлення чи запуск CoopSync.**
-> Причина — функція **Smart App Control**: вона за замовчуванням вмикається на "чистих" (не
-> оновлених зі старіших Windows) інсталяціях Windows 11 22H2+ і блокує будь-які непідписані
-> програми, а CoopSync поки що без цифрового підпису.
+> **Windows 11 (version 22H2 and later) may block CoopSync's installer or the app itself.**
+> The reason is **Smart App Control** — a feature that's enabled by default on "clean"
+> installs of Windows 11 22H2+ (not on systems upgraded from an older Windows) and blocks
+> any unsigned application. CoopSync doesn't have a digital signature yet.
 >
-> **Перед встановленням** перевір і, якщо потрібно, вимкни: `Параметри → Конфіденційність і
-> безпека → Безпека Windows → Керування додатками та браузером → Smart App Control` → **Вимкнено**.
+> **Before installing**, check and, if needed, turn it off: `Settings → Privacy & security
+> → Windows Security → App & browser control → Smart App Control` → **Off**.
 >
-> Це безпечно і не шкодить системі — з оновленням Windows квітня 2026 (KB5083769) функцію можна
-> вільно вмикати назад після встановлення, без переустановки Windows.
+> This is safe and doesn't harm your system — since the April 2026 Windows update
+> (KB5083769), you can freely turn it back on afterward, no Windows reinstall required.
 
-Завантаж останній `CoopSync-Setup-x.x.x.exe` з [Releases](../../releases) і запусти встановлення —
-на першому екрані інсталятора теж буде це саме попередження.
+Download the latest `CoopSync-Setup-x.x.x.exe` from [Releases](../../releases) and run the
+installer — the same warning appears on the installer's first screen too.
 
-## Як це працює (задум)
+## How it works (the idea)
 
-1. Обидва встановлюють CoopSync і логіняться в GitHub прямо з програми.
-2. Програма створює **приватний** репозиторій і запрошує друга у співавтори.
-3. CoopSync працює у фоні (старт разом із Windows), детектить ігри Steam.
-4. Закрив гру → сейви пушаться на GitHub. Запускаєш гру → підтягується остання версія.
+1. Both players install CoopSync and sign in with GitHub right from the app.
+2. The app creates a **private** repository and invites the friend as a collaborator.
+3. CoopSync runs in the background (starts with Windows), detects installed Steam games.
+4. Quit the game → saves get pushed to GitHub. Launch the game → the latest version gets
+   pulled first.
 
-## Стек
+## Stack
 
 - Electron + TypeScript
 - React (UI)
-- electron-vite (збірка), electron-builder (інсталятор)
+- electron-vite (build), electron-builder (installer)
 
-## Скрипти
+## Scripts
 
 ```bash
-npm run dev        # запуск у режимі розробки
-npm run build      # збірка
-npm run typecheck  # перевірка типів
-npm run dist       # зібрати .exe інсталятор
+npm run dev        # run in development mode
+npm run build      # build
+npm run typecheck  # type checking
+npm run dist       # build the .exe installer
 ```
 
-## Статус
+## Status
 
-🚧 У розробці. MVP: логін GitHub → детект Steam-ігор → автосинк сейвів.
+🚧 In development. MVP: GitHub login → Steam game detection → automatic save sync.

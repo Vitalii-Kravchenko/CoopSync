@@ -15,10 +15,12 @@ interface AppSettings {
   language: string
   /** Кастомний аватар користувача (data URL), якщо завантажив свій. */
   avatarDataUrl?: string
+  /** Показувати попередження про Steam Cloud при кожному запуску. */
+  showCloudWarning: boolean
 }
 
 // Англійська — універсальний фолбек, якщо мову з інсталятора визначити не вдалось.
-const DEFAULTS: AppSettings = { startMinimized: false, language: 'en' }
+const DEFAULTS: AppSettings = { startMinimized: false, language: 'en', showCloudWarning: true }
 
 function settingsPath(): string {
   return join(app.getPath('userData'), 'app-settings.json')

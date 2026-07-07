@@ -58,6 +58,12 @@ export interface Translation {
     gameNotSupported: string
     notInstalled: string
   }
+  cloudWarning: {
+    title: string
+    message: string
+    instructions: string
+    dismiss: string
+  }
   onboarding: {
     welcomeTitle: string
     welcomeSubtitle: string
@@ -114,6 +120,9 @@ export interface Translation {
     language: string
     autostart: string
     startMinimized: string
+    cloudWarningToggle: string
+    smartAppWarningTitle: string
+    smartAppWarningText: string
     about: string
     version: (v: string) => string
     aboutDescription: string

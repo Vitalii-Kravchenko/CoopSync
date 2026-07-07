@@ -31,14 +31,23 @@ function SettingsScreen({ user, onLoggedOut, avatarDataUrl, onAvatarChange }: Pr
     startMinimized: false
   })
   const [avatarError, setAvatarError] = useState<string | null>(null)
+  const [showCloudWarning, setShowCloudWarning] = useState(true)
+  const [appVersion, setAppVersion] = useState('')
 
   useEffect(() => {
     void loadRepo()
     window.api.settings.getStartup().then(setStartup)
+    window.api.settings.getGeneral().then((s) => setShowCloudWarning(s.showCloudWarning))
+    window.api.getAppVersion().then(setAppVersion)
   }, [])
 
   async function handleStartup(patch: Partial<StartupSettings>): Promise<void> {
     setStartup(await window.api.settings.setStartup(patch))
+  }
+
+  async function handleCloudWarningToggle(value: boolean): Promise<void> {
+    setShowCloudWarning(value)
+    await window.api.settings.setCloudWarning(value)
   }
 
   async function handlePickAvatar(): Promise<void> {
@@ -209,6 +218,12 @@ function SettingsScreen({ user, onLoggedOut, avatarDataUrl, onAvatarChange }: Pr
             value={startup.startMinimized}
             onChange={(v) => handleStartup({ startMinimized: v })}
           />
+          <div style={styles.divider} />
+          <Toggle
+            label={t.settings.cloudWarningToggle}
+            value={showCloudWarning}
+            onChange={handleCloudWarningToggle}
+          />
         </div>
 
         {/* Про програму */}
@@ -218,7 +233,7 @@ function SettingsScreen({ user, onLoggedOut, avatarDataUrl, onAvatarChange }: Pr
             <Logo size={42} />
             <div>
               <div style={styles.repoName}>CoopSync</div>
-              <div style={styles.muted}>{t.settings.version('0.1.0')}</div>
+              <div style={styles.muted}>{t.settings.version(appVersion)}</div>
             </div>
           </div>
           <div style={{ ...styles.muted, lineHeight: 1.5, margin: '4px 0 14px' }}>
@@ -230,6 +245,10 @@ function SettingsScreen({ user, onLoggedOut, avatarDataUrl, onAvatarChange }: Pr
           >
             {t.settings.githubRepoLink}
           </button>
+          <div style={styles.smartAppWarning}>
+            <div style={styles.smartAppWarningTitle}>⚠️ {t.settings.smartAppWarningTitle}</div>
+            <div style={styles.smartAppWarningText}>{t.settings.smartAppWarningText}</div>
+          </div>
         </div>
       </div>
     </div>
@@ -415,7 +434,26 @@ const styles: Record<string, React.CSSProperties> = {
     outline: 'none'
   },
   divider: { height: 1, background: colors.borderSubtle, margin: '6px 0' },
-  aboutRow: { display: 'flex', alignItems: 'center', gap: 13, marginBottom: 14 }
+  aboutRow: { display: 'flex', alignItems: 'center', gap: 13, marginBottom: 14 },
+  smartAppWarning: {
+    marginTop: 14,
+    padding: '10px 12px',
+    borderRadius: radii.md,
+    border: `1px solid ${colors.warningBd}`,
+    background: colors.warningBg
+  },
+  smartAppWarningTitle: {
+    fontFamily: fonts.display,
+    fontSize: 12.5,
+    fontWeight: 600,
+    color: colors.text1,
+    marginBottom: 4
+  },
+  smartAppWarningText: {
+    fontSize: 11.5,
+    color: colors.text2,
+    lineHeight: 1.5
+  }
 }
 
 export default SettingsScreen

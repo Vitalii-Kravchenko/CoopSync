@@ -31,6 +31,14 @@ export const pl: Translation = {
     gameNotSupported: 'gra nieobsługiwana',
     notInstalled: 'niezainstalowana'
   },
+  cloudWarning: {
+    title: 'Wyłącz Steam Cloud dla synchronizowanych gier',
+    message:
+      'CoopSync sam zarządza zapisami gier, które synchronizuje. Jeśli Steam Cloud też synchronizuje ten sam folder, mogą wystąpić konflikty i wzajemne nadpisywanie.',
+    instructions:
+      'W Steam: Biblioteka → PPM na grze → Właściwości → Ogólne → wyłącz „Synchronizacja Steam Cloud”.',
+    dismiss: 'Zamknij'
+  },
   onboarding: {
     welcomeTitle: 'Witamy w CoopSync!',
     welcomeSubtitle: 'Skonfigurujmy synchronizację w kilku krokach',
@@ -87,6 +95,10 @@ export const pl: Translation = {
     language: 'Język',
     autostart: 'Uruchamiaj razem z Windows',
     startMinimized: 'Uruchamiaj zminimalizowane w zasobniku',
+    cloudWarningToggle: 'Pokazuj ostrzeżenie o Steam Cloud przy uruchomieniu',
+    smartAppWarningTitle: 'Smart App Control (Windows 11)',
+    smartAppWarningText:
+      'Na Windows 11 trzymaj Smart App Control wyłączone (Ustawienia -> Zabezpieczenia Windows -> Kontrola aplikacji i przeglądarki) — inaczej przyszłe aktualizacje CoopSync mogą się nie zainstalować, ponieważ aplikacja nie jest jeszcze podpisana cyfrowo.',
     about: 'O programie',
     version: (v) => `Wersja ${v}`,
     aboutDescription: 'Synchronizacja zapisów gier kooperacyjnych między znajomymi przez GitHub.',

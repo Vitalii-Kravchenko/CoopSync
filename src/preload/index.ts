@@ -105,7 +105,10 @@ const api = {
     setLanguage: (language: string): Promise<void> =>
       ipcRenderer.invoke('settings:set-language', language),
     /** Відкрити діалог вибору файлу аватара. null = скасовано. */
-    pickAvatar: (): Promise<string | null> => ipcRenderer.invoke('settings:pick-avatar')
+    pickAvatar: (): Promise<string | null> => ipcRenderer.invoke('settings:pick-avatar'),
+    /** Увімкнути/вимкнути показ попередження про Steam Cloud при запуску. */
+    setCloudWarning: (show: boolean): Promise<void> =>
+      ipcRenderer.invoke('settings:set-cloud-warning', show)
   },
   role: {
     /** Поточна роль (або null, якщо ще не вибрано). */
@@ -117,6 +120,8 @@ const api = {
   },
   /** Відкрити URL у системному браузері. */
   openExternal: (url: string): Promise<void> => ipcRenderer.invoke('shell:open-external', url),
+  /** Версія застосунку (з package.json). */
+  getAppVersion: (): Promise<string> => ipcRenderer.invoke('app:get-version'),
   /** Скопіювати текст у буфер обміну. */
   copyToClipboard: (text: string): Promise<void> => ipcRenderer.invoke('clipboard:write', text)
 }

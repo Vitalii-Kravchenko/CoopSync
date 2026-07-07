@@ -31,6 +31,12 @@ export const zhCN: Translation = {
     gameNotSupported: '该游戏不受支持',
     notInstalled: '未安装'
   },
+  cloudWarning: {
+    title: '为已同步的游戏关闭 Steam 云存储',
+    message: 'CoopSync 会自行管理它同步的游戏存档。如果 Steam Cloud 也在同步同一个文件夹，两者可能发生冲突并互相覆盖。',
+    instructions: '在 Steam 中：库 → 右键点击游戏 → 属性 → 常规 → 关闭"Steam 云同步"。',
+    dismiss: '关闭'
+  },
   onboarding: {
     welcomeTitle: '欢迎使用 CoopSync！',
     welcomeSubtitle: '让我们用几个步骤设置同步',
@@ -87,6 +93,10 @@ export const zhCN: Translation = {
     language: '语言',
     autostart: '随 Windows 启动',
     startMinimized: '启动时最小化到托盘',
+    cloudWarningToggle: '启动时显示 Steam Cloud 提示',
+    smartAppWarningTitle: 'Windows Smart App Control',
+    smartAppWarningText:
+      '如果你使用 Windows 11，请保持 Smart App Control 关闭状态（设置 -> Windows 安全中心 -> 应用和浏览器控制）——否则由于应用程序尚未进行数字签名，CoopSync 未来的更新可能无法安装。',
     about: '关于',
     version: (v) => `版本 ${v}`,
     aboutDescription: '通过 GitHub 在朋友之间同步联机游戏存档。',

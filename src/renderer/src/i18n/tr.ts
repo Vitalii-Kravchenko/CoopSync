@@ -31,6 +31,14 @@ export const tr: Translation = {
     gameNotSupported: 'oyun desteklenmiyor',
     notInstalled: 'yüklü değil'
   },
+  cloudWarning: {
+    title: "Senkronize edilen oyunlar için Steam Cloud'u kapat",
+    message:
+      'CoopSync, senkronize ettiği oyunların kayıtlarını kendisi yönetir. Steam Cloud da aynı klasörü senkronize ediyorsa, ikisi çakışıp birbirinin üzerine yazabilir.',
+    instructions:
+      'Steam\'de: Kitaplık → oyuna sağ tık → Özellikler → Genel → "Steam Cloud senkronizasyonu"nu kapat.',
+    dismiss: 'Kapat'
+  },
   onboarding: {
     welcomeTitle: "CoopSync'e hoş geldin!",
     welcomeSubtitle: 'Senkronizasyonu birkaç adımda ayarlayalım',
@@ -87,6 +95,10 @@ export const tr: Translation = {
     language: 'Dil',
     autostart: 'Windows ile başlat',
     startMinimized: 'Tepsi alanında küçültülmüş başlat',
+    cloudWarningToggle: 'Başlangıçta Steam Cloud uyarısını göster',
+    smartAppWarningTitle: 'Windows Smart App Control',
+    smartAppWarningText:
+      "Windows 11'de Smart App Control'ü kapalı tut (Ayarlar -> Windows Güvenliği -> Uygulama ve tarayıcı denetimi) — aksi halde uygulama henüz dijital olarak imzalanmadığı için CoopSync'in gelecekteki güncellemeleri yüklenemeyebilir.",
     about: 'Hakkında',
     version: (v) => `Sürüm ${v}`,
     aboutDescription: 'Arkadaşlar arasında GitHub üzerinden ortak oyun kayıtlarını senkronize eder.',

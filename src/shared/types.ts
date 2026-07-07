@@ -108,6 +108,8 @@ export interface GeneralSettings {
   language: string
   /** Кастомний аватар (data URL) або null, якщо не завантажений. */
   avatarDataUrl: string | null
+  /** Показувати попередження про Steam Cloud при кожному запуску. */
+  showCloudWarning: boolean
 }
 
 /** Роль користувача в коопі. */

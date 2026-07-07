@@ -2,8 +2,16 @@ import { useEffect, useMemo, useState } from 'react'
 import { colors, fonts, radii, shadows } from '../theme'
 import { useI18n } from '../i18n'
 import GameCard from '../components/GameCard'
-import { SearchIcon } from '../components/icons'
+import CloudWarningBanner from '../components/CloudWarningBanner'
+import { SearchIcon, UploadIcon, DownloadIcon } from '../components/icons'
 import type { InstalledGame, CatalogGame, GameSyncStatus } from '../../../shared/types'
+
+interface BannerState {
+  text: string
+  kind: 'success' | 'info' | 'error'
+  /** Іконка синку (свій UploadIcon/DownloadIcon), якщо банер про push/pull. */
+  icon?: 'upload' | 'download'
+}
 
 function MainScreen(): React.JSX.Element {
   const { t } = useI18n()
@@ -12,10 +20,10 @@ function MainScreen(): React.JSX.Element {
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState<string | null>(null)
-  const [banner, setBanner] = useState<{ text: string; kind: 'success' | 'info' | 'error' } | null>(
-    null
-  )
+  const [banner, setBanner] = useState<BannerState | null>(null)
   const [syncStatuses, setSyncStatuses] = useState<Record<string, GameSyncStatus>>({})
+  // Попередження про Steam Cloud: показуємо раз на запуск, поки не закриють хрестиком.
+  const [showCloudWarning, setShowCloudWarning] = useState(false)
 
   useEffect(() => {
     Promise.all([window.api.games.allInstalled(), window.api.games.catalog()]).then(
@@ -27,6 +35,7 @@ function MainScreen(): React.JSX.Element {
     )
     // Статуси тягнемо окремо — вони повільніші (clone/pull сховища).
     void loadStatuses()
+    window.api.settings.getGeneral().then((s) => setShowCloudWarning(s.showCloudWarning))
   }, [])
 
   async function loadStatuses(): Promise<void> {
@@ -45,8 +54,11 @@ function MainScreen(): React.JSX.Element {
     return window.api.watcher.onAutoSync((e) => {
       if (e.ok) {
         // Показуємо реальний результат синку, а не фіксований текст.
-        const prefix = e.action === 'pull' ? '⬇️' : '⬆️'
-        setBanner({ text: `${prefix} ${e.name}: ${e.message}`, kind: 'success' })
+        setBanner({
+          text: `${e.name}: ${e.message}`,
+          kind: 'success',
+          icon: e.action === 'pull' ? 'download' : 'upload'
+        })
       }
       // Стан міг змінитися — оновлюємо ігри та статуси.
       void loadStatuses()
@@ -111,6 +123,8 @@ function MainScreen(): React.JSX.Element {
 
   return (
     <div style={styles.screen}>
+      {showCloudWarning && <CloudWarningBanner onDismiss={() => setShowCloudWarning(false)} />}
+
       <div style={styles.searchWrap}>
         <span style={styles.searchIcon}>
           <SearchIcon size={16} color={colors.text3} />
@@ -172,13 +186,21 @@ function MainScreen(): React.JSX.Element {
               banner.kind === 'error' ? colors.dangerBd : banner.kind === 'info' ? colors.infoBd : colors.successBd
           }}
         >
-          <span
-            style={{
-              ...styles.bannerDot,
-              background:
-                banner.kind === 'error' ? colors.danger : banner.kind === 'info' ? colors.info : colors.success
-            }}
-          />
+          {banner.icon ? (
+            banner.icon === 'upload' ? (
+              <UploadIcon size={14} color={colors.success} />
+            ) : (
+              <DownloadIcon size={14} color={colors.success} />
+            )
+          ) : (
+            <span
+              style={{
+                ...styles.bannerDot,
+                background:
+                  banner.kind === 'error' ? colors.danger : banner.kind === 'info' ? colors.info : colors.success
+              }}
+            />
+          )}
           {banner.text}
         </div>
       )}

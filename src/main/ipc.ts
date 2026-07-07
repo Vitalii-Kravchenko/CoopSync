@@ -114,6 +114,10 @@ export function registerIpcHandlers(): void {
     await shell.openExternal(url)
   })
 
+  // Версія застосунку (з package.json) — щоб не хардкодити рядок в UI і не
+  // розходитись з реальною версією при кожному релізі.
+  ipcMain.handle('app:get-version', (): string => app.getVersion())
+
   // Скопіювати текст у буфер обміну.
   ipcMain.handle('clipboard:write', (_event, text: string): void => {
     clipboard.writeText(text)
@@ -271,12 +275,20 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle('settings:get-general', (): GeneralSettings => {
     const s = readSettings()
-    return { language: s.language, avatarDataUrl: s.avatarDataUrl ?? null }
+    return {
+      language: s.language,
+      avatarDataUrl: s.avatarDataUrl ?? null,
+      showCloudWarning: s.showCloudWarning
+    }
   })
 
   ipcMain.handle('settings:set-language', (_event, language: string): void => {
     writeSettings({ language })
     updateTrayLanguage(language)
+  })
+
+  ipcMain.handle('settings:set-cloud-warning', (_event, showCloudWarning: boolean): void => {
+    writeSettings({ showCloudWarning })
   })
 
   // Відкрити діалог вибору файлу, зчитати картинку і зберегти як data URL.

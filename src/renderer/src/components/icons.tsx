@@ -122,6 +122,14 @@ export function CrownIcon({ size = 16, color }: IconProps): React.JSX.Element {
   )
 }
 
+export function CloseIcon({ size = 16, color }: IconProps): React.JSX.Element {
+  return (
+    <svg {...base(size)} style={{ color }}>
+      <path d="M18 6 6 18M6 6l12 12" />
+    </svg>
+  )
+}
+
 export function UsersIcon({ size = 16, color }: IconProps): React.JSX.Element {
   return (
     <svg {...base(size)} style={{ color }}>

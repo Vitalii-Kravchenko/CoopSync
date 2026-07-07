@@ -2,8 +2,8 @@ import { app } from 'electron'
 import { execFile } from 'child_process'
 import { promisify } from 'util'
 import { createHash } from 'crypto'
-import { join } from 'path'
-import { existsSync } from 'fs'
+import { basename, join } from 'path'
+import { existsSync, statSync } from 'fs'
 import { cp, rm, mkdir, readdir, readFile, writeFile } from 'fs/promises'
 import { SUPPORTED_GAMES, READY_GAMES } from '../games/catalog'
 import { SAVES_REPO_NAME } from '../config'
@@ -64,10 +64,24 @@ async function ensureRepo(token: string, owner: string): Promise<void> {
   }
 }
 
-function findGame(appId: string): { name: string; savePath: string } {
+function findGame(appId: string): { name: string; savePath: string; saveFilePattern?: RegExp } {
   const g = SUPPORTED_GAMES.find((x) => x.appId === appId)
   if (!g) throw new Error('Гра не підтримується')
-  return { name: g.name, savePath: g.getSavePath() }
+  return { name: g.name, savePath: g.getSavePath(), saveFilePattern: g.saveFilePattern }
+}
+
+// Копіює папку, пропускаючи файли (не папки), що не матчаться паттерном гри —
+// потрібно для ігор, де та сама папка сейвів містить ще й акаунт-специфічні
+// файли, які не можна переносити на чужий ПК (див. SupportedGame.saveFilePattern).
+async function copyFiltered(src: string, dest: string, pattern?: RegExp): Promise<void> {
+  await cp(src, dest, {
+    recursive: true,
+    filter: (source) => {
+      if (!pattern) return true
+      if (statSync(source).isDirectory()) return true
+      return pattern.test(basename(source))
+    }
+  })
 }
 
 // --- Версії сейвів ---
@@ -131,7 +145,7 @@ export async function uploadGame(token: string, owner: string, appId: string): P
   // Замінюємо вміст папки гри в репо свіжими локальними сейвами.
   const dest = join(repoDir(), game.name)
   await rm(dest, { recursive: true, force: true })
-  await cp(game.savePath, dest, { recursive: true })
+  await copyFiltered(game.savePath, dest, game.saveFilePattern)
 
   // Завжди створюємо нову версію — навіть якщо файли начебто ті самі
   // (могли змінитися дрібниці: координати персонажа, час у грі тощо).
@@ -155,7 +169,7 @@ export async function downloadGame(token: string, owner: string, appId: string):
   if (!existsSync(src)) throw new Error('У сховищі ще немає сейвів цієї гри')
 
   await mkdir(game.savePath, { recursive: true })
-  await cp(src, game.savePath, { recursive: true })
+  await copyFiltered(src, game.savePath, game.saveFilePattern)
 
   // Локальна версія тепер дорівнює хмарній.
   const remoteVersion = await readRemoteVersion(game.name)
@@ -167,7 +181,7 @@ export async function downloadGame(token: string, owner: string, appId: string):
 
 // Відбиток вмісту папки: відсортований список "шлях:хеш" → один хеш.
 // Однаковий відбиток = однаковий вміст.
-async function folderHash(dir: string): Promise<string> {
+async function folderHash(dir: string, pattern?: RegExp): Promise<string> {
   const parts: string[] = []
   async function walk(d: string, rel: string): Promise<void> {
     const entries = (await readdir(d, { withFileTypes: true })).sort((a, b) =>
@@ -175,6 +189,7 @@ async function folderHash(dir: string): Promise<string> {
     )
     for (const e of entries) {
       if (e.name === '.git') continue
+      if (pattern && !e.isDirectory() && !pattern.test(e.name)) continue
       const full = join(d, e.name)
       const r = rel ? `${rel}/${e.name}` : e.name
       if (e.isDirectory()) await walk(full, r)
@@ -216,8 +231,8 @@ export async function getSyncStatuses(token: string, owner: string): Promise<Gam
     } else {
       // Версія не новіша — перевіряємо, чи є незбережені локальні зміни.
       const [localHash, remoteHash] = await Promise.all([
-        folderHash(savePath),
-        folderHash(repoPath)
+        folderHash(savePath, g.saveFilePattern),
+        folderHash(repoPath, g.saveFilePattern)
       ])
       status = localHash === remoteHash ? 'synced' : 'local-newer'
     }

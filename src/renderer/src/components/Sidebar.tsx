@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { colors, fonts, gradients, radii, shadows } from '../theme'
 import { useI18n } from '../i18n'
-import { LibraryIcon, SettingsIcon } from './icons'
+import { LibraryIcon, FriendsIcon, SettingsIcon } from './icons'
 
-export type Screen = 'main' | 'settings'
+export type Screen = 'main' | 'friends' | 'settings'
 
 interface Props {
   active: Screen
@@ -22,6 +22,12 @@ function Sidebar({ active, onNavigate }: Props): React.JSX.Element {
           label={t.sidebar.games}
           active={active === 'main'}
           onClick={() => onNavigate('main')}
+        />
+        <NavItem
+          icon={<FriendsIcon size={16} />}
+          label={t.sidebar.friends}
+          active={active === 'friends'}
+          onClick={() => onNavigate('friends')}
         />
       </div>
 

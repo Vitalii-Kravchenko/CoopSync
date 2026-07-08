@@ -5,6 +5,7 @@ import TitleBar from './components/TitleBar'
 import Sidebar, { type Screen } from './components/Sidebar'
 import OnboardingScreen from './screens/OnboardingScreen'
 import MainScreen from './screens/MainScreen'
+import FriendsScreen from './screens/FriendsScreen'
 import SettingsScreen from './screens/SettingsScreen'
 import type { AuthUser } from '../../shared/types'
 
@@ -93,6 +94,9 @@ function App(): React.JSX.Element {
               щоб Settings не перезавантажував дані при кожному вході. */}
           <div style={{ flex: 1, display: screen === 'main' ? 'flex' : 'none', minHeight: 0 }}>
             <MainScreen />
+          </div>
+          <div style={{ flex: 1, display: screen === 'friends' ? 'flex' : 'none', minHeight: 0 }}>
+            <FriendsScreen user={user} avatarDataUrl={avatarDataUrl} />
           </div>
           <div style={{ flex: 1, display: screen === 'settings' ? 'flex' : 'none', minHeight: 0 }}>
             <SettingsScreen

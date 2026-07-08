@@ -130,6 +130,18 @@ export function CloseIcon({ size = 16, color }: IconProps): React.JSX.Element {
   )
 }
 
+// Іконка "Друзі" для бічного меню — той самий силует, що й у дизайн-системі
+// (docs/design-system.html, 4.12 Навігація): один більший силует + один менший.
+export function FriendsIcon({ size = 16, color }: IconProps): React.JSX.Element {
+  return (
+    <svg {...base(size)} style={{ color }}>
+      <circle cx="9" cy="7" r="4" />
+      <path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2" />
+      <circle cx="18" cy="8" r="2.5" />
+    </svg>
+  )
+}
+
 export function UsersIcon({ size = 16, color }: IconProps): React.JSX.Element {
   return (
     <svg {...base(size)} style={{ color }}>

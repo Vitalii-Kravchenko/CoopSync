@@ -7,22 +7,27 @@
 <p align="center">🇺🇸 English · <a href="README.uk.md">🇺🇦 Українська</a></p>
 
 <p align="center">
-  <span style="display:inline-flex;align-items:center;height:24px;padding:0 9px;margin:2px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#8A6CFF;background:rgba(138,108,255,.12);border:1px solid rgba(138,108,255,.38);border-radius:5px;">v0.3.1</span>
-  <span style="display:inline-flex;align-items:center;height:24px;padding:0 9px;margin:2px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#36E2E8;background:rgba(54,226,232,.12);border:1px solid rgba(54,226,232,.38);border-radius:5px;">Windows</span>
-  <span style="display:inline-flex;align-items:center;height:24px;padding:0 9px;margin:2px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#5AA9FF;background:rgba(90,169,255,.12);border:1px solid rgba(90,169,255,.38);border-radius:5px;">Electron + TS</span>
-  <a href="LICENSE"><span style="display:inline-flex;align-items:center;height:24px;padding:0 9px;margin:2px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#79839A;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);border-radius:5px;">Noncommercial</span></a>
+  <img src="https://img.shields.io/badge/version-0.4.0-8A6CFF?style=flat-square&labelColor=10131C" alt="Version">
+  <img src="https://img.shields.io/badge/platform-Windows-36E2E8?style=flat-square&labelColor=10131C" alt="Platform">
+  <img src="https://img.shields.io/badge/stack-Electron%20%2B%20TS-5AA9FF?style=flat-square&labelColor=10131C" alt="Stack">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Noncommercial-79839A?style=flat-square&labelColor=10131C" alt="License"></a>
 </p>
 
-Free co-op save sync for games, through your own private GitHub repository.
+<p align="center">Free co-op save sync for games, through your own private GitHub repository.</p>
 
 ## Requirements
 
-- Windows 10 or 11
-- Steam (CoopSync detects your installed Steam games)
-- **[Git for Windows](https://git-scm.com/download/win)** installed and available in
-  `PATH` — CoopSync uses your system's Git to push/pull saves, it isn't bundled with
-  the app
-- A free [GitHub](https://github.com) account
+| | |
+|---|---|
+| 🪟 **OS** | Windows 10 or 11 |
+| 🎮 **Steam** | CoopSync detects your installed Steam games |
+| 🔧 **[Git for Windows](https://git-scm.com/download/win)** | Must be installed and available in `PATH` — see below |
+| 🐙 **[GitHub account](https://github.com)** | Free — used as the sync backend |
+
+> [!NOTE]
+> **What do I actually need to install myself?** Just **Git for Windows**, one time. Everything
+> else — Electron, Node.js, all app dependencies — is bundled inside the CoopSync installer, so
+> there's nothing else to set up. If `git --version` works in a terminal, you're covered.
 
 ## Idea
 
@@ -63,8 +68,19 @@ installer — the same warning appears on the installer's first screen too.
 1. Both players install CoopSync and sign in with GitHub right from the app.
 2. The app creates a **private** repository and invites the friend as a collaborator.
 3. CoopSync runs in the background (starts with Windows), detects installed Steam games.
-4. Quit the game → saves get pushed to GitHub. Launch the game → the latest version gets
-   pulled first.
+4. Quit the game → saves get pushed to GitHub, but only if no one else already pushed a
+   newer version while you were playing — CoopSync checks first, so a friend's progress is
+   never silently overwritten. Launch the game → the latest version gets pulled first.
+
+## Features
+
+- 🔄 **Automatic sync** — push on quit, pull on launch, with a conflict check so a
+  co-op friend's newer save is never overwritten by mistake.
+- 👥 **Friends tab** — invite friends by GitHub username and see who's accepted, who's
+  still pending.
+- 🗑️ **Delete the shared storage** — a guarded, two-step confirmation (with a short
+  countdown) if you ever want to start over.
+- 🌍 **10 languages** — including English, Ukrainian, German, Polish, and more.
 
 ## Stack
 

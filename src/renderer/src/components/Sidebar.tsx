@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { colors, fonts, gradients, radii, shadows } from '../theme'
+import { colors, fonts, gradients, radii, shadows, transitions } from '../theme'
 import { useI18n } from '../i18n'
 import { LibraryIcon, FriendsIcon, HistoryIcon, SettingsIcon } from './icons'
 
@@ -104,7 +104,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 500,
     cursor: 'pointer',
     textAlign: 'left',
-    transition: 'background .12s, color .12s'
+    transition: `background ${transitions.fast}, color ${transitions.fast}`
   },
   accentBar: {
     position: 'absolute',

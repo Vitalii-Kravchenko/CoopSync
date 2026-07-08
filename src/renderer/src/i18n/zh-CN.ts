@@ -13,7 +13,12 @@ export const zhCN: Translation = {
     alreadySynced: '版本一致 — 无需同步',
     noSavesInCloud: '存储中还没有这个游戏的存档',
     noLocalSaves: '没有可上传的本地存档',
-    syncErrorFallback: '同步错误'
+    syncErrorFallback: '同步错误',
+    uploadSuccess: (v) => `已上传到 GitHub ✓ (${v})`,
+    downloadSuccess: (v) => `已从 GitHub 下载 ✓ (${v})`,
+    pushSkipped: '云端已经有更新的版本（其他人已上传）——已跳过自动同步。请在游戏界面手动更新。',
+    statusesError: '无法检查同步状态',
+    retry: '重试'
   },
   gameCard: {
     statusSynced: '已同步',
@@ -29,7 +34,9 @@ export const zhCN: Translation = {
     download: '下载',
     versions: (local, cloud) => `本地 ${local} · 云端 ${cloud}`,
     gameNotSupported: '该游戏不受支持',
-    notInstalled: '未安装'
+    notInstalled: '未安装',
+    lastSync: (v) => `上次同步：${v}`,
+    savesSize: (v) => `存档大小：${v}`
   },
   friends: {
     title: '好友',
@@ -37,7 +44,8 @@ export const zhCN: Translation = {
     sending: '正在发送邀请…',
     acceptedBadge: '已接受',
     noStorage: '请先在设置中创建共享存储',
-    emptyFriends: '还没有好友——在上方邀请一位吧'
+    emptyFriends: '还没有好友——在上方邀请一位吧',
+    inviteError: '无法邀请'
   },
   history: {
     title: '同步历史',
@@ -48,6 +56,7 @@ export const zhCN: Translation = {
     uploaded: '已上传',
     emptyTitle: '暂无记录',
     emptySubtitle: '首次上传后将显示历史记录',
+    loadError: '无法加载历史记录',
     justNow: '刚刚',
     minutesAgo: (n) => `${n} 分钟前`,
     hoursAgo: (n) => `${n} 小时前`,
@@ -127,5 +136,29 @@ export const zhCN: Translation = {
     version: (v) => `版本 ${v}`,
     aboutDescription: '通过 GitHub 在朋友之间同步联机游戏存档。',
     githubRepoLink: 'GitHub 仓库 →'
+  },
+  errors: {
+    NOT_LOGGED_IN: () => '请先使用 GitHub 登录',
+    HOST_LOGIN_REQUIRED: () => '请输入朋友的用户名',
+    NO_ACCESS_TO_HOST_REPO: (p) => `无法访问 "${p.host}" 的存储。你的朋友需要创建存储并邀请你作为协作者。`,
+    IMAGE_FORMAT_UNSUPPORTED: () => '不支持的图片格式',
+    IMAGE_TOO_LARGE: () => '文件过大（最大 2 MB）',
+    DEVICE_CODE_FAILED: (p) => `请求登录代码时 GitHub 返回错误 ${p.status}`,
+    LOGIN_FAILED: (p) => `无法完成登录${p.reason ? `：${p.reason}` : ''}`,
+    USER_FETCH_FAILED: (p) => `无法获取用户数据 (${p.status})`,
+    REPO_CHECK_FAILED: (p) => `无法检查存储 (${p.status})`,
+    REPO_CREATE_FAILED: (p) => `无法创建存储 (${p.status})`,
+    GITHUB_USER_NOT_FOUND: (p) => `在 GitHub 上找不到用户 "${p.username}"`,
+    REPO_NOT_FOUND: () => '未找到存储 — 请先创建',
+    INVITE_FAILED: (p) => `无法发送邀请 (${p.status})`,
+    REPO_DELETE_NO_PERMISSION: () => '没有删除权限（需要 delete_repo 权限范围）。请退出登录后重新登录。',
+    REPO_DELETE_FAILED: (p) => `无法删除存储 (${p.status})`,
+    ENCRYPTION_UNAVAILABLE: () => '此系统上加密不可用 — 无法安全保存令牌',
+    GAME_NOT_SUPPORTED: () => '该游戏不受支持',
+    SAVE_FOLDER_NOT_FOUND: () => '未找到存档文件夹',
+    NO_CLOUD_SAVES: () => '存储中还没有这个游戏的存档',
+    NO_INTERNET: () => '没有网络连接 — 请检查网络后重试',
+    GIT_AUTH_FAILED: () => '无法访问 GitHub — 令牌可能已过期。请退出登录后重新登录',
+    GIT_GENERIC: (p) => `同步错误：${p.detail}`
   }
 }

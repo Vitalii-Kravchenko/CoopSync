@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { colors, fonts, radii, steamPoster } from '../theme'
+import { colors, fonts, radii, steamPoster, transitions } from '../theme'
 import { useI18n } from '../i18n'
+import { describeError } from '../errors'
 import type { Translation } from '../i18n'
 import { HistoryIcon } from '../components/icons'
 import type { SyncHistoryEntry } from '../../../shared/types'
@@ -25,12 +26,18 @@ function HistoryScreen(): React.JSX.Element {
   const { t } = useI18n()
   const [entries, setEntries] = useState<SyncHistoryEntry[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   useEffect(() => {
     window.api.sync
       .history()
-      .then(setEntries)
+      .then((list) => {
+        setEntries(list)
+        setLoadError(null)
+      })
+      .catch((e) => setLoadError(describeError(e, t, t.history.loadError)))
       .finally(() => setLoading(false))
+    // Одноразовий фетч при монтуванні — не рефетчимо історію лише через зміну мови.
   }, [])
 
   const showTable = loading || entries.length > 0
@@ -66,8 +73,8 @@ function HistoryScreen(): React.JSX.Element {
           <div style={styles.emptyIcon}>
             <HistoryIcon size={20} color={colors.text3} />
           </div>
-          <div style={styles.emptyTitle}>{t.history.emptyTitle}</div>
-          <div style={styles.emptySubtitle}>{t.history.emptySubtitle}</div>
+          <div style={styles.emptyTitle}>{loadError ?? t.history.emptyTitle}</div>
+          {!loadError && <div style={styles.emptySubtitle}>{t.history.emptySubtitle}</div>}
         </div>
       )}
     </div>
@@ -162,7 +169,7 @@ const styles: Record<string, React.CSSProperties> = {
     gridTemplateColumns: '2.2fr 1.2fr 1fr 1fr',
     alignItems: 'center',
     padding: '13px 16px',
-    transition: 'background .12s'
+    transition: `background ${transitions.fast}`
   },
   gameCell: {
     display: 'flex',

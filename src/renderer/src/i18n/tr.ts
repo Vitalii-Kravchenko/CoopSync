@@ -13,7 +13,13 @@ export const tr: Translation = {
     alreadySynced: 'Sürümler eşleşiyor — senkronizasyona gerek yok',
     noSavesInCloud: 'Depoda bu oyuna ait kayıt henüz yok',
     noLocalSaves: 'Yüklenecek yerel kayıt yok',
-    syncErrorFallback: 'Senkronizasyon hatası'
+    syncErrorFallback: 'Senkronizasyon hatası',
+    uploadSuccess: (v) => `GitHub'a yüklendi ✓ (${v})`,
+    downloadSuccess: (v) => `GitHub'dan indirildi ✓ (${v})`,
+    pushSkipped:
+      "Bulutta zaten daha yeni bir sürüm var (başka biri kendi sürümünü yükledi) — otomatik senkronizasyon atlandı. Oyunlar ekranından elle güncelle.",
+    statusesError: 'Senkronizasyon durumu kontrol edilemedi',
+    retry: 'Tekrar dene'
   },
   gameCard: {
     statusSynced: 'Senkronize edildi',
@@ -29,7 +35,9 @@ export const tr: Translation = {
     download: 'İndir',
     versions: (local, cloud) => `Yerel ${local} · Bulut ${cloud}`,
     gameNotSupported: 'oyun desteklenmiyor',
-    notInstalled: 'yüklü değil'
+    notInstalled: 'yüklü değil',
+    lastSync: (v) => `Son senkronizasyon: ${v}`,
+    savesSize: (v) => `Kayıt boyutu: ${v}`
   },
   friends: {
     title: 'Arkadaşlar',
@@ -37,7 +45,8 @@ export const tr: Translation = {
     sending: 'Davet gönderiliyor…',
     acceptedBadge: 'Kabul edildi',
     noStorage: "Önce Ayarlar'da ortak depoyu oluştur",
-    emptyFriends: 'Henüz arkadaş yok — yukarıdan birini davet et'
+    emptyFriends: 'Henüz arkadaş yok — yukarıdan birini davet et',
+    inviteError: 'Davet edilemedi'
   },
   history: {
     title: 'Senkronizasyon geçmişi',
@@ -48,6 +57,7 @@ export const tr: Translation = {
     uploaded: 'Yüklendi',
     emptyTitle: 'Henüz kayıt yok',
     emptySubtitle: 'Geçmiş ilk yüklemeden sonra görünecek',
+    loadError: 'Geçmiş yüklenemedi',
     justNow: 'Az önce',
     minutesAgo: (n) => `${n} dk önce`,
     hoursAgo: (n) => `${n} sa önce`,
@@ -130,5 +140,31 @@ export const tr: Translation = {
     version: (v) => `Sürüm ${v}`,
     aboutDescription: 'Arkadaşlar arasında GitHub üzerinden ortak oyun kayıtlarını senkronize eder.',
     githubRepoLink: 'GitHub deposu →'
+  },
+  errors: {
+    NOT_LOGGED_IN: () => 'Önce GitHub ile giriş yap',
+    HOST_LOGIN_REQUIRED: () => 'Arkadaşının kullanıcı adını gir',
+    NO_ACCESS_TO_HOST_REPO: (p) =>
+      `"${p.host}" deposuna erişim yok. Arkadaşının depoyu oluşturup seni işbirlikçi olarak davet etmesi gerekiyor.`,
+    IMAGE_FORMAT_UNSUPPORTED: () => 'Desteklenmeyen resim formatı',
+    IMAGE_TOO_LARGE: () => 'Dosya çok büyük (maksimum 2 MB)',
+    DEVICE_CODE_FAILED: (p) => `GitHub, giriş kodu isteğine ${p.status} hatasıyla yanıt verdi`,
+    LOGIN_FAILED: (p) => `Giriş tamamlanamadı${p.reason ? `: ${p.reason}` : ''}`,
+    USER_FETCH_FAILED: (p) => `Kullanıcı verileri alınamadı (${p.status})`,
+    REPO_CHECK_FAILED: (p) => `Depo kontrol edilemedi (${p.status})`,
+    REPO_CREATE_FAILED: (p) => `Depo oluşturulamadı (${p.status})`,
+    GITHUB_USER_NOT_FOUND: (p) => `"${p.username}" kullanıcısı GitHub'da bulunamadı`,
+    REPO_NOT_FOUND: () => 'Depo bulunamadı — önce oluştur',
+    INVITE_FAILED: (p) => `Davet gönderilemedi (${p.status})`,
+    REPO_DELETE_NO_PERMISSION: () =>
+      "Silme izni yok (delete_repo kapsamı gerekiyor). Hesaptan çıkıp tekrar giriş yap.",
+    REPO_DELETE_FAILED: (p) => `Depo silinemedi (${p.status})`,
+    ENCRYPTION_UNAVAILABLE: () => 'Bu sistemde şifreleme kullanılamıyor — token güvenli şekilde saklanamıyor',
+    GAME_NOT_SUPPORTED: () => 'Oyun desteklenmiyor',
+    SAVE_FOLDER_NOT_FOUND: () => 'Kayıt klasörü bulunamadı',
+    NO_CLOUD_SAVES: () => 'Depoda bu oyuna ait kayıt henüz yok',
+    NO_INTERNET: () => 'İnternet bağlantısı yok — ağını kontrol edip tekrar dene',
+    GIT_AUTH_FAILED: () => "GitHub'a erişim yok — token süresi dolmuş olabilir. Hesaptan çıkıp tekrar giriş yap",
+    GIT_GENERIC: (p) => `Senkronizasyon hatası: ${p.detail}`
   }
 }

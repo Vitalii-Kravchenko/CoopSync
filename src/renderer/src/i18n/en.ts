@@ -13,7 +13,12 @@ export const en: Translation = {
     alreadySynced: 'Versions match — no need to sync',
     noSavesInCloud: 'There are no saves for this game in storage yet',
     noLocalSaves: 'No local saves to upload',
-    syncErrorFallback: 'Sync error'
+    syncErrorFallback: 'Sync error',
+    uploadSuccess: (v) => `Uploaded to GitHub ✓ (${v})`,
+    downloadSuccess: (v) => `Downloaded from GitHub ✓ (${v})`,
+    pushSkipped: "The cloud already has a newer version (someone else uploaded theirs) — auto-sync skipped. Update manually on the games screen.",
+    statusesError: "Couldn't check sync status",
+    retry: 'Try again'
   },
   gameCard: {
     statusSynced: 'Synced',
@@ -29,7 +34,9 @@ export const en: Translation = {
     download: 'Download',
     versions: (local, cloud) => `Local ${local} · Cloud ${cloud}`,
     gameNotSupported: 'game not supported',
-    notInstalled: 'not installed'
+    notInstalled: 'not installed',
+    lastSync: (v) => `Last synced: ${v}`,
+    savesSize: (v) => `Save size: ${v}`
   },
   friends: {
     title: 'Friends',
@@ -37,7 +44,8 @@ export const en: Translation = {
     sending: 'Sending invite…',
     acceptedBadge: 'Accepted',
     noStorage: 'Set up shared storage in Settings first',
-    emptyFriends: 'No friends yet — invite someone above'
+    emptyFriends: 'No friends yet — invite someone above',
+    inviteError: "Couldn't invite"
   },
   history: {
     title: 'Sync history',
@@ -48,6 +56,7 @@ export const en: Translation = {
     uploaded: 'Uploaded',
     emptyTitle: 'No entries yet',
     emptySubtitle: 'Sync history will appear after the first upload',
+    loadError: "Couldn't load history",
     justNow: 'Just now',
     minutesAgo: (n) => `${n} min ago`,
     hoursAgo: (n) => `${n} h ago`,
@@ -130,5 +139,31 @@ export const en: Translation = {
     version: (v) => `Version ${v}`,
     aboutDescription: 'Synchronize co-op game saves between friends via GitHub.',
     githubRepoLink: 'GitHub repository →'
+  },
+  errors: {
+    NOT_LOGGED_IN: () => 'Sign in with GitHub first',
+    HOST_LOGIN_REQUIRED: () => "Enter your friend's username",
+    NO_ACCESS_TO_HOST_REPO: (p) =>
+      `No access to "${p.host}"'s storage. Your friend needs to create the storage and invite you as a collaborator.`,
+    IMAGE_FORMAT_UNSUPPORTED: () => 'Unsupported image format',
+    IMAGE_TOO_LARGE: () => 'File is too large (2 MB max)',
+    DEVICE_CODE_FAILED: (p) => `GitHub returned an error ${p.status} requesting a login code`,
+    LOGIN_FAILED: (p) => `Couldn't finish signing in${p.reason ? `: ${p.reason}` : ''}`,
+    USER_FETCH_FAILED: (p) => `Couldn't fetch user data (${p.status})`,
+    REPO_CHECK_FAILED: (p) => `Couldn't check storage (${p.status})`,
+    REPO_CREATE_FAILED: (p) => `Couldn't create storage (${p.status})`,
+    GITHUB_USER_NOT_FOUND: (p) => `User "${p.username}" not found on GitHub`,
+    REPO_NOT_FOUND: () => 'Storage not found — create it first',
+    INVITE_FAILED: (p) => `Couldn't send the invite (${p.status})`,
+    REPO_DELETE_NO_PERMISSION: () =>
+      "No permission to delete (needs the delete_repo scope). Log out and sign in again.",
+    REPO_DELETE_FAILED: (p) => `Couldn't delete storage (${p.status})`,
+    ENCRYPTION_UNAVAILABLE: () => "Encryption isn't available on this system — can't store the token safely",
+    GAME_NOT_SUPPORTED: () => 'Game not supported',
+    SAVE_FOLDER_NOT_FOUND: () => 'Save folder not found',
+    NO_CLOUD_SAVES: () => 'There are no saves for this game in storage yet',
+    NO_INTERNET: () => "No internet connection — check your network and try again",
+    GIT_AUTH_FAILED: () => "No access to GitHub — the token may have expired. Log out and sign in again",
+    GIT_GENERIC: (p) => `Sync error: ${p.detail}`
   }
 }

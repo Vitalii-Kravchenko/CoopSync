@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { colors, fonts, gradients, radii, shadows } from '../theme'
+import { colors, fonts, gradients, radii, shadows, transitions } from '../theme'
 import { LANGUAGES, useI18n, type LanguageCode } from '../i18n'
+import { describeError } from '../errors'
 import { GitHubIcon, Logo } from '../components/icons'
 import Button from '../components/Button'
 import ConfirmModal from '../components/ConfirmModal'
@@ -27,6 +28,8 @@ function SettingsScreen({ user, onLoggedOut, avatarDataUrl, onAvatarChange }: Pr
   const [showDeleteRepo, setShowDeleteRepo] = useState(false)
   const [deletingRepo, setDeletingRepo] = useState(false)
   const [deleteRepoError, setDeleteRepoError] = useState<string | null>(null)
+  const [creatingRepo, setCreatingRepo] = useState(false)
+  const [createRepoError, setCreateRepoError] = useState<string | null>(null)
 
   useEffect(() => {
     void loadRepo()
@@ -50,7 +53,7 @@ function SettingsScreen({ user, onLoggedOut, avatarDataUrl, onAvatarChange }: Pr
       const dataUrl = await window.api.settings.pickAvatar()
       if (dataUrl) onAvatarChange(dataUrl)
     } catch (e) {
-      setAvatarError(e instanceof Error ? e.message : t.settings.avatarError)
+      setAvatarError(describeError(e, t, t.settings.avatarError))
     }
   }
 
@@ -63,6 +66,19 @@ function SettingsScreen({ user, onLoggedOut, avatarDataUrl, onAvatarChange }: Pr
     onLoggedOut()
   }
 
+  async function handleCreateRepo(): Promise<void> {
+    setCreatingRepo(true)
+    setCreateRepoError(null)
+    try {
+      await window.api.repo.create()
+      await loadRepo()
+    } catch (e) {
+      setCreateRepoError(describeError(e, t, t.onboarding.createRepoError))
+    } finally {
+      setCreatingRepo(false)
+    }
+  }
+
   async function handleDeleteRepo(): Promise<void> {
     setDeletingRepo(true)
     setDeleteRepoError(null)
@@ -71,8 +87,7 @@ function SettingsScreen({ user, onLoggedOut, avatarDataUrl, onAvatarChange }: Pr
       setShowDeleteRepo(false)
       await loadRepo()
     } catch (e) {
-      const raw = e instanceof Error ? e.message : t.settings.deleteRepoConfirmTitle
-      setDeleteRepoError(raw.replace(/^Error invoking remote method '[^']+':\s*(Error:\s*)?/, ''))
+      setDeleteRepoError(describeError(e, t, t.settings.deleteRepoConfirmTitle))
     } finally {
       setDeletingRepo(false)
     }
@@ -138,7 +153,18 @@ function SettingsScreen({ user, onLoggedOut, avatarDataUrl, onAvatarChange }: Pr
             </Button>
           </>
         ) : (
-          <div style={styles.muted}>{t.settings.storageNotSet}</div>
+          <>
+            <div style={{ ...styles.muted, marginBottom: 14 }}>{t.settings.storageNotSet}</div>
+            <Button
+              variant="primary"
+              style={{ alignSelf: 'flex-start' }}
+              onClick={handleCreateRepo}
+              disabled={creatingRepo}
+            >
+              {creatingRepo ? t.onboarding.creating : t.onboarding.createRepo}
+            </Button>
+            {createRepoError && <div style={styles.createRepoError}>{createRepoError}</div>}
+          </>
         )}
       </div>
 
@@ -251,7 +277,7 @@ function Toggle({
           boxShadow: value ? shadows.glowCy : 'none',
           position: 'relative',
           cursor: 'pointer',
-          transition: 'background .15s, box-shadow .15s',
+          transition: `background ${transitions.hover}, box-shadow ${transitions.hover}`,
           flexShrink: 0
         }}
       >
@@ -265,7 +291,7 @@ function Toggle({
             borderRadius: '50%',
             background: value ? '#fff' : colors.text3,
             boxShadow: shadows.sh1,
-            transition: 'left .15s'
+            transition: `left ${transitions.hover}`
           }}
         />
       </div>
@@ -310,6 +336,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   avatarImg: { width: '100%', height: '100%', objectFit: 'cover' },
   avatarError: { fontSize: 11, color: colors.danger, maxWidth: 100, textAlign: 'center' },
+  createRepoError: { fontSize: 12.5, color: colors.danger, marginTop: 10 },
   userName: { fontFamily: fonts.display, fontSize: 20, fontWeight: 700, color: colors.text1 },
   muted: { fontSize: 13, color: colors.text3 },
   repoRow: { display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 },

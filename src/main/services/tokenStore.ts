@@ -1,6 +1,7 @@
 import { app, safeStorage } from 'electron'
 import { join } from 'path'
 import { writeFileSync, readFileSync, existsSync, rmSync } from 'fs'
+import { makeAppError } from '../../shared/errors'
 
 // Файл, де лежить зашифрований токен (у системній папці даних застосунку).
 function tokenPath(): string {
@@ -10,7 +11,7 @@ function tokenPath(): string {
 /** Зберегти токен у зашифрованому вигляді. */
 export function saveToken(token: string): void {
   if (!safeStorage.isEncryptionAvailable()) {
-    throw new Error('Шифрування недоступне в системі — не можу безпечно зберегти токен')
+    throw makeAppError('ENCRYPTION_UNAVAILABLE')
   }
   const encrypted = safeStorage.encryptString(token)
   writeFileSync(tokenPath(), encrypted)

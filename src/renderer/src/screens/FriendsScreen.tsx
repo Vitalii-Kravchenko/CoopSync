@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { colors, fonts, radii, shadows } from '../theme'
 import { useI18n } from '../i18n'
+import { describeError } from '../errors'
 import { GitHubIcon, CheckIcon } from '../components/icons'
 import Button from '../components/Button'
 import type { AuthUser, SavesRepoStatus, PendingInvite, Collaborator } from '../../../shared/types'
@@ -19,6 +20,7 @@ function FriendsScreen({ user, avatarDataUrl }: Props): React.JSX.Element {
   const [collaborators, setCollaborators] = useState<Collaborator[]>([])
   const [friend, setFriend] = useState('')
   const [busy, setBusy] = useState(false)
+  const [inviteError, setInviteError] = useState<string | null>(null)
 
   useEffect(() => {
     void load()
@@ -36,10 +38,13 @@ function FriendsScreen({ user, avatarDataUrl }: Props): React.JSX.Element {
   async function handleInvite(): Promise<void> {
     if (!friend.trim()) return
     setBusy(true)
+    setInviteError(null)
     try {
       await window.api.repo.invite(friend)
       setFriend('')
       await load()
+    } catch (e) {
+      setInviteError(describeError(e, t, t.friends.inviteError))
     } finally {
       setBusy(false)
     }
@@ -74,6 +79,7 @@ function FriendsScreen({ user, avatarDataUrl }: Props): React.JSX.Element {
               </Button>
             </div>
             {busy && <div style={styles.sending}>{t.friends.sending}</div>}
+            {inviteError && <div style={styles.error}>{inviteError}</div>}
           </div>
 
           <div style={styles.card}>
@@ -144,6 +150,7 @@ const styles: Record<string, React.CSSProperties> = {
     outline: 'none'
   },
   sending: { fontSize: 12, color: colors.text3, marginTop: 10 },
+  error: { fontSize: 12.5, color: colors.danger, marginTop: 10 },
   memberRow: { display: 'flex', alignItems: 'center', gap: 11, marginBottom: 12 },
   memberAvatar: {
     width: 30,

@@ -13,7 +13,13 @@ export const ptBR: Translation = {
     alreadySynced: 'As versões coincidem — não é necessário sincronizar',
     noSavesInCloud: 'Ainda não há saves deste jogo no armazenamento',
     noLocalSaves: 'Não há saves locais para enviar',
-    syncErrorFallback: 'Erro de sincronização'
+    syncErrorFallback: 'Erro de sincronização',
+    uploadSuccess: (v) => `Enviado para o GitHub ✓ (${v})`,
+    downloadSuccess: (v) => `Baixado do GitHub ✓ (${v})`,
+    pushSkipped:
+      'A nuvem já tem uma versão mais recente (outra pessoa enviou a dela) — sincronização automática ignorada. Atualize manualmente na tela de jogos.',
+    statusesError: 'Não foi possível verificar o status de sincronização',
+    retry: 'Tentar novamente'
   },
   gameCard: {
     statusSynced: 'Sincronizado',
@@ -29,7 +35,9 @@ export const ptBR: Translation = {
     download: 'Baixar',
     versions: (local, cloud) => `Local ${local} · Nuvem ${cloud}`,
     gameNotSupported: 'jogo não suportado',
-    notInstalled: 'não instalado'
+    notInstalled: 'não instalado',
+    lastSync: (v) => `Última sincronização: ${v}`,
+    savesSize: (v) => `Tamanho dos saves: ${v}`
   },
   friends: {
     title: 'Amigos',
@@ -37,7 +45,8 @@ export const ptBR: Translation = {
     sending: 'Enviando convite…',
     acceptedBadge: 'Aceito',
     noStorage: 'Primeiro configure o armazenamento compartilhado em Configurações',
-    emptyFriends: 'Ainda não há amigos — convide alguém acima'
+    emptyFriends: 'Ainda não há amigos — convide alguém acima',
+    inviteError: 'Não foi possível convidar'
   },
   history: {
     title: 'Histórico de sincronização',
@@ -48,6 +57,7 @@ export const ptBR: Translation = {
     uploaded: 'Enviado',
     emptyTitle: 'Ainda não há registros',
     emptySubtitle: 'O histórico aparecerá após o primeiro envio',
+    loadError: 'Não foi possível carregar o histórico',
     justNow: 'Agora mesmo',
     minutesAgo: (n) => `há ${n} min`,
     hoursAgo: (n) => `há ${n} h`,
@@ -130,5 +140,32 @@ export const ptBR: Translation = {
     version: (v) => `Versão ${v}`,
     aboutDescription: 'Sincroniza saves de jogos cooperativos entre amigos via GitHub.',
     githubRepoLink: 'Repositório do GitHub →'
+  },
+  errors: {
+    NOT_LOGGED_IN: () => 'Entre com o GitHub primeiro',
+    HOST_LOGIN_REQUIRED: () => 'Informe o usuário do seu amigo',
+    NO_ACCESS_TO_HOST_REPO: (p) =>
+      `Sem acesso ao armazenamento de "${p.host}". Seu amigo precisa criar o armazenamento e te convidar como colaborador.`,
+    IMAGE_FORMAT_UNSUPPORTED: () => 'Formato de imagem não suportado',
+    IMAGE_TOO_LARGE: () => 'Arquivo muito grande (máximo de 2 MB)',
+    DEVICE_CODE_FAILED: (p) => `O GitHub respondeu com erro ${p.status} ao solicitar o código de login`,
+    LOGIN_FAILED: (p) => `Não foi possível concluir o login${p.reason ? `: ${p.reason}` : ''}`,
+    USER_FETCH_FAILED: (p) => `Não foi possível obter os dados do usuário (${p.status})`,
+    REPO_CHECK_FAILED: (p) => `Não foi possível verificar o armazenamento (${p.status})`,
+    REPO_CREATE_FAILED: (p) => `Não foi possível criar o armazenamento (${p.status})`,
+    GITHUB_USER_NOT_FOUND: (p) => `Usuário "${p.username}" não encontrado no GitHub`,
+    REPO_NOT_FOUND: () => 'Armazenamento não encontrado — crie-o primeiro',
+    INVITE_FAILED: (p) => `Não foi possível enviar o convite (${p.status})`,
+    REPO_DELETE_NO_PERMISSION: () =>
+      'Sem permissão para excluir (é necessário o scope delete_repo). Saia da conta e entre novamente.',
+    REPO_DELETE_FAILED: (p) => `Não foi possível excluir o armazenamento (${p.status})`,
+    ENCRYPTION_UNAVAILABLE: () =>
+      'A criptografia não está disponível neste sistema — não é possível salvar o token com segurança',
+    GAME_NOT_SUPPORTED: () => 'Jogo não suportado',
+    SAVE_FOLDER_NOT_FOUND: () => 'Pasta de saves não encontrada',
+    NO_CLOUD_SAVES: () => 'Ainda não há saves deste jogo no armazenamento',
+    NO_INTERNET: () => 'Sem conexão com a internet — verifique sua rede e tente novamente',
+    GIT_AUTH_FAILED: () => 'Sem acesso ao GitHub — o token pode ter expirado. Saia da conta e entre novamente',
+    GIT_GENERIC: (p) => `Erro de sincronização: ${p.detail}`
   }
 }

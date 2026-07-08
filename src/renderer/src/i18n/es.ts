@@ -13,7 +13,13 @@ export const es: Translation = {
     alreadySynced: 'Las versiones coinciden — no es necesario sincronizar',
     noSavesInCloud: 'Todavía no hay partidas guardadas de este juego en el almacenamiento',
     noLocalSaves: 'No hay partidas locales para subir',
-    syncErrorFallback: 'Error de sincronización'
+    syncErrorFallback: 'Error de sincronización',
+    uploadSuccess: (v) => `Subido a GitHub ✓ (${v})`,
+    downloadSuccess: (v) => `Descargado de GitHub ✓ (${v})`,
+    pushSkipped:
+      'La nube ya tiene una versión más reciente (alguien más subió la suya) — sincronización automática omitida. Actualiza manualmente en la pantalla de juegos.',
+    statusesError: 'No se pudo comprobar el estado de sincronización',
+    retry: 'Reintentar'
   },
   gameCard: {
     statusSynced: 'Sincronizado',
@@ -29,7 +35,9 @@ export const es: Translation = {
     download: 'Descargar',
     versions: (local, cloud) => `Local ${local} · Nube ${cloud}`,
     gameNotSupported: 'juego no compatible',
-    notInstalled: 'no instalado'
+    notInstalled: 'no instalado',
+    lastSync: (v) => `Última sincronización: ${v}`,
+    savesSize: (v) => `Tamaño de las partidas: ${v}`
   },
   friends: {
     title: 'Amigos',
@@ -37,7 +45,8 @@ export const es: Translation = {
     sending: 'Enviando invitación…',
     acceptedBadge: 'Aceptado',
     noStorage: 'Primero configura el almacenamiento compartido en Ajustes',
-    emptyFriends: 'Todavía no hay amigos — invita a alguien arriba'
+    emptyFriends: 'Todavía no hay amigos — invita a alguien arriba',
+    inviteError: 'No se pudo invitar'
   },
   history: {
     title: 'Historial de sincronización',
@@ -48,6 +57,7 @@ export const es: Translation = {
     uploaded: 'Subido',
     emptyTitle: 'Todavía no hay registros',
     emptySubtitle: 'El historial aparecerá después de la primera subida',
+    loadError: 'No se pudo cargar el historial',
     justNow: 'Ahora mismo',
     minutesAgo: (n) => `hace ${n} min`,
     hoursAgo: (n) => `hace ${n} h`,
@@ -130,5 +140,32 @@ export const es: Translation = {
     version: (v) => `Versión ${v}`,
     aboutDescription: 'Sincroniza partidas guardadas de juegos cooperativos entre amigos a través de GitHub.',
     githubRepoLink: 'Repositorio de GitHub →'
+  },
+  errors: {
+    NOT_LOGGED_IN: () => 'Primero inicia sesión con GitHub',
+    HOST_LOGIN_REQUIRED: () => 'Indica el usuario de tu amigo',
+    NO_ACCESS_TO_HOST_REPO: (p) =>
+      `Sin acceso al almacenamiento de "${p.host}". Tu amigo debe crear el almacenamiento e invitarte como colaborador.`,
+    IMAGE_FORMAT_UNSUPPORTED: () => 'Formato de imagen no compatible',
+    IMAGE_TOO_LARGE: () => 'El archivo es demasiado grande (máximo 2 MB)',
+    DEVICE_CODE_FAILED: (p) => `GitHub respondió con el error ${p.status} al solicitar el código de inicio de sesión`,
+    LOGIN_FAILED: (p) => `No se pudo completar el inicio de sesión${p.reason ? `: ${p.reason}` : ''}`,
+    USER_FETCH_FAILED: (p) => `No se pudieron obtener los datos del usuario (${p.status})`,
+    REPO_CHECK_FAILED: (p) => `No se pudo comprobar el almacenamiento (${p.status})`,
+    REPO_CREATE_FAILED: (p) => `No se pudo crear el almacenamiento (${p.status})`,
+    GITHUB_USER_NOT_FOUND: (p) => `No se encontró el usuario "${p.username}" en GitHub`,
+    REPO_NOT_FOUND: () => 'Almacenamiento no encontrado — créalo primero',
+    INVITE_FAILED: (p) => `No se pudo enviar la invitación (${p.status})`,
+    REPO_DELETE_NO_PERMISSION: () =>
+      'Sin permiso para eliminar (se requiere el scope delete_repo). Cierra sesión y vuelve a iniciarla.',
+    REPO_DELETE_FAILED: (p) => `No se pudo eliminar el almacenamiento (${p.status})`,
+    ENCRYPTION_UNAVAILABLE: () =>
+      'El cifrado no está disponible en este sistema — no se puede guardar el token de forma segura',
+    GAME_NOT_SUPPORTED: () => 'Juego no compatible',
+    SAVE_FOLDER_NOT_FOUND: () => 'Carpeta de partidas guardadas no encontrada',
+    NO_CLOUD_SAVES: () => 'Todavía no hay partidas guardadas de este juego en el almacenamiento',
+    NO_INTERNET: () => 'Sin conexión a internet — comprueba tu red e inténtalo de nuevo',
+    GIT_AUTH_FAILED: () => 'Sin acceso a GitHub — el token pudo haber caducado. Cierra sesión y vuelve a iniciarla',
+    GIT_GENERIC: (p) => `Error de sincronización: ${p.detail}`
   }
 }

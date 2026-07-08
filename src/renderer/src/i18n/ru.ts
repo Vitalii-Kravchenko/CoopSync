@@ -13,7 +13,13 @@ export const ru: Translation = {
     alreadySynced: 'Версии совпадают — синхронизация не нужна',
     noSavesInCloud: 'В хранилище пока нет сейвов этой игры',
     noLocalSaves: 'Локально нет сейвов для выгрузки',
-    syncErrorFallback: 'Ошибка синхронизации'
+    syncErrorFallback: 'Ошибка синхронизации',
+    uploadSuccess: (v) => `Выгружено на GitHub ✓ (${v})`,
+    downloadSuccess: (v) => `Загружено с GitHub ✓ (${v})`,
+    pushSkipped:
+      'В облаке уже новее версия (кто-то другой выгрузил свою) — автосинхронизация пропущена. Обнови вручную на экране игр.',
+    statusesError: 'Не удалось проверить статус синхронизации',
+    retry: 'Попробовать снова'
   },
   gameCard: {
     statusSynced: 'Синхронизировано',
@@ -29,7 +35,9 @@ export const ru: Translation = {
     download: 'Загрузить',
     versions: (local, cloud) => `Локально ${local} · Облако ${cloud}`,
     gameNotSupported: 'игра не поддерживается',
-    notInstalled: 'не установлено'
+    notInstalled: 'не установлено',
+    lastSync: (v) => `Последняя синхронизация: ${v}`,
+    savesSize: (v) => `Размер сейвов: ${v}`
   },
   friends: {
     title: 'Друзья',
@@ -37,7 +45,8 @@ export const ru: Translation = {
     sending: 'Отправляю приглашение…',
     acceptedBadge: 'Принято',
     noStorage: 'Сначала создай общее хранилище в Настройках',
-    emptyFriends: 'Пока нет друзей — пригласи кого-нибудь выше'
+    emptyFriends: 'Пока нет друзей — пригласи кого-нибудь выше',
+    inviteError: 'Не удалось пригласить'
   },
   history: {
     title: 'История синхронизаций',
@@ -48,6 +57,7 @@ export const ru: Translation = {
     uploaded: 'Выгружено',
     emptyTitle: 'Записей пока нет',
     emptySubtitle: 'История появится после первой выгрузки',
+    loadError: 'Не удалось загрузить историю',
     justNow: 'Только что',
     minutesAgo: (n) => `${n} мин назад`,
     hoursAgo: (n) => `${n} ч назад`,
@@ -130,5 +140,31 @@ export const ru: Translation = {
     version: (v) => `Версия ${v}`,
     aboutDescription: 'Синхронизация сохранений кооперативных игр между друзьями через GitHub.',
     githubRepoLink: 'Репозиторий GitHub →'
+  },
+  errors: {
+    NOT_LOGGED_IN: () => 'Сначала войди через GitHub',
+    HOST_LOGIN_REQUIRED: () => 'Укажи ник друга',
+    NO_ACCESS_TO_HOST_REPO: (p) =>
+      `Нет доступа к хранилищу "${p.host}". Друг должен создать хранилище и пригласить тебя в соавторы.`,
+    IMAGE_FORMAT_UNSUPPORTED: () => 'Неподдерживаемый формат изображения',
+    IMAGE_TOO_LARGE: () => 'Файл слишком большой (максимум 2 МБ)',
+    DEVICE_CODE_FAILED: (p) => `GitHub ответил ошибкой ${p.status} на запрос кода входа`,
+    LOGIN_FAILED: (p) => `Не удалось завершить вход${p.reason ? `: ${p.reason}` : ''}`,
+    USER_FETCH_FAILED: (p) => `Не удалось получить данные пользователя (${p.status})`,
+    REPO_CHECK_FAILED: (p) => `Не удалось проверить хранилище (${p.status})`,
+    REPO_CREATE_FAILED: (p) => `Не удалось создать хранилище (${p.status})`,
+    GITHUB_USER_NOT_FOUND: (p) => `Пользователь "${p.username}" не найден на GitHub`,
+    REPO_NOT_FOUND: () => 'Хранилище не найдено — сначала создай его',
+    INVITE_FAILED: (p) => `Не удалось отправить приглашение (${p.status})`,
+    REPO_DELETE_NO_PERMISSION: () =>
+      'Нет прав на удаление (нужен скоуп delete_repo). Выйди из аккаунта и войди снова.',
+    REPO_DELETE_FAILED: (p) => `Не удалось удалить хранилище (${p.status})`,
+    ENCRYPTION_UNAVAILABLE: () => 'Шифрование недоступно в системе — не могу безопасно сохранить токен',
+    GAME_NOT_SUPPORTED: () => 'Игра не поддерживается',
+    SAVE_FOLDER_NOT_FOUND: () => 'Папка сейвов не найдена',
+    NO_CLOUD_SAVES: () => 'В хранилище пока нет сейвов этой игры',
+    NO_INTERNET: () => 'Нет соединения с интернетом — проверь сеть и попробуй снова',
+    GIT_AUTH_FAILED: () => 'Нет доступа к GitHub — токен мог протухнуть. Выйди из аккаунта и войди снова',
+    GIT_GENERIC: (p) => `Ошибка синхронизации: ${p.detail}`
   }
 }

@@ -7,7 +7,8 @@ import { existsSync, statSync } from 'fs'
 import { cp, rm, mkdir, readdir, readFile, writeFile } from 'fs/promises'
 import { SUPPORTED_GAMES, READY_GAMES } from '../games/catalog'
 import { SAVES_REPO_NAME } from '../config'
-import type { SyncStatus, GameSyncStatus, SyncHistoryEntry } from '../../shared/types'
+import { makeAppError } from '../../shared/errors'
+import type { SyncStatus, GameSyncStatus, SyncHistoryEntry, SyncResult } from '../../shared/types'
 
 const exec = promisify(execFile)
 const BIG_BUFFER = 64 * 1024 * 1024 // запас для великих сейвів
@@ -39,34 +40,91 @@ const GIT_ENV = {
   GCM_INTERACTIVE: 'never'
 }
 
+// Розпізнати сирий exec()-виняток git (технічний stderr, "Command failed: git...")
+// і перетворити на код помилки, зрозумілий користувачу. Нерозпізнані випадки не
+// губимо повністю — лишаємо найзмістовніший рядок stderr (fatal:/error:) як деталь.
+function wrapGitError(e: unknown): Error {
+  const raw = e instanceof Error ? e.message : String(e)
+  if (/could not resolve host|network is unreachable|connection timed out|failed to connect|recv failure|could not connect/i.test(raw)) {
+    return makeAppError('NO_INTERNET')
+  }
+  if (/authentication failed|could not read username|repository not found|401 unauthorized|403 forbidden/i.test(raw)) {
+    return makeAppError('GIT_AUTH_FAILED')
+  }
+  const lines = raw
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
+  const detail = [...lines].reverse().find((l) => /^(fatal|error):/i.test(l)) ?? lines.at(-1) ?? raw
+  return makeAppError('GIT_GENERIC', { detail })
+}
+
 // Запустити git у вже клонованому репо.
 async function git(args: string[]): Promise<string> {
-  const { stdout } = await exec('git', [...NO_HELPER, ...args], {
-    cwd: repoDir(),
-    maxBuffer: BIG_BUFFER,
-    env: GIT_ENV
-  })
-  return stdout
+  try {
+    const { stdout } = await exec('git', [...NO_HELPER, ...args], {
+      cwd: repoDir(),
+      maxBuffer: BIG_BUFFER,
+      env: GIT_ENV
+    })
+    return stdout
+  } catch (e) {
+    throw wrapGitError(e)
+  }
 }
+
+// Одночасні виклики (напр. MainScreen і HistoryScreen смикають ensureRepo
+// паралельно на старті) інакше змагаються за той самий клон і ламають один
+// одного (два "git clone" в ту саму папку). Серіалізуємо через спільний proмiс.
+let ensureRepoInFlight: Promise<void> | null = null
 
 // Переконатися, що репо склоновано локально й оновлено з GitHub.
 async function ensureRepo(token: string, owner: string): Promise<void> {
+  if (!ensureRepoInFlight) {
+    ensureRepoInFlight = doEnsureRepo(token, owner).finally(() => {
+      ensureRepoInFlight = null
+    })
+  }
+  return ensureRepoInFlight
+}
+
+async function doEnsureRepo(token: string, owner: string, retried = false): Promise<void> {
   const dir = repoDir()
   const url = remoteUrl(token, owner)
 
   if (!existsSync(join(dir, '.git'))) {
     await mkdir(app.getPath('userData'), { recursive: true })
-    await exec('git', [...NO_HELPER, 'clone', url, dir], { maxBuffer: BIG_BUFFER, env: GIT_ENV })
+    try {
+      await exec('git', [...NO_HELPER, 'clone', url, dir], { maxBuffer: BIG_BUFFER, env: GIT_ENV })
+    } catch (e) {
+      throw wrapGitError(e)
+    }
   } else {
     // Оновлюємо токен у remote (міг змінитись) і підтягуємо свіже.
     await git(['remote', 'set-url', 'origin', url])
-    await git(['pull', '--no-rebase', 'origin', 'main'])
+    try {
+      await exec('git', [...NO_HELPER, 'pull', '--no-rebase', 'origin', 'main'], {
+        cwd: dir,
+        maxBuffer: BIG_BUFFER,
+        env: GIT_ENV
+      })
+    } catch (e) {
+      const raw = e instanceof Error ? e.message : String(e)
+      if (!retried && /refusing to merge unrelated histories/i.test(raw)) {
+        // Локальний клон застарів відносно пересозданого на GitHub репо (напр.
+        // хтось видалив і перестворив сховище) — самі перестворюємо клон з нуля
+        // замість падати назавжди з незрозумілою git-помилкою.
+        await rm(dir, { recursive: true, force: true })
+        return doEnsureRepo(token, owner, true)
+      }
+      throw wrapGitError(e)
+    }
   }
 }
 
 function findGame(appId: string): { name: string; savePath: string; saveFilePattern?: RegExp } {
   const g = SUPPORTED_GAMES.find((x) => x.appId === appId)
-  if (!g) throw new Error('Гра не підтримується')
+  if (!g) throw makeAppError('GAME_NOT_SUPPORTED')
   return { name: g.name, savePath: g.getSavePath(), saveFilePattern: g.saveFilePattern }
 }
 
@@ -91,17 +149,27 @@ function remoteMetaPath(name: string): string {
   return join(repoDir(), '.meta', `${name}.json`)
 }
 
-async function readRemoteVersion(name: string): Promise<number> {
+interface RemoteMeta {
+  version: number
+  updatedAt: string
+  updatedBy: string
+}
+
+async function readRemoteMeta(name: string): Promise<RemoteMeta | null> {
   const p = remoteMetaPath(name)
-  if (!existsSync(p)) return 0
+  if (!existsSync(p)) return null
   try {
     // Прибираємо можливий BOM на початку — інакше JSON.parse падає.
     const raw = (await readFile(p, 'utf8')).replace(/^﻿/, '')
-    const data = JSON.parse(raw) as { version?: number }
-    return data.version ?? 0
+    return JSON.parse(raw) as RemoteMeta
   } catch {
-    return 0
+    return null
   }
+}
+
+async function readRemoteVersion(name: string): Promise<number> {
+  const meta = await readRemoteMeta(name)
+  return meta?.version ?? 0
 }
 
 async function writeRemoteMeta(name: string, version: number, owner: string): Promise<void> {
@@ -184,10 +252,10 @@ export async function isRemoteAhead(token: string, owner: string, appId: string)
 }
 
 /** Вивантажити сейви гри на GitHub (push). Піднімає версію. */
-export async function uploadGame(token: string, owner: string, appId: string): Promise<string> {
+export async function uploadGame(token: string, owner: string, appId: string): Promise<SyncResult> {
   await ensureRepo(token, owner)
   const game = findGame(appId)
-  if (!existsSync(game.savePath)) throw new Error('Папку сейвів не знайдено')
+  if (!existsSync(game.savePath)) throw makeAppError('SAVE_FOLDER_NOT_FOUND')
 
   // Замінюємо вміст папки гри в репо свіжими локальними сейвами.
   const dest = join(repoDir(), game.name)
@@ -211,16 +279,16 @@ export async function uploadGame(token: string, owner: string, appId: string): P
   await git(['commit', '-m', `sync: ${game.name} ${formatVersion(newVersion)} (${owner})`])
   await git(['push', 'origin', 'main'])
   await setLocalVersion(appId, newVersion)
-  return `Вивантажено на GitHub ✓ (${formatVersion(newVersion)})`
+  return { version: newVersion }
 }
 
 /** Завантажити сейви гри з GitHub у локальну папку (pull). */
-export async function downloadGame(token: string, owner: string, appId: string): Promise<string> {
+export async function downloadGame(token: string, owner: string, appId: string): Promise<SyncResult> {
   await ensureRepo(token, owner)
   const game = findGame(appId)
 
   const src = join(repoDir(), game.name)
-  if (!existsSync(src)) throw new Error('У сховищі ще немає сейвів цієї гри')
+  if (!existsSync(src)) throw makeAppError('NO_CLOUD_SAVES')
 
   await mkdir(game.savePath, { recursive: true })
   await copyFiltered(src, game.savePath, game.saveFilePattern)
@@ -228,7 +296,7 @@ export async function downloadGame(token: string, owner: string, appId: string):
   // Локальна версія тепер дорівнює хмарній.
   const remoteVersion = await readRemoteVersion(game.name)
   await setLocalVersion(appId, remoteVersion)
-  return `Завантажено з GitHub ✓ (${formatVersion(remoteVersion)})`
+  return { version: remoteVersion }
 }
 
 /** Прибрати локальний клон сховища й забуті версії — після видалення репо на GitHub. */
@@ -263,6 +331,24 @@ async function folderHash(dir: string, pattern?: RegExp): Promise<string> {
   return createHash('sha1').update(parts.join('\n')).digest('hex')
 }
 
+// Сумарний розмір файлів у папці (з урахуванням того самого паттерна фільтрації,
+// що й copyFiltered/folderHash — щоб цифра відповідала тому, що реально синкається).
+async function folderSize(dir: string, pattern?: RegExp): Promise<number> {
+  let total = 0
+  async function walk(d: string): Promise<void> {
+    const entries = await readdir(d, { withFileTypes: true })
+    for (const e of entries) {
+      if (e.name === '.git') continue
+      if (pattern && !e.isDirectory() && !pattern.test(e.name)) continue
+      const full = join(d, e.name)
+      if (e.isDirectory()) await walk(full)
+      else total += statSync(full).size
+    }
+  }
+  await walk(dir)
+  return total
+}
+
 /** Статус синку для всіх підтримуваних ігор (один pull на всі). */
 export async function getSyncStatuses(token: string, owner: string): Promise<GameSyncStatus[]> {
   await ensureRepo(token, owner)
@@ -276,7 +362,8 @@ export async function getSyncStatuses(token: string, owner: string): Promise<Gam
     const remoteExists = existsSync(repoPath)
 
     const localVer = localVersions[g.appId] ?? 0
-    const remoteVer = await readRemoteVersion(g.name)
+    const remoteMeta = await readRemoteMeta(g.name)
+    const remoteVer = remoteMeta?.version ?? 0
 
     let status: SyncStatus
     if (!localExists && !remoteExists) {
@@ -297,7 +384,23 @@ export async function getSyncStatuses(token: string, owner: string): Promise<Gam
       status = localHash === remoteHash ? 'synced' : 'local-newer'
     }
 
-    result.push({ appId: g.appId, status, localVersion: localVer, remoteVersion: remoteVer })
+    // Час/розмір показуємо зі спільної (хмарної) копії, коли вона є — це те,
+    // що бачать обидва гравці незалежно від того, хто синкав востаннє.
+    // Інакше (ще нікому не вивантажено) — розмір хоча б локальної папки.
+    const sizeBytes = remoteExists
+      ? await folderSize(repoPath, g.saveFilePattern)
+      : localExists
+        ? await folderSize(savePath, g.saveFilePattern)
+        : undefined
+
+    result.push({
+      appId: g.appId,
+      status,
+      localVersion: localVer,
+      remoteVersion: remoteVer,
+      lastSyncAt: remoteMeta?.updatedAt,
+      sizeBytes
+    })
   }
   return result
 }

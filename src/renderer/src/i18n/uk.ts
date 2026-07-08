@@ -13,7 +13,13 @@ export const uk: Translation = {
     alreadySynced: 'Версії збігаються — синхронізувати не потрібно',
     noSavesInCloud: 'У сховищі ще немає сейвів цієї гри',
     noLocalSaves: 'Локально немає сейвів для вивантаження',
-    syncErrorFallback: 'Помилка синхронізації'
+    syncErrorFallback: 'Помилка синхронізації',
+    uploadSuccess: (v) => `Вивантажено на GitHub ✓ (${v})`,
+    downloadSuccess: (v) => `Завантажено з GitHub ✓ (${v})`,
+    pushSkipped:
+      'У хмарі вже новіша версія (хтось інший вивантажив свою) — автосинк пропущено. Онови вручну на екрані ігор.',
+    statusesError: 'Не вдалося перевірити статус синку',
+    retry: 'Спробувати ще раз'
   },
   gameCard: {
     statusSynced: 'Синхронізовано',
@@ -29,7 +35,9 @@ export const uk: Translation = {
     download: 'Завантажити',
     versions: (local, cloud) => `Локально ${local} · Хмара ${cloud}`,
     gameNotSupported: 'гра не підтримується',
-    notInstalled: 'не встановлено'
+    notInstalled: 'не встановлено',
+    lastSync: (v) => `Останній синк: ${v}`,
+    savesSize: (v) => `Розмір сейвів: ${v}`
   },
   friends: {
     title: 'Друзі',
@@ -37,7 +45,8 @@ export const uk: Translation = {
     sending: 'Надсилаю запрошення…',
     acceptedBadge: 'Прийнято',
     noStorage: 'Спершу створи спільне сховище в Налаштуваннях',
-    emptyFriends: 'Ще немає друзів — запроси когось вище'
+    emptyFriends: 'Ще немає друзів — запроси когось вище',
+    inviteError: 'Не вдалось запросити'
   },
   history: {
     title: 'Історія синхронізацій',
@@ -48,6 +57,7 @@ export const uk: Translation = {
     uploaded: 'Вивантажено',
     emptyTitle: 'Записів ще немає',
     emptySubtitle: 'Історія з’явиться після першого вивантаження',
+    loadError: 'Не вдалося завантажити історію',
     justNow: 'Щойно',
     minutesAgo: (n) => `${n} хв тому`,
     hoursAgo: (n) => `${n} год тому`,
@@ -130,5 +140,31 @@ export const uk: Translation = {
     version: (v) => `Версія ${v}`,
     aboutDescription: 'Синхронізація збережень кооперативних ігор між друзями через GitHub.',
     githubRepoLink: 'GitHub репозиторій →'
+  },
+  errors: {
+    NOT_LOGGED_IN: () => 'Спершу залогінься в GitHub',
+    HOST_LOGIN_REQUIRED: () => 'Вкажи нік друга',
+    NO_ACCESS_TO_HOST_REPO: (p) =>
+      `Немає доступу до сховища "${p.host}". Друг має створити сховище і запросити тебе у співавтори.`,
+    IMAGE_FORMAT_UNSUPPORTED: () => 'Непідтримуваний формат зображення',
+    IMAGE_TOO_LARGE: () => 'Файл занадто великий (максимум 2 МБ)',
+    DEVICE_CODE_FAILED: (p) => `GitHub відповів помилкою ${p.status} на запит коду входу`,
+    LOGIN_FAILED: (p) => `Не вдалось завершити логін${p.reason ? `: ${p.reason}` : ''}`,
+    USER_FETCH_FAILED: (p) => `Не вдалось отримати дані користувача (${p.status})`,
+    REPO_CHECK_FAILED: (p) => `Не вдалось перевірити сховище (${p.status})`,
+    REPO_CREATE_FAILED: (p) => `Не вдалось створити сховище (${p.status})`,
+    GITHUB_USER_NOT_FOUND: (p) => `Користувача "${p.username}" не знайдено на GitHub`,
+    REPO_NOT_FOUND: () => 'Сховище не знайдено — спершу створи його',
+    INVITE_FAILED: (p) => `Не вдалось надіслати запрошення (${p.status})`,
+    REPO_DELETE_NO_PERMISSION: () =>
+      'Немає прав на видалення (потрібен скоуп delete_repo). Вийди з акаунта і залогінься знову.',
+    REPO_DELETE_FAILED: (p) => `Не вдалось видалити сховище (${p.status})`,
+    ENCRYPTION_UNAVAILABLE: () => 'Шифрування недоступне в системі — не можу безпечно зберегти токен',
+    GAME_NOT_SUPPORTED: () => 'Гра не підтримується',
+    SAVE_FOLDER_NOT_FOUND: () => 'Папку сейвів не знайдено',
+    NO_CLOUD_SAVES: () => 'У сховищі ще немає сейвів цієї гри',
+    NO_INTERNET: () => 'Немає з’єднання з інтернетом — перевір мережу і спробуй ще раз',
+    GIT_AUTH_FAILED: () => 'Немає доступу до GitHub — токен міг протухнути. Вийди з акаунта і залогінься знову',
+    GIT_GENERIC: (p) => `Помилка синхронізації: ${p.detail}`
   }
 }

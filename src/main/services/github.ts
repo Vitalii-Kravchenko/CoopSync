@@ -1,4 +1,5 @@
 import { GITHUB_CLIENT_ID, GITHUB_SCOPE, SAVES_REPO_NAME } from '../config'
+import { makeAppError } from '../../shared/errors'
 import type {
   DeviceCodeInfo,
   AuthUser,
@@ -48,7 +49,7 @@ export async function requestDeviceCode(): Promise<{
     body: JSON.stringify({ client_id: GITHUB_CLIENT_ID, scope: GITHUB_SCOPE })
   })
   if (!res.ok) {
-    throw new Error(`GitHub відповів помилкою ${res.status} на запит device code`)
+    throw makeAppError('DEVICE_CODE_FAILED', { status: String(res.status) })
   }
   const data = (await res.json()) as DeviceCodeResponse
   return {
@@ -91,7 +92,7 @@ export async function pollForToken(deviceCode: string, interval: number): Promis
       continue
     }
     // Будь-яка інша помилка — фатальна (код протух, доступ відхилено тощо).
-    throw new Error(data.error_description || data.error || 'Не вдалось завершити логін')
+    throw makeAppError('LOGIN_FAILED', { reason: data.error_description || data.error || '' })
   }
 }
 
@@ -99,7 +100,7 @@ export async function pollForToken(deviceCode: string, interval: number): Promis
 export async function fetchUser(token: string): Promise<AuthUser> {
   const res = await fetch(`${API}/user`, { headers: authHeaders(token) })
   if (!res.ok) {
-    throw new Error(`Не вдалось отримати дані користувача (${res.status})`)
+    throw makeAppError('USER_FETCH_FAILED', { status: String(res.status) })
   }
   const data = (await res.json()) as { login: string }
   return { login: data.login }
@@ -118,7 +119,7 @@ export async function getSavesRepo(token: string, owner: string): Promise<SavesR
     headers: authHeaders(token)
   })
   if (res.status === 404) return null
-  if (!res.ok) throw new Error(`Не вдалось перевірити сховище (${res.status})`)
+  if (!res.ok) throw makeAppError('REPO_CHECK_FAILED', { status: String(res.status) })
   const data = (await res.json()) as RepoResponse
   return { fullName: data.full_name, url: data.html_url }
 }
@@ -138,7 +139,7 @@ export async function createSavesRepo(token: string, owner: string): Promise<Sav
       description: 'CoopSync — спільне сховище сейвів'
     })
   })
-  if (!res.ok) throw new Error(`Не вдалось створити сховище (${res.status})`)
+  if (!res.ok) throw makeAppError('REPO_CREATE_FAILED', { status: String(res.status) })
   const data = (await res.json()) as RepoResponse
   return { fullName: data.full_name, url: data.html_url }
 }
@@ -159,9 +160,12 @@ export async function inviteCollaborator(
   )
   // 201 — запрошення створено, 204 — вже співавтор.
   if (res.status === 201 || res.status === 204) return
-  if (res.status === 422) throw new Error(`Користувача "${username}" не знайдено на GitHub`)
-  if (res.status === 404) throw new Error('Сховище не знайдено — спершу створи його')
-  throw new Error(`Не вдалось надіслати запрошення (${res.status})`)
+  // GitHub повертає 404 саме коли юзера з таким ніком не існує (перевірено емпірично —
+  // не 422, як можна було б очікувати). До цього виклику наявність самого сховища вже
+  // гарантована (UI показує форму запрошення лише після repoReady), тож 404 тут
+  // однозначно означає "нема такого юзера", а не "нема сховища".
+  if (res.status === 404) throw makeAppError('GITHUB_USER_NOT_FOUND', { username })
+  throw makeAppError('INVITE_FAILED', { status: String(res.status) })
 }
 
 /** Список запрошень, які ще не прийняті. */
@@ -195,11 +199,9 @@ export async function deleteSavesRepo(token: string, owner: string): Promise<voi
   if (res.status === 204) return
   if (res.status === 404) return // вже видалено — вважаємо успіхом
   if (res.status === 403) {
-    throw new Error(
-      'Немає прав на видалення (потрібен скоуп delete_repo). Вийди з акаунта і залогінься знову.'
-    )
+    throw makeAppError('REPO_DELETE_NO_PERMISSION')
   }
-  throw new Error(`Не вдалось видалити сховище (${res.status})`)
+  throw makeAppError('REPO_DELETE_FAILED', { status: String(res.status) })
 }
 
 function sleep(ms: number): Promise<void> {

@@ -1,6 +1,7 @@
 import { app, ipcMain, shell, clipboard, BrowserWindow, dialog } from 'electron'
 import { readFileSync, statSync } from 'fs'
 import { extname } from 'path'
+import { makeAppError } from '../shared/errors'
 import { readSettings, writeSettings } from './services/settingsStore'
 import { updateTrayLanguage } from './trayIcon'
 import {
@@ -34,6 +35,7 @@ import type {
   CatalogGame,
   GameSyncStatus,
   SyncHistoryEntry,
+  SyncResult,
   StartupSettings,
   RoleConfig,
   InstalledGame,
@@ -56,7 +58,7 @@ let cachedOwner: string | null = null
 // Перевіряє, що користувач залогінений, і повертає токен + його нік (owner).
 async function requireAuth(): Promise<{ token: string; owner: string }> {
   const token = loadToken()
-  if (!token) throw new Error('Спершу залогінься в GitHub')
+  if (!token) throw makeAppError('NOT_LOGGED_IN')
   if (!cachedOwner) {
     const user = await fetchUser(token)
     cachedOwner = user.login
@@ -71,7 +73,7 @@ async function syncTarget(): Promise<{ token: string; owner: string }> {
   const settings = readSettings()
   if (settings.hostOwner) {
     const token = loadToken()
-    if (!token) throw new Error('Спершу залогінься в GitHub')
+    if (!token) throw makeAppError('NOT_LOGGED_IN')
     return { token, owner: settings.hostOwner }
   }
   return requireAuth()
@@ -189,13 +191,13 @@ export function registerIpcHandlers(): void {
   // --- Синхронізація сейвів ---
 
   // Вивантажити сейви гри на GitHub (у сховище host'а).
-  ipcMain.handle('sync:upload', async (_event, appId: string): Promise<string> => {
+  ipcMain.handle('sync:upload', async (_event, appId: string): Promise<SyncResult> => {
     const { token, owner } = await syncTarget()
     return uploadGame(token, owner, appId)
   })
 
   // Завантажити сейви гри з GitHub (зі сховища host'а).
-  ipcMain.handle('sync:download', async (_event, appId: string): Promise<string> => {
+  ipcMain.handle('sync:download', async (_event, appId: string): Promise<SyncResult> => {
     const { token, owner } = await syncTarget()
     return downloadGame(token, owner, appId)
   })
@@ -327,9 +329,9 @@ export function registerIpcHandlers(): void {
 
     const filePath = result.filePaths[0]
     const mime = AVATAR_MIME[extname(filePath).toLowerCase()]
-    if (!mime) throw new Error('Непідтримуваний формат зображення')
+    if (!mime) throw makeAppError('IMAGE_FORMAT_UNSUPPORTED')
     if (statSync(filePath).size > MAX_AVATAR_BYTES) {
-      throw new Error('Файл занадто великий (максимум 2 МБ)')
+      throw makeAppError('IMAGE_TOO_LARGE')
     }
 
     const dataUrl = `data:${mime};base64,${readFileSync(filePath).toString('base64')}`
@@ -356,15 +358,13 @@ export function registerIpcHandlers(): void {
   // Підключитися до друга-хоста: перевіряємо доступ до його сховища.
   ipcMain.handle('role:join', async (_event, hostLogin: string): Promise<RoleConfig> => {
     const token = loadToken()
-    if (!token) throw new Error('Спершу залогінься в GitHub')
+    if (!token) throw makeAppError('NOT_LOGGED_IN')
     const host = hostLogin.trim()
-    if (!host) throw new Error('Вкажи нік друга')
+    if (!host) throw makeAppError('HOST_LOGIN_REQUIRED')
 
     const repo = await getSavesRepo(token, host)
     if (!repo) {
-      throw new Error(
-        `Немає доступу до сховища "${host}". Друг має створити сховище і запросити тебе у співавтори.`
-      )
+      throw makeAppError('NO_ACCESS_TO_HOST_REPO', { host })
     }
     writeSettings({ role: 'join', hostOwner: host })
     return { role: 'join', hostOwner: host }

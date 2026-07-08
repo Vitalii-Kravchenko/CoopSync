@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { colors, fonts, gradients, radii, shadows } from '../theme'
+import { colors, fonts, gradients, radii, shadows, transitions } from '../theme'
 import { useI18n } from '../i18n'
+import { describeError } from '../errors'
 import { GitHubIcon, CheckIcon, CrownIcon, UsersIcon } from '../components/icons'
 import Button from '../components/Button'
 import type {
@@ -64,7 +65,7 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
       const result = await window.api.auth.login()
       setAuth(result)
     } catch (e) {
-      setError(e instanceof Error ? e.message : t.onboarding.loginError)
+      setError(describeError(e, t, t.onboarding.loginError))
     } finally {
       setBusy(false)
       setDeviceCode(null)
@@ -79,7 +80,7 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
       setRole('host')
       await loadRepo()
     } catch (e) {
-      setError(e instanceof Error ? e.message : t.onboarding.genericError)
+      setError(describeError(e, t, t.onboarding.genericError))
     } finally {
       setBusy(false)
     }
@@ -93,7 +94,7 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
       await window.api.role.join(hostLogin)
       onComplete()
     } catch (e) {
-      setError(e instanceof Error ? e.message : t.onboarding.joinError)
+      setError(describeError(e, t, t.onboarding.joinError))
     } finally {
       setBusy(false)
     }
@@ -106,7 +107,7 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
       await window.api.repo.create()
       await loadRepo()
     } catch (e) {
-      setError(e instanceof Error ? e.message : t.onboarding.createRepoError)
+      setError(describeError(e, t, t.onboarding.createRepoError))
     } finally {
       setBusy(false)
     }
@@ -121,7 +122,7 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
       setFriend('')
       await loadRepo()
     } catch (e) {
-      setError(e instanceof Error ? e.message : t.onboarding.inviteError)
+      setError(describeError(e, t, t.onboarding.inviteError))
     } finally {
       setBusy(false)
     }
@@ -383,7 +384,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: 8,
-    transition: 'transform .15s, box-shadow .15s, border-color .15s'
+    transition: `transform ${transitions.hover}, box-shadow ${transitions.hover}, border-color ${transitions.hover}`
   },
   roleIconBox: {
     width: 36,

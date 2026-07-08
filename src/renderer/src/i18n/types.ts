@@ -1,3 +1,5 @@
+import type { ErrorCode } from '../../../shared/errors'
+
 export type LanguageCode = 'en' | 'uk' | 'de' | 'fr' | 'pl' | 'ru' | 'es' | 'pt-BR' | 'tr' | 'zh-CN'
 
 export interface LanguageMeta {
@@ -41,6 +43,11 @@ export interface Translation {
     noSavesInCloud: string
     noLocalSaves: string
     syncErrorFallback: string
+    uploadSuccess: (version: string) => string
+    downloadSuccess: (version: string) => string
+    pushSkipped: string
+    statusesError: string
+    retry: string
   }
   gameCard: {
     statusSynced: string
@@ -57,6 +64,8 @@ export interface Translation {
     versions: (local: string, cloud: string) => string
     gameNotSupported: string
     notInstalled: string
+    lastSync: (value: string) => string
+    savesSize: (value: string) => string
   }
   friends: {
     title: string
@@ -65,6 +74,7 @@ export interface Translation {
     acceptedBadge: string
     noStorage: string
     emptyFriends: string
+    inviteError: string
   }
   history: {
     title: string
@@ -75,6 +85,7 @@ export interface Translation {
     uploaded: string
     emptyTitle: string
     emptySubtitle: string
+    loadError: string
     justNow: string
     minutesAgo: (n: number) => string
     hoursAgo: (n: number) => string
@@ -154,4 +165,6 @@ export interface Translation {
     aboutDescription: string
     githubRepoLink: string
   }
+  /** Локалізовані тексти для кодів помилок з main-процесу (shared/errors.ts). */
+  errors: Record<ErrorCode, (params: Record<string, string>) => string>
 }

@@ -9,6 +9,7 @@ import type {
   CatalogGame,
   GameSyncStatus,
   SyncHistoryEntry,
+  SyncResult,
   AutoSyncEvent,
   StartupSettings,
   RoleConfig,
@@ -58,9 +59,9 @@ const api = {
   },
   sync: {
     /** Вивантажити сейви гри на GitHub. */
-    upload: (appId: string): Promise<string> => ipcRenderer.invoke('sync:upload', appId),
+    upload: (appId: string): Promise<SyncResult> => ipcRenderer.invoke('sync:upload', appId),
     /** Завантажити сейви гри з GitHub. */
-    download: (appId: string): Promise<string> => ipcRenderer.invoke('sync:download', appId),
+    download: (appId: string): Promise<SyncResult> => ipcRenderer.invoke('sync:download', appId),
     /** Статус синку всіх ігор. */
     statuses: (): Promise<GameSyncStatus[]> => ipcRenderer.invoke('sync:statuses'),
     /** Історія push-подій (найновіші перші). */

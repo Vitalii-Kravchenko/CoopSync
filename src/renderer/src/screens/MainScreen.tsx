@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { colors, fonts, radii, shadows } from '../theme'
 import { useI18n } from '../i18n'
+import { describeError, describeSyncResult } from '../errors'
 import GameCard from '../components/GameCard'
 import CloudWarningBanner from '../components/CloudWarningBanner'
 import { SearchIcon, UploadIcon, DownloadIcon } from '../components/icons'
@@ -24,6 +25,9 @@ function MainScreen(): React.JSX.Element {
   const [syncStatuses, setSyncStatuses] = useState<Record<string, GameSyncStatus>>({})
   // Попередження про Steam Cloud: показуємо раз на запуск, поки не закриють хрестиком.
   const [showCloudWarning, setShowCloudWarning] = useState(false)
+  // Якщо перевірка статусів впала (мережа, гіт) — показуємо це явно, а не мовчимо
+  // вічним "Перевіряю..." на картках без жодного пояснення.
+  const [statusesError, setStatusesError] = useState<string | null>(null)
 
   useEffect(() => {
     Promise.all([window.api.games.allInstalled(), window.api.games.catalog()]).then(
@@ -44,34 +48,31 @@ function MainScreen(): React.JSX.Element {
       const map: Record<string, GameSyncStatus> = {}
       for (const s of list) map[s.appId] = s
       setSyncStatuses(map)
-    } catch {
-      // Статуси не критичні для показу карток — мовчки ігноруємо.
+      setStatusesError(null)
+    } catch (e) {
+      setStatusesError(describeError(e, t, t.main.statusesError))
     }
   }
 
   // Реакція на автосинхронізацію (запуск/вихід гри у фоні).
   useEffect(() => {
     return window.api.watcher.onAutoSync((e) => {
+      const text = `${e.name}: ${describeSyncResult(e.code, e.params, t)}`
       if (e.action === 'push-skipped') {
         // Свідомо пропущений автопуш (конфлікт версій) — це не помилка,
         // але й не мовчати можна: тут людина могла б втратити прогрес друга.
-        setBanner({ text: `${e.name}: ${e.message}`, kind: 'warning' })
+        setBanner({ text, kind: 'warning' })
       } else if (e.ok) {
-        // Показуємо реальний результат синку, а не фіксований текст.
-        setBanner({
-          text: `${e.name}: ${e.message}`,
-          kind: 'success',
-          icon: e.action === 'pull' ? 'download' : 'upload'
-        })
+        setBanner({ text, kind: 'success', icon: e.action === 'pull' ? 'download' : 'upload' })
       } else {
         // Раніше помилки автосинку мовчки губились — тепер теж показуємо їх.
-        setBanner({ text: `${e.name}: ${e.message}`, kind: 'error' })
+        setBanner({ text, kind: 'error' })
       }
       // Стан міг змінитися — оновлюємо ігри та статуси.
       void loadStatuses()
       window.api.games.allInstalled().then(setInstalled)
     })
-  }, [])
+  }, [t])
 
   // Множина встановлених appId — щоб картки каталогу нижче показували правильний
   // стан незалежно від того, чи гра вже встановлена (раніше секцію "Усі підтримувані"
@@ -110,19 +111,17 @@ function MainScreen(): React.JSX.Element {
     setSyncing(appId)
     setBanner(null)
     try {
-      const msg =
+      const result =
         action === 'upload'
           ? await window.api.sync.upload(appId)
           : await window.api.sync.download(appId)
-      setBanner({ text: msg, kind: 'success' })
+      const code = action === 'upload' ? 'upload-success' : 'download-success'
+      setBanner({ text: describeSyncResult(code, { version: String(result.version) }, t), kind: 'success' })
       // Сейви могли змінитися — оновлюємо ігри та статуси.
       setInstalled(await window.api.games.allInstalled())
       await loadStatuses()
     } catch (e) {
-      const raw = e instanceof Error ? e.message : t.main.syncErrorFallback
-      // Прибираємо технічний префікс "Error invoking remote method '...': Error:".
-      const clean = raw.replace(/^Error invoking remote method '[^']+':\s*(Error:\s*)?/, '')
-      setBanner({ text: clean, kind: 'error' })
+      setBanner({ text: describeError(e, t, t.main.syncErrorFallback), kind: 'error' })
     } finally {
       setSyncing(null)
     }
@@ -145,6 +144,15 @@ function MainScreen(): React.JSX.Element {
         />
       </div>
 
+      {statusesError && (
+        <div style={styles.statusesError}>
+          <span>{statusesError}</span>
+          <button style={styles.retryLink} onClick={() => void loadStatuses()}>
+            {t.main.retry}
+          </button>
+        </div>
+      )}
+
       {loading && <div style={styles.muted}>{t.main.loadingGames}</div>}
 
       {!loading && (
@@ -162,6 +170,8 @@ function MainScreen(): React.JSX.Element {
                   syncStatus={syncStatuses[g.appId]?.status}
                   localVersion={syncStatuses[g.appId]?.localVersion}
                   remoteVersion={syncStatuses[g.appId]?.remoteVersion}
+                  lastSyncAt={syncStatuses[g.appId]?.lastSyncAt}
+                  sizeBytes={syncStatuses[g.appId]?.sizeBytes}
                   busy={syncing === g.appId}
                   onUpload={() => handleSync(g.appId, 'upload')}
                   onDownload={() => handleSync(g.appId, 'download')}
@@ -279,6 +289,28 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 20
   },
   muted: { color: colors.text3, fontSize: 14 },
+  statusesError: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 20,
+    padding: '10px 14px',
+    borderRadius: radii.md,
+    border: `1px solid ${colors.warningBd}`,
+    background: colors.warningBg,
+    color: colors.text1,
+    fontSize: 13
+  },
+  retryLink: {
+    background: 'transparent',
+    border: 'none',
+    color: colors.cy,
+    cursor: 'pointer',
+    fontSize: 13,
+    fontWeight: 600,
+    padding: 0,
+    textDecoration: 'underline'
+  },
   banner: {
     position: 'fixed',
     bottom: 22,

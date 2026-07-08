@@ -13,7 +13,13 @@ export const pl: Translation = {
     alreadySynced: 'Wersje się zgadzają — synchronizacja niepotrzebna',
     noSavesInCloud: 'W magazynie nie ma jeszcze zapisów tej gry',
     noLocalSaves: 'Brak lokalnych zapisów do wysłania',
-    syncErrorFallback: 'Błąd synchronizacji'
+    syncErrorFallback: 'Błąd synchronizacji',
+    uploadSuccess: (v) => `Wysłano na GitHub ✓ (${v})`,
+    downloadSuccess: (v) => `Pobrano z GitHub ✓ (${v})`,
+    pushSkipped:
+      'W chmurze jest już nowsza wersja (ktoś inny ją wysłał) — automatyczna synchronizacja pominięta. Zaktualizuj ręcznie na ekranie gier.',
+    statusesError: 'Nie udało się sprawdzić statusu synchronizacji',
+    retry: 'Spróbuj ponownie'
   },
   gameCard: {
     statusSynced: 'Zsynchronizowano',
@@ -29,7 +35,9 @@ export const pl: Translation = {
     download: 'Pobierz',
     versions: (local, cloud) => `Lokalnie ${local} · Chmura ${cloud}`,
     gameNotSupported: 'gra nieobsługiwana',
-    notInstalled: 'niezainstalowana'
+    notInstalled: 'niezainstalowana',
+    lastSync: (v) => `Ostatnia synchronizacja: ${v}`,
+    savesSize: (v) => `Rozmiar zapisów: ${v}`
   },
   friends: {
     title: 'Znajomi',
@@ -37,7 +45,8 @@ export const pl: Translation = {
     sending: 'Wysyłam zaproszenie…',
     acceptedBadge: 'Zaakceptowano',
     noStorage: 'Najpierw skonfiguruj wspólny magazyn w Ustawieniach',
-    emptyFriends: 'Jeszcze nie masz znajomych — zaproś kogoś powyżej'
+    emptyFriends: 'Jeszcze nie masz znajomych — zaproś kogoś powyżej',
+    inviteError: 'Nie udało się zaprosić'
   },
   history: {
     title: 'Historia synchronizacji',
@@ -48,6 +57,7 @@ export const pl: Translation = {
     uploaded: 'Wysłano',
     emptyTitle: 'Jeszcze brak wpisów',
     emptySubtitle: 'Historia pojawi się po pierwszym wysłaniu',
+    loadError: 'Nie udało się wczytać historii',
     justNow: 'Przed chwilą',
     minutesAgo: (n) => `${n} min temu`,
     hoursAgo: (n) => `${n} godz. temu`,
@@ -130,5 +140,32 @@ export const pl: Translation = {
     version: (v) => `Wersja ${v}`,
     aboutDescription: 'Synchronizacja zapisów gier kooperacyjnych między znajomymi przez GitHub.',
     githubRepoLink: 'Repozytorium GitHub →'
+  },
+  errors: {
+    NOT_LOGGED_IN: () => 'Najpierw zaloguj się przez GitHub',
+    HOST_LOGIN_REQUIRED: () => 'Podaj nazwę użytkownika znajomego',
+    NO_ACCESS_TO_HOST_REPO: (p) =>
+      `Brak dostępu do magazynu "${p.host}". Znajomy musi utworzyć magazyn i zaprosić cię jako współpracownika.`,
+    IMAGE_FORMAT_UNSUPPORTED: () => 'Nieobsługiwany format obrazu',
+    IMAGE_TOO_LARGE: () => 'Plik jest za duży (maksymalnie 2 MB)',
+    DEVICE_CODE_FAILED: (p) => `GitHub odpowiedział błędem ${p.status} przy żądaniu kodu logowania`,
+    LOGIN_FAILED: (p) => `Nie udało się zakończyć logowania${p.reason ? `: ${p.reason}` : ''}`,
+    USER_FETCH_FAILED: (p) => `Nie udało się pobrać danych użytkownika (${p.status})`,
+    REPO_CHECK_FAILED: (p) => `Nie udało się sprawdzić magazynu (${p.status})`,
+    REPO_CREATE_FAILED: (p) => `Nie udało się utworzyć magazynu (${p.status})`,
+    GITHUB_USER_NOT_FOUND: (p) => `Nie znaleziono użytkownika "${p.username}" na GitHub`,
+    REPO_NOT_FOUND: () => 'Magazyn nie znaleziony — najpierw go utwórz',
+    INVITE_FAILED: (p) => `Nie udało się wysłać zaproszenia (${p.status})`,
+    REPO_DELETE_NO_PERMISSION: () =>
+      'Brak uprawnień do usunięcia (wymagany scope delete_repo). Wyloguj się i zaloguj ponownie.',
+    REPO_DELETE_FAILED: (p) => `Nie udało się usunąć magazynu (${p.status})`,
+    ENCRYPTION_UNAVAILABLE: () =>
+      'Szyfrowanie jest niedostępne w systemie — nie można bezpiecznie zapisać tokenu',
+    GAME_NOT_SUPPORTED: () => 'Gra nieobsługiwana',
+    SAVE_FOLDER_NOT_FOUND: () => 'Nie znaleziono folderu zapisów',
+    NO_CLOUD_SAVES: () => 'W magazynie nie ma jeszcze zapisów tej gry',
+    NO_INTERNET: () => 'Brak połączenia z internetem — sprawdź sieć i spróbuj ponownie',
+    GIT_AUTH_FAILED: () => 'Brak dostępu do GitHub — token mógł wygasnąć. Wyloguj się i zaloguj ponownie',
+    GIT_GENERIC: (p) => `Błąd synchronizacji: ${p.detail}`
   }
 }

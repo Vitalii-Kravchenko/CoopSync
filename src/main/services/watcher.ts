@@ -2,6 +2,7 @@ import { execFile } from 'child_process'
 import { promisify } from 'util'
 import { READY_GAMES, type SupportedGame } from '../games/catalog'
 import { uploadGame, downloadGame, getSyncStatuses, isRemoteAhead } from './sync'
+import { parseAppError } from '../../shared/errors'
 import type { AutoSyncEvent } from '../../shared/types'
 
 const exec = promisify(execFile)
@@ -29,8 +30,11 @@ function isGameRunning(game: SupportedGame, procs: Set<string>): boolean {
   return game.processNames.some((p) => procs.has(p.toLowerCase()))
 }
 
-function errMsg(e: unknown): string {
-  return e instanceof Error ? e.message : 'Помилка'
+// Розкодовує AppError (main-процес не знає мови — далі локалізує renderer через
+// describeError/describeSyncResult). Нерозпізнані винятки йдуть як GIT_GENERIC.
+function errorCode(e: unknown): { code: string; params?: Record<string, string> } {
+  const raw = e instanceof Error ? e.message : String(e)
+  return parseAppError(raw) ?? { code: 'GIT_GENERIC', params: { detail: raw } }
 }
 
 async function tick(
@@ -58,12 +62,19 @@ async function tick(
           const statuses = await getSyncStatuses(token, owner)
           const st = statuses.find((s) => s.appId === game.appId)
           if (st && (st.status === 'remote-newer' || st.status === 'cloud-only')) {
-            const message = await downloadGame(token, owner, game.appId)
-            onEvent({ appId: game.appId, name: game.name, action: 'pull', ok: true, message })
+            const result = await downloadGame(token, owner, game.appId)
+            onEvent({
+              appId: game.appId,
+              name: game.name,
+              action: 'pull',
+              ok: true,
+              code: 'download-success',
+              params: { version: String(result.version) }
+            })
           }
           // synced / local-newer / not-uploaded → нічого тягнути не треба.
         } catch (e) {
-          onEvent({ appId: game.appId, name: game.name, action: 'pull', ok: false, message: errMsg(e) })
+          onEvent({ appId: game.appId, name: game.name, action: 'pull', ok: false, ...errorCode(e) })
         }
       } else if (was && !now) {
         // Гра закрилася → вивантажуємо сейви, АЛЕ спершу перевіряємо, чи хтось
@@ -76,15 +87,21 @@ async function tick(
               name: game.name,
               action: 'push-skipped',
               ok: true,
-              message:
-                'У хмарі вже новіша версія (хтось інший вивантажив свою) — автосинк пропущено. Онови вручну на екрані ігор.'
+              code: 'push-skipped'
             })
           } else {
-            const message = await uploadGame(token, owner, game.appId)
-            onEvent({ appId: game.appId, name: game.name, action: 'push', ok: true, message })
+            const result = await uploadGame(token, owner, game.appId)
+            onEvent({
+              appId: game.appId,
+              name: game.name,
+              action: 'push',
+              ok: true,
+              code: 'upload-success',
+              params: { version: String(result.version) }
+            })
           }
         } catch (e) {
-          onEvent({ appId: game.appId, name: game.name, action: 'push', ok: false, message: errMsg(e) })
+          onEvent({ appId: game.appId, name: game.name, action: 'push', ok: false, ...errorCode(e) })
         }
       }
     }

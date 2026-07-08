@@ -13,7 +13,13 @@ export const de: Translation = {
     alreadySynced: 'Versionen stimmen überein — keine Synchronisierung nötig',
     noSavesInCloud: 'Für dieses Spiel gibt es noch keine Spielstände im Speicher',
     noLocalSaves: 'Keine lokalen Spielstände zum Hochladen',
-    syncErrorFallback: 'Synchronisierungsfehler'
+    syncErrorFallback: 'Synchronisierungsfehler',
+    uploadSuccess: (v) => `Zu GitHub hochgeladen ✓ (${v})`,
+    downloadSuccess: (v) => `Von GitHub heruntergeladen ✓ (${v})`,
+    pushSkipped:
+      'In der Cloud gibt es bereits eine neuere Version (jemand anders hat hochgeladen) — automatische Synchronisierung übersprungen. Aktualisiere manuell im Spiele-Bildschirm.',
+    statusesError: 'Synchronisierungsstatus konnte nicht geprüft werden',
+    retry: 'Erneut versuchen'
   },
   gameCard: {
     statusSynced: 'Synchronisiert',
@@ -29,7 +35,9 @@ export const de: Translation = {
     download: 'Herunterladen',
     versions: (local, cloud) => `Lokal ${local} · Cloud ${cloud}`,
     gameNotSupported: 'Spiel nicht unterstützt',
-    notInstalled: 'nicht installiert'
+    notInstalled: 'nicht installiert',
+    lastSync: (v) => `Zuletzt synchronisiert: ${v}`,
+    savesSize: (v) => `Speichergröße: ${v}`
   },
   friends: {
     title: 'Freunde',
@@ -37,7 +45,8 @@ export const de: Translation = {
     sending: 'Einladung wird gesendet…',
     acceptedBadge: 'Angenommen',
     noStorage: 'Richte zuerst den gemeinsamen Speicher in den Einstellungen ein',
-    emptyFriends: 'Noch keine Freunde — lade oben jemanden ein'
+    emptyFriends: 'Noch keine Freunde — lade oben jemanden ein',
+    inviteError: 'Einladung fehlgeschlagen'
   },
   history: {
     title: 'Synchronisierungsverlauf',
@@ -48,6 +57,7 @@ export const de: Translation = {
     uploaded: 'Hochgeladen',
     emptyTitle: 'Noch keine Einträge',
     emptySubtitle: 'Der Verlauf erscheint nach dem ersten Upload',
+    loadError: 'Verlauf konnte nicht geladen werden',
     justNow: 'Gerade eben',
     minutesAgo: (n) => `vor ${n} Min.`,
     hoursAgo: (n) => `vor ${n} Std.`,
@@ -130,5 +140,32 @@ export const de: Translation = {
     version: (v) => `Version ${v}`,
     aboutDescription: 'Synchronisiert Spielstände von Koop-Spielen zwischen Freunden über GitHub.',
     githubRepoLink: 'GitHub-Repository →'
+  },
+  errors: {
+    NOT_LOGGED_IN: () => 'Melde dich zuerst bei GitHub an',
+    HOST_LOGIN_REQUIRED: () => 'Gib den Benutzernamen deines Freundes ein',
+    NO_ACCESS_TO_HOST_REPO: (p) =>
+      `Kein Zugriff auf den Speicher von "${p.host}". Dein Freund muss den Speicher erstellen und dich als Mitarbeiter einladen.`,
+    IMAGE_FORMAT_UNSUPPORTED: () => 'Nicht unterstütztes Bildformat',
+    IMAGE_TOO_LARGE: () => 'Datei ist zu groß (maximal 2 MB)',
+    DEVICE_CODE_FAILED: (p) => `GitHub antwortete mit Fehler ${p.status} bei der Anfrage des Anmeldecodes`,
+    LOGIN_FAILED: (p) => `Anmeldung fehlgeschlagen${p.reason ? `: ${p.reason}` : ''}`,
+    USER_FETCH_FAILED: (p) => `Benutzerdaten konnten nicht abgerufen werden (${p.status})`,
+    REPO_CHECK_FAILED: (p) => `Speicher konnte nicht geprüft werden (${p.status})`,
+    REPO_CREATE_FAILED: (p) => `Speicher konnte nicht erstellt werden (${p.status})`,
+    GITHUB_USER_NOT_FOUND: (p) => `Benutzer "${p.username}" auf GitHub nicht gefunden`,
+    REPO_NOT_FOUND: () => 'Speicher nicht gefunden — erstelle ihn zuerst',
+    INVITE_FAILED: (p) => `Einladung konnte nicht gesendet werden (${p.status})`,
+    REPO_DELETE_NO_PERMISSION: () =>
+      'Keine Berechtigung zum Löschen (Scope delete_repo erforderlich). Melde dich ab und wieder an.',
+    REPO_DELETE_FAILED: (p) => `Speicher konnte nicht gelöscht werden (${p.status})`,
+    ENCRYPTION_UNAVAILABLE: () =>
+      'Verschlüsselung ist auf diesem System nicht verfügbar — Token kann nicht sicher gespeichert werden',
+    GAME_NOT_SUPPORTED: () => 'Spiel nicht unterstützt',
+    SAVE_FOLDER_NOT_FOUND: () => 'Spielstand-Ordner nicht gefunden',
+    NO_CLOUD_SAVES: () => 'Für dieses Spiel gibt es noch keine Spielstände im Speicher',
+    NO_INTERNET: () => 'Keine Internetverbindung — prüfe dein Netzwerk und versuche es erneut',
+    GIT_AUTH_FAILED: () => 'Kein Zugriff auf GitHub — das Token ist evtl. abgelaufen. Melde dich ab und wieder an',
+    GIT_GENERIC: (p) => `Synchronisierungsfehler: ${p.detail}`
   }
 }

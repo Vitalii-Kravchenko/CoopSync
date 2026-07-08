@@ -14,6 +14,14 @@ body,
   height: 100%;
 }
 
+/* Ті самі тривалості, що й transitions у theme.ts (--t-fast/--t-hover/--t-fade) —
+   theme.ts керує inline-стилями компонентів, тут — глобальні CSS-класи (.btn/.input-field/.win-ctrl). */
+:root {
+  --t-fast: 120ms ease;
+  --t-hover: 150ms ease;
+  --t-fade: 200ms ease;
+}
+
 body {
   background:
     radial-gradient(1100px 620px at 16% -8%, rgba(54, 226, 232, 0.05), transparent 60%),
@@ -102,12 +110,12 @@ body {
   height: 40px;
   padding: 0 20px;
   transition:
-    background 0.15s,
-    border-color 0.15s,
-    color 0.15s,
-    opacity 0.15s,
-    transform 0.12s,
-    box-shadow 0.15s;
+    background var(--t-hover),
+    border-color var(--t-hover),
+    color var(--t-hover),
+    opacity var(--t-hover),
+    transform var(--t-fast),
+    box-shadow var(--t-hover);
 }
 .btn:disabled {
   opacity: 0.5;
@@ -172,8 +180,8 @@ body {
 /* Поля вводу — фокус: ціановий контур + м'яке кільце (єдиний фокус-стиль системи). */
 .input-field {
   transition:
-    border-color 0.15s,
-    box-shadow 0.15s;
+    border-color var(--t-hover),
+    box-shadow var(--t-hover);
 }
 .input-field:focus {
   border-color: #36e2e8 !important;
@@ -194,8 +202,8 @@ body {
   cursor: pointer;
   border-radius: 0;
   transition:
-    background 0.12s,
-    color 0.12s;
+    background var(--t-fast),
+    color var(--t-fast);
   -webkit-app-region: no-drag;
 }
 .win-ctrl:hover {

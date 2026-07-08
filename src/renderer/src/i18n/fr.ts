@@ -13,7 +13,13 @@ export const fr: Translation = {
     alreadySynced: 'Les versions correspondent — synchronisation inutile',
     noSavesInCloud: "Aucune sauvegarde de ce jeu dans le stockage pour l'instant",
     noLocalSaves: 'Aucune sauvegarde locale à envoyer',
-    syncErrorFallback: 'Erreur de synchronisation'
+    syncErrorFallback: 'Erreur de synchronisation',
+    uploadSuccess: (v) => `Envoyé sur GitHub ✓ (${v})`,
+    downloadSuccess: (v) => `Téléchargé depuis GitHub ✓ (${v})`,
+    pushSkipped:
+      "Le cloud a déjà une version plus récente (quelqu'un d'autre a envoyé la sienne) — synchro auto ignorée. Mets à jour manuellement sur l'écran des jeux.",
+    statusesError: 'Impossible de vérifier le statut de synchronisation',
+    retry: 'Réessayer'
   },
   gameCard: {
     statusSynced: 'Synchronisé',
@@ -29,7 +35,9 @@ export const fr: Translation = {
     download: 'Télécharger',
     versions: (local, cloud) => `Local ${local} · Cloud ${cloud}`,
     gameNotSupported: 'jeu non pris en charge',
-    notInstalled: 'non installé'
+    notInstalled: 'non installé',
+    lastSync: (v) => `Dernière synchro : ${v}`,
+    savesSize: (v) => `Taille des sauvegardes : ${v}`
   },
   friends: {
     title: 'Amis',
@@ -37,7 +45,8 @@ export const fr: Translation = {
     sending: "Envoi de l'invitation…",
     acceptedBadge: 'Accepté',
     noStorage: "Configure d'abord le stockage partagé dans les Paramètres",
-    emptyFriends: "Pas encore d'amis — invite quelqu'un ci-dessus"
+    emptyFriends: "Pas encore d'amis — invite quelqu'un ci-dessus",
+    inviteError: "Impossible d'inviter"
   },
   history: {
     title: 'Historique de synchronisation',
@@ -48,6 +57,7 @@ export const fr: Translation = {
     uploaded: 'Envoyé',
     emptyTitle: "Pas encore d'entrées",
     emptySubtitle: "L'historique apparaîtra après le premier envoi",
+    loadError: "Impossible de charger l'historique",
     justNow: "À l'instant",
     minutesAgo: (n) => `il y a ${n} min`,
     hoursAgo: (n) => `il y a ${n} h`,
@@ -130,5 +140,32 @@ export const fr: Translation = {
     version: (v) => `Version ${v}`,
     aboutDescription: 'Synchronise les sauvegardes de jeux coopératifs entre amis via GitHub.',
     githubRepoLink: 'Dépôt GitHub →'
+  },
+  errors: {
+    NOT_LOGGED_IN: () => "Connecte-toi d'abord avec GitHub",
+    HOST_LOGIN_REQUIRED: () => "Indique le nom d'utilisateur de ton ami",
+    NO_ACCESS_TO_HOST_REPO: (p) =>
+      `Pas d'accès au stockage de "${p.host}". Ton ami doit créer le stockage et t'inviter comme collaborateur.`,
+    IMAGE_FORMAT_UNSUPPORTED: () => 'Format d\'image non pris en charge',
+    IMAGE_TOO_LARGE: () => 'Fichier trop volumineux (2 Mo maximum)',
+    DEVICE_CODE_FAILED: (p) => `GitHub a répondu avec une erreur ${p.status} lors de la demande du code de connexion`,
+    LOGIN_FAILED: (p) => `Impossible de terminer la connexion${p.reason ? ` : ${p.reason}` : ''}`,
+    USER_FETCH_FAILED: (p) => `Impossible de récupérer les données utilisateur (${p.status})`,
+    REPO_CHECK_FAILED: (p) => `Impossible de vérifier le stockage (${p.status})`,
+    REPO_CREATE_FAILED: (p) => `Impossible de créer le stockage (${p.status})`,
+    GITHUB_USER_NOT_FOUND: (p) => `Utilisateur "${p.username}" introuvable sur GitHub`,
+    REPO_NOT_FOUND: () => "Stockage introuvable — crée-le d'abord",
+    INVITE_FAILED: (p) => `Impossible d'envoyer l'invitation (${p.status})`,
+    REPO_DELETE_NO_PERMISSION: () =>
+      "Pas la permission de supprimer (le scope delete_repo est requis). Déconnecte-toi et reconnecte-toi.",
+    REPO_DELETE_FAILED: (p) => `Impossible de supprimer le stockage (${p.status})`,
+    ENCRYPTION_UNAVAILABLE: () =>
+      "Le chiffrement n'est pas disponible sur ce système — impossible de stocker le token en sécurité",
+    GAME_NOT_SUPPORTED: () => 'Jeu non pris en charge',
+    SAVE_FOLDER_NOT_FOUND: () => 'Dossier de sauvegarde introuvable',
+    NO_CLOUD_SAVES: () => "Aucune sauvegarde de ce jeu dans le stockage pour l'instant",
+    NO_INTERNET: () => 'Pas de connexion internet — vérifie ton réseau et réessaie',
+    GIT_AUTH_FAILED: () => "Pas d'accès à GitHub — le token a peut-être expiré. Déconnecte-toi et reconnecte-toi",
+    GIT_GENERIC: (p) => `Erreur de synchronisation : ${p.detail}`
   }
 }

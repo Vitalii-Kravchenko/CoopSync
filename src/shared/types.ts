@@ -84,16 +84,32 @@ export interface GameSyncStatus {
   localVersion: number
   /** Версія сейвів на GitHub (0 = ще не вивантажено). */
   remoteVersion: number
+  /** ISO timestamp останнього push у хмару (спільний для обох гравців), якщо колись синкали. */
+  lastSyncAt?: string
+  /** Розмір сейвів у байтах — хмарної копії, якщо є, інакше локальної. */
+  sizeBytes?: number
 }
+
+/** Результат вивантаження/завантаження — версія, а не готовий текст, щоб
+ * renderer сам зібрав локалізоване повідомлення (main-процес мови не знає). */
+export interface SyncResult {
+  version: number
+}
+
+/** Код результату автосинку — те саме, що й ручний sync, показуємо тим самим
+ * describeSyncResult(). 'push-skipped' — хмара вже випередила нашу відому версію. */
+export type SyncResultCode = 'upload-success' | 'download-success' | 'push-skipped'
 
 /** Подія автосинхронізації (запуск гри → pull, вихід → push). */
 export interface AutoSyncEvent {
   appId: string
   name: string
-  /** 'push-skipped' — хмара вже випередила нашу відому версію, автопуш свідомо пропущено. */
   action: 'pull' | 'push' | 'push-skipped'
   ok: boolean
-  message: string
+  /** Успіх — SyncResultCode (через describeSyncResult); невдача — ErrorCode
+   * з shared/errors.ts, закодований так само, як app-error (через describeError). */
+  code: string
+  params?: Record<string, string>
 }
 
 /** Налаштування запуску. */

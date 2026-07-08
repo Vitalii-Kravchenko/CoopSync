@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { colors, fonts, gradients, radii, shadows, steamPoster } from '../theme'
+import { colors, fonts, radii, shadows, steamPoster, transitions } from '../theme'
 import { useI18n } from '../i18n'
 import type { Translation } from '../i18n'
 import { UploadIcon, DownloadIcon } from './icons'
+import Button from './Button'
 import type { SyncStatus } from '../../../shared/types'
 
 interface Props {
@@ -17,6 +18,10 @@ interface Props {
   localVersion?: number
   /** Версія сейвів на GitHub. */
   remoteVersion?: number
+  /** ISO timestamp останнього push у хмару (спільний для обох гравців). */
+  lastSyncAt?: string
+  /** Розмір сейвів у байтах. */
+  sizeBytes?: number
   /** Триває синхронізація саме цієї гри. */
   busy?: boolean
   onUpload?: () => void
@@ -26,6 +31,38 @@ interface Props {
 // "1" → "v1.001", 0/undefined → "—".
 function fmtVersion(n: number | undefined): string {
   return n && n > 0 ? `v1.${String(n).padStart(3, '0')}` : '—'
+}
+
+function startOfDay(d: Date): number {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+}
+
+// ISO timestamp → "Сьогодні, 14:32" / "Учора, 14:32" / "8 лип, 14:32" (локалізовано,
+// день через Intl.RelativeTimeFormat — та сама фраза, що й у нативному календарі мови).
+function formatLastSync(iso: string, locale: string): string {
+  const date = new Date(iso)
+  const dayDiff = Math.round((startOfDay(date) - startOfDay(new Date())) / 86_400_000)
+  const time = new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' }).format(date)
+
+  const dayPart =
+    dayDiff >= -1 && dayDiff <= 1
+      ? new Intl.RelativeTimeFormat(locale, { numeric: 'auto' }).format(dayDiff, 'day')
+      : new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' }).format(date)
+
+  return `${dayPart.charAt(0).toUpperCase()}${dayPart.slice(1)}, ${time}`
+}
+
+// Байти → "482 KB" / "1.3 GB".
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  const units = ['KB', 'MB', 'GB']
+  let value = bytes / 1024
+  let unitIndex = 0
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024
+    unitIndex++
+  }
+  return `${value.toFixed(value < 10 ? 1 : 0)} ${units[unitIndex]}`
 }
 
 // Як показати статус синку: колір, крапка, текст (бейдж-пілюля).
@@ -74,11 +111,13 @@ function GameCard({
   syncStatus,
   localVersion,
   remoteVersion,
+  lastSyncAt,
+  sizeBytes,
   busy,
   onUpload,
   onDownload
 }: Props): React.JSX.Element {
-  const { t } = useI18n()
+  const { t, language } = useI18n()
   const [hover, setHover] = useState(false)
   const [imgError, setImgError] = useState(false)
 
@@ -88,11 +127,7 @@ function GameCard({
   const status = playable ? syncDisplay(syncStatus, t) : null
 
   return (
-    <div
-      style={styles.wrap}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-    >
+    <div style={styles.wrap}>
       <div
         style={{
           ...styles.poster,
@@ -100,6 +135,8 @@ function GameCard({
           borderColor: showOverlay ? colors.borderAccent : colors.borderSubtle,
           boxShadow: showOverlay ? `${shadows.sh4}, ${shadows.glowCy}` : shadows.sh2
         }}
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
       >
         {!imgError ? (
           <img
@@ -114,19 +151,33 @@ function GameCard({
 
         {installed && !supported && <div style={styles.unsupported}>{t.gameCard.unsupported}</div>}
 
-        {showOverlay && (
-          <div style={styles.overlay}>
+        {playable && (
+          <div
+            style={{
+              ...styles.overlay,
+              opacity: showOverlay ? 1 : 0,
+              pointerEvents: showOverlay ? 'auto' : 'none'
+            }}
+          >
             {busy ? (
               <div style={styles.syncing}>{t.gameCard.syncing}</div>
             ) : (
-              <>
-                <button title={t.gameCard.upload} style={styles.circleBtnPrimary} onClick={onUpload}>
-                  <UploadIcon size={16} color={colors.textOnAccent} />
-                </button>
-                <button title={t.gameCard.download} style={styles.circleBtnSecondary} onClick={onDownload}>
-                  <DownloadIcon size={16} color={colors.text1} />
-                </button>
-              </>
+              <div style={styles.overlayContent}>
+                <Button variant="primary" style={styles.overlayBtn} onClick={onUpload}>
+                  <UploadIcon size={15} color={colors.textOnAccent} />
+                  {t.gameCard.upload}
+                </Button>
+                <Button variant="secondary" style={styles.overlayBtn} onClick={onDownload}>
+                  <DownloadIcon size={15} color={colors.text1} />
+                  {t.gameCard.download}
+                </Button>
+                {lastSyncAt && (
+                  <div style={styles.overlayMeta}>{t.gameCard.lastSync(formatLastSync(lastSyncAt, language))}</div>
+                )}
+                {sizeBytes != null && (
+                  <div style={styles.overlayMeta}>{t.gameCard.savesSize(formatBytes(sizeBytes))}</div>
+                )}
+              </div>
             )}
           </div>
         )}
@@ -161,7 +212,7 @@ const styles: Record<string, React.CSSProperties> = {
     overflow: 'hidden',
     background: `linear-gradient(160deg,${colors.bgRaised},${colors.bgBase})`,
     border: '1px solid',
-    transition: 'box-shadow .18s ease, border-color .18s ease'
+    transition: `box-shadow ${transitions.hover}, border-color ${transitions.hover}`
   },
   img: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
   fallback: {
@@ -185,30 +236,17 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12
+    padding: '0 16px',
+    transition: `opacity ${transitions.fade}`
   },
-  circleBtnPrimary: {
-    width: 42,
-    height: 42,
-    borderRadius: '50%',
-    border: 'none',
-    background: gradients.energy,
-    boxShadow: shadows.glowCy,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer'
-  },
-  circleBtnSecondary: {
-    width: 42,
-    height: 42,
-    borderRadius: '50%',
-    border: `1px solid ${colors.borderStrong}`,
-    background: 'rgba(255,255,255,.08)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer'
+  overlayContent: { display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 8, width: '100%' },
+  overlayBtn: { width: '100%', height: 36, fontSize: 12.5, padding: '0 10px' },
+  overlayMeta: {
+    marginTop: 2,
+    textAlign: 'center',
+    fontSize: 11,
+    color: colors.text2,
+    lineHeight: 1.4
   },
   caption: { minWidth: 0 },
   name: {

@@ -3,7 +3,7 @@ import type { Translation } from './types'
 export const ptBR: Translation = {
   app: { loading: 'Carregando…' },
   windowControls: { minimize: 'Minimizar', maximize: 'Maximizar', restore: 'Restaurar', close: 'Fechar' },
-  sidebar: { games: 'Jogos', friends: 'Amigos', settings: 'Configurações' },
+  sidebar: { games: 'Jogos', friends: 'Amigos', settings: 'Configurações', history: 'Histórico' },
   main: {
     searchPlaceholder: 'Buscar um jogo...',
     loadingGames: 'Procurando jogos…',
@@ -38,6 +38,20 @@ export const ptBR: Translation = {
     acceptedBadge: 'Aceito',
     noStorage: 'Primeiro configure o armazenamento compartilhado em Configurações',
     emptyFriends: 'Ainda não há amigos — convide alguém acima'
+  },
+  history: {
+    title: 'Histórico de sincronização',
+    columnGame: 'Jogo',
+    columnAction: 'Ação',
+    columnVersion: 'Versão',
+    columnWhen: 'Quando',
+    uploaded: 'Enviado',
+    emptyTitle: 'Ainda não há registros',
+    emptySubtitle: 'O histórico aparecerá após o primeiro envio',
+    justNow: 'Agora mesmo',
+    minutesAgo: (n) => `há ${n} min`,
+    hoursAgo: (n) => `há ${n} h`,
+    daysAgo: (n) => `há ${n} d`
   },
   cloudWarning: {
     title: 'Desative o Steam Cloud para os jogos sincronizados',

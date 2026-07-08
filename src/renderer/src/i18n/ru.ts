@@ -3,7 +3,7 @@ import type { Translation } from './types'
 export const ru: Translation = {
   app: { loading: 'Загрузка…' },
   windowControls: { minimize: 'Свернуть', maximize: 'Развернуть', restore: 'Восстановить', close: 'Закрыть' },
-  sidebar: { games: 'Игры', friends: 'Друзья', settings: 'Настройки' },
+  sidebar: { games: 'Игры', friends: 'Друзья', settings: 'Настройки', history: 'История' },
   main: {
     searchPlaceholder: 'Поиск игры...',
     loadingGames: 'Ищу игры…',
@@ -38,6 +38,20 @@ export const ru: Translation = {
     acceptedBadge: 'Принято',
     noStorage: 'Сначала создай общее хранилище в Настройках',
     emptyFriends: 'Пока нет друзей — пригласи кого-нибудь выше'
+  },
+  history: {
+    title: 'История синхронизаций',
+    columnGame: 'Игра',
+    columnAction: 'Действие',
+    columnVersion: 'Версия',
+    columnWhen: 'Когда',
+    uploaded: 'Выгружено',
+    emptyTitle: 'Записей пока нет',
+    emptySubtitle: 'История появится после первой выгрузки',
+    justNow: 'Только что',
+    minutesAgo: (n) => `${n} мин назад`,
+    hoursAgo: (n) => `${n} ч назад`,
+    daysAgo: (n) => `${n} дн назад`
   },
   cloudWarning: {
     title: 'Отключи Steam Cloud для игр, которые синхронизирует CoopSync',

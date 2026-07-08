@@ -68,6 +68,14 @@ body {
     transform: rotate(360deg);
   }
 }
+@keyframes shimmer {
+  0% {
+    background-position: -460px 0;
+  }
+  100% {
+    background-position: 460px 0;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.001ms !important;

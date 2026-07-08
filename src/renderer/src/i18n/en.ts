@@ -3,7 +3,7 @@ import type { Translation } from './types'
 export const en: Translation = {
   app: { loading: 'Loading…' },
   windowControls: { minimize: 'Minimize', maximize: 'Maximize', restore: 'Restore', close: 'Close' },
-  sidebar: { games: 'Games', friends: 'Friends', settings: 'Settings' },
+  sidebar: { games: 'Games', friends: 'Friends', settings: 'Settings', history: 'History' },
   main: {
     searchPlaceholder: 'Search for a game...',
     loadingGames: 'Looking for games…',
@@ -38,6 +38,20 @@ export const en: Translation = {
     acceptedBadge: 'Accepted',
     noStorage: 'Set up shared storage in Settings first',
     emptyFriends: 'No friends yet — invite someone above'
+  },
+  history: {
+    title: 'Sync history',
+    columnGame: 'Game',
+    columnAction: 'Action',
+    columnVersion: 'Version',
+    columnWhen: 'When',
+    uploaded: 'Uploaded',
+    emptyTitle: 'No entries yet',
+    emptySubtitle: 'Sync history will appear after the first upload',
+    justNow: 'Just now',
+    minutesAgo: (n) => `${n} min ago`,
+    hoursAgo: (n) => `${n} h ago`,
+    daysAgo: (n) => `${n} d ago`
   },
   cloudWarning: {
     title: 'Turn off Steam Cloud for synced games',

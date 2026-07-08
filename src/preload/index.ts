@@ -8,6 +8,7 @@ import type {
   DetectedGame,
   CatalogGame,
   GameSyncStatus,
+  SyncHistoryEntry,
   AutoSyncEvent,
   StartupSettings,
   RoleConfig,
@@ -61,7 +62,9 @@ const api = {
     /** Завантажити сейви гри з GitHub. */
     download: (appId: string): Promise<string> => ipcRenderer.invoke('sync:download', appId),
     /** Статус синку всіх ігор. */
-    statuses: (): Promise<GameSyncStatus[]> => ipcRenderer.invoke('sync:statuses')
+    statuses: (): Promise<GameSyncStatus[]> => ipcRenderer.invoke('sync:statuses'),
+    /** Історія push-подій (найновіші перші). */
+    history: (): Promise<SyncHistoryEntry[]> => ipcRenderer.invoke('sync:history')
   },
   watcher: {
     /** Запустити автосинхронізацію (стеження за процесами ігор). */

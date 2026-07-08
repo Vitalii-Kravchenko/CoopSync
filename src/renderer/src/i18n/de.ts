@@ -3,7 +3,7 @@ import type { Translation } from './types'
 export const de: Translation = {
   app: { loading: 'Wird geladen…' },
   windowControls: { minimize: 'Minimieren', maximize: 'Maximieren', restore: 'Wiederherstellen', close: 'Schließen' },
-  sidebar: { games: 'Spiele', friends: 'Freunde', settings: 'Einstellungen' },
+  sidebar: { games: 'Spiele', friends: 'Freunde', settings: 'Einstellungen', history: 'Verlauf' },
   main: {
     searchPlaceholder: 'Spiel suchen...',
     loadingGames: 'Suche nach Spielen…',
@@ -38,6 +38,20 @@ export const de: Translation = {
     acceptedBadge: 'Angenommen',
     noStorage: 'Richte zuerst den gemeinsamen Speicher in den Einstellungen ein',
     emptyFriends: 'Noch keine Freunde — lade oben jemanden ein'
+  },
+  history: {
+    title: 'Synchronisierungsverlauf',
+    columnGame: 'Spiel',
+    columnAction: 'Aktion',
+    columnVersion: 'Version',
+    columnWhen: 'Wann',
+    uploaded: 'Hochgeladen',
+    emptyTitle: 'Noch keine Einträge',
+    emptySubtitle: 'Der Verlauf erscheint nach dem ersten Upload',
+    justNow: 'Gerade eben',
+    minutesAgo: (n) => `vor ${n} Min.`,
+    hoursAgo: (n) => `vor ${n} Std.`,
+    daysAgo: (n) => `vor ${n} Tg.`
   },
   cloudWarning: {
     title: 'Steam Cloud für synchronisierte Spiele deaktivieren',

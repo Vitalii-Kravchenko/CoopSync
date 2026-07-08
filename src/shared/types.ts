@@ -113,6 +113,18 @@ export interface GeneralSettings {
   showCloudWarning: boolean
 }
 
+/** Один запис в історії синхронізацій — один push (вивантаження) якоїсь гри. */
+export interface SyncHistoryEntry {
+  appId: string
+  gameName: string
+  /** Версія, яку саме тоді запушили. */
+  version: number
+  /** Логін того, хто вивантажив. */
+  updatedBy: string
+  /** ISO timestamp моменту push. */
+  updatedAt: string
+}
+
 /** Роль користувача в коопі. */
 export type UserRole = 'host' | 'join'
 

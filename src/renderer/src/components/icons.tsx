@@ -142,6 +142,15 @@ export function FriendsIcon({ size = 16, color }: IconProps): React.JSX.Element 
   )
 }
 
+export function HistoryIcon({ size = 16, color }: IconProps): React.JSX.Element {
+  return (
+    <svg {...base(size)} style={{ color }}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3.5 2" />
+    </svg>
+  )
+}
+
 export function UsersIcon({ size = 16, color }: IconProps): React.JSX.Element {
   return (
     <svg {...base(size)} style={{ color }}>

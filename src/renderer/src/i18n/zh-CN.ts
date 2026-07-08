@@ -3,7 +3,7 @@ import type { Translation } from './types'
 export const zhCN: Translation = {
   app: { loading: '加载中…' },
   windowControls: { minimize: '最小化', maximize: '最大化', restore: '还原', close: '关闭' },
-  sidebar: { games: '游戏', friends: '好友', settings: '设置' },
+  sidebar: { games: '游戏', friends: '好友', settings: '设置', history: '历史' },
   main: {
     searchPlaceholder: '搜索游戏...',
     loadingGames: '正在查找游戏…',
@@ -38,6 +38,20 @@ export const zhCN: Translation = {
     acceptedBadge: '已接受',
     noStorage: '请先在设置中创建共享存储',
     emptyFriends: '还没有好友——在上方邀请一位吧'
+  },
+  history: {
+    title: '同步历史',
+    columnGame: '游戏',
+    columnAction: '操作',
+    columnVersion: '版本',
+    columnWhen: '时间',
+    uploaded: '已上传',
+    emptyTitle: '暂无记录',
+    emptySubtitle: '首次上传后将显示历史记录',
+    justNow: '刚刚',
+    minutesAgo: (n) => `${n} 分钟前`,
+    hoursAgo: (n) => `${n} 小时前`,
+    daysAgo: (n) => `${n} 天前`
   },
   cloudWarning: {
     title: '为已同步的游戏关闭 Steam 云存储',

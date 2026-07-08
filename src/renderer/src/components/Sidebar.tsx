@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { colors, fonts, gradients, radii, shadows } from '../theme'
 import { useI18n } from '../i18n'
-import { LibraryIcon, FriendsIcon, SettingsIcon } from './icons'
+import { LibraryIcon, FriendsIcon, HistoryIcon, SettingsIcon } from './icons'
 
-export type Screen = 'main' | 'friends' | 'settings'
+export type Screen = 'main' | 'friends' | 'history' | 'settings'
 
 interface Props {
   active: Screen
@@ -28,6 +28,12 @@ function Sidebar({ active, onNavigate }: Props): React.JSX.Element {
           label={t.sidebar.friends}
           active={active === 'friends'}
           onClick={() => onNavigate('friends')}
+        />
+        <NavItem
+          icon={<HistoryIcon size={16} />}
+          label={t.sidebar.history}
+          active={active === 'history'}
+          onClick={() => onNavigate('history')}
         />
       </div>
 

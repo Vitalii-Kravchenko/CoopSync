@@ -30,7 +30,7 @@ export function isLanguageCode(value: string): value is LanguageCode {
 export interface Translation {
   app: { loading: string }
   windowControls: { minimize: string; maximize: string; restore: string; close: string }
-  sidebar: { games: string; friends: string; settings: string }
+  sidebar: { games: string; friends: string; settings: string; history: string }
   main: {
     searchPlaceholder: string
     loadingGames: string
@@ -65,6 +65,20 @@ export interface Translation {
     acceptedBadge: string
     noStorage: string
     emptyFriends: string
+  }
+  history: {
+    title: string
+    columnGame: string
+    columnAction: string
+    columnVersion: string
+    columnWhen: string
+    uploaded: string
+    emptyTitle: string
+    emptySubtitle: string
+    justNow: string
+    minutesAgo: (n: number) => string
+    hoursAgo: (n: number) => string
+    daysAgo: (n: number) => string
   }
   cloudWarning: {
     title: string

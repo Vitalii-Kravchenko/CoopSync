@@ -7,7 +7,7 @@ import { existsSync, statSync } from 'fs'
 import { cp, rm, mkdir, readdir, readFile, writeFile } from 'fs/promises'
 import { SUPPORTED_GAMES, READY_GAMES } from '../games/catalog'
 import { SAVES_REPO_NAME } from '../config'
-import type { SyncStatus, GameSyncStatus } from '../../shared/types'
+import type { SyncStatus, GameSyncStatus, SyncHistoryEntry } from '../../shared/types'
 
 const exec = promisify(execFile)
 const BIG_BUFFER = 64 * 1024 * 1024 // запас для великих сейвів
@@ -110,6 +110,41 @@ async function writeRemoteMeta(name: string, version: number, owner: string): Pr
   await writeFile(remoteMetaPath(name), JSON.stringify(meta, null, 2))
 }
 
+// --- Історія синхронізацій ---
+// Лог push-подій, спільний для host і join (лежить у самому репо, тож
+// синкається разом із сейвами). Тільки push — download локальний, у хмарі
+// нічого не міняє, тож логувати його в спільній історії нема сенсу.
+
+const MAX_HISTORY_ENTRIES = 50
+
+function historyPath(): string {
+  return join(repoDir(), '.meta', 'history.json')
+}
+
+async function readHistory(): Promise<SyncHistoryEntry[]> {
+  const p = historyPath()
+  if (!existsSync(p)) return []
+  try {
+    const raw = (await readFile(p, 'utf8')).replace(/^﻿/, '')
+    return JSON.parse(raw) as SyncHistoryEntry[]
+  } catch {
+    return []
+  }
+}
+
+async function appendHistory(entry: SyncHistoryEntry): Promise<void> {
+  const current = await readHistory()
+  const next = [entry, ...current].slice(0, MAX_HISTORY_ENTRIES)
+  await mkdir(join(repoDir(), '.meta'), { recursive: true })
+  await writeFile(historyPath(), JSON.stringify(next, null, 2))
+}
+
+/** Історія push-подій, найновіші перші. */
+export async function getSyncHistory(token: string, owner: string): Promise<SyncHistoryEntry[]> {
+  await ensureRepo(token, owner)
+  return readHistory()
+}
+
 function localVersionsPath(): string {
   return join(app.getPath('userData'), 'coopsync-versions.json')
 }
@@ -164,6 +199,13 @@ export async function uploadGame(token: string, owner: string, appId: string): P
   // Мета-файл оновлюється щоразу, тож коміт ніколи не буде порожнім.
   const newVersion = (await readRemoteVersion(game.name)) + 1
   await writeRemoteMeta(game.name, newVersion, owner)
+  await appendHistory({
+    appId,
+    gameName: game.name,
+    version: newVersion,
+    updatedBy: owner,
+    updatedAt: new Date().toISOString()
+  })
 
   await git(['add', '-A'])
   await git(['commit', '-m', `sync: ${game.name} ${formatVersion(newVersion)} (${owner})`])

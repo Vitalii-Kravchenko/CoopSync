@@ -15,7 +15,13 @@ import {
   listCollaborators
 } from './services/github'
 import { detectGames, detectAllInstalled } from './services/steam'
-import { uploadGame, downloadGame, getSyncStatuses, resetLocalSaveState } from './services/sync'
+import {
+  uploadGame,
+  downloadGame,
+  getSyncStatuses,
+  getSyncHistory,
+  resetLocalSaveState
+} from './services/sync'
 import { startWatcher, stopWatcher } from './services/watcher'
 import { READY_GAMES } from './games/catalog'
 import { saveToken, loadToken, clearToken } from './services/tokenStore'
@@ -27,6 +33,7 @@ import type {
   DetectedGame,
   CatalogGame,
   GameSyncStatus,
+  SyncHistoryEntry,
   StartupSettings,
   RoleConfig,
   InstalledGame,
@@ -197,6 +204,12 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('sync:statuses', async (): Promise<GameSyncStatus[]> => {
     const { token, owner } = await syncTarget()
     return getSyncStatuses(token, owner)
+  })
+
+  // Історія push-подій (найновіші перші).
+  ipcMain.handle('sync:history', async (): Promise<SyncHistoryEntry[]> => {
+    const { token, owner } = await syncTarget()
+    return getSyncHistory(token, owner)
   })
 
   // --- Автосинхронізація (спостерігач процесів) ---

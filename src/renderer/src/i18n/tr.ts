@@ -3,7 +3,7 @@ import type { Translation } from './types'
 export const tr: Translation = {
   app: { loading: 'Yükleniyor…' },
   windowControls: { minimize: 'Küçült', maximize: 'Büyüt', restore: 'Geri Yükle', close: 'Kapat' },
-  sidebar: { games: 'Oyunlar', friends: 'Arkadaşlar', settings: 'Ayarlar' },
+  sidebar: { games: 'Oyunlar', friends: 'Arkadaşlar', settings: 'Ayarlar', history: 'Geçmiş' },
   main: {
     searchPlaceholder: 'Oyun ara...',
     loadingGames: 'Oyunlar aranıyor…',
@@ -38,6 +38,20 @@ export const tr: Translation = {
     acceptedBadge: 'Kabul edildi',
     noStorage: "Önce Ayarlar'da ortak depoyu oluştur",
     emptyFriends: 'Henüz arkadaş yok — yukarıdan birini davet et'
+  },
+  history: {
+    title: 'Senkronizasyon geçmişi',
+    columnGame: 'Oyun',
+    columnAction: 'Eylem',
+    columnVersion: 'Sürüm',
+    columnWhen: 'Ne zaman',
+    uploaded: 'Yüklendi',
+    emptyTitle: 'Henüz kayıt yok',
+    emptySubtitle: 'Geçmiş ilk yüklemeden sonra görünecek',
+    justNow: 'Az önce',
+    minutesAgo: (n) => `${n} dk önce`,
+    hoursAgo: (n) => `${n} sa önce`,
+    daysAgo: (n) => `${n} gün önce`
   },
   cloudWarning: {
     title: "Senkronize edilen oyunlar için Steam Cloud'u kapat",

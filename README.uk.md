@@ -7,10 +7,10 @@
 <p align="center"><a href="README.md">🇺🇸 English</a> · 🇺🇦 Українська</p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.3.0-36E2E8?style=flat-square" alt="версія 0.3.0">
-  <img src="https://img.shields.io/badge/platform-Windows-0078D6?style=flat-square&logo=windows11&logoColor=white" alt="платформа Windows">
-  <img src="https://img.shields.io/badge/stack-Electron%20%2B%20TS-8A6CFF?style=flat-square&logo=electron&logoColor=white" alt="стек Electron + TypeScript">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Некомерційна-6b7280?style=flat-square" alt="ліцензія PolyForm Noncommercial 1.0.0"></a>
+  <span style="display:inline-flex;align-items:center;height:24px;padding:0 9px;margin:2px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#8A6CFF;background:rgba(138,108,255,.12);border:1px solid rgba(138,108,255,.38);border-radius:5px;">v0.3.1</span>
+  <span style="display:inline-flex;align-items:center;height:24px;padding:0 9px;margin:2px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#36E2E8;background:rgba(54,226,232,.12);border:1px solid rgba(54,226,232,.38);border-radius:5px;">Windows</span>
+  <span style="display:inline-flex;align-items:center;height:24px;padding:0 9px;margin:2px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#5AA9FF;background:rgba(90,169,255,.12);border:1px solid rgba(90,169,255,.38);border-radius:5px;">Electron + TS</span>
+  <a href="LICENSE"><span style="display:inline-flex;align-items:center;height:24px;padding:0 9px;margin:2px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#79839A;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);border-radius:5px;">Некомерційна</span></a>
 </p>
 
 Безкоштовний синхронізатор кооп-сейвів для ігор через приватний GitHub-репозиторій.

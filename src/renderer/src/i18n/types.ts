@@ -30,7 +30,7 @@ export function isLanguageCode(value: string): value is LanguageCode {
 export interface Translation {
   app: { loading: string }
   windowControls: { minimize: string; maximize: string; restore: string; close: string }
-  sidebar: { games: string; settings: string }
+  sidebar: { games: string; friends: string; settings: string }
   main: {
     searchPlaceholder: string
     loadingGames: string
@@ -57,6 +57,14 @@ export interface Translation {
     versions: (local: string, cloud: string) => string
     gameNotSupported: string
     notInstalled: string
+  }
+  friends: {
+    title: string
+    inviteTitle: string
+    sending: string
+    acceptedBadge: string
+    noStorage: string
+    emptyFriends: string
   }
   cloudWarning: {
     title: string
@@ -110,13 +118,16 @@ export interface Translation {
     storage: string
     privateRepo: string
     storageNotSet: string
-    inviteMoreFriend: string
     friendPlaceholder: string
     invite: string
     members: (count: number) => string
     owner: string
     pendingConfirmation: string
     pendingBadge: string
+    deleteRepoButton: string
+    deleteRepoConfirmTitle: string
+    deleteRepoConfirmDesc: string
+    cancel: string
     general: string
     language: string
     autostart: string

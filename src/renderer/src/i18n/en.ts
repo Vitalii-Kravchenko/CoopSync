@@ -3,7 +3,7 @@ import type { Translation } from './types'
 export const en: Translation = {
   app: { loading: 'Loading…' },
   windowControls: { minimize: 'Minimize', maximize: 'Maximize', restore: 'Restore', close: 'Close' },
-  sidebar: { games: 'Games', settings: 'Settings' },
+  sidebar: { games: 'Games', friends: 'Friends', settings: 'Settings' },
   main: {
     searchPlaceholder: 'Search for a game...',
     loadingGames: 'Looking for games…',
@@ -30,6 +30,14 @@ export const en: Translation = {
     versions: (local, cloud) => `Local ${local} · Cloud ${cloud}`,
     gameNotSupported: 'game not supported',
     notInstalled: 'not installed'
+  },
+  friends: {
+    title: 'Friends',
+    inviteTitle: 'Invite a friend',
+    sending: 'Sending invite…',
+    acceptedBadge: 'Accepted',
+    noStorage: 'Set up shared storage in Settings first',
+    emptyFriends: 'No friends yet — invite someone above'
   },
   cloudWarning: {
     title: 'Turn off Steam Cloud for synced games',
@@ -85,13 +93,17 @@ export const en: Translation = {
     storage: 'Storage',
     privateRepo: 'Private repository',
     storageNotSet: 'Storage not set up',
-    inviteMoreFriend: 'Invite another friend',
     friendPlaceholder: "Friend's GitHub username",
     invite: 'Invite',
     members: (count) => `Members (${count})`,
     owner: '(owner)',
     pendingConfirmation: 'Awaiting confirmation',
     pendingBadge: 'Pending',
+    deleteRepoButton: 'Delete repository',
+    deleteRepoConfirmTitle: 'Delete the saves repository?',
+    deleteRepoConfirmDesc:
+      "This permanently deletes the shared storage on GitHub — the entire save history for both players. Your local game files aren't touched. This can't be undone.",
+    cancel: 'Cancel',
     general: 'General',
     language: 'Language',
     autostart: 'Launch with Windows',

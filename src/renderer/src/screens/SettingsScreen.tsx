@@ -3,13 +3,8 @@ import { colors, fonts, gradients, radii, shadows } from '../theme'
 import { LANGUAGES, useI18n, type LanguageCode } from '../i18n'
 import { GitHubIcon, Logo } from '../components/icons'
 import Button from '../components/Button'
-import type {
-  AuthUser,
-  SavesRepoStatus,
-  PendingInvite,
-  Collaborator,
-  StartupSettings
-} from '../../../shared/types'
+import ConfirmModal from '../components/ConfirmModal'
+import type { AuthUser, SavesRepoStatus, StartupSettings } from '../../../shared/types'
 
 interface Props {
   user: AuthUser
@@ -22,10 +17,6 @@ interface Props {
 function SettingsScreen({ user, onLoggedOut, avatarDataUrl, onAvatarChange }: Props): React.JSX.Element {
   const { t, language, setLanguage } = useI18n()
   const [repo, setRepo] = useState<SavesRepoStatus | null>(null)
-  const [invites, setInvites] = useState<PendingInvite[]>([])
-  const [collaborators, setCollaborators] = useState<Collaborator[]>([])
-  const [friend, setFriend] = useState('')
-  const [busy, setBusy] = useState(false)
   const [startup, setStartup] = useState<StartupSettings>({
     openAtLogin: false,
     startMinimized: false
@@ -33,6 +24,9 @@ function SettingsScreen({ user, onLoggedOut, avatarDataUrl, onAvatarChange }: Pr
   const [avatarError, setAvatarError] = useState<string | null>(null)
   const [showCloudWarning, setShowCloudWarning] = useState(true)
   const [appVersion, setAppVersion] = useState('')
+  const [showDeleteRepo, setShowDeleteRepo] = useState(false)
+  const [deletingRepo, setDeletingRepo] = useState(false)
+  const [deleteRepoError, setDeleteRepoError] = useState<string | null>(null)
 
   useEffect(() => {
     void loadRepo()
@@ -61,29 +55,27 @@ function SettingsScreen({ user, onLoggedOut, avatarDataUrl, onAvatarChange }: Pr
   }
 
   async function loadRepo(): Promise<void> {
-    const r = await window.api.repo.getStatus()
-    setRepo(r)
-    if (r.state === 'ready') {
-      setInvites(await window.api.repo.listInvitations())
-      setCollaborators(await window.api.repo.listCollaborators())
-    }
-  }
-
-  async function handleInvite(): Promise<void> {
-    if (!friend.trim()) return
-    setBusy(true)
-    try {
-      await window.api.repo.invite(friend)
-      setFriend('')
-      await loadRepo()
-    } finally {
-      setBusy(false)
-    }
+    setRepo(await window.api.repo.getStatus())
   }
 
   async function handleLogout(): Promise<void> {
     await window.api.auth.logout()
     onLoggedOut()
+  }
+
+  async function handleDeleteRepo(): Promise<void> {
+    setDeletingRepo(true)
+    setDeleteRepoError(null)
+    try {
+      await window.api.repo.delete()
+      setShowDeleteRepo(false)
+      await loadRepo()
+    } catch (e) {
+      const raw = e instanceof Error ? e.message : t.settings.deleteRepoConfirmTitle
+      setDeleteRepoError(raw.replace(/^Error invoking remote method '[^']+':\s*(Error:\s*)?/, ''))
+    } finally {
+      setDeletingRepo(false)
+    }
   }
 
   return (
@@ -118,74 +110,36 @@ function SettingsScreen({ user, onLoggedOut, avatarDataUrl, onAvatarChange }: Pr
         </Button>
       </div>
 
-      <div style={styles.cols}>
-        {/* Сховище */}
-        <div style={styles.card2}>
-          <div style={styles.h2}>{t.settings.storage}</div>
-          {repo?.state === 'ready' ? (
-            <>
-              <div style={styles.repoRow}>
-                <div style={styles.repoIcon}>🔒</div>
-                <div>
-                  <div style={styles.repoName}>{repo.repo.fullName}</div>
-                  <div style={styles.muted}>{t.settings.privateRepo}</div>
-                </div>
+      {/* Сховище */}
+      <div style={{ ...styles.card2, marginBottom: 22 }}>
+        <div style={styles.h2}>{t.settings.storage}</div>
+        {repo?.state === 'ready' ? (
+          <>
+            <div style={styles.repoRow}>
+              <div style={styles.repoIcon}>🔒</div>
+              <div>
+                <div style={styles.repoName}>{repo.repo.fullName}</div>
+                <div style={styles.muted}>{t.settings.privateRepo}</div>
               </div>
-              <button
-                style={styles.linkBtn}
-                onClick={() => window.api.openExternal(repo.repo.url)}
-              >
-                {repo.repo.url} ⧉
-              </button>
-              <div style={{ ...styles.muted, marginTop: 14, marginBottom: 8 }}>{t.settings.inviteMoreFriend}</div>
-              <div style={styles.row}>
-                <input
-                  className="input-field"
-                  style={styles.input}
-                  placeholder={t.settings.friendPlaceholder}
-                  value={friend}
-                  onChange={(e) => setFriend(e.target.value)}
-                  disabled={busy}
-                />
-                <Button variant="primary" onClick={handleInvite} disabled={busy || !friend.trim()}>
-                  {t.settings.invite}
-                </Button>
-              </div>
-            </>
-          ) : (
-            <div style={styles.muted}>{t.settings.storageNotSet}</div>
-          )}
-        </div>
-
-        {/* Учасники */}
-        <div style={styles.card2}>
-          <div style={styles.h2}>{t.settings.members(collaborators.length + 1)}</div>
-          <div style={styles.memberRow}>
-            <div style={styles.memberAvatar}>
-              {avatarDataUrl ? <img src={avatarDataUrl} alt="" style={styles.memberAvatarImg} /> : <GitHubIcon size={16} />}
             </div>
-            <span style={styles.memberName}>{user.login}</span>
-            <span style={styles.muted}>{t.settings.owner}</span>
-          </div>
-          {collaborators.map((c) => (
-            <div key={c.login} style={styles.memberRow}>
-              <div style={styles.memberAvatar}>👤</div>
-              <span style={styles.memberName}>{c.login}</span>
-            </div>
-          ))}
-          {invites.length > 0 && (
-            <>
-              <div style={{ ...styles.muted, marginTop: 12, marginBottom: 8 }}>{t.settings.pendingConfirmation}</div>
-              {invites.map((i) => (
-                <div key={i.login} style={styles.memberRow}>
-                  <div style={styles.memberAvatar}>👤</div>
-                  <span style={{ ...styles.memberName, flex: 1 }}>{i.login}</span>
-                  <span style={styles.badge}>{t.settings.pendingBadge}</span>
-                </div>
-              ))}
-            </>
-          )}
-        </div>
+            <button
+              style={styles.linkBtn}
+              onClick={() => window.api.openExternal(repo.repo.url)}
+            >
+              {repo.repo.url} ⧉
+            </button>
+            <div style={{ ...styles.divider, marginTop: 18 }} />
+            <Button
+              variant="danger"
+              style={{ marginTop: 4 }}
+              onClick={() => setShowDeleteRepo(true)}
+            >
+              {t.settings.deleteRepoButton}
+            </Button>
+          </>
+        ) : (
+          <div style={styles.muted}>{t.settings.storageNotSet}</div>
+        )}
       </div>
 
       <div style={styles.cols}>
@@ -251,6 +205,23 @@ function SettingsScreen({ user, onLoggedOut, avatarDataUrl, onAvatarChange }: Pr
           </div>
         </div>
       </div>
+
+      {showDeleteRepo && (
+        <ConfirmModal
+          title={t.settings.deleteRepoConfirmTitle}
+          description={t.settings.deleteRepoConfirmDesc}
+          confirmLabel={t.settings.deleteRepoButton}
+          cancelLabel={t.settings.cancel}
+          countdownSeconds={10}
+          busy={deletingRepo}
+          error={deleteRepoError}
+          onConfirm={handleDeleteRepo}
+          onCancel={() => {
+            setShowDeleteRepo(false)
+            setDeleteRepoError(null)
+          }}
+        />
+      )}
     </div>
   )
 }
@@ -341,20 +312,6 @@ const styles: Record<string, React.CSSProperties> = {
   avatarError: { fontSize: 11, color: colors.danger, maxWidth: 100, textAlign: 'center' },
   userName: { fontFamily: fonts.display, fontSize: 20, fontWeight: 700, color: colors.text1 },
   muted: { fontSize: 13, color: colors.text3 },
-  row: { display: 'flex', gap: 10 },
-  input: {
-    flex: 1,
-    height: 40,
-    padding: '0 14px',
-    border: `1px solid ${colors.borderDefault}`,
-    borderRadius: radii.md,
-    background: colors.bgInset,
-    boxShadow: 'inset 0 1px 2px rgba(0,0,0,.3)',
-    color: colors.text1,
-    fontFamily: fonts.body,
-    fontSize: 13,
-    outline: 'none'
-  },
   repoRow: { display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 },
   repoIcon: {
     width: 36,
@@ -383,31 +340,6 @@ const styles: Record<string, React.CSSProperties> = {
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis'
-  },
-  memberRow: { display: 'flex', alignItems: 'center', gap: 11, marginBottom: 12 },
-  memberAvatar: {
-    width: 30,
-    height: 30,
-    borderRadius: '50%',
-    background: colors.bgInset,
-    border: `1px solid ${colors.borderDefault}`,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: 13,
-    overflow: 'hidden'
-  },
-  memberAvatarImg: { width: '100%', height: '100%', objectFit: 'cover' },
-  memberName: { fontSize: 14, color: colors.text1 },
-  badge: {
-    fontFamily: fonts.display,
-    fontSize: 10.5,
-    fontWeight: 600,
-    color: colors.warning,
-    background: colors.warningBg,
-    border: `1px solid ${colors.warningBd}`,
-    padding: '3px 10px',
-    borderRadius: radii.pill
   },
   toggleRow: {
     display: 'flex',

@@ -186,6 +186,22 @@ export async function listCollaborators(token: string, owner: string): Promise<C
     .map((c) => ({ login: c.login }))
 }
 
+/** Видалити репозиторій сейвів насовсім. Незворотно — підтвердження робить UI. */
+export async function deleteSavesRepo(token: string, owner: string): Promise<void> {
+  const res = await fetch(`${API}/repos/${owner}/${SAVES_REPO_NAME}`, {
+    method: 'DELETE',
+    headers: authHeaders(token)
+  })
+  if (res.status === 204) return
+  if (res.status === 404) return // вже видалено — вважаємо успіхом
+  if (res.status === 403) {
+    throw new Error(
+      'Немає прав на видалення (потрібен скоуп delete_repo). Вийди з акаунта і залогінься знову.'
+    )
+  }
+  throw new Error(`Не вдалось видалити сховище (${res.status})`)
+}
+
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }

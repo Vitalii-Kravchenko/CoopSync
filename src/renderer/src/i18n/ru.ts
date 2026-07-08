@@ -3,7 +3,7 @@ import type { Translation } from './types'
 export const ru: Translation = {
   app: { loading: 'Загрузка…' },
   windowControls: { minimize: 'Свернуть', maximize: 'Развернуть', restore: 'Восстановить', close: 'Закрыть' },
-  sidebar: { games: 'Игры', settings: 'Настройки' },
+  sidebar: { games: 'Игры', friends: 'Друзья', settings: 'Настройки' },
   main: {
     searchPlaceholder: 'Поиск игры...',
     loadingGames: 'Ищу игры…',
@@ -30,6 +30,14 @@ export const ru: Translation = {
     versions: (local, cloud) => `Локально ${local} · Облако ${cloud}`,
     gameNotSupported: 'игра не поддерживается',
     notInstalled: 'не установлено'
+  },
+  friends: {
+    title: 'Друзья',
+    inviteTitle: 'Пригласить друга',
+    sending: 'Отправляю приглашение…',
+    acceptedBadge: 'Принято',
+    noStorage: 'Сначала создай общее хранилище в Настройках',
+    emptyFriends: 'Пока нет друзей — пригласи кого-нибудь выше'
   },
   cloudWarning: {
     title: 'Отключи Steam Cloud для игр, которые синхронизирует CoopSync',
@@ -85,13 +93,17 @@ export const ru: Translation = {
     storage: 'Хранилище',
     privateRepo: 'Приватный репозиторий',
     storageNotSet: 'Хранилище не настроено',
-    inviteMoreFriend: 'Пригласить ещё друга',
     friendPlaceholder: 'Ник друга на GitHub',
     invite: 'Пригласить',
     members: (count) => `Участники (${count})`,
     owner: '(владелец)',
     pendingConfirmation: 'Ожидают подтверждения',
     pendingBadge: 'Ожидает',
+    deleteRepoButton: 'Удалить репозиторий',
+    deleteRepoConfirmTitle: 'Удалить репозиторий сейвов?',
+    deleteRepoConfirmDesc:
+      'Это навсегда удалит общее хранилище на GitHub — всю историю сейвов обоих игроков. Локальные файлы игр на твоём ПК не пострадают. Действие нельзя отменить.',
+    cancel: 'Отмена',
     general: 'Общее',
     language: 'Язык',
     autostart: 'Запускать вместе с Windows',

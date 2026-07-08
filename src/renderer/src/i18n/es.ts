@@ -3,7 +3,7 @@ import type { Translation } from './types'
 export const es: Translation = {
   app: { loading: 'Cargando…' },
   windowControls: { minimize: 'Minimizar', maximize: 'Maximizar', restore: 'Restaurar', close: 'Cerrar' },
-  sidebar: { games: 'Juegos', settings: 'Ajustes' },
+  sidebar: { games: 'Juegos', friends: 'Amigos', settings: 'Ajustes' },
   main: {
     searchPlaceholder: 'Buscar un juego...',
     loadingGames: 'Buscando juegos…',
@@ -30,6 +30,14 @@ export const es: Translation = {
     versions: (local, cloud) => `Local ${local} · Nube ${cloud}`,
     gameNotSupported: 'juego no compatible',
     notInstalled: 'no instalado'
+  },
+  friends: {
+    title: 'Amigos',
+    inviteTitle: 'Invitar a un amigo',
+    sending: 'Enviando invitación…',
+    acceptedBadge: 'Aceptado',
+    noStorage: 'Primero configura el almacenamiento compartido en Ajustes',
+    emptyFriends: 'Todavía no hay amigos — invita a alguien arriba'
   },
   cloudWarning: {
     title: 'Desactiva Steam Cloud para los juegos sincronizados',
@@ -85,13 +93,17 @@ export const es: Translation = {
     storage: 'Almacenamiento',
     privateRepo: 'Repositorio privado',
     storageNotSet: 'Almacenamiento no configurado',
-    inviteMoreFriend: 'Invitar a otro amigo',
     friendPlaceholder: 'Usuario de GitHub del amigo',
     invite: 'Invitar',
     members: (count) => `Miembros (${count})`,
     owner: '(propietario)',
     pendingConfirmation: 'Esperando confirmación',
     pendingBadge: 'Pendiente',
+    deleteRepoButton: 'Eliminar repositorio',
+    deleteRepoConfirmTitle: '¿Eliminar el repositorio de partidas guardadas?',
+    deleteRepoConfirmDesc:
+      'Esto elimina permanentemente el almacenamiento compartido en GitHub — todo el historial de partidas de ambos jugadores. Tus archivos de juego locales no se ven afectados. No se puede deshacer.',
+    cancel: 'Cancelar',
     general: 'General',
     language: 'Idioma',
     autostart: 'Iniciar con Windows',

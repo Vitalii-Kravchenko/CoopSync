@@ -9,12 +9,13 @@ import {
   fetchUser,
   getSavesRepo,
   createSavesRepo,
+  deleteSavesRepo,
   inviteCollaborator,
   listInvitations,
   listCollaborators
 } from './services/github'
 import { detectGames, detectAllInstalled } from './services/steam'
-import { uploadGame, downloadGame, getSyncStatuses } from './services/sync'
+import { uploadGame, downloadGame, getSyncStatuses, resetLocalSaveState } from './services/sync'
 import { startWatcher, stopWatcher } from './services/watcher'
 import { READY_GAMES } from './games/catalog'
 import { saveToken, loadToken, clearToken } from './services/tokenStore'
@@ -137,6 +138,14 @@ export function registerIpcHandlers(): void {
     const { token, owner } = await requireAuth()
     const repo = await createSavesRepo(token, owner)
     return { state: 'ready', repo }
+  })
+
+  // Видалити репозиторій сейвів насовсім (незворотно — підтвердження вже пройшло в UI).
+  ipcMain.handle('repo:delete', async (): Promise<void> => {
+    const { token, owner } = await requireAuth()
+    await deleteSavesRepo(token, owner)
+    stopWatcher()
+    await resetLocalSaveState()
   })
 
   // Запросити друга у співавтори.

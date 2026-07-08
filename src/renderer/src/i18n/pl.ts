@@ -3,7 +3,7 @@ import type { Translation } from './types'
 export const pl: Translation = {
   app: { loading: 'Ładowanie…' },
   windowControls: { minimize: 'Minimalizuj', maximize: 'Maksymalizuj', restore: 'Przywróć', close: 'Zamknij' },
-  sidebar: { games: 'Gry', settings: 'Ustawienia' },
+  sidebar: { games: 'Gry', friends: 'Znajomi', settings: 'Ustawienia' },
   main: {
     searchPlaceholder: 'Szukaj gry...',
     loadingGames: 'Szukam gier…',
@@ -30,6 +30,14 @@ export const pl: Translation = {
     versions: (local, cloud) => `Lokalnie ${local} · Chmura ${cloud}`,
     gameNotSupported: 'gra nieobsługiwana',
     notInstalled: 'niezainstalowana'
+  },
+  friends: {
+    title: 'Znajomi',
+    inviteTitle: 'Zaproś znajomego',
+    sending: 'Wysyłam zaproszenie…',
+    acceptedBadge: 'Zaakceptowano',
+    noStorage: 'Najpierw skonfiguruj wspólny magazyn w Ustawieniach',
+    emptyFriends: 'Jeszcze nie masz znajomych — zaproś kogoś powyżej'
   },
   cloudWarning: {
     title: 'Wyłącz Steam Cloud dla synchronizowanych gier',
@@ -85,13 +93,17 @@ export const pl: Translation = {
     storage: 'Magazyn',
     privateRepo: 'Prywatne repozytorium',
     storageNotSet: 'Magazyn nieskonfigurowany',
-    inviteMoreFriend: 'Zaproś kolejnego znajomego',
     friendPlaceholder: 'Nazwa użytkownika GitHub znajomego',
     invite: 'Zaproś',
     members: (count) => `Uczestnicy (${count})`,
     owner: '(właściciel)',
     pendingConfirmation: 'Oczekują potwierdzenia',
     pendingBadge: 'Oczekuje',
+    deleteRepoButton: 'Usuń repozytorium',
+    deleteRepoConfirmTitle: 'Usunąć repozytorium zapisów?',
+    deleteRepoConfirmDesc:
+      'To trwale usunie wspólny magazyn na GitHub — całą historię zapisów obu graczy. Lokalne pliki gry na Twoim komputerze nie zostaną naruszone. Tej czynności nie można cofnąć.',
+    cancel: 'Anuluj',
     general: 'Ogólne',
     language: 'Język',
     autostart: 'Uruchamiaj razem z Windows',

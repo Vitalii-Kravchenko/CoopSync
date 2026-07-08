@@ -3,7 +3,7 @@ import type { Translation } from './types'
 export const tr: Translation = {
   app: { loading: 'Yükleniyor…' },
   windowControls: { minimize: 'Küçült', maximize: 'Büyüt', restore: 'Geri Yükle', close: 'Kapat' },
-  sidebar: { games: 'Oyunlar', settings: 'Ayarlar' },
+  sidebar: { games: 'Oyunlar', friends: 'Arkadaşlar', settings: 'Ayarlar' },
   main: {
     searchPlaceholder: 'Oyun ara...',
     loadingGames: 'Oyunlar aranıyor…',
@@ -30,6 +30,14 @@ export const tr: Translation = {
     versions: (local, cloud) => `Yerel ${local} · Bulut ${cloud}`,
     gameNotSupported: 'oyun desteklenmiyor',
     notInstalled: 'yüklü değil'
+  },
+  friends: {
+    title: 'Arkadaşlar',
+    inviteTitle: 'Arkadaş davet et',
+    sending: 'Davet gönderiliyor…',
+    acceptedBadge: 'Kabul edildi',
+    noStorage: "Önce Ayarlar'da ortak depoyu oluştur",
+    emptyFriends: 'Henüz arkadaş yok — yukarıdan birini davet et'
   },
   cloudWarning: {
     title: "Senkronize edilen oyunlar için Steam Cloud'u kapat",
@@ -85,13 +93,17 @@ export const tr: Translation = {
     storage: 'Depo',
     privateRepo: 'Özel depo',
     storageNotSet: 'Depo ayarlanmadı',
-    inviteMoreFriend: 'Başka bir arkadaş davet et',
     friendPlaceholder: 'Arkadaşın GitHub kullanıcı adı',
     invite: 'Davet et',
     members: (count) => `Üyeler (${count})`,
     owner: '(sahip)',
     pendingConfirmation: 'Onay bekleniyor',
     pendingBadge: 'Bekliyor',
+    deleteRepoButton: 'Depoyu sil',
+    deleteRepoConfirmTitle: 'Kayıt deposu silinsin mi?',
+    deleteRepoConfirmDesc:
+      "Bu, GitHub'daki ortak depoyu kalıcı olarak siler — her iki oyuncunun da tüm kayıt geçmişini. Yerel oyun dosyaların etkilenmez. Bu işlem geri alınamaz.",
+    cancel: 'İptal',
     general: 'Genel',
     language: 'Dil',
     autostart: 'Windows ile başlat',

@@ -3,7 +3,7 @@ import type { Translation } from './types'
 export const zhCN: Translation = {
   app: { loading: '加载中…' },
   windowControls: { minimize: '最小化', maximize: '最大化', restore: '还原', close: '关闭' },
-  sidebar: { games: '游戏', settings: '设置' },
+  sidebar: { games: '游戏', friends: '好友', settings: '设置' },
   main: {
     searchPlaceholder: '搜索游戏...',
     loadingGames: '正在查找游戏…',
@@ -30,6 +30,14 @@ export const zhCN: Translation = {
     versions: (local, cloud) => `本地 ${local} · 云端 ${cloud}`,
     gameNotSupported: '该游戏不受支持',
     notInstalled: '未安装'
+  },
+  friends: {
+    title: '好友',
+    inviteTitle: '邀请好友',
+    sending: '正在发送邀请…',
+    acceptedBadge: '已接受',
+    noStorage: '请先在设置中创建共享存储',
+    emptyFriends: '还没有好友——在上方邀请一位吧'
   },
   cloudWarning: {
     title: '为已同步的游戏关闭 Steam 云存储',
@@ -83,13 +91,16 @@ export const zhCN: Translation = {
     storage: '存储',
     privateRepo: '私有仓库',
     storageNotSet: '存储未设置',
-    inviteMoreFriend: '邀请另一位朋友',
     friendPlaceholder: '朋友的 GitHub 用户名',
     invite: '邀请',
     members: (count) => `成员（${count}）`,
     owner: '（所有者）',
     pendingConfirmation: '等待确认',
     pendingBadge: '待确认',
+    deleteRepoButton: '删除仓库',
+    deleteRepoConfirmTitle: '删除存档仓库？',
+    deleteRepoConfirmDesc: '这将永久删除 GitHub 上的共享存储——两位玩家的全部存档历史。你本地的游戏文件不受影响。此操作无法撤销。',
+    cancel: '取消',
     general: '通用',
     language: '语言',
     autostart: '随 Windows 启动',

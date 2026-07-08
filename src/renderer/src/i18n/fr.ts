@@ -3,7 +3,7 @@ import type { Translation } from './types'
 export const fr: Translation = {
   app: { loading: 'Chargement…' },
   windowControls: { minimize: 'Réduire', maximize: 'Agrandir', restore: 'Restaurer', close: 'Fermer' },
-  sidebar: { games: 'Jeux', settings: 'Paramètres' },
+  sidebar: { games: 'Jeux', friends: 'Amis', settings: 'Paramètres' },
   main: {
     searchPlaceholder: 'Rechercher un jeu...',
     loadingGames: 'Recherche de jeux…',
@@ -30,6 +30,14 @@ export const fr: Translation = {
     versions: (local, cloud) => `Local ${local} · Cloud ${cloud}`,
     gameNotSupported: 'jeu non pris en charge',
     notInstalled: 'non installé'
+  },
+  friends: {
+    title: 'Amis',
+    inviteTitle: 'Inviter un ami',
+    sending: "Envoi de l'invitation…",
+    acceptedBadge: 'Accepté',
+    noStorage: "Configure d'abord le stockage partagé dans les Paramètres",
+    emptyFriends: "Pas encore d'amis — invite quelqu'un ci-dessus"
   },
   cloudWarning: {
     title: 'Désactive Steam Cloud pour les jeux synchronisés',
@@ -85,13 +93,17 @@ export const fr: Translation = {
     storage: 'Stockage',
     privateRepo: 'Dépôt privé',
     storageNotSet: 'Stockage non configuré',
-    inviteMoreFriend: 'Inviter un autre ami',
     friendPlaceholder: "Nom d'utilisateur GitHub de l'ami",
     invite: 'Inviter',
     members: (count) => `Membres (${count})`,
     owner: '(propriétaire)',
     pendingConfirmation: 'En attente de confirmation',
     pendingBadge: 'En attente',
+    deleteRepoButton: 'Supprimer le dépôt',
+    deleteRepoConfirmTitle: 'Supprimer le dépôt des sauvegardes ?',
+    deleteRepoConfirmDesc:
+      "Cela supprime définitivement le stockage partagé sur GitHub — tout l'historique des sauvegardes des deux joueurs. Tes fichiers de jeu locaux ne sont pas touchés. Cette action est irréversible.",
+    cancel: 'Annuler',
     general: 'Général',
     language: 'Langue',
     autostart: 'Lancer avec Windows',

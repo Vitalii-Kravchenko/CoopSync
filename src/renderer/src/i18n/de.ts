@@ -3,7 +3,7 @@ import type { Translation } from './types'
 export const de: Translation = {
   app: { loading: 'Wird geladen…' },
   windowControls: { minimize: 'Minimieren', maximize: 'Maximieren', restore: 'Wiederherstellen', close: 'Schließen' },
-  sidebar: { games: 'Spiele', settings: 'Einstellungen' },
+  sidebar: { games: 'Spiele', friends: 'Freunde', settings: 'Einstellungen' },
   main: {
     searchPlaceholder: 'Spiel suchen...',
     loadingGames: 'Suche nach Spielen…',
@@ -30,6 +30,14 @@ export const de: Translation = {
     versions: (local, cloud) => `Lokal ${local} · Cloud ${cloud}`,
     gameNotSupported: 'Spiel nicht unterstützt',
     notInstalled: 'nicht installiert'
+  },
+  friends: {
+    title: 'Freunde',
+    inviteTitle: 'Freund einladen',
+    sending: 'Einladung wird gesendet…',
+    acceptedBadge: 'Angenommen',
+    noStorage: 'Richte zuerst den gemeinsamen Speicher in den Einstellungen ein',
+    emptyFriends: 'Noch keine Freunde — lade oben jemanden ein'
   },
   cloudWarning: {
     title: 'Steam Cloud für synchronisierte Spiele deaktivieren',
@@ -85,13 +93,17 @@ export const de: Translation = {
     storage: 'Speicher',
     privateRepo: 'Privates Repository',
     storageNotSet: 'Speicher nicht eingerichtet',
-    inviteMoreFriend: 'Weiteren Freund einladen',
     friendPlaceholder: 'GitHub-Benutzername des Freundes',
     invite: 'Einladen',
     members: (count) => `Mitglieder (${count})`,
     owner: '(Besitzer)',
     pendingConfirmation: 'Warten auf Bestätigung',
     pendingBadge: 'Ausstehend',
+    deleteRepoButton: 'Repository löschen',
+    deleteRepoConfirmTitle: 'Speicherstand-Repository löschen?',
+    deleteRepoConfirmDesc:
+      'Dies löscht den gemeinsamen Speicher auf GitHub endgültig — den gesamten Spielstandverlauf beider Spieler. Deine lokalen Spieldateien bleiben unberührt. Das kann nicht rückgängig gemacht werden.',
+    cancel: 'Abbrechen',
     general: 'Allgemein',
     language: 'Sprache',
     autostart: 'Mit Windows starten',

@@ -38,6 +38,8 @@ const api = {
     getStatus: (): Promise<SavesRepoStatus> => ipcRenderer.invoke('repo:get-status'),
     /** Створити (або підключити наявне) сховище. */
     create: (): Promise<SavesRepoStatus> => ipcRenderer.invoke('repo:create'),
+    /** Видалити сховище насовсім (незворотно). */
+    delete: (): Promise<void> => ipcRenderer.invoke('repo:delete'),
     /** Запросити друга у співавтори. */
     invite: (username: string): Promise<void> => ipcRenderer.invoke('repo:invite', username),
     /** Список ще не прийнятих запрошень. */

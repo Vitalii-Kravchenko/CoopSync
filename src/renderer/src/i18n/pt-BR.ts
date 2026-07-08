@@ -3,7 +3,7 @@ import type { Translation } from './types'
 export const ptBR: Translation = {
   app: { loading: 'Carregando…' },
   windowControls: { minimize: 'Minimizar', maximize: 'Maximizar', restore: 'Restaurar', close: 'Fechar' },
-  sidebar: { games: 'Jogos', settings: 'Configurações' },
+  sidebar: { games: 'Jogos', friends: 'Amigos', settings: 'Configurações' },
   main: {
     searchPlaceholder: 'Buscar um jogo...',
     loadingGames: 'Procurando jogos…',
@@ -30,6 +30,14 @@ export const ptBR: Translation = {
     versions: (local, cloud) => `Local ${local} · Nuvem ${cloud}`,
     gameNotSupported: 'jogo não suportado',
     notInstalled: 'não instalado'
+  },
+  friends: {
+    title: 'Amigos',
+    inviteTitle: 'Convidar um amigo',
+    sending: 'Enviando convite…',
+    acceptedBadge: 'Aceito',
+    noStorage: 'Primeiro configure o armazenamento compartilhado em Configurações',
+    emptyFriends: 'Ainda não há amigos — convide alguém acima'
   },
   cloudWarning: {
     title: 'Desative o Steam Cloud para os jogos sincronizados',
@@ -85,13 +93,17 @@ export const ptBR: Translation = {
     storage: 'Armazenamento',
     privateRepo: 'Repositório privado',
     storageNotSet: 'Armazenamento não configurado',
-    inviteMoreFriend: 'Convidar outro amigo',
     friendPlaceholder: 'Usuário do GitHub do amigo',
     invite: 'Convidar',
     members: (count) => `Membros (${count})`,
     owner: '(dono)',
     pendingConfirmation: 'Aguardando confirmação',
     pendingBadge: 'Pendente',
+    deleteRepoButton: 'Excluir repositório',
+    deleteRepoConfirmTitle: 'Excluir o repositório de saves?',
+    deleteRepoConfirmDesc:
+      'Isso exclui permanentemente o armazenamento compartilhado no GitHub — todo o histórico de saves dos dois jogadores. Seus arquivos de jogo locais não são afetados. Essa ação não pode ser desfeita.',
+    cancel: 'Cancelar',
     general: 'Geral',
     language: 'Idioma',
     autostart: 'Iniciar com o Windows',

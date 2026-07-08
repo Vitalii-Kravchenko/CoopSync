@@ -90,7 +90,8 @@ export interface GameSyncStatus {
 export interface AutoSyncEvent {
   appId: string
   name: string
-  action: 'pull' | 'push'
+  /** 'push-skipped' — хмара вже випередила нашу відому версію, автопуш свідомо пропущено. */
+  action: 'pull' | 'push' | 'push-skipped'
   ok: boolean
   message: string
 }

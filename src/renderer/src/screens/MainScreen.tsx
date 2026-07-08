@@ -8,7 +8,7 @@ import type { InstalledGame, CatalogGame, GameSyncStatus } from '../../../shared
 
 interface BannerState {
   text: string
-  kind: 'success' | 'info' | 'error'
+  kind: 'success' | 'info' | 'error' | 'warning'
   /** Іконка синку (свій UploadIcon/DownloadIcon), якщо банер про push/pull. */
   icon?: 'upload' | 'download'
 }
@@ -52,13 +52,20 @@ function MainScreen(): React.JSX.Element {
   // Реакція на автосинхронізацію (запуск/вихід гри у фоні).
   useEffect(() => {
     return window.api.watcher.onAutoSync((e) => {
-      if (e.ok) {
+      if (e.action === 'push-skipped') {
+        // Свідомо пропущений автопуш (конфлікт версій) — це не помилка,
+        // але й не мовчати можна: тут людина могла б втратити прогрес друга.
+        setBanner({ text: `${e.name}: ${e.message}`, kind: 'warning' })
+      } else if (e.ok) {
         // Показуємо реальний результат синку, а не фіксований текст.
         setBanner({
           text: `${e.name}: ${e.message}`,
           kind: 'success',
           icon: e.action === 'pull' ? 'download' : 'upload'
         })
+      } else {
+        // Раніше помилки автосинку мовчки губились — тепер теж показуємо їх.
+        setBanner({ text: `${e.name}: ${e.message}`, kind: 'error' })
       }
       // Стан міг змінитися — оновлюємо ігри та статуси.
       void loadStatuses()
@@ -199,7 +206,13 @@ function MainScreen(): React.JSX.Element {
           style={{
             ...styles.banner,
             borderColor:
-              banner.kind === 'error' ? colors.dangerBd : banner.kind === 'info' ? colors.infoBd : colors.successBd
+              banner.kind === 'error'
+                ? colors.dangerBd
+                : banner.kind === 'warning'
+                  ? colors.warningBd
+                  : banner.kind === 'info'
+                    ? colors.infoBd
+                    : colors.successBd
           }}
         >
           {banner.icon ? (
@@ -213,7 +226,13 @@ function MainScreen(): React.JSX.Element {
               style={{
                 ...styles.bannerDot,
                 background:
-                  banner.kind === 'error' ? colors.danger : banner.kind === 'info' ? colors.info : colors.success
+                  banner.kind === 'error'
+                    ? colors.danger
+                    : banner.kind === 'warning'
+                      ? colors.warning
+                      : banner.kind === 'info'
+                        ? colors.info
+                        : colors.success
               }}
             />
           )}

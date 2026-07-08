@@ -1,7 +1,7 @@
 import { execFile } from 'child_process'
 import { promisify } from 'util'
 import { READY_GAMES, type SupportedGame } from '../games/catalog'
-import { uploadGame, downloadGame, getSyncStatuses } from './sync'
+import { uploadGame, downloadGame, getSyncStatuses, isRemoteAhead } from './sync'
 import type { AutoSyncEvent } from '../../shared/types'
 
 const exec = promisify(execFile)
@@ -66,10 +66,23 @@ async function tick(
           onEvent({ appId: game.appId, name: game.name, action: 'pull', ok: false, message: errMsg(e) })
         }
       } else if (was && !now) {
-        // Гра закрилася → вивантажуємо сейви.
+        // Гра закрилася → вивантажуємо сейви, АЛЕ спершу перевіряємо, чи хтось
+        // інший (напр. друг-хост) уже не запушив новішу версію, поки ми грали —
+        // інакше ми б мовчки затерли його прогрес своїм (можливо, застарілим) сейвом.
         try {
-          const message = await uploadGame(token, owner, game.appId)
-          onEvent({ appId: game.appId, name: game.name, action: 'push', ok: true, message })
+          if (await isRemoteAhead(token, owner, game.appId)) {
+            onEvent({
+              appId: game.appId,
+              name: game.name,
+              action: 'push-skipped',
+              ok: true,
+              message:
+                'У хмарі вже новіша версія (хтось інший вивантажив свою) — автосинк пропущено. Онови вручну на екрані ігор.'
+            })
+          } else {
+            const message = await uploadGame(token, owner, game.appId)
+            onEvent({ appId: game.appId, name: game.name, action: 'push', ok: true, message })
+          }
         } catch (e) {
           onEvent({ appId: game.appId, name: game.name, action: 'push', ok: false, message: errMsg(e) })
         }

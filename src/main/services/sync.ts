@@ -136,6 +136,18 @@ function formatVersion(n: number): string {
   return `v1.${String(n).padStart(3, '0')}`
 }
 
+// Легка перевірка перед push при виході з гри: чи хмара вже випередила
+// відому нам локальну версію (хтось інший встиг запушити, поки ми грали).
+// Без хешування вмісту папки — досить порівняти номери версій з .meta.
+export async function isRemoteAhead(token: string, owner: string, appId: string): Promise<boolean> {
+  await ensureRepo(token, owner)
+  const game = findGame(appId)
+  const localVersions = await readLocalVersions()
+  const localVer = localVersions[appId] ?? 0
+  const remoteVer = await readRemoteVersion(game.name)
+  return remoteVer > localVer
+}
+
 /** Вивантажити сейви гри на GitHub (push). Піднімає версію. */
 export async function uploadGame(token: string, owner: string, appId: string): Promise<string> {
   await ensureRepo(token, owner)
@@ -175,6 +187,12 @@ export async function downloadGame(token: string, owner: string, appId: string):
   const remoteVersion = await readRemoteVersion(game.name)
   await setLocalVersion(appId, remoteVersion)
   return `Завантажено з GitHub ✓ (${formatVersion(remoteVersion)})`
+}
+
+/** Прибрати локальний клон сховища й забуті версії — після видалення репо на GitHub. */
+export async function resetLocalSaveState(): Promise<void> {
+  await rm(repoDir(), { recursive: true, force: true })
+  await rm(localVersionsPath(), { force: true })
 }
 
 // --- Визначення статусу синхронізації ---

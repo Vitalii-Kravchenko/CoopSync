@@ -25,7 +25,7 @@
 | 🐙 **[GitHub account](https://github.com)** | Free — used as the sync backend |
 
 > [!NOTE]
-> **What do I actually need to install myself?** Just **Git for Windows**, one time. Everything
+> **What do I actually need to install myself?** Just **[Git for Windows](https://git-scm.com/download/win)**, one time. Everything
 > else — Electron, Node.js, all app dependencies — is bundled inside the CoopSync installer, so
 > there's nothing else to set up. If `git --version` works in a terminal, you're covered.
 
@@ -80,7 +80,8 @@ installer — the same warning appears on the installer's first screen too.
   still pending.
 - 🗑️ **Delete the shared storage** — a guarded, two-step confirmation (with a short
   countdown) if you ever want to start over.
-- 🌍 **10 languages** — including English, Ukrainian, German, Polish, and more.
+- 🌍 **10 languages** — English, French, German, Polish, Portuguese (Brazil), Russian,
+  Chinese (Simplified), Spanish, Turkish, and Ukrainian.
 
 ## Stack
 

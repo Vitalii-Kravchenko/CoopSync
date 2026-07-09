@@ -1,7 +1,7 @@
 {
   "name": "coopsync",
   "version": "0.6.0",
-  "description": "Безкоштовний синхронізатор кооп-сейвів ігор через приватний GitHub-репозиторій",
+  "description": "Free co-op save sync for games via a private GitHub repository",
   "main": "./out/main/index.js",
   "author": "Vitalii Kravchenko",
   "license": "PolyForm-Noncommercial-1.0.0",

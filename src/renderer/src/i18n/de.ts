@@ -16,8 +16,11 @@ export const de: Translation = {
     syncErrorFallback: 'Synchronisierungsfehler',
     uploadSuccess: (v) => `Zu GitHub hochgeladen ✓ (${v})`,
     downloadSuccess: (v) => `Von GitHub heruntergeladen ✓ (${v})`,
+    restoreSuccess: (n) => `Fehlende Dateien aus der Cloud wiederhergestellt: ${n} ✓`,
     pushSkipped:
       'In der Cloud gibt es bereits eine neuere Version (jemand anders hat hochgeladen) — automatische Synchronisierung übersprungen. Aktualisiere manuell im Spiele-Bildschirm.',
+    pushSkippedStale:
+      'Der lokale Spielstand wirkt veraltet (seit dem letzten Cloud-Sync unverändert) — automatischer Upload übersprungen, um die Cloud nicht zu überschreiben. Lade bei Bedarf die Cloud-Version manuell herunter.',
     statusesError: 'Synchronisierungsstatus konnte nicht geprüft werden',
     retry: 'Erneut versuchen'
   },
@@ -25,6 +28,7 @@ export const de: Translation = {
     statusSynced: 'Synchronisiert',
     statusLocalNewer: 'Lokal ist neuer',
     statusRemoteNewer: 'Neuere Version in der Cloud',
+    statusLocalStale: 'Lokaler Spielstand veraltet',
     statusNotUploaded: 'Nicht hochgeladen',
     statusCloudOnly: 'Nur in der Cloud',
     statusNoSaves: 'Keine Spielstände',

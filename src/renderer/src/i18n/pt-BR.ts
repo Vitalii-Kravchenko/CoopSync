@@ -16,8 +16,11 @@ export const ptBR: Translation = {
     syncErrorFallback: 'Erro de sincronização',
     uploadSuccess: (v) => `Enviado para o GitHub ✓ (${v})`,
     downloadSuccess: (v) => `Baixado do GitHub ✓ (${v})`,
+    restoreSuccess: (n) => `Arquivos restaurados da nuvem: ${n} ✓`,
     pushSkipped:
       'A nuvem já tem uma versão mais recente (outra pessoa enviou a dela) — sincronização automática ignorada. Atualize manualmente na tela de jogos.',
+    pushSkippedStale:
+      'O save local parece desatualizado (sem mudanças desde a última sincronização com a nuvem) — envio automático ignorado para não sobrescrever a nuvem. Baixe a versão da nuvem manualmente se necessário.',
     statusesError: 'Não foi possível verificar o status de sincronização',
     retry: 'Tentar novamente'
   },
@@ -25,6 +28,7 @@ export const ptBR: Translation = {
     statusSynced: 'Sincronizado',
     statusLocalNewer: 'A versão local é mais recente',
     statusRemoteNewer: 'Há uma versão mais recente na nuvem',
+    statusLocalStale: 'Save local está desatualizado',
     statusNotUploaded: 'Não enviado',
     statusCloudOnly: 'Somente na nuvem',
     statusNoSaves: 'Sem saves',

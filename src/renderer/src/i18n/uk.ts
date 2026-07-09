@@ -16,8 +16,11 @@ export const uk: Translation = {
     syncErrorFallback: 'Помилка синхронізації',
     uploadSuccess: (v) => `Вивантажено на GitHub ✓ (${v})`,
     downloadSuccess: (v) => `Завантажено з GitHub ✓ (${v})`,
+    restoreSuccess: (n) => `Довантажено файлів з хмари: ${n} ✓`,
     pushSkipped:
       'У хмарі вже новіша версія (хтось інший вивантажив свою) — автосинк пропущено. Онови вручну на екрані ігор.',
+    pushSkippedStale:
+      'Локальний сейв виглядає застарілим (не змінювався після останнього синку) — автовивантаження пропущено, щоб не затерти хмару. За потреби завантаж хмарну версію вручну.',
     statusesError: 'Не вдалося перевірити статус синку',
     retry: 'Спробувати ще раз'
   },
@@ -25,6 +28,7 @@ export const uk: Translation = {
     statusSynced: 'Синхронізовано',
     statusLocalNewer: 'Локальна новіша',
     statusRemoteNewer: 'Є новіша в хмарі',
+    statusLocalStale: 'Локальний сейв застарілий',
     statusNotUploaded: 'Не вивантажено',
     statusCloudOnly: 'Тільки в хмарі',
     statusNoSaves: 'Сейвів нема',

@@ -45,7 +45,9 @@ export interface Translation {
     syncErrorFallback: string
     uploadSuccess: (version: string) => string
     downloadSuccess: (version: string) => string
+    restoreSuccess: (count: string) => string
     pushSkipped: string
+    pushSkippedStale: string
     statusesError: string
     retry: string
   }
@@ -53,6 +55,7 @@ export interface Translation {
     statusSynced: string
     statusLocalNewer: string
     statusRemoteNewer: string
+    statusLocalStale: string
     statusNotUploaded: string
     statusCloudOnly: string
     statusNoSaves: string

@@ -5,6 +5,7 @@ import { describeError } from '../errors'
 import type { Translation } from '../i18n'
 import { HistoryIcon } from '../components/icons'
 import type { SyncHistoryEntry } from '../../../shared/types'
+import { formatVersion as fmtVersion } from '../../../shared/format'
 
 // ISO timestamp → "2 хв тому" / "1 год тому" / "3 дн тому" (локалізовано).
 function formatRelativeTime(iso: string, t: Translation): string {
@@ -15,11 +16,6 @@ function formatRelativeTime(iso: string, t: Translation): string {
   if (diffHours < 24) return t.history.hoursAgo(diffHours)
   const diffDays = Math.floor(diffHours / 24)
   return t.history.daysAgo(diffDays)
-}
-
-// "4" → "v1.004".
-function fmtVersion(n: number): string {
-  return `v1.${String(n).padStart(3, '0')}`
 }
 
 function HistoryScreen(): React.JSX.Element {

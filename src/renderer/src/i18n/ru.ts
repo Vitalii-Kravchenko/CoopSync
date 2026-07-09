@@ -16,8 +16,11 @@ export const ru: Translation = {
     syncErrorFallback: 'Ошибка синхронизации',
     uploadSuccess: (v) => `Выгружено на GitHub ✓ (${v})`,
     downloadSuccess: (v) => `Загружено с GitHub ✓ (${v})`,
+    restoreSuccess: (n) => `Восстановлено файлов из облака: ${n} ✓`,
     pushSkipped:
       'В облаке уже новее версия (кто-то другой выгрузил свою) — автосинхронизация пропущена. Обнови вручную на экране игр.',
+    pushSkippedStale:
+      'Локальный сейв выглядит устаревшим (не менялся после последней синхронизации с облаком) — автовыгрузка пропущена, чтобы не затереть облако. При необходимости загрузи облачную версию вручную.',
     statusesError: 'Не удалось проверить статус синхронизации',
     retry: 'Попробовать снова'
   },
@@ -25,6 +28,7 @@ export const ru: Translation = {
     statusSynced: 'Синхронизировано',
     statusLocalNewer: 'Локальная версия новее',
     statusRemoteNewer: 'Есть более новая версия в облаке',
+    statusLocalStale: 'Локальный сейв устарел',
     statusNotUploaded: 'Не выгружено',
     statusCloudOnly: 'Только в облаке',
     statusNoSaves: 'Сейвов нет',

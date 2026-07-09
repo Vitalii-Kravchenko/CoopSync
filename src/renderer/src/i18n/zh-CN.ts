@@ -16,7 +16,9 @@ export const zhCN: Translation = {
     syncErrorFallback: '同步错误',
     uploadSuccess: (v) => `已上传到 GitHub ✓ (${v})`,
     downloadSuccess: (v) => `已从 GitHub 下载 ✓ (${v})`,
+    restoreSuccess: (n) => `已从云端恢复缺失文件：${n} ✓`,
     pushSkipped: '云端已经有更新的版本（其他人已上传）——已跳过自动同步。请在游戏界面手动更新。',
+    pushSkippedStale: '本地存档看起来已过时（自上次云同步以来未变化）——已跳过自动上传，以免覆盖云端。如有需要，请手动下载云端版本。',
     statusesError: '无法检查同步状态',
     retry: '重试'
   },
@@ -24,6 +26,7 @@ export const zhCN: Translation = {
     statusSynced: '已同步',
     statusLocalNewer: '本地版本较新',
     statusRemoteNewer: '云端有更新版本',
+    statusLocalStale: '本地存档已过时',
     statusNotUploaded: '尚未上传',
     statusCloudOnly: '仅云端',
     statusNoSaves: '没有存档',

@@ -1,7 +1,7 @@
 import { execFile } from 'child_process'
 import { promisify } from 'util'
 import { READY_GAMES, type SupportedGame } from '../games/catalog'
-import { uploadGame, downloadGame, getSyncStatuses, isRemoteAhead } from './sync'
+import { uploadGame, downloadGame, getSyncStatuses, restoreMissingFiles } from './sync'
 import { parseAppError } from '../../shared/errors'
 import type { AutoSyncEvent } from '../../shared/types'
 
@@ -56,12 +56,18 @@ async function tick(
       if (initial) continue
 
       if (!was && now) {
-        // Гра щойно запустилася → тягнемо свіжі сейви, АЛЕ лише якщо хмара
-        // новіша. Інакше затерли б новіший локальний прогрес.
+        // Гра щойно запустилася → спершу довантажуємо файли, яких бракує
+        // локально (напр. видалений світ), не чіпаючи наявні локальні файли —
+        // це безпечно завжди, незалежно від версій. Далі повний pull, АЛЕ
+        // лише якщо хмара новіша. Інакше затерли б новіший локальний прогрес.
         try {
+          const restored = await restoreMissingFiles(token, owner, game.appId)
           const statuses = await getSyncStatuses(token, owner)
           const st = statuses.find((s) => s.appId === game.appId)
-          if (st && (st.status === 'remote-newer' || st.status === 'cloud-only')) {
+          if (
+            st &&
+            (st.status === 'remote-newer' || st.status === 'cloud-only' || st.status === 'local-stale')
+          ) {
             const result = await downloadGame(token, owner, game.appId)
             onEvent({
               appId: game.appId,
@@ -71,23 +77,46 @@ async function tick(
               code: 'download-success',
               params: { version: String(result.version) }
             })
+          } else if (restored > 0) {
+            onEvent({
+              appId: game.appId,
+              name: game.name,
+              action: 'pull',
+              ok: true,
+              code: 'restore-success',
+              params: { count: String(restored) }
+            })
           }
-          // synced / local-newer / not-uploaded → нічого тягнути не треба.
+          // synced / local-newer (без відновлених файлів) → нічого тягнути не треба.
         } catch (e) {
           onEvent({ appId: game.appId, name: game.name, action: 'pull', ok: false, ...errorCode(e) })
         }
       } else if (was && !now) {
-        // Гра закрилася → вивантажуємо сейви, АЛЕ спершу перевіряємо, чи хтось
-        // інший (напр. друг-хост) уже не запушив новішу версію, поки ми грали —
-        // інакше ми б мовчки затерли його прогрес своїм (можливо, застарілим) сейвом.
+        // Гра закрилася → вивантажуємо сейви, АЛЕ спершу перевіряємо статус:
+        // - хтось інший (напр. друг-хост) уже запушив новішу версію, поки ми
+        //   грали — інакше ми б мовчки затерли його прогрес своїм сейвом;
+        // - локальний вміст відрізняється від хмарного, але не тому, що ми
+        //   реально грали (жоден файл не змінювався після останнього синку,
+        //   напр. підмінили сейви старим бекапом) — інакше застаріле мовчки
+        //   затре актуальний хмарний прогрес.
         try {
-          if (await isRemoteAhead(token, owner, game.appId)) {
+          const statuses = await getSyncStatuses(token, owner)
+          const st = statuses.find((s) => s.appId === game.appId)
+          if (st?.status === 'remote-newer' || st?.status === 'cloud-only') {
             onEvent({
               appId: game.appId,
               name: game.name,
               action: 'push-skipped',
               ok: true,
               code: 'push-skipped'
+            })
+          } else if (st?.status === 'local-stale') {
+            onEvent({
+              appId: game.appId,
+              name: game.name,
+              action: 'push-skipped',
+              ok: true,
+              code: 'push-skipped-stale'
             })
           } else {
             const result = await uploadGame(token, owner, game.appId)

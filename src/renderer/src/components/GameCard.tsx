@@ -5,6 +5,7 @@ import type { Translation } from '../i18n'
 import { UploadIcon, DownloadIcon } from './icons'
 import Button from './Button'
 import type { SyncStatus } from '../../../shared/types'
+import { formatVersion } from '../../../shared/format'
 
 interface Props {
   appId: string
@@ -28,9 +29,9 @@ interface Props {
   onDownload?: () => void
 }
 
-// "1" → "v1.001", 0/undefined → "—".
+// 0/undefined → "—", інакше formatVersion.
 function fmtVersion(n: number | undefined): string {
-  return n && n > 0 ? `v1.${String(n).padStart(3, '0')}` : '—'
+  return n && n > 0 ? formatVersion(n) : '—'
 }
 
 function startOfDay(d: Date): number {
@@ -77,6 +78,8 @@ function syncDisplay(
       return { color: colors.warning, bg: colors.warningBg, bd: colors.warningBd, text: t.gameCard.statusLocalNewer }
     case 'remote-newer':
       return { color: colors.info, bg: colors.infoBg, bd: colors.infoBd, text: t.gameCard.statusRemoteNewer }
+    case 'local-stale':
+      return { color: colors.warning, bg: colors.warningBg, bd: colors.warningBd, text: t.gameCard.statusLocalStale }
     case 'not-uploaded':
       return {
         color: colors.text3,
@@ -262,12 +265,13 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'inline-flex',
     alignItems: 'center',
     gap: 6,
-    height: 22,
-    padding: '0 9px',
+    minHeight: 22,
+    padding: '4px 9px',
     marginTop: 6,
     fontFamily: fonts.display,
     fontWeight: 600,
     fontSize: 10.5,
+    lineHeight: 1.3,
     letterSpacing: '.03em',
     borderRadius: radii.pill,
     border: '1px solid'

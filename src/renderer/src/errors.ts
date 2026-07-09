@@ -1,10 +1,6 @@
 import { parseAppError } from '../../shared/errors'
+import { formatVersion } from '../../shared/format'
 import type { Translation } from './i18n'
-
-// "1" → "v1.001".
-function fmtVersion(n: number): string {
-  return `v1.${String(n).padStart(3, '0')}`
-}
 
 /**
  * Перетворити помилку з window.api-виклику на читабельний локалізований текст.
@@ -26,11 +22,15 @@ export function describeError(e: unknown, t: Translation, fallback: string): str
 export function describeSyncResult(code: string, params: Record<string, string> | undefined, t: Translation): string {
   switch (code) {
     case 'upload-success':
-      return t.main.uploadSuccess(fmtVersion(Number(params?.version ?? 0)))
+      return t.main.uploadSuccess(formatVersion(Number(params?.version ?? 0)))
     case 'download-success':
-      return t.main.downloadSuccess(fmtVersion(Number(params?.version ?? 0)))
+      return t.main.downloadSuccess(formatVersion(Number(params?.version ?? 0)))
+    case 'restore-success':
+      return t.main.restoreSuccess(String(params?.count ?? 0))
     case 'push-skipped':
       return t.main.pushSkipped
+    case 'push-skipped-stale':
+      return t.main.pushSkippedStale
     default: {
       const entry = t.errors[code as keyof Translation['errors']]
       return entry ? entry(params ?? {}) : t.main.syncErrorFallback

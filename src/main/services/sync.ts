@@ -8,6 +8,7 @@ import { cp, rm, mkdir, readdir, readFile, writeFile } from 'fs/promises'
 import { SUPPORTED_GAMES, READY_GAMES } from '../games/catalog'
 import { SAVES_REPO_NAME } from '../config'
 import { makeAppError } from '../../shared/errors'
+import { formatVersion } from '../../shared/format'
 import type { SyncStatus, GameSyncStatus, SyncHistoryEntry, SyncResult } from '../../shared/types'
 
 const exec = promisify(execFile)
@@ -234,37 +235,34 @@ async function setLocalVersion(appId: string, version: number): Promise<void> {
   await writeFile(localVersionsPath(), JSON.stringify(all, null, 2))
 }
 
-// Версія для показу: 1 → "v1.001".
-function formatVersion(n: number): string {
-  return `v1.${String(n).padStart(3, '0')}`
-}
-
-// Легка перевірка перед push при виході з гри: чи хмара вже випередила
-// відому нам локальну версію (хтось інший встиг запушити, поки ми грали).
-// Без хешування вмісту папки — досить порівняти номери версій з .meta.
-export async function isRemoteAhead(token: string, owner: string, appId: string): Promise<boolean> {
-  await ensureRepo(token, owner)
-  const game = findGame(appId)
-  const localVersions = await readLocalVersions()
-  const localVer = localVersions[appId] ?? 0
-  const remoteVer = await readRemoteVersion(game.name)
-  return remoteVer > localVer
-}
-
 /** Вивантажити сейви гри на GitHub (push). Піднімає версію. */
 export async function uploadGame(token: string, owner: string, appId: string): Promise<SyncResult> {
   await ensureRepo(token, owner)
   const game = findGame(appId)
   if (!existsSync(game.savePath)) throw makeAppError('SAVE_FOLDER_NOT_FOUND')
 
-  // Замінюємо вміст папки гри в репо свіжими локальними сейвами.
   const dest = join(repoDir(), game.name)
+
+  // Якщо хмарна копія вже є і вміст співпадає з локальним (реальних змін
+  // немає — типовий випадок: локальний трекінг версій скинувся, а в гру
+  // після цього не заходили) — не бампаємо версію і не створюємо порожній
+  // коміт, просто підтягуємо локальний трекінг до вже актуальної хмарної версії.
+  if (existsSync(dest)) {
+    const [localHash, remoteHash] = await Promise.all([
+      folderHash(game.savePath, game.saveFilePattern),
+      folderHash(dest, game.saveFilePattern)
+    ])
+    if (localHash === remoteHash) {
+      const remoteVersion = await readRemoteVersion(game.name)
+      await setLocalVersion(appId, remoteVersion)
+      return { version: remoteVersion }
+    }
+  }
+
+  // Замінюємо вміст папки гри в репо свіжими локальними сейвами.
   await rm(dest, { recursive: true, force: true })
   await copyFiltered(game.savePath, dest, game.saveFilePattern)
 
-  // Завжди створюємо нову версію — навіть якщо файли начебто ті самі
-  // (могли змінитися дрібниці: координати персонажа, час у грі тощо).
-  // Мета-файл оновлюється щоразу, тож коміт ніколи не буде порожнім.
   const newVersion = (await readRemoteVersion(game.name)) + 1
   await writeRemoteMeta(game.name, newVersion, owner)
   await appendHistory({
@@ -280,6 +278,42 @@ export async function uploadGame(token: string, owner: string, appId: string): P
   await git(['push', 'origin', 'main'])
   await setLocalVersion(appId, newVersion)
   return { version: newVersion }
+}
+
+/**
+ * Довантажити з хмари файли, яких бракує локально — не чіпаючи наявні
+ * локальні файли (git-подібна поведінка: додаємо те, чого нема, а не
+ * перезаписуємо те, що вже є). Захищає від сценарію, коли гравець видалив
+ * частину локальних сейвів (напр. один світ) — при вході в гру ці файли
+ * автоматично повертаються з хмари, і застосунок більше не сприймає їхню
+ * відсутність як "локальний прогрес", який треба запушити поверх хмари.
+ * Повертає кількість відновлених файлів.
+ */
+export async function restoreMissingFiles(token: string, owner: string, appId: string): Promise<number> {
+  await ensureRepo(token, owner)
+  const game = findGame(appId)
+  const repoPath = join(repoDir(), game.name)
+  if (!existsSync(repoPath)) return 0
+
+  let restored = 0
+  async function walk(remoteDir: string, localDir: string): Promise<void> {
+    const entries = await readdir(remoteDir, { withFileTypes: true })
+    for (const e of entries) {
+      if (e.name === '.git') continue
+      if (game.saveFilePattern && !e.isDirectory() && !game.saveFilePattern.test(e.name)) continue
+      const remoteFull = join(remoteDir, e.name)
+      const localFull = join(localDir, e.name)
+      if (e.isDirectory()) {
+        await walk(remoteFull, localFull)
+      } else if (!existsSync(localFull)) {
+        await mkdir(localDir, { recursive: true })
+        await cp(remoteFull, localFull)
+        restored++
+      }
+    }
+  }
+  await walk(repoPath, game.savePath)
+  return restored
 }
 
 /** Завантажити сейви гри з GitHub у локальну папку (pull). */
@@ -329,6 +363,25 @@ async function folderHash(dir: string, pattern?: RegExp): Promise<string> {
   }
   await walk(dir, '')
   return createHash('sha1').update(parts.join('\n')).digest('hex')
+}
+
+// Час останньої зміни файлу в папці (найсвіжіший mtime, мс). 0, якщо файлів нема.
+// Використовується, щоб відрізнити "локально реально новіший прогрес" від
+// "локальний вміст просто відрізняється, бо підмінили старим бекапом".
+async function maxMtime(dir: string, pattern?: RegExp): Promise<number> {
+  let max = 0
+  async function walk(d: string): Promise<void> {
+    const entries = await readdir(d, { withFileTypes: true })
+    for (const e of entries) {
+      if (e.name === '.git') continue
+      if (pattern && !e.isDirectory() && !pattern.test(e.name)) continue
+      const full = join(d, e.name)
+      if (e.isDirectory()) await walk(full)
+      else max = Math.max(max, statSync(full).mtimeMs)
+    }
+  }
+  await walk(dir)
+  return max
 }
 
 // Сумарний розмір файлів у папці (з урахуванням того самого паттерна фільтрації,
@@ -381,7 +434,21 @@ export async function getSyncStatuses(token: string, owner: string): Promise<Gam
         folderHash(savePath, g.saveFilePattern),
         folderHash(repoPath, g.saveFilePattern)
       ])
-      status = localHash === remoteHash ? 'synced' : 'local-newer'
+      if (localHash === remoteHash) {
+        status = 'synced'
+      } else if (
+        remoteMeta &&
+        (await maxMtime(savePath, g.saveFilePattern)) <= new Date(remoteMeta.updatedAt).getTime()
+      ) {
+        // Локальний вміст відрізняється від хмарного, але жоден локальний файл
+        // не змінювався ПІСЛЯ останнього відомого хмарного синку — це не новий
+        // прогрес, а застарілі дані (напр. відновлений старий бекап сейвів).
+        // Не можна вважати це "локально новіше" — інакше застаріле мовчки
+        // затре хмарний прогрес при автопуші.
+        status = 'local-stale'
+      } else {
+        status = 'local-newer'
+      }
     }
 
     // Час/розмір показуємо зі спільної (хмарної) копії, коли вона є — це те,

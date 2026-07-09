@@ -16,8 +16,11 @@ export const pl: Translation = {
     syncErrorFallback: 'Błąd synchronizacji',
     uploadSuccess: (v) => `Wysłano na GitHub ✓ (${v})`,
     downloadSuccess: (v) => `Pobrano z GitHub ✓ (${v})`,
+    restoreSuccess: (n) => `Przywrócono brakujące pliki z chmury: ${n} ✓`,
     pushSkipped:
       'W chmurze jest już nowsza wersja (ktoś inny ją wysłał) — automatyczna synchronizacja pominięta. Zaktualizuj ręcznie na ekranie gier.',
+    pushSkippedStale:
+      'Lokalny zapis wygląda na nieaktualny (bez zmian od ostatniej synchronizacji z chmurą) — automatyczne wysyłanie pominięte, by nie nadpisać chmury. W razie potrzeby pobierz wersję z chmury ręcznie.',
     statusesError: 'Nie udało się sprawdzić statusu synchronizacji',
     retry: 'Spróbuj ponownie'
   },
@@ -25,6 +28,7 @@ export const pl: Translation = {
     statusSynced: 'Zsynchronizowano',
     statusLocalNewer: 'Lokalna wersja jest nowsza',
     statusRemoteNewer: 'Nowsza wersja w chmurze',
+    statusLocalStale: 'Lokalny zapis jest nieaktualny',
     statusNotUploaded: 'Nie wysłano',
     statusCloudOnly: 'Tylko w chmurze',
     statusNoSaves: 'Brak zapisów',

@@ -16,7 +16,9 @@ export const en: Translation = {
     syncErrorFallback: 'Sync error',
     uploadSuccess: (v) => `Uploaded to GitHub ✓ (${v})`,
     downloadSuccess: (v) => `Downloaded from GitHub ✓ (${v})`,
+    restoreSuccess: (n) => `Restored missing files from the cloud: ${n} ✓`,
     pushSkipped: "The cloud already has a newer version (someone else uploaded theirs) — auto-sync skipped. Update manually on the games screen.",
+    pushSkippedStale: "Local save looks outdated (unchanged since the last cloud sync) — auto-upload skipped so it doesn't overwrite the cloud. Download the cloud version manually if needed.",
     statusesError: "Couldn't check sync status",
     retry: 'Try again'
   },
@@ -24,6 +26,7 @@ export const en: Translation = {
     statusSynced: 'Synced',
     statusLocalNewer: 'Local is newer',
     statusRemoteNewer: 'Newer version in the cloud',
+    statusLocalStale: 'Local save is outdated',
     statusNotUploaded: 'Not uploaded',
     statusCloudOnly: 'Cloud only',
     statusNoSaves: 'No saves',

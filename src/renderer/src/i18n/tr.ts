@@ -16,8 +16,11 @@ export const tr: Translation = {
     syncErrorFallback: 'Senkronizasyon hatası',
     uploadSuccess: (v) => `GitHub'a yüklendi ✓ (${v})`,
     downloadSuccess: (v) => `GitHub'dan indirildi ✓ (${v})`,
+    restoreSuccess: (n) => `Buluttan eksik dosyalar geri yüklendi: ${n} ✓`,
     pushSkipped:
       "Bulutta zaten daha yeni bir sürüm var (başka biri kendi sürümünü yükledi) — otomatik senkronizasyon atlandı. Oyunlar ekranından elle güncelle.",
+    pushSkippedStale:
+      "Yerel kayıt eski görünüyor (son bulut senkronizasyonundan beri değişmemiş) — bulutun üzerine yazmamak için otomatik yükleme atlandı. Gerekirse bulut sürümünü elle indir.",
     statusesError: 'Senkronizasyon durumu kontrol edilemedi',
     retry: 'Tekrar dene'
   },
@@ -25,6 +28,7 @@ export const tr: Translation = {
     statusSynced: 'Senkronize edildi',
     statusLocalNewer: 'Yerel sürüm daha yeni',
     statusRemoteNewer: 'Bulutta daha yeni bir sürüm var',
+    statusLocalStale: 'Yerel kayıt eski',
     statusNotUploaded: 'Yüklenmedi',
     statusCloudOnly: 'Yalnızca bulutta',
     statusNoSaves: 'Kayıt yok',

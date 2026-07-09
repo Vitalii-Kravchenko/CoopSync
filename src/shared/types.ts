@@ -73,6 +73,7 @@ export type SyncStatus =
   | 'synced' // локальне = хмара
   | 'local-newer' // локальне новіше → вивантажити
   | 'remote-newer' // у хмарі новіше → завантажити
+  | 'local-stale' // локальне відрізняється, але не змінювалось після останнього синку (напр. старий бекап) → завантажити
   | 'not-uploaded' // локальне є, у хмарі ще нема
   | 'cloud-only' // у хмарі є, локально нема
   | 'no-saves' // нема ні там, ні там
@@ -97,8 +98,16 @@ export interface SyncResult {
 }
 
 /** Код результату автосинку — те саме, що й ручний sync, показуємо тим самим
- * describeSyncResult(). 'push-skipped' — хмара вже випередила нашу відому версію. */
-export type SyncResultCode = 'upload-success' | 'download-success' | 'push-skipped'
+ * describeSyncResult(). 'push-skipped' — хмара вже випередила нашу відому версію.
+ * 'push-skipped-stale' — локальний вміст застарілий (не змінювався після
+ * останнього синку), автопуш пропущено, щоб не затерти хмару.
+ * 'restore-success' — довантажено файли, яких бракувало локально (без повного pull). */
+export type SyncResultCode =
+  | 'upload-success'
+  | 'download-success'
+  | 'push-skipped'
+  | 'push-skipped-stale'
+  | 'restore-success'
 
 /** Подія автосинхронізації (запуск гри → pull, вихід → push). */
 export interface AutoSyncEvent {

@@ -93,7 +93,17 @@ export function cutClip(px = 10): string {
   return `polygon(0 0, calc(100% - ${px}px) 0, 100% ${px}px, 100% 100%, ${px}px 100%, 0 calc(100% - ${px}px))`
 }
 
+// Chromium кешує <img> на диску практично назавжди в межах локальної сесії
+// (застосунок не перезавантажує сторінку), тож без зміни самого URL нова
+// обкладинка з CDN ніколи не підхопиться, навіть коли Steam її оновить.
+// fetch() з cache:'no-cache' сюди не підходить — крос-доменні fetch-запити
+// підпадають під CORS (на відміну від <img src>), а CDN потрібних заголовків
+// не віддає, тож запит просто падає. Натомість кеш-бастер міняється раз при
+// кожному старті рендер-процесу (не персистентно) — це гарантує, що при
+// кожному запуску CoopSync тягнеться свіжа версія з CDN, без CORS-проблем.
+const POSTER_CACHE_BUST = Date.now()
+
 /** URL вертикального постера гри зі Steam (2:3). */
 export function steamPoster(appId: string): string {
-  return `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/library_600x900.jpg`
+  return `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/library_600x900.jpg?v=${POSTER_CACHE_BUST}`
 }

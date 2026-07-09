@@ -4,6 +4,12 @@ import { registerIpcHandlers } from './ipc'
 import { createTray } from './trayIcon'
 import { consumeInstallerLanguage, readSettings, writeSettings } from './services/settingsStore'
 
+// На частині старих відеокарт (особливо AMD) GPU-процес Electron/Chromium
+// падає при старті, і застосунок взагалі не відкривається. UI простий
+// (картки, легкі анімації), тож вимикаємо апаратне прискорення безумовно
+// для всіх — втрата плавності від софтверного рендерингу непомітна.
+app.disableHardwareAcceleration()
+
 let mainWindow: BrowserWindow | null = null
 let isQuitting = false // true лише коли користувач справді виходить (через трей)
 

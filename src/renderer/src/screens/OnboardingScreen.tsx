@@ -204,9 +204,9 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
           <div style={styles.okRow}>
             <CrownIcon size={16} color={colors.success} />
             <span style={styles.okName}>{t.onboarding.youAreHost}</span>
-            <button style={styles.changeLink} onClick={() => setRole(null)}>
+            <Button variant="ghost" style={styles.smallGhost} onClick={() => setRole(null)}>
               {t.onboarding.change}
-            </button>
+            </Button>
           </div>
         )}
         {role === 'join' && (
@@ -224,9 +224,13 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
                 {busy ? t.onboarding.checking : t.onboarding.connect}
               </Button>
             </div>
-            <button style={styles.changeLink} onClick={() => setRole(null)}>
+            <Button
+              variant="ghost"
+              style={{ ...styles.smallGhost, alignSelf: 'flex-start' }}
+              onClick={() => setRole(null)}
+            >
               {t.onboarding.chooseOtherRole}
-            </button>
+            </Button>
           </div>
         )}
       </Step>
@@ -399,16 +403,7 @@ const styles: Record<string, React.CSSProperties> = {
   roleTitle: { fontFamily: fonts.display, fontSize: 14.5, fontWeight: 700 },
   roleDesc: { fontSize: 12.5, color: colors.text3 },
   joinBox: { display: 'flex', flexDirection: 'column', gap: 8 },
-  changeLink: {
-    alignSelf: 'flex-start',
-    background: 'transparent',
-    border: 'none',
-    color: colors.cy,
-    cursor: 'pointer',
-    fontSize: 12.5,
-    padding: 0,
-    textDecoration: 'underline'
-  },
+  smallGhost: { height: 30, padding: '0 14px', fontSize: 12 },
   device: { display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'flex-start' },
   deviceCode: {
     fontFamily: fonts.mono,

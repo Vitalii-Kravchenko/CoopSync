@@ -16,8 +16,11 @@ export const es: Translation = {
     syncErrorFallback: 'Error de sincronización',
     uploadSuccess: (v) => `Subido a GitHub ✓ (${v})`,
     downloadSuccess: (v) => `Descargado de GitHub ✓ (${v})`,
+    restoreSuccess: (n) => `Archivos restaurados desde la nube: ${n} ✓`,
     pushSkipped:
       'La nube ya tiene una versión más reciente (alguien más subió la suya) — sincronización automática omitida. Actualiza manualmente en la pantalla de juegos.',
+    pushSkippedStale:
+      'La partida local parece desactualizada (sin cambios desde la última sincronización con la nube) — subida automática omitida para no sobrescribir la nube. Descarga la versión de la nube manualmente si es necesario.',
     statusesError: 'No se pudo comprobar el estado de sincronización',
     retry: 'Reintentar'
   },
@@ -25,6 +28,7 @@ export const es: Translation = {
     statusSynced: 'Sincronizado',
     statusLocalNewer: 'La versión local es más reciente',
     statusRemoteNewer: 'Hay una versión más reciente en la nube',
+    statusLocalStale: 'La partida local está desactualizada',
     statusNotUploaded: 'No subido',
     statusCloudOnly: 'Solo en la nube',
     statusNoSaves: 'Sin partidas guardadas',

@@ -51,10 +51,10 @@ function ConfirmModal({
           <div style={styles.description}>{description}</div>
           {error && <div style={styles.error}>{error}</div>}
           <div style={styles.actions}>
-            <Button variant="ghost" onClick={onCancel} disabled={busy}>
+            <Button variant="ghost" style={styles.actionBtn} onClick={onCancel} disabled={busy}>
               {cancelLabel}
             </Button>
-            <Button variant="danger" onClick={onConfirm} disabled={locked || busy}>
+            <Button variant="danger" style={styles.actionBtn} onClick={onConfirm} disabled={locked || busy}>
               {locked ? `${confirmLabel} (${remaining})` : confirmLabel}
             </Button>
           </div>
@@ -84,7 +84,7 @@ const styles: Record<string, React.CSSProperties> = {
     zIndex: 200
   },
   card: {
-    width: 360,
+    width: 440,
     border: `1px solid ${colors.dangerBd}`,
     borderRadius: radii.lg,
     background: colors.bgOverlay,
@@ -105,7 +105,8 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '8px 10px',
     marginBottom: 16
   },
-  actions: { display: 'flex', gap: 10, justifyContent: 'flex-end' }
+  actions: { display: 'flex', gap: 10, justifyContent: 'flex-end' },
+  actionBtn: { whiteSpace: 'nowrap', flexShrink: 0 }
 }
 
 export default ConfirmModal

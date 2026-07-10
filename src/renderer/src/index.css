@@ -84,6 +84,18 @@ body {
     background-position: 460px 0;
   }
 }
+@keyframes historyRowIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-6px);
+    background: rgba(54, 226, 232, 0.1);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    background: transparent;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.001ms !important;

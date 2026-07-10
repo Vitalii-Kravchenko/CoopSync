@@ -48,6 +48,7 @@ export interface Translation {
     restoreSuccess: (count: string) => string
     pushSkipped: string
     pushSkippedStale: string
+    pushSkippedNoChange: string
     statusesError: string
     retry: string
   }
@@ -59,6 +60,7 @@ export interface Translation {
     statusNotUploaded: string
     statusCloudOnly: string
     statusNoSaves: string
+    statusNoRepo: string
     statusChecking: string
     unsupported: string
     syncing: string

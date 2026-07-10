@@ -21,6 +21,7 @@ export const de: Translation = {
       'In der Cloud gibt es bereits eine neuere Version (jemand anders hat hochgeladen) — automatische Synchronisierung übersprungen. Aktualisiere manuell im Spiele-Bildschirm.',
     pushSkippedStale:
       'Der lokale Spielstand wirkt veraltet (seit dem letzten Cloud-Sync unverändert) — automatischer Upload übersprungen, um die Cloud nicht zu überschreiben. Lade bei Bedarf die Cloud-Version manuell herunter.',
+    pushSkippedNoChange: 'Keine Änderungen — nichts hochzuladen',
     statusesError: 'Synchronisierungsstatus konnte nicht geprüft werden',
     retry: 'Erneut versuchen'
   },
@@ -32,6 +33,7 @@ export const de: Translation = {
     statusNotUploaded: 'Nicht hochgeladen',
     statusCloudOnly: 'Nur in der Cloud',
     statusNoSaves: 'Keine Spielstände',
+    statusNoRepo: 'Repository nicht verbunden',
     statusChecking: 'Wird geprüft…',
     unsupported: 'Nicht unterstützt',
     syncing: 'Synchronisiere…',

@@ -31,6 +31,8 @@ export function describeSyncResult(code: string, params: Record<string, string> 
       return t.main.pushSkipped
     case 'push-skipped-stale':
       return t.main.pushSkippedStale
+    case 'push-skipped-nochange':
+      return t.main.pushSkippedNoChange
     default: {
       const entry = t.errors[code as keyof Translation['errors']]
       return entry ? entry(params ?? {}) : t.main.syncErrorFallback

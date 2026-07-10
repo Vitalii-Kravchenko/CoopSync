@@ -19,6 +19,7 @@ export const en: Translation = {
     restoreSuccess: (n) => `Restored missing files from the cloud: ${n} ✓`,
     pushSkipped: "The cloud already has a newer version (someone else uploaded theirs) — auto-sync skipped. Update manually on the games screen.",
     pushSkippedStale: "Local save looks outdated (unchanged since the last cloud sync) — auto-upload skipped so it doesn't overwrite the cloud. Download the cloud version manually if needed.",
+    pushSkippedNoChange: 'No changes — nothing to upload',
     statusesError: "Couldn't check sync status",
     retry: 'Try again'
   },
@@ -30,6 +31,7 @@ export const en: Translation = {
     statusNotUploaded: 'Not uploaded',
     statusCloudOnly: 'Cloud only',
     statusNoSaves: 'No saves',
+    statusNoRepo: 'Repository not connected',
     statusChecking: 'Checking…',
     unsupported: 'Not supported',
     syncing: 'Syncing…',

@@ -21,6 +21,7 @@ export const ptBR: Translation = {
       'A nuvem já tem uma versão mais recente (outra pessoa enviou a dela) — sincronização automática ignorada. Atualize manualmente na tela de jogos.',
     pushSkippedStale:
       'O save local parece desatualizado (sem mudanças desde a última sincronização com a nuvem) — envio automático ignorado para não sobrescrever a nuvem. Baixe a versão da nuvem manualmente se necessário.',
+    pushSkippedNoChange: 'Sem alterações — nada para enviar',
     statusesError: 'Não foi possível verificar o status de sincronização',
     retry: 'Tentar novamente'
   },
@@ -32,6 +33,7 @@ export const ptBR: Translation = {
     statusNotUploaded: 'Não enviado',
     statusCloudOnly: 'Somente na nuvem',
     statusNoSaves: 'Sem saves',
+    statusNoRepo: 'Repositório não conectado',
     statusChecking: 'Verificando…',
     unsupported: 'Não suportado',
     syncing: 'Sincronizando…',

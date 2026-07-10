@@ -19,6 +19,7 @@ export const zhCN: Translation = {
     restoreSuccess: (n) => `已从云端恢复缺失文件：${n} ✓`,
     pushSkipped: '云端已经有更新的版本（其他人已上传）——已跳过自动同步。请在游戏界面手动更新。',
     pushSkippedStale: '本地存档看起来已过时（自上次云同步以来未变化）——已跳过自动上传，以免覆盖云端。如有需要，请手动下载云端版本。',
+    pushSkippedNoChange: '无变化 — 没有需要上传的内容',
     statusesError: '无法检查同步状态',
     retry: '重试'
   },
@@ -30,6 +31,7 @@ export const zhCN: Translation = {
     statusNotUploaded: '尚未上传',
     statusCloudOnly: '仅云端',
     statusNoSaves: '没有存档',
+    statusNoRepo: '仓库未连接',
     statusChecking: '正在检查…',
     unsupported: '不支持',
     syncing: '同步中…',

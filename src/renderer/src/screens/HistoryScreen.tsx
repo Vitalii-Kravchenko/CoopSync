@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { colors, fonts, radii, steamPoster, transitions } from '../theme'
 import { useI18n } from '../i18n'
 import { describeError } from '../errors'
@@ -18,23 +18,118 @@ function formatRelativeTime(iso: string, t: Translation): string {
   return t.history.daysAgo(diffDays)
 }
 
-function HistoryScreen(): React.JSX.Element {
+interface Props {
+  /** Чи активна зараз ця вкладка (HistoryScreen лишається змонтованим у фоні,
+   *  навіть коли відкрита інша вкладка). */
+  active: boolean
+  /** Змінюється при видаленні/створенні сховища й після кожного реального push —
+   *  сигнал перечитати історію (HistoryScreen лишається змонтованим у фоні,
+   *  сам по собі про такі події не дізнається). */
+  syncVersion: number
+}
+
+function historyKey(e: SyncHistoryEntry): string {
+  return `${e.appId}-${e.updatedAt}`
+}
+
+function HistoryScreen({ active, syncVersion }: Props): React.JSX.Element {
   const { t } = useI18n()
   const [entries, setEntries] = useState<SyncHistoryEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
-
+  // Що реально рендериться з анімацією зараз.
+  const [newKeys, setNewKeys] = useState<Set<string>>(new Set())
+  // Дзеркало entries для читання всередині асинхронних колбеків без затримки
+  // на цикл рендеру (setEntries асинхронний — ref оновлюємо синхронно одразу).
+  const entriesRef = useRef<SyncHistoryEntry[]>([])
+  // Найсвіжіший список з останнього фетчу — навіть якщо вкладка неактивна
+  // і entries/newKeys ще не оновлені (чекають моменту, коли стане видимою).
+  const latestListRef = useRef<SyncHistoryEntry[]>([])
+  const fetchInFlightRef = useRef(false)
+  const clearNewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Актуальне значення active всередині асинхронних колбеків (де замикання
+  // інакше бачило б те, яким active було в момент виклику loadHistory).
+  const activeRef = useRef(active)
   useEffect(() => {
+    activeRef.current = active
+  }, [active])
+
+  // Показати список і "нове" ОДНІЄЮ атомарною дією — інакше, якщо контент
+  // з'являється окремо від анімації (напр. список оновився тихо у фоні, поки
+  // вкладка була неактивна, а анімація прилетіла пізніше самим фетчем), вийде
+  // або "показало все, а потім ще раз щось підсвітилось", або навпаки.
+  // "Нове" — це просто діф проти того, що користувач УЖЕ бачив на екрані
+  // (entriesRef), а не якийсь окремий трекер стану.
+  function reveal(list: SyncHistoryEntry[]): void {
+    const shownKeys = new Set(entriesRef.current.map(historyKey))
+    const fresh = new Set(list.map(historyKey).filter((k) => !shownKeys.has(k)))
+    entriesRef.current = list
+    setEntries(list)
+    setNewKeys(fresh)
+    if (clearNewTimerRef.current) clearTimeout(clearNewTimerRef.current)
+    if (fresh.size > 0) {
+      clearNewTimerRef.current = setTimeout(() => setNewKeys(new Set()), 700)
+    }
+  }
+
+  function loadHistory(): void {
+    if (fetchInFlightRef.current) return
+    fetchInFlightRef.current = true
+    // Скелетон — тільки якщо на екрані ще справді нічого немає.
+    if (entriesRef.current.length === 0) setLoading(true)
     window.api.sync
       .history()
       .then((list) => {
-        setEntries(list)
+        latestListRef.current = list
         setLoadError(null)
+        // Вкладка неактивна — не чіпаємо видимий список/анімацію взагалі,
+        // вони оновляться разом, щойно вкладка стане видимою (див. нижче).
+        if (activeRef.current) reveal(list)
       })
-      .catch((e) => setLoadError(describeError(e, t, t.history.loadError)))
-      .finally(() => setLoading(false))
-    // Одноразовий фетч при монтуванні — не рефетчимо історію лише через зміну мови.
+      .catch((e) => {
+        // Є що показати — мовчки лишаємо старий список замість помилки.
+        if (entriesRef.current.length === 0) {
+          setLoadError(describeError(e, t, t.history.loadError))
+        }
+      })
+      .finally(() => {
+        fetchInFlightRef.current = false
+        setLoading(false)
+      })
+  }
+
+  useEffect(() => {
+    loadHistory()
+    return () => {
+      if (clearNewTimerRef.current) clearTimeout(clearNewTimerRef.current)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // syncVersion > 0 — це не монтування (те вже покрив ефект вище), а сигнал
+  // "щось реально засинхронізувалось" — перечитуємо.
+  useEffect(() => {
+    if (syncVersion > 0) loadHistory()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [syncVersion])
+
+  // При поверненні на вкладку "Історія": одразу показуємо те, що вже знаємо
+  // з останнього фетчу (могло прийти, поки вкладка була неактивна) — без
+  // затримки, і заразом тихо перевіряємо, чи нема чогось ще новішого.
+  // Перший рендер (active вже true на монтуванні) пропускаємо — покриває
+  // ефект монтування вище.
+  const skipFirstActive = useRef(true)
+  useEffect(() => {
+    if (skipFirstActive.current) {
+      skipFirstActive.current = false
+      return
+    }
+    if (active) {
+      if (latestListRef.current.length > 0) reveal(latestListRef.current)
+      loadHistory()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active])
 
   const showTable = loading || entries.length > 0
 
@@ -55,10 +150,11 @@ function HistoryScreen(): React.JSX.Element {
             ? [0, 1, 2].map((i) => <ShimmerRow key={i} last={i === 2} />)
             : entries.map((e, i) => (
                 <HistoryRow
-                  key={`${e.appId}-${e.updatedAt}`}
+                  key={historyKey(e)}
                   entry={e}
                   t={t}
                   last={i === entries.length - 1}
+                  isNew={newKeys.has(historyKey(e))}
                 />
               ))}
         </div>
@@ -80,11 +176,16 @@ function HistoryScreen(): React.JSX.Element {
 function HistoryRow({
   entry,
   t,
-  last
+  last,
+  isNew
 }: {
   entry: SyncHistoryEntry
   t: Translation
   last: boolean
+  /** true — щойно з'явився в цьому фетчі, треба програти анімацію появи.
+   *  false — вже бачили раніше; без анімації, навіть якщо DOM щойно став видимим
+   *  (вкладка була display:none — браузер інакше переграв би анімацію знову). */
+  isNew: boolean
 }): React.JSX.Element {
   const [hover, setHover] = useState(false)
   const [imgError, setImgError] = useState(false)
@@ -94,7 +195,8 @@ function HistoryRow({
       style={{
         ...styles.row,
         borderBottom: last ? 'none' : `1px solid ${colors.borderSubtle}`,
-        background: hover ? colors.bgHover : 'transparent'
+        background: hover ? colors.bgHover : 'transparent',
+        animation: isNew ? 'historyRowIn .4s ease' : 'none'
       }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}

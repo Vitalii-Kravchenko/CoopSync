@@ -21,6 +21,7 @@ export const es: Translation = {
       'La nube ya tiene una versión más reciente (alguien más subió la suya) — sincronización automática omitida. Actualiza manualmente en la pantalla de juegos.',
     pushSkippedStale:
       'La partida local parece desactualizada (sin cambios desde la última sincronización con la nube) — subida automática omitida para no sobrescribir la nube. Descarga la versión de la nube manualmente si es necesario.',
+    pushSkippedNoChange: 'Sin cambios — nada que subir',
     statusesError: 'No se pudo comprobar el estado de sincronización',
     retry: 'Reintentar'
   },
@@ -32,6 +33,7 @@ export const es: Translation = {
     statusNotUploaded: 'No subido',
     statusCloudOnly: 'Solo en la nube',
     statusNoSaves: 'Sin partidas guardadas',
+    statusNoRepo: 'Repositorio no conectado',
     statusChecking: 'Comprobando…',
     unsupported: 'No compatible',
     syncing: 'Sincronizando…',

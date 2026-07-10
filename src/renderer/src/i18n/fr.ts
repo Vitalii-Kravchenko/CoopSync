@@ -21,6 +21,7 @@ export const fr: Translation = {
       "Le cloud a déjà une version plus récente (quelqu'un d'autre a envoyé la sienne) — synchro auto ignorée. Mets à jour manuellement sur l'écran des jeux.",
     pushSkippedStale:
       "La sauvegarde locale semble obsolète (inchangée depuis la dernière synchro cloud) — envoi automatique ignoré pour ne pas écraser le cloud. Télécharge la version cloud manuellement si besoin.",
+    pushSkippedNoChange: 'Aucun changement — rien à envoyer',
     statusesError: 'Impossible de vérifier le statut de synchronisation',
     retry: 'Réessayer'
   },
@@ -32,6 +33,7 @@ export const fr: Translation = {
     statusNotUploaded: 'Non envoyé',
     statusCloudOnly: 'Cloud uniquement',
     statusNoSaves: 'Aucune sauvegarde',
+    statusNoRepo: 'Dépôt non connecté',
     statusChecking: 'Vérification…',
     unsupported: 'Non pris en charge',
     syncing: 'Synchronisation…',

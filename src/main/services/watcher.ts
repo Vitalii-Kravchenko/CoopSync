@@ -102,6 +102,10 @@ async function tick(
         try {
           const statuses = await getSyncStatuses(token, owner)
           const st = statuses.find((s) => s.appId === game.appId)
+          // TODO(тимчасово): діагностика "зберіг у грі, вийшов — нічого не запушилось".
+          console.log(
+            `[watcher] exit ${game.name}: status=${st?.status} localVer=${st?.localVersion} remoteVer=${st?.remoteVersion} lastSyncAt=${st?.lastSyncAt}`
+          )
           if (st?.status === 'remote-newer' || st?.status === 'cloud-only') {
             onEvent({
               appId: game.appId,
@@ -120,14 +124,27 @@ async function tick(
             })
           } else {
             const result = await uploadGame(token, owner, game.appId)
-            onEvent({
-              appId: game.appId,
-              name: game.name,
-              action: 'push',
-              ok: true,
-              code: 'upload-success',
-              params: { version: String(result.version) }
-            })
+            if (result.pushed === false) {
+              // Хеш локального й хмарного вмісту збігся — реально нічого не
+              // вивантажувалось (грали, але не зберігали/не міняли сейв).
+              // "Вивантажено" тут була б брехнею, тож окремий, чесний код.
+              onEvent({
+                appId: game.appId,
+                name: game.name,
+                action: 'push-skipped',
+                ok: true,
+                code: 'push-skipped-nochange'
+              })
+            } else {
+              onEvent({
+                appId: game.appId,
+                name: game.name,
+                action: 'push',
+                ok: true,
+                code: 'upload-success',
+                params: { version: String(result.version) }
+              })
+            }
           }
         } catch (e) {
           onEvent({ appId: game.appId, name: game.name, action: 'push', ok: false, ...errorCode(e) })

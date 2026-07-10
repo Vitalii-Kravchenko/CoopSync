@@ -96,6 +96,13 @@ function syncDisplay(
         bd: colors.borderDefault,
         text: t.gameCard.statusNoSaves
       }
+    case 'no-repo':
+      return {
+        color: colors.text3,
+        bg: 'rgba(255,255,255,.04)',
+        bd: colors.borderDefault,
+        text: t.gameCard.statusNoRepo
+      }
     default:
       return {
         color: colors.text3,

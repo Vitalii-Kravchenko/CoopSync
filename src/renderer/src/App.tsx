@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { colors, fonts } from './theme'
 import { useI18n } from './i18n'
+import { describeSyncResult } from './errors'
 import TitleBar from './components/TitleBar'
 import Sidebar, { type Screen } from './components/Sidebar'
+import Banner, { type BannerState } from './components/Banner'
 import OnboardingScreen from './screens/OnboardingScreen'
 import MainScreen from './screens/MainScreen'
 import FriendsScreen from './screens/FriendsScreen'
@@ -18,6 +20,14 @@ function App(): React.JSX.Element {
   const [screen, setScreen] = useState<Screen>('main')
   const [user, setUser] = useState<AuthUser | null>(null)
   const [avatarDataUrl, setAvatarDataUrl] = useState<string | null>(null)
+  // Бампається при видаленні/створенні сховища або будь-якому реальному push'і.
+  // MainScreen і HistoryScreen лишаються змонтованими у фоні (див. коментар нижче)
+  // і самі не дізнаються про такі зміни, тож перечитують дані по цьому сигналу.
+  const [syncVersion, setSyncVersion] = useState(0)
+  const bumpSyncVersion = (): void => setSyncVersion((v) => v + 1)
+  // Глобальний тост про синхронізацію — рендериться поза табами (styles.appBody),
+  // тому видимий незалежно від того, яка вкладка зараз відкрита.
+  const [banner, setBanner] = useState<BannerState | null>(null)
 
   // При старті визначаємо: чи все вже налаштовано (повторний запуск),
   // чи треба показати майстер налаштування.
@@ -76,6 +86,40 @@ function App(): React.JSX.Element {
     setPhase('onboarding')
   }
 
+  // Реакція на автосинхронізацію (запуск/вихід гри у фоні) — на рівні App, а не
+  // MainScreen, щоб банер про push/pull був видимий на будь-якій вкладці.
+  useEffect(() => {
+    if (phase !== 'app') return
+    return window.api.watcher.onAutoSync((e) => {
+      const text = `${e.name}: ${describeSyncResult(e.code, e.params, t)}`
+      if (e.code === 'push-skipped-nochange') {
+        // Грали, але сейв не змінився — не проблема і не привід для тривоги
+        // (як і ручне "вже синхронізовано"), тому info-тон, а не warning.
+        setBanner({ text, kind: 'info' })
+      } else if (e.action === 'push-skipped') {
+        // Свідомо пропущений автопуш (конфлікт версій) — це не помилка,
+        // але й не мовчати можна: тут людина могла б втратити прогрес друга.
+        setBanner({ text, kind: 'warning' })
+      } else if (e.ok) {
+        setBanner({ text, kind: 'success', icon: e.action === 'pull' ? 'download' : 'upload' })
+      } else {
+        // Раніше помилки автосинку мовчки губились — тепер теж показуємо їх.
+        setBanner({ text, kind: 'error' })
+      }
+      // Будь-яка реальна синхронізація (push ДОДАЄ запис; pull МІГ підтягнути
+      // git-пул чужий новий запис, якого локально ще не було видно) — окрім
+      // свідомо пропущених/no-change випадків — сигналимо MainScreen/HistoryScreen.
+      if (e.ok && e.action !== 'push-skipped') bumpSyncVersion()
+    })
+  }, [phase, t])
+
+  // Банер сам зникає через 5 секунд.
+  useEffect(() => {
+    if (!banner) return
+    const timer = setTimeout(() => setBanner(null), 5000)
+    return () => clearTimeout(timer)
+  }, [banner])
+
   return (
     <div style={styles.root}>
       <TitleBar user={phase === 'app' ? user : null} avatarDataUrl={avatarDataUrl} />
@@ -94,13 +138,18 @@ function App(): React.JSX.Element {
           {/* Обидва екрани лишаються змонтованими — перемикаємо лише видимість,
               щоб Settings не перезавантажував дані при кожному вході. */}
           <div style={{ flex: 1, display: screen === 'main' ? 'flex' : 'none', minHeight: 0 }}>
-            <MainScreen />
+            <MainScreen
+              active={screen === 'main'}
+              syncVersion={syncVersion}
+              onSynced={bumpSyncVersion}
+              onBanner={setBanner}
+            />
           </div>
           <div style={{ flex: 1, display: screen === 'friends' ? 'flex' : 'none', minHeight: 0 }}>
             <FriendsScreen user={user} avatarDataUrl={avatarDataUrl} />
           </div>
           <div style={{ flex: 1, display: screen === 'history' ? 'flex' : 'none', minHeight: 0 }}>
-            <HistoryScreen />
+            <HistoryScreen active={screen === 'history'} syncVersion={syncVersion} />
           </div>
           <div style={{ flex: 1, display: screen === 'settings' ? 'flex' : 'none', minHeight: 0 }}>
             <SettingsScreen
@@ -108,8 +157,11 @@ function App(): React.JSX.Element {
               onLoggedOut={handleLoggedOut}
               avatarDataUrl={avatarDataUrl}
               onAvatarChange={setAvatarDataUrl}
+              onRepoChanged={bumpSyncVersion}
             />
           </div>
+
+          <Banner banner={banner} />
         </div>
       )}
     </div>

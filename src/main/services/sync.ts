@@ -7,7 +7,7 @@ import { existsSync, statSync } from 'fs'
 import { cp, rm, mkdir, readdir, readFile, writeFile } from 'fs/promises'
 import { SUPPORTED_GAMES, READY_GAMES } from '../games/catalog'
 import { SAVES_REPO_NAME } from '../config'
-import { makeAppError } from '../../shared/errors'
+import { makeAppError, parseAppError } from '../../shared/errors'
 import { formatVersion } from '../../shared/format'
 import type { SyncStatus, GameSyncStatus, SyncHistoryEntry, SyncResult } from '../../shared/types'
 
@@ -49,7 +49,14 @@ function wrapGitError(e: unknown): Error {
   if (/could not resolve host|network is unreachable|connection timed out|failed to connect|recv failure|could not connect/i.test(raw)) {
     return makeAppError('NO_INTERNET')
   }
-  if (/authentication failed|could not read username|repository not found|401 unauthorized|403 forbidden/i.test(raw)) {
+  // Окремо від інших auth-помилок: "repository not found" на git-рівні означає
+  // саме "такого репо більше нема" (видалили на GitHub) — токен тут ні до чого,
+  // тож не радимо переlogінюватись, а даємо код, який вище перетворюємо на
+  // чіткий "сховище не підключено" замість голої git-помилки.
+  if (/repository not found/i.test(raw)) {
+    return makeAppError('REPO_NOT_FOUND')
+  }
+  if (/authentication failed|could not read username|401 unauthorized|403 forbidden/i.test(raw)) {
     return makeAppError('GIT_AUTH_FAILED')
   }
   const lines = raw
@@ -255,7 +262,7 @@ export async function uploadGame(token: string, owner: string, appId: string): P
     if (localHash === remoteHash) {
       const remoteVersion = await readRemoteVersion(game.name)
       await setLocalVersion(appId, remoteVersion)
-      return { version: remoteVersion }
+      return { version: remoteVersion, pushed: false }
     }
   }
 
@@ -277,7 +284,7 @@ export async function uploadGame(token: string, owner: string, appId: string): P
   await git(['commit', '-m', `sync: ${game.name} ${formatVersion(newVersion)} (${owner})`])
   await git(['push', 'origin', 'main'])
   await setLocalVersion(appId, newVersion)
-  return { version: newVersion }
+  return { version: newVersion, pushed: true }
 }
 
 /**
@@ -404,7 +411,24 @@ async function folderSize(dir: string, pattern?: RegExp): Promise<number> {
 
 /** Статус синку для всіх підтримуваних ігор (один pull на всі). */
 export async function getSyncStatuses(token: string, owner: string): Promise<GameSyncStatus[]> {
-  await ensureRepo(token, owner)
+  try {
+    await ensureRepo(token, owner)
+  } catch (e) {
+    const raw = e instanceof Error ? e.message : String(e)
+    if (parseAppError(raw)?.code === 'REPO_NOT_FOUND') {
+      // Сховище видалене на GitHub (і локальний клон або відсутній, або
+      // застарів) — не помилка мережі/токена, а чіткий стан "нема сховища".
+      // Показуємо це явно на кожній картці замість того, щоб падати помилкою
+      // і лишати ігри вічно висіти на "Перевіряю...".
+      return READY_GAMES.map((g) => ({
+        appId: g.appId,
+        status: 'no-repo',
+        localVersion: 0,
+        remoteVersion: 0
+      }))
+    }
+    throw e
+  }
 
   const localVersions = await readLocalVersions()
   const result: GameSyncStatus[] = []

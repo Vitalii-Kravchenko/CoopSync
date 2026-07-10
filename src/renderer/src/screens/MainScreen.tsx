@@ -1,27 +1,35 @@
-import { useEffect, useMemo, useState } from 'react'
-import { colors, fonts, radii, shadows } from '../theme'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { colors, fonts, radii } from '../theme'
 import { useI18n } from '../i18n'
 import { describeError, describeSyncResult } from '../errors'
 import GameCard from '../components/GameCard'
 import CloudWarningBanner from '../components/CloudWarningBanner'
-import { SearchIcon, UploadIcon, DownloadIcon } from '../components/icons'
+import type { BannerState } from '../components/Banner'
+import { SearchIcon } from '../components/icons'
 import type { InstalledGame, CatalogGame, GameSyncStatus } from '../../../shared/types'
 
-interface BannerState {
-  text: string
-  kind: 'success' | 'info' | 'error' | 'warning'
-  /** Іконка синку (свій UploadIcon/DownloadIcon), якщо банер про push/pull. */
-  icon?: 'upload' | 'download'
+interface Props {
+  /** Чи активна зараз ця вкладка (MainScreen лишається змонтованим у фоні,
+   *  навіть коли відкрита інша вкладка). */
+  active: boolean
+  /** Змінюється, коли сховище видалене/створене заново в Settings, або після
+   *  реальної синхронізації (push/pull) — сигнал перечитати статуси синку
+   *  (MainScreen лишається змонтованим у фоні). */
+  syncVersion: number
+  /** Викликати після реального push (ручного чи автоматичного) — сигнал для
+   *  HistoryScreen (теж лишається змонтованим у фоні) перечитати історію. */
+  onSynced: () => void
+  /** Показати глобальний банер (рендериться в App — видимий на всіх вкладках). */
+  onBanner: (banner: BannerState) => void
 }
 
-function MainScreen(): React.JSX.Element {
+function MainScreen({ active, syncVersion, onSynced, onBanner }: Props): React.JSX.Element {
   const { t } = useI18n()
   const [installed, setInstalled] = useState<InstalledGame[]>([])
   const [catalog, setCatalog] = useState<CatalogGame[]>([])
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState<string | null>(null)
-  const [banner, setBanner] = useState<BannerState | null>(null)
   const [syncStatuses, setSyncStatuses] = useState<Record<string, GameSyncStatus>>({})
   // Попередження про Steam Cloud: показуємо раз на запуск, поки не закриють хрестиком.
   const [showCloudWarning, setShowCloudWarning] = useState(false)
@@ -42,6 +50,26 @@ function MainScreen(): React.JSX.Element {
     window.api.settings.getGeneral().then((s) => setShowCloudWarning(s.showCloudWarning))
   }, [])
 
+  // syncVersion === 0 на монтуванні — той випадок вже покриває ефект вище.
+  useEffect(() => {
+    if (syncVersion > 0) {
+      void loadStatuses()
+      window.api.games.allInstalled().then(setInstalled)
+    }
+  }, [syncVersion])
+
+  // При поверненні на вкладку "Ігри" перечитуємо статуси — вони могли застаріти,
+  // поки вкладка була неактивна (напр. друг запушив свою версію). Перший рендер
+  // (active вже true на монтуванні) пропускаємо — його покриває ефект монтування вище.
+  const skipFirstActive = useRef(true)
+  useEffect(() => {
+    if (skipFirstActive.current) {
+      skipFirstActive.current = false
+      return
+    }
+    if (active) void loadStatuses()
+  }, [active])
+
   async function loadStatuses(): Promise<void> {
     try {
       const list = await window.api.sync.statuses()
@@ -50,29 +78,12 @@ function MainScreen(): React.JSX.Element {
       setSyncStatuses(map)
       setStatusesError(null)
     } catch (e) {
+      // Не лишаємо застарілі статуси (напр. від видаленого репо) поруч із
+      // помилкою — картки мають впасти в "Перевіряю...", а не брехати старими даними.
+      setSyncStatuses({})
       setStatusesError(describeError(e, t, t.main.statusesError))
     }
   }
-
-  // Реакція на автосинхронізацію (запуск/вихід гри у фоні).
-  useEffect(() => {
-    return window.api.watcher.onAutoSync((e) => {
-      const text = `${e.name}: ${describeSyncResult(e.code, e.params, t)}`
-      if (e.action === 'push-skipped') {
-        // Свідомо пропущений автопуш (конфлікт версій) — це не помилка,
-        // але й не мовчати можна: тут людина могла б втратити прогрес друга.
-        setBanner({ text, kind: 'warning' })
-      } else if (e.ok) {
-        setBanner({ text, kind: 'success', icon: e.action === 'pull' ? 'download' : 'upload' })
-      } else {
-        // Раніше помилки автосинку мовчки губились — тепер теж показуємо їх.
-        setBanner({ text, kind: 'error' })
-      }
-      // Стан міг змінитися — оновлюємо ігри та статуси.
-      void loadStatuses()
-      window.api.games.allInstalled().then(setInstalled)
-    })
-  }, [t])
 
   // Множина встановлених appId — щоб картки каталогу нижче показували правильний
   // стан незалежно від того, чи гра вже встановлена (раніше секцію "Усі підтримувані"
@@ -84,44 +95,45 @@ function MainScreen(): React.JSX.Element {
   const filteredInstalled = installed.filter((g) => g.name.toLowerCase().includes(q))
   const filteredCatalog = catalog.filter((g) => g.name.toLowerCase().includes(q))
 
-  // Банер сам зникає через 5 секунд.
-  useEffect(() => {
-    if (!banner) return
-    const t = setTimeout(() => setBanner(null), 5000)
-    return () => clearTimeout(t)
-  }, [banner])
-
   async function handleSync(appId: string, action: 'upload' | 'download'): Promise<void> {
     const status = syncStatuses[appId]?.status
 
     // Випадки, коли діяти не треба — лише акуратно повідомляємо (без виклику синку).
     if (status === 'synced') {
-      setBanner({ text: t.main.alreadySynced, kind: 'info' })
+      onBanner({ text: t.main.alreadySynced, kind: 'info' })
       return
     }
     if (action === 'download' && (status === 'not-uploaded' || status === 'no-saves')) {
-      setBanner({ text: t.main.noSavesInCloud, kind: 'error' })
+      onBanner({ text: t.main.noSavesInCloud, kind: 'error' })
       return
     }
     if (action === 'upload' && (status === 'cloud-only' || status === 'no-saves')) {
-      setBanner({ text: t.main.noLocalSaves, kind: 'error' })
+      onBanner({ text: t.main.noLocalSaves, kind: 'error' })
       return
     }
 
     setSyncing(appId)
-    setBanner(null)
     try {
       const result =
         action === 'upload'
           ? await window.api.sync.upload(appId)
           : await window.api.sync.download(appId)
-      const code = action === 'upload' ? 'upload-success' : 'download-success'
-      setBanner({ text: describeSyncResult(code, { version: String(result.version) }, t), kind: 'success' })
+      if (action === 'upload' && result.pushed === false) {
+        // Хеш співпав з хмарою в останній момент (напр. друг щойно запушив те
+        // саме) — реального вивантаження не було, кажемо це чесно.
+        onBanner({ text: describeSyncResult('push-skipped-nochange', undefined, t), kind: 'info' })
+      } else {
+        const code = action === 'upload' ? 'upload-success' : 'download-success'
+        onBanner({ text: describeSyncResult(code, { version: String(result.version) }, t), kind: 'success' })
+        // І push (новий запис), і pull (git pull міг підтягнути чужий новий
+        // запис) — вартий того, щоб HistoryScreen перечитав дані.
+        onSynced()
+      }
       // Сейви могли змінитися — оновлюємо ігри та статуси.
       setInstalled(await window.api.games.allInstalled())
       await loadStatuses()
     } catch (e) {
-      setBanner({ text: describeError(e, t, t.main.syncErrorFallback), kind: 'error' })
+      onBanner({ text: describeError(e, t, t.main.syncErrorFallback), kind: 'error' })
     } finally {
       setSyncing(null)
     }
@@ -210,45 +222,6 @@ function MainScreen(): React.JSX.Element {
           )}
         </>
       )}
-
-      {banner && (
-        <div
-          style={{
-            ...styles.banner,
-            borderColor:
-              banner.kind === 'error'
-                ? colors.dangerBd
-                : banner.kind === 'warning'
-                  ? colors.warningBd
-                  : banner.kind === 'info'
-                    ? colors.infoBd
-                    : colors.successBd
-          }}
-        >
-          {banner.icon ? (
-            banner.icon === 'upload' ? (
-              <UploadIcon size={14} color={colors.success} />
-            ) : (
-              <DownloadIcon size={14} color={colors.success} />
-            )
-          ) : (
-            <span
-              style={{
-                ...styles.bannerDot,
-                background:
-                  banner.kind === 'error'
-                    ? colors.danger
-                    : banner.kind === 'warning'
-                      ? colors.warning
-                      : banner.kind === 'info'
-                        ? colors.info
-                        : colors.success
-              }}
-            />
-          )}
-          {banner.text}
-        </div>
-      )}
     </div>
   )
 }
@@ -310,27 +283,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     padding: 0,
     textDecoration: 'underline'
-  },
-  banner: {
-    position: 'fixed',
-    bottom: 22,
-    left: '50%',
-    transform: 'translateX(-50%)',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 10,
-    padding: '12px 20px',
-    borderRadius: radii.md,
-    border: '1px solid',
-    background: colors.bgOverlay,
-    color: colors.text1,
-    fontFamily: fonts.body,
-    fontWeight: 600,
-    fontSize: 13.5,
-    boxShadow: shadows.sh3,
-    zIndex: 100
-  },
-  bannerDot: { width: 6, height: 6, borderRadius: '50%', flexShrink: 0 }
+  }
 }
 
 export default MainScreen

@@ -21,6 +21,7 @@ export const pl: Translation = {
       'W chmurze jest już nowsza wersja (ktoś inny ją wysłał) — automatyczna synchronizacja pominięta. Zaktualizuj ręcznie na ekranie gier.',
     pushSkippedStale:
       'Lokalny zapis wygląda na nieaktualny (bez zmian od ostatniej synchronizacji z chmurą) — automatyczne wysyłanie pominięte, by nie nadpisać chmury. W razie potrzeby pobierz wersję z chmury ręcznie.',
+    pushSkippedNoChange: 'Bez zmian — nie było czego wysyłać',
     statusesError: 'Nie udało się sprawdzić statusu synchronizacji',
     retry: 'Spróbuj ponownie'
   },
@@ -32,6 +33,7 @@ export const pl: Translation = {
     statusNotUploaded: 'Nie wysłano',
     statusCloudOnly: 'Tylko w chmurze',
     statusNoSaves: 'Brak zapisów',
+    statusNoRepo: 'Repozytorium niepodłączone',
     statusChecking: 'Sprawdzam…',
     unsupported: 'Nieobsługiwana',
     syncing: 'Synchronizuję…',

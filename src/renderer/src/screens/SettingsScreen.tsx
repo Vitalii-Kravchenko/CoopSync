@@ -13,9 +13,18 @@ interface Props {
   /** Кастомний аватар (data URL) — спільний з titlebar і онбордингом. */
   avatarDataUrl: string | null
   onAvatarChange: (dataUrl: string) => void
+  /** MainScreen лишається змонтованим у фоні — сповіщаємо його перерахувати
+   *  статуси синку, коли сховище видалене або створене заново. */
+  onRepoChanged: () => void
 }
 
-function SettingsScreen({ user, onLoggedOut, avatarDataUrl, onAvatarChange }: Props): React.JSX.Element {
+function SettingsScreen({
+  user,
+  onLoggedOut,
+  avatarDataUrl,
+  onAvatarChange,
+  onRepoChanged
+}: Props): React.JSX.Element {
   const { t, language, setLanguage } = useI18n()
   const [repo, setRepo] = useState<SavesRepoStatus | null>(null)
   const [startup, setStartup] = useState<StartupSettings>({
@@ -72,6 +81,11 @@ function SettingsScreen({ user, onLoggedOut, avatarDataUrl, onAvatarChange }: Pr
     try {
       await window.api.repo.create()
       await loadRepo()
+      onRepoChanged()
+      // repo:delete зупиняє автосинк (watcher.stopWatcher()), а сам він більше
+      // ніде не перезапускається — без цього гра/вихід з гри після пересоздання
+      // репо мовчки ігноруються до перезапуску застосунку.
+      void window.api.watcher.start()
     } catch (e) {
       setCreateRepoError(describeError(e, t, t.onboarding.createRepoError))
     } finally {
@@ -86,6 +100,7 @@ function SettingsScreen({ user, onLoggedOut, avatarDataUrl, onAvatarChange }: Pr
       await window.api.repo.delete()
       setShowDeleteRepo(false)
       await loadRepo()
+      onRepoChanged()
     } catch (e) {
       setDeleteRepoError(describeError(e, t, t.settings.deleteRepoConfirmTitle))
     } finally {

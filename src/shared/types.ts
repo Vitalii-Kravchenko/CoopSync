@@ -77,6 +77,7 @@ export type SyncStatus =
   | 'not-uploaded' // локальне є, у хмарі ще нема
   | 'cloud-only' // у хмарі є, локально нема
   | 'no-saves' // нема ні там, ні там
+  | 'no-repo' // сховище видалене/не підключене — версії з хмарою звіряти нема з чим
 
 export interface GameSyncStatus {
   appId: string
@@ -95,18 +96,24 @@ export interface GameSyncStatus {
  * renderer сам зібрав локалізоване повідомлення (main-процес мови не знає). */
 export interface SyncResult {
   version: number
+  /** Чи реально пішов push (upload). false — контент і так вже збігався з
+   *  хмарою, версію просто підтягнули до вже актуальної, нічого не змінилось. */
+  pushed?: boolean
 }
 
 /** Код результату автосинку — те саме, що й ручний sync, показуємо тим самим
  * describeSyncResult(). 'push-skipped' — хмара вже випередила нашу відому версію.
  * 'push-skipped-stale' — локальний вміст застарілий (не змінювався після
  * останнього синку), автопуш пропущено, щоб не затерти хмару.
+ * 'push-skipped-nochange' — грали, але вміст сейву не змінився (хеш співпав
+ * з хмарою) — push і не мав сенсу, не показуємо це як "вивантажено".
  * 'restore-success' — довантажено файли, яких бракувало локально (без повного pull). */
 export type SyncResultCode =
   | 'upload-success'
   | 'download-success'
   | 'push-skipped'
   | 'push-skipped-stale'
+  | 'push-skipped-nochange'
   | 'restore-success'
 
 /** Подія автосинхронізації (запуск гри → pull, вихід → push). */

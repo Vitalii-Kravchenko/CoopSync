@@ -21,6 +21,7 @@ export const tr: Translation = {
       "Bulutta zaten daha yeni bir sürüm var (başka biri kendi sürümünü yükledi) — otomatik senkronizasyon atlandı. Oyunlar ekranından elle güncelle.",
     pushSkippedStale:
       "Yerel kayıt eski görünüyor (son bulut senkronizasyonundan beri değişmemiş) — bulutun üzerine yazmamak için otomatik yükleme atlandı. Gerekirse bulut sürümünü elle indir.",
+    pushSkippedNoChange: 'Değişiklik yok — yüklenecek bir şey yoktu',
     statusesError: 'Senkronizasyon durumu kontrol edilemedi',
     retry: 'Tekrar dene'
   },
@@ -32,6 +33,7 @@ export const tr: Translation = {
     statusNotUploaded: 'Yüklenmedi',
     statusCloudOnly: 'Yalnızca bulutta',
     statusNoSaves: 'Kayıt yok',
+    statusNoRepo: 'Depo bağlı değil',
     statusChecking: 'Kontrol ediliyor…',
     unsupported: 'Desteklenmiyor',
     syncing: 'Senkronize ediliyor…',

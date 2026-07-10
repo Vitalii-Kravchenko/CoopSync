@@ -42,8 +42,8 @@ export const pl: Translation = {
     versions: (local, cloud) => `Lokalnie ${local} · Chmura ${cloud}`,
     gameNotSupported: 'gra nieobsługiwana',
     notInstalled: 'niezainstalowana',
-    lastSync: (v) => `Ostatnia synchronizacja: ${v}`,
-    savesSize: (v) => `Rozmiar zapisów: ${v}`
+    lastSyncLabel: 'Ostatnia synchronizacja:',
+    savesSizeLabel: 'Rozmiar zapisów:'
   },
   friends: {
     title: 'Znajomi',

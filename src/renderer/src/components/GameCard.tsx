@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { colors, fonts, radii, shadows, steamPoster, transitions } from '../theme'
 import { useI18n } from '../i18n'
 import type { Translation } from '../i18n'
-import { UploadIcon, DownloadIcon } from './icons'
+import { UploadIcon, DownloadIcon, HistoryIcon, DiskIcon } from './icons'
 import Button from './Button'
 import type { SyncStatus } from '../../../shared/types'
 import { formatVersion } from '../../../shared/format'
@@ -181,11 +181,28 @@ function GameCard({
                   <DownloadIcon size={15} color={colors.text1} />
                   {t.gameCard.download}
                 </Button>
-                {lastSyncAt && (
-                  <div style={styles.overlayMeta}>{t.gameCard.lastSync(formatLastSync(lastSyncAt, language))}</div>
-                )}
-                {sizeBytes != null && (
-                  <div style={styles.overlayMeta}>{t.gameCard.savesSize(formatBytes(sizeBytes))}</div>
+                {(lastSyncAt || sizeBytes != null) && (
+                  <div style={styles.overlayMeta}>
+                    {lastSyncAt && (
+                      <span
+                        style={styles.overlayMetaItem}
+                        title={`${t.gameCard.lastSyncLabel} ${formatLastSync(lastSyncAt, language)}`}
+                      >
+                        <HistoryIcon size={12} color={colors.text3} />
+                        {formatLastSync(lastSyncAt, language)}
+                      </span>
+                    )}
+                    {lastSyncAt && sizeBytes != null && <span style={styles.overlayMetaDot}>·</span>}
+                    {sizeBytes != null && (
+                      <span
+                        style={styles.overlayMetaItem}
+                        title={`${t.gameCard.savesSizeLabel} ${formatBytes(sizeBytes)}`}
+                      >
+                        <DiskIcon size={12} color={colors.text3} />
+                        {formatBytes(sizeBytes)}
+                      </span>
+                    )}
+                  </div>
                 )}
               </div>
             )}
@@ -252,12 +269,25 @@ const styles: Record<string, React.CSSProperties> = {
   overlayContent: { display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 8, width: '100%' },
   overlayBtn: { width: '100%', height: 36, fontSize: 12.5, padding: '0 10px' },
   overlayMeta: {
-    marginTop: 2,
-    textAlign: 'center',
-    fontSize: 11,
+    marginTop: 4,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
+    fontFamily: fonts.mono,
+    fontSize: 10.5,
     color: colors.text2,
+    filter: 'drop-shadow(0 1px 2px rgba(0,0,0,.85))',
     lineHeight: 1.4
   },
+  overlayMetaItem: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 4,
+    whiteSpace: 'nowrap'
+  },
+  overlayMetaDot: { color: colors.text3, opacity: 0.6 },
   caption: { minWidth: 0 },
   name: {
     fontFamily: fonts.display,

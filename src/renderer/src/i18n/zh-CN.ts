@@ -40,8 +40,8 @@ export const zhCN: Translation = {
     versions: (local, cloud) => `本地 ${local} · 云端 ${cloud}`,
     gameNotSupported: '该游戏不受支持',
     notInstalled: '未安装',
-    lastSync: (v) => `上次同步：${v}`,
-    savesSize: (v) => `存档大小：${v}`
+    lastSyncLabel: '上次同步：',
+    savesSizeLabel: '存档大小：'
   },
   friends: {
     title: '好友',

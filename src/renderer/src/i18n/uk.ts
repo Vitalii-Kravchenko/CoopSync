@@ -42,8 +42,8 @@ export const uk: Translation = {
     versions: (local, cloud) => `Локально ${local} · Хмара ${cloud}`,
     gameNotSupported: 'гра не підтримується',
     notInstalled: 'не встановлено',
-    lastSync: (v) => `Останній синк: ${v}`,
-    savesSize: (v) => `Розмір сейвів: ${v}`
+    lastSyncLabel: 'Останній синк:',
+    savesSizeLabel: 'Розмір сейвів:'
   },
   friends: {
     title: 'Друзі',

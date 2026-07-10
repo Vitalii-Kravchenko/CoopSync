@@ -208,6 +208,8 @@ function MainScreen({ active, syncVersion, onSynced, onBanner }: Props): React.J
                     syncStatus={syncStatuses[g.appId]?.status}
                     localVersion={syncStatuses[g.appId]?.localVersion}
                     remoteVersion={syncStatuses[g.appId]?.remoteVersion}
+                    lastSyncAt={syncStatuses[g.appId]?.lastSyncAt}
+                    sizeBytes={syncStatuses[g.appId]?.sizeBytes}
                     busy={syncing === g.appId}
                     onUpload={() => handleSync(g.appId, 'upload')}
                     onDownload={() => handleSync(g.appId, 'download')}

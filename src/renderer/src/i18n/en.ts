@@ -40,8 +40,8 @@ export const en: Translation = {
     versions: (local, cloud) => `Local ${local} · Cloud ${cloud}`,
     gameNotSupported: 'game not supported',
     notInstalled: 'not installed',
-    lastSync: (v) => `Last synced: ${v}`,
-    savesSize: (v) => `Save size: ${v}`
+    lastSyncLabel: 'Last synced:',
+    savesSizeLabel: 'Save size:'
   },
   friends: {
     title: 'Friends',

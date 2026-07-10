@@ -69,8 +69,8 @@ export interface Translation {
     versions: (local: string, cloud: string) => string
     gameNotSupported: string
     notInstalled: string
-    lastSync: (value: string) => string
-    savesSize: (value: string) => string
+    lastSyncLabel: string
+    savesSizeLabel: string
   }
   friends: {
     title: string

@@ -42,8 +42,8 @@ export const fr: Translation = {
     versions: (local, cloud) => `Local ${local} · Cloud ${cloud}`,
     gameNotSupported: 'jeu non pris en charge',
     notInstalled: 'non installé',
-    lastSync: (v) => `Dernière synchro : ${v}`,
-    savesSize: (v) => `Taille des sauvegardes : ${v}`
+    lastSyncLabel: 'Dernière synchro :',
+    savesSizeLabel: 'Taille des sauvegardes :'
   },
   friends: {
     title: 'Amis',

@@ -42,8 +42,8 @@ export const ru: Translation = {
     versions: (local, cloud) => `Локально ${local} · Облако ${cloud}`,
     gameNotSupported: 'игра не поддерживается',
     notInstalled: 'не установлено',
-    lastSync: (v) => `Последняя синхронизация: ${v}`,
-    savesSize: (v) => `Размер сейвов: ${v}`
+    lastSyncLabel: 'Последняя синхронизация:',
+    savesSizeLabel: 'Размер сейвов:'
   },
   friends: {
     title: 'Друзья',

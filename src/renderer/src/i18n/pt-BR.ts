@@ -42,8 +42,8 @@ export const ptBR: Translation = {
     versions: (local, cloud) => `Local ${local} · Nuvem ${cloud}`,
     gameNotSupported: 'jogo não suportado',
     notInstalled: 'não instalado',
-    lastSync: (v) => `Última sincronização: ${v}`,
-    savesSize: (v) => `Tamanho dos saves: ${v}`
+    lastSyncLabel: 'Última sincronização:',
+    savesSizeLabel: 'Tamanho dos saves:'
   },
   friends: {
     title: 'Amigos',

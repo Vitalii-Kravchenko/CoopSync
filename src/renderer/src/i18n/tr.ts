@@ -42,8 +42,8 @@ export const tr: Translation = {
     versions: (local, cloud) => `Yerel ${local} · Bulut ${cloud}`,
     gameNotSupported: 'oyun desteklenmiyor',
     notInstalled: 'yüklü değil',
-    lastSync: (v) => `Son senkronizasyon: ${v}`,
-    savesSize: (v) => `Kayıt boyutu: ${v}`
+    lastSyncLabel: 'Son senkronizasyon:',
+    savesSizeLabel: 'Kayıt boyutu:'
   },
   friends: {
     title: 'Arkadaşlar',

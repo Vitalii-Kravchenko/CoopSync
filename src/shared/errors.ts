@@ -28,6 +28,8 @@ export type ErrorCode =
   | 'NO_INTERNET'
   | 'GIT_AUTH_FAILED'
   | 'GIT_GENERIC'
+  | 'SUPPORT_SEND_FAILED'
+  | 'SUPPORT_RATE_LIMITED'
 
 const MARKER = 'app-error:'
 

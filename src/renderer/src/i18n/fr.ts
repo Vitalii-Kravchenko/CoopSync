@@ -147,6 +147,26 @@ export const fr: Translation = {
     aboutDescription: 'Synchronise les sauvegardes de jeux coopératifs entre amis via GitHub.',
     githubRepoLink: 'Dépôt GitHub →'
   },
+  support: {
+    tooltip: 'Support',
+    title: 'Contacter le support',
+    categoryBug: 'Bug trouvé',
+    categoryGame: "Demander l'ajout d'un jeu",
+    categoryIdea: "J'ai une idée",
+    categoryOther: 'Autre chose',
+    placeholder: 'Décris ici...',
+    messageRequired: 'Écris quelques mots',
+    send: 'Envoyer',
+    sending: 'Envoi…',
+    success: 'Envoyé ! Merci pour ton retour.',
+    gameSearchPlaceholder: 'Rechercher le jeu sur Steam...',
+    gameSearchEmpty: 'Aucun résultat',
+    gameRequired: "Choisis d'abord un jeu",
+    commentOptionalPlaceholder: 'Commentaire supplémentaire (facultatif)',
+    maxGamesReached: (max) => `Maximum ${max} jeux par demande`,
+    addAnotherGame: 'Ajouter un autre jeu',
+    removeGame: 'Retirer'
+  },
   errors: {
     NOT_LOGGED_IN: () => "Connecte-toi d'abord avec GitHub",
     HOST_LOGIN_REQUIRED: () => "Indique le nom d'utilisateur de ton ami",
@@ -172,6 +192,9 @@ export const fr: Translation = {
     NO_CLOUD_SAVES: () => "Aucune sauvegarde de ce jeu dans le stockage pour l'instant",
     NO_INTERNET: () => 'Pas de connexion internet — vérifie ton réseau et réessaie',
     GIT_AUTH_FAILED: () => "Pas d'accès à GitHub — le token a peut-être expiré. Déconnecte-toi et reconnecte-toi",
-    GIT_GENERIC: (p) => `Erreur de synchronisation : ${p.detail}`
+    GIT_GENERIC: (p) => `Erreur de synchronisation : ${p.detail}`,
+    SUPPORT_SEND_FAILED: () => "Échec de l'envoi. Réessaie dans un instant.",
+    SUPPORT_RATE_LIMITED: (p) =>
+      p.time ? `Trop de tentatives — réessaie vers ${p.time}.` : 'Trop de tentatives — attends un peu et réessaie.'
   }
 }

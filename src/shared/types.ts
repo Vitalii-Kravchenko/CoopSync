@@ -15,6 +15,8 @@ export interface DeviceCodeInfo {
 /** Інформація про залогіненого користувача GitHub. */
 export interface AuthUser {
   login: string
+  /** Публічне ім'я з GitHub-профілю, якщо користувач його вказав. */
+  name?: string
 }
 
 /** Поточний стан авторизації. */
@@ -165,4 +167,29 @@ export interface RoleConfig {
   role: UserRole
   /** Логін власника сховища (host'а). Для ролі host = я сам. */
   hostOwner: string
+}
+
+/** Тип звернення в кнопці "Підтримка". */
+export type SupportCategory = 'bug' | 'game-request' | 'idea' | 'other'
+
+/** Гра, знайдена через пошук по Steam-магазину (не по встановлених — по всьому Steam). */
+export interface SteamSearchResult {
+  appId: string
+  name: string
+  /** Готове посилання на картинку від самого Steam (search API) — новіші ігри
+   *  роздають картинки з хеш-шляхів, які не зібрати самому з appId. */
+  imageUrl?: string
+}
+
+/** Максимум ігор в одному зверненні "Хочу гру" — щоб пул кандидатів на
+ *  голосування не засипали за раз (обмеження і в UI, і на боці Worker'а). */
+export const MAX_GAME_REQUESTS = 3
+
+/** Звернення користувача, яке йде на пошту Віталія через Worker-проксі. */
+export interface SupportRequest {
+  category: SupportCategory
+  /** Для 'bug'/'other' — сам текст звернення. Для 'game-request' — необов'язковий коментар. */
+  message: string
+  /** Обрані ігри зі Steam-пошуку — тільки для категорії 'game-request', до MAX_GAME_REQUESTS штук. */
+  games?: SteamSearchResult[]
 }

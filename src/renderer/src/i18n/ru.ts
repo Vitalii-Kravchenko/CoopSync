@@ -147,6 +147,26 @@ export const ru: Translation = {
     aboutDescription: 'Синхронизация сохранений кооперативных игр между друзьями через GitHub.',
     githubRepoLink: 'Репозиторий GitHub →'
   },
+  support: {
+    tooltip: 'Поддержка',
+    title: 'Обратиться в поддержку',
+    categoryBug: 'Нашёл баг',
+    categoryGame: 'Хочу, чтобы добавили игру',
+    categoryIdea: 'Есть идея',
+    categoryOther: 'Другое',
+    placeholder: 'Опиши здесь...',
+    messageRequired: 'Напиши несколько слов',
+    send: 'Отправить',
+    sending: 'Отправляю…',
+    success: 'Отправлено! Спасибо за обращение.',
+    gameSearchPlaceholder: 'Поиск игры в Steam...',
+    gameSearchEmpty: 'Ничего не найдено',
+    gameRequired: 'Сначала выбери игру',
+    commentOptionalPlaceholder: 'Дополнительный комментарий (необязательно)',
+    maxGamesReached: (max) => `Максимум ${max} игры за одно обращение`,
+    addAnotherGame: 'Добавить ещё игру',
+    removeGame: 'Убрать'
+  },
   errors: {
     NOT_LOGGED_IN: () => 'Сначала войди через GitHub',
     HOST_LOGIN_REQUIRED: () => 'Укажи ник друга',
@@ -171,6 +191,9 @@ export const ru: Translation = {
     NO_CLOUD_SAVES: () => 'В хранилище пока нет сейвов этой игры',
     NO_INTERNET: () => 'Нет соединения с интернетом — проверь сеть и попробуй снова',
     GIT_AUTH_FAILED: () => 'Нет доступа к GitHub — токен мог протухнуть. Выйди из аккаунта и войди снова',
-    GIT_GENERIC: (p) => `Ошибка синхронизации: ${p.detail}`
+    GIT_GENERIC: (p) => `Ошибка синхронизации: ${p.detail}`,
+    SUPPORT_SEND_FAILED: () => 'Не удалось отправить. Попробуй ещё раз чуть позже.',
+    SUPPORT_RATE_LIMITED: (p) =>
+      p.time ? `Слишком много попыток — попробуй снова примерно в ${p.time}.` : 'Слишком много попыток — подожди немного и попробуй снова.'
   }
 }

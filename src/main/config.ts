@@ -16,3 +16,10 @@ export const GITHUB_SCOPE = 'repo read:org delete_repo'
 // Назва репозиторію для сейвів. Унікальність дає namespace (owner/назва),
 // тому нік користувача в саму назву додавати не треба.
 export const SAVES_REPO_NAME = 'coopsync-saves'
+
+// Ендпоінт Cloudflare Worker, який пересилає звернення з кнопки "Підтримка"
+// на пошту Віталія (через Resend). Це НЕ секрет — публічний URL, застосунок
+// шле сюди лише POST з текстом звернення. Реальний секрет (ключ Resend API)
+// живе тільки на самому Worker'і (env-секрет), сюди й у білд ніколи не потрапляє.
+// Обмеження зловживань (rate limit) теж на боці Worker'а, не в застосунку.
+export const SUPPORT_ENDPOINT_URL = 'https://coopsync-support.coopsync-support.workers.dev'

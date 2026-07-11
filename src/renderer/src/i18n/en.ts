@@ -145,6 +145,26 @@ export const en: Translation = {
     aboutDescription: 'Synchronize co-op game saves between friends via GitHub.',
     githubRepoLink: 'GitHub repository →'
   },
+  support: {
+    tooltip: 'Support',
+    title: 'Contact support',
+    categoryBug: 'Found a bug',
+    categoryGame: 'Want a game added',
+    categoryIdea: 'Have an idea',
+    categoryOther: 'Something else',
+    placeholder: 'Describe it here...',
+    messageRequired: 'Write a few words first',
+    send: 'Send',
+    sending: 'Sending…',
+    success: "Sent! Thanks for the feedback.",
+    gameSearchPlaceholder: 'Search for the game on Steam...',
+    gameSearchEmpty: 'Nothing found',
+    gameRequired: 'Pick a game first',
+    commentOptionalPlaceholder: 'Additional comment (optional)',
+    maxGamesReached: (max) => `You can add up to ${max} games per request`,
+    addAnotherGame: 'Add another game',
+    removeGame: 'Remove'
+  },
   errors: {
     NOT_LOGGED_IN: () => 'Sign in with GitHub first',
     HOST_LOGIN_REQUIRED: () => "Enter your friend's username",
@@ -169,6 +189,9 @@ export const en: Translation = {
     NO_CLOUD_SAVES: () => 'There are no saves for this game in storage yet',
     NO_INTERNET: () => "No internet connection — check your network and try again",
     GIT_AUTH_FAILED: () => "No access to GitHub — the token may have expired. Log out and sign in again",
-    GIT_GENERIC: (p) => `Sync error: ${p.detail}`
+    GIT_GENERIC: (p) => `Sync error: ${p.detail}`,
+    SUPPORT_SEND_FAILED: () => "Couldn't send. Try again in a moment.",
+    SUPPORT_RATE_LIMITED: (p) =>
+      p.time ? `Too many requests right now — try again around ${p.time}.` : 'Too many requests right now — wait a bit and try again.'
   }
 }

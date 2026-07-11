@@ -16,6 +16,7 @@ import {
   listCollaborators
 } from './services/github'
 import { detectGames, detectAllInstalled } from './services/steam'
+import { searchSteamStore } from './services/steamSearch'
 import {
   uploadGame,
   downloadGame,
@@ -26,6 +27,7 @@ import {
 import { startWatcher, stopWatcher } from './services/watcher'
 import { READY_GAMES } from './games/catalog'
 import { saveToken, loadToken, clearToken } from './services/tokenStore'
+import { sendSupportMessage } from './services/support'
 import type {
   AuthStatus,
   SavesRepoStatus,
@@ -39,7 +41,9 @@ import type {
   StartupSettings,
   RoleConfig,
   InstalledGame,
-  GeneralSettings
+  GeneralSettings,
+  SupportRequest,
+  SteamSearchResult
 } from '../shared/types'
 
 // Максимальний розмір файлу аватара — щоб не роздувати settings.json.
@@ -186,6 +190,12 @@ export function registerIpcHandlers(): void {
   // Каталог ГОТОВИХ до синку ігор (для розділу "Усі підтримувані" та пошуку).
   ipcMain.handle('games:catalog', (): CatalogGame[] =>
     READY_GAMES.map((g) => ({ appId: g.appId, name: g.name }))
+  )
+
+  // Пошук по всьому Steam-магазину (для "Підтримка" → "Хочу, щоб додали гру").
+  ipcMain.handle(
+    'games:search-store',
+    async (_event, term: string): Promise<SteamSearchResult[]> => searchSteamStore(term)
   )
 
   // --- Синхронізація сейвів ---
@@ -368,5 +378,12 @@ export function registerIpcHandlers(): void {
     }
     writeSettings({ role: 'join', hostOwner: host })
     return { role: 'join', hostOwner: host }
+  })
+
+  // --- Підтримка ---
+
+  // Надіслати звернення (баг / хочу гру / інше) на пошту Віталія через Worker-проксі.
+  ipcMain.handle('support:send', async (_event, request: SupportRequest): Promise<void> => {
+    await sendSupportMessage(request)
   })
 }

@@ -147,6 +147,26 @@ export const uk: Translation = {
     aboutDescription: 'Синхронізація збережень кооперативних ігор між друзями через GitHub.',
     githubRepoLink: 'GitHub репозиторій →'
   },
+  support: {
+    tooltip: 'Підтримка',
+    title: 'Звернутись у підтримку',
+    categoryBug: 'Знайшов баг',
+    categoryGame: 'Хочу, щоб додали гру',
+    categoryIdea: 'Маю ідею',
+    categoryOther: 'Інше',
+    placeholder: 'Опиши тут...',
+    messageRequired: 'Напиши кілька слів',
+    send: 'Відправити',
+    sending: 'Надсилаю…',
+    success: 'Надіслано! Дякую за звернення.',
+    gameSearchPlaceholder: 'Пошук гри в Steam...',
+    gameSearchEmpty: 'Нічого не знайдено',
+    gameRequired: 'Спершу обери гру',
+    commentOptionalPlaceholder: 'Додатковий коментар (необов’язково)',
+    maxGamesReached: (max) => `Максимум ${max} гри за одне звернення`,
+    addAnotherGame: 'Додати ще гру',
+    removeGame: 'Прибрати'
+  },
   errors: {
     NOT_LOGGED_IN: () => 'Спершу залогінься в GitHub',
     HOST_LOGIN_REQUIRED: () => 'Вкажи нік друга',
@@ -171,6 +191,9 @@ export const uk: Translation = {
     NO_CLOUD_SAVES: () => 'У сховищі ще немає сейвів цієї гри',
     NO_INTERNET: () => 'Немає з’єднання з інтернетом — перевір мережу і спробуй ще раз',
     GIT_AUTH_FAILED: () => 'Немає доступу до GitHub — токен міг протухнути. Вийди з акаунта і залогінься знову',
-    GIT_GENERIC: (p) => `Помилка синхронізації: ${p.detail}`
+    GIT_GENERIC: (p) => `Помилка синхронізації: ${p.detail}`,
+    SUPPORT_SEND_FAILED: () => 'Не вдалося надіслати. Спробуй ще раз трохи пізніше.',
+    SUPPORT_RATE_LIMITED: (p) =>
+      p.time ? `Забагато спроб — спробуй знову приблизно о ${p.time}.` : 'Забагато спроб — зачекай трохи і спробуй ще раз.'
   }
 }

@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { colors, fonts, radii, shadows } from '../theme'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 import Button from './Button'
 
 interface Props {
@@ -30,6 +31,13 @@ function ConfirmModal({
   onCancel
 }: Props): React.JSX.Element {
   const [remaining, setRemaining] = useState(countdownSeconds ?? 0)
+  // Закривати кліком по фону — лише якщо саме натискання миші теж було на
+  // фоні, а не всередині картки. Інакше виділення тексту (mousedown усередині
+  // → рух за межі модалки → mouseup на фоні) браузер трактує як клік по фону
+  // (спільний предок mousedown/mouseup-цілей), і модалка заплющувалась сама.
+  const mouseDownOnBackdrop = useRef(false)
+  const cardRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(cardRef)
 
   useEffect(() => {
     if (!countdownSeconds) return
@@ -40,8 +48,16 @@ function ConfirmModal({
   const locked = remaining > 0
 
   return (
-    <div style={styles.backdrop} onClick={onCancel}>
-      <div style={styles.card} onClick={(e) => e.stopPropagation()}>
+    <div
+      style={styles.backdrop}
+      onMouseDown={(e) => {
+        mouseDownOnBackdrop.current = e.target === e.currentTarget
+      }}
+      onClick={(e) => {
+        if (mouseDownOnBackdrop.current && e.target === e.currentTarget) onCancel()
+      }}
+    >
+      <div ref={cardRef} style={styles.card} onClick={(e) => e.stopPropagation()}>
         <div style={styles.topBar} />
         <div style={styles.body}>
           <div style={styles.titleRow}>
@@ -89,7 +105,8 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: radii.lg,
     background: colors.bgOverlay,
     boxShadow: `${shadows.sh5}, 0 0 30px rgba(255,107,124,.12)`,
-    overflow: 'hidden'
+    overflow: 'hidden',
+    outline: 'none'
   },
   topBar: { height: 2, background: `linear-gradient(90deg, ${colors.danger}, #ff9aa6)` },
   body: { padding: 22 },

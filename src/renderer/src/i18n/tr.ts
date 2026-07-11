@@ -147,6 +147,26 @@ export const tr: Translation = {
     aboutDescription: 'Arkadaşlar arasında GitHub üzerinden ortak oyun kayıtlarını senkronize eder.',
     githubRepoLink: 'GitHub deposu →'
   },
+  support: {
+    tooltip: 'Destek',
+    title: 'Destekle iletişime geç',
+    categoryBug: 'Bir hata buldum',
+    categoryGame: 'Bir oyunun eklenmesini istiyorum',
+    categoryIdea: 'Bir fikrim var',
+    categoryOther: 'Başka bir şey',
+    placeholder: 'Burada açıkla...',
+    messageRequired: 'Birkaç kelime yaz',
+    send: 'Gönder',
+    sending: 'Gönderiliyor…',
+    success: 'Gönderildi! Geri bildirimin için teşekkürler.',
+    gameSearchPlaceholder: "Steam'de oyunu ara...",
+    gameSearchEmpty: 'Hiçbir şey bulunamadı',
+    gameRequired: 'Önce bir oyun seç',
+    commentOptionalPlaceholder: 'Ek yorum (isteğe bağlı)',
+    maxGamesReached: (max) => `Bir istekte en fazla ${max} oyun eklenebilir`,
+    addAnotherGame: 'Başka bir oyun ekle',
+    removeGame: 'Kaldır'
+  },
   errors: {
     NOT_LOGGED_IN: () => 'Önce GitHub ile giriş yap',
     HOST_LOGIN_REQUIRED: () => 'Arkadaşının kullanıcı adını gir',
@@ -171,6 +191,9 @@ export const tr: Translation = {
     NO_CLOUD_SAVES: () => 'Depoda bu oyuna ait kayıt henüz yok',
     NO_INTERNET: () => 'İnternet bağlantısı yok — ağını kontrol edip tekrar dene',
     GIT_AUTH_FAILED: () => "GitHub'a erişim yok — token süresi dolmuş olabilir. Hesaptan çıkıp tekrar giriş yap",
-    GIT_GENERIC: (p) => `Senkronizasyon hatası: ${p.detail}`
+    GIT_GENERIC: (p) => `Senkronizasyon hatası: ${p.detail}`,
+    SUPPORT_SEND_FAILED: () => 'Gönderilemedi. Birazdan tekrar dene.',
+    SUPPORT_RATE_LIMITED: (p) =>
+      p.time ? `Çok fazla deneme — saat ${p.time} civarında tekrar dene.` : 'Çok fazla deneme — biraz bekleyip tekrar dene.'
   }
 }

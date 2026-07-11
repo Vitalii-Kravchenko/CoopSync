@@ -142,6 +142,26 @@ export const zhCN: Translation = {
     aboutDescription: '通过 GitHub 在朋友之间同步联机游戏存档。',
     githubRepoLink: 'GitHub 仓库 →'
   },
+  support: {
+    tooltip: '支持',
+    title: '联系支持',
+    categoryBug: '发现了一个错误',
+    categoryGame: '希望添加某个游戏',
+    categoryIdea: '有个想法',
+    categoryOther: '其他',
+    placeholder: '在此描述...',
+    messageRequired: '请写几句话',
+    send: '发送',
+    sending: '发送中…',
+    success: '已发送！感谢你的反馈。',
+    gameSearchPlaceholder: '在 Steam 中搜索游戏...',
+    gameSearchEmpty: '未找到任何内容',
+    gameRequired: '请先选择一个游戏',
+    commentOptionalPlaceholder: '补充说明（可选）',
+    maxGamesReached: (max) => `每次最多可添加 ${max} 个游戏`,
+    addAnotherGame: '添加另一个游戏',
+    removeGame: '移除'
+  },
   errors: {
     NOT_LOGGED_IN: () => '请先使用 GitHub 登录',
     HOST_LOGIN_REQUIRED: () => '请输入朋友的用户名',
@@ -164,6 +184,8 @@ export const zhCN: Translation = {
     NO_CLOUD_SAVES: () => '存储中还没有这个游戏的存档',
     NO_INTERNET: () => '没有网络连接 — 请检查网络后重试',
     GIT_AUTH_FAILED: () => '无法访问 GitHub — 令牌可能已过期。请退出登录后重新登录',
-    GIT_GENERIC: (p) => `同步错误：${p.detail}`
+    GIT_GENERIC: (p) => `同步错误：${p.detail}`,
+    SUPPORT_SEND_FAILED: () => '发送失败，请稍后重试。',
+    SUPPORT_RATE_LIMITED: (p) => (p.time ? `请求过多，请在 ${p.time} 左右重试。` : '请求过多，请稍等片刻后重试。')
   }
 }

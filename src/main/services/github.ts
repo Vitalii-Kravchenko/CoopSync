@@ -102,8 +102,8 @@ export async function fetchUser(token: string): Promise<AuthUser> {
   if (!res.ok) {
     throw makeAppError('USER_FETCH_FAILED', { status: String(res.status) })
   }
-  const data = (await res.json()) as { login: string }
-  return { login: data.login }
+  const data = (await res.json()) as { login: string; name: string | null }
+  return { login: data.login, name: data.name ?? undefined }
 }
 
 // --- Спільне сховище сейвів ---

@@ -105,6 +105,14 @@ export function SearchIcon({ size = 16, color }: IconProps): React.JSX.Element {
   )
 }
 
+export function ChevronDownIcon({ size = 16, color }: IconProps): React.JSX.Element {
+  return (
+    <svg {...base(size)} style={{ color }}>
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  )
+}
+
 export function CheckIcon({ size = 16, color }: IconProps): React.JSX.Element {
   return (
     <svg {...base(size)} style={{ color }}>
@@ -157,6 +165,19 @@ export function DiskIcon({ size = 16, color }: IconProps): React.JSX.Element {
       <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" />
       <polyline points="17 21 17 13 7 13 7 21" />
       <polyline points="7 3 7 8 15 8" />
+    </svg>
+  )
+}
+
+export function SupportIcon({ size = 16, color }: IconProps): React.JSX.Element {
+  return (
+    <svg {...base(size)} style={{ color }}>
+      <circle cx="12" cy="12" r="10" />
+      <circle cx="12" cy="12" r="4" />
+      <line x1="4.93" y1="4.93" x2="9.17" y2="9.17" />
+      <line x1="14.83" y1="14.83" x2="19.07" y2="19.07" />
+      <line x1="14.83" y1="9.17" x2="19.07" y2="4.93" />
+      <line x1="4.93" y1="19.07" x2="9.17" y2="14.83" />
     </svg>
   )
 }

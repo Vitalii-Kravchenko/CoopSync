@@ -14,7 +14,9 @@ import type {
   StartupSettings,
   RoleConfig,
   InstalledGame,
-  GeneralSettings
+  GeneralSettings,
+  SupportRequest,
+  SteamSearchResult
 } from '../shared/types'
 
 // API, доступне в renderer як window.api.
@@ -55,7 +57,10 @@ const api = {
     /** Усі встановлені Steam-ігри (+ чи підтримуються). */
     allInstalled: (): Promise<InstalledGame[]> => ipcRenderer.invoke('games:all-installed'),
     /** Повний каталог підтримуваних ігор. */
-    catalog: (): Promise<CatalogGame[]> => ipcRenderer.invoke('games:catalog')
+    catalog: (): Promise<CatalogGame[]> => ipcRenderer.invoke('games:catalog'),
+    /** Пошук по всьому Steam-магазину (не лише встановлені). */
+    searchStore: (term: string): Promise<SteamSearchResult[]> =>
+      ipcRenderer.invoke('games:search-store', term)
   },
   sync: {
     /** Вивантажити сейви гри на GitHub. */
@@ -123,6 +128,10 @@ const api = {
     setHost: (): Promise<RoleConfig> => ipcRenderer.invoke('role:set-host'),
     /** Підключитися до сховища друга-хоста. */
     join: (hostLogin: string): Promise<RoleConfig> => ipcRenderer.invoke('role:join', hostLogin)
+  },
+  support: {
+    /** Надіслати звернення (баг / хочу гру / інше) на пошту Віталія. */
+    send: (request: SupportRequest): Promise<void> => ipcRenderer.invoke('support:send', request)
   },
   /** Відкрити URL у системному браузері. */
   openExternal: (url: string): Promise<void> => ipcRenderer.invoke('shell:open-external', url),

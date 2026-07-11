@@ -1,0 +1,12 @@
+name = "coopsync-support"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+
+[vars]
+# НЕ секрет — просто адреса, куди йдуть листи. RESEND_API_KEY (реальний секрет)
+# додається окремо командою: wrangler secret put RESEND_API_KEY
+TO_EMAIL = "coopsync.support@gmail.com"
+
+[[kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "2e0c1978ecca4abd89939c49c4facead"

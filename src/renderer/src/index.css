@@ -121,6 +121,13 @@ body {
   letter-spacing: 0.02em;
   height: 40px;
   padding: 0 20px;
+  /* Прибирає нативну "хромку" <button> (включно з платформним фокус-станом) —
+     без цього на primary/success (clip-path зрізає кут) нативний фокус-стан
+     ЧАСТКОВО малювався ПІД власним фоном кнопки і визирав сірим прямокутником
+     саме в зрізаному кутку, де кнопка сама себе не перекриває. */
+  appearance: none;
+  -webkit-appearance: none;
+  outline: none;
   transition:
     background var(--t-hover),
     border-color var(--t-hover),
@@ -135,7 +142,18 @@ body {
   box-shadow: none !important;
   transform: none !important;
 }
+/* Фокус клавіатурою (Tab) — той самий ціановий контур по всій системі,
+   замість дивного нативного (у Chromium зазвичай синій прямокутник, що не
+   пасує до темної теми). :focus-visible — тільки для клавіатури, не для миші. */
+.btn:focus-visible,
+.icon-btn:focus-visible,
+.icon-btn-plain:focus-visible {
+  outline: 2px solid #36e2e8;
+  outline-offset: 3px;
+}
 .btn-primary {
+  position: relative;
+  z-index: 0;
   color: #04141a;
   background: linear-gradient(120deg, #36e2e8 0%, #5ab6f2 42%, #8a6cff 100%);
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.45), 0 0 22px rgba(54, 226, 232, 0.4);
@@ -151,6 +169,8 @@ body {
   box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 .btn-success {
+  position: relative;
+  z-index: 0;
   color: #06140e;
   background: #3fd9a6;
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.45), 0 0 18px rgba(63, 217, 166, 0.3);
@@ -159,6 +179,43 @@ body {
 .btn-success:not(:disabled):hover {
   filter: brightness(1.08);
   transform: translateY(-1px);
+}
+/* primary/success мають ЗМІШАНУ форму: 2 кути зрізані (clip-path), 2 —
+   заокруглені (border-radius, він і далі працює там, де clip-path не сягає).
+   Ані outline, ані box-shadow не рахуються з clip-path — тому кільце навколо
+   всієї кнопки виходить нерівним. Рішення: власний шар ВСЕРЕДИНІ кнопки
+   (::before, відступ 3px — ніколи не виходить за межі, тому ніде не
+   обрізається), з ТІЄЮ Ж парою форм, коректно перерахованою під менший
+   розмір.
+   Заокруглення (звичайне коло) — лінійне зменшення: 9-3=6px.
+   Похилий зріз (45°) рахується ІНАКШЕ: рівномірна товщина рамки d навколо
+   діагональної лінії відповідає зменшенню зрізу на d×(2-√2)≈0.586d, а не на
+   2d — з цим раніше й була помилка (2d давало L'=3, що збігалося з лінією
+   зовнішнього зрізу і робило рамку там нульової товщини — саме тому вона й
+   зникала на зрізаних кутах). 9-3×0.586 ≈ 7.24, округлено до 7px.
+   z-index:0 на самій кнопці — щоб z-index:-1 цього шару лишався одразу під
+   власним фоном кнопки, а не "втікав" у чужий шар малювання.
+   transition: none — щоб поява кільця не сіпалась окремо від зміни фону. */
+.btn-primary:focus-visible,
+.btn-success:focus-visible {
+  outline: none;
+  background: #ffffff;
+  transition: none;
+}
+.btn-primary:focus-visible::before,
+.btn-success:focus-visible::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  z-index: -1;
+  border-radius: 6px;
+  clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 7px 100%, 0 calc(100% - 7px));
+}
+.btn-primary:focus-visible::before {
+  background: linear-gradient(120deg, #36e2e8 0%, #5ab6f2 42%, #8a6cff 100%);
+}
+.btn-success:focus-visible::before {
+  background: #3fd9a6;
 }
 .btn-secondary {
   color: #edf1fa;
@@ -189,15 +246,82 @@ body {
   background: rgba(255, 107, 124, 0.12);
 }
 
-/* Поля вводу — фокус: ціановий контур + м'яке кільце (єдиний фокус-стиль системи). */
+/* Поля вводу — фокус: ціановий контур + м'яке кільце (єдиний фокус-стиль системи).
+   :focus-visible, не :focus — інакше цей клас (він же на кнопці-дропдауні
+   категорії) показує кільце навіть коли фокус прийшов програмно при
+   відкритті модалки (наша пастка фокуса ставить фокус на перший елемент),
+   а не від реального натискання Tab користувачем. Для звичайних text-полів
+   поведінка не зміниться — :focus-visible для них спрацьовує так само, як
+   :focus (браузер завжди показує фокус на текстових полях, незалежно від
+   миші/клавіатури). */
 .input-field {
   transition:
     border-color var(--t-hover),
     box-shadow var(--t-hover);
 }
-.input-field:focus {
+.input-field:focus-visible {
   border-color: #36e2e8 !important;
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3), 0 0 0 3px rgba(54, 226, 232, 0.18) !important;
+}
+
+/* Кругла/квадратна icon-only кнопка (дизайн-система 4.1 "icon-only") — окремий
+   клас, а не інлайн-стилі, бо інлайн background завжди перекриває CSS :hover
+   (та сама пастка, що вже була з пунктами Sidebar). */
+.icon-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #b6bfd2;
+  background: #171b27;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  outline: none;
+  transition:
+    border-color var(--t-hover),
+    color var(--t-hover),
+    background var(--t-hover);
+}
+.icon-btn:hover {
+  border-color: rgba(54, 226, 232, 0.45);
+  color: #36e2e8;
+  background: #1c2230;
+}
+
+/* "Гола" icon-only кнопка — без рамки й фону, лише іконка (напр. прибрати
+   один пункт зі списку). Свідомо відрізняється від .icon-btn (рамка+фон),
+   щоб не виглядати як дубль кнопки закриття модалки поруч. Hover — у
+   небезпечний (danger) відтінок, бо дія завжди про видалення чогось. */
+.icon-btn-plain {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #79839a;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  outline: none;
+  transition:
+    color var(--t-hover),
+    background var(--t-hover);
+}
+.icon-btn-plain:hover:not(:disabled) {
+  color: #ff6b7c;
+  background: rgba(255, 107, 124, 0.1);
+}
+.icon-btn-plain:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* Кнопки керування вікном. */

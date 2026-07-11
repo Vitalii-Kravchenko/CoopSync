@@ -170,6 +170,26 @@ export interface Translation {
     aboutDescription: string
     githubRepoLink: string
   }
+  support: {
+    tooltip: string
+    title: string
+    categoryBug: string
+    categoryGame: string
+    categoryIdea: string
+    categoryOther: string
+    placeholder: string
+    messageRequired: string
+    send: string
+    sending: string
+    success: string
+    gameSearchPlaceholder: string
+    gameSearchEmpty: string
+    gameRequired: string
+    commentOptionalPlaceholder: string
+    maxGamesReached: (max: number) => string
+    addAnotherGame: string
+    removeGame: string
+  }
   /** Локалізовані тексти для кодів помилок з main-процесу (shared/errors.ts). */
   errors: Record<ErrorCode, (params: Record<string, string>) => string>
 }

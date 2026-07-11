@@ -147,6 +147,26 @@ export const de: Translation = {
     aboutDescription: 'Synchronisiert Spielstände von Koop-Spielen zwischen Freunden über GitHub.',
     githubRepoLink: 'GitHub-Repository →'
   },
+  support: {
+    tooltip: 'Support',
+    title: 'Support kontaktieren',
+    categoryBug: 'Fehler gefunden',
+    categoryGame: 'Spiel hinzufügen lassen',
+    categoryIdea: 'Habe eine Idee',
+    categoryOther: 'Etwas anderes',
+    placeholder: 'Beschreibe es hier...',
+    messageRequired: 'Schreib ein paar Worte',
+    send: 'Senden',
+    sending: 'Wird gesendet…',
+    success: 'Gesendet! Danke für dein Feedback.',
+    gameSearchPlaceholder: 'Spiel auf Steam suchen...',
+    gameSearchEmpty: 'Nichts gefunden',
+    gameRequired: 'Wähle zuerst ein Spiel',
+    commentOptionalPlaceholder: 'Zusätzlicher Kommentar (optional)',
+    maxGamesReached: (max) => `Maximal ${max} Spiele pro Anfrage`,
+    addAnotherGame: 'Weiteres Spiel hinzufügen',
+    removeGame: 'Entfernen'
+  },
   errors: {
     NOT_LOGGED_IN: () => 'Melde dich zuerst bei GitHub an',
     HOST_LOGIN_REQUIRED: () => 'Gib den Benutzernamen deines Freundes ein',
@@ -172,6 +192,9 @@ export const de: Translation = {
     NO_CLOUD_SAVES: () => 'Für dieses Spiel gibt es noch keine Spielstände im Speicher',
     NO_INTERNET: () => 'Keine Internetverbindung — prüfe dein Netzwerk und versuche es erneut',
     GIT_AUTH_FAILED: () => 'Kein Zugriff auf GitHub — das Token ist evtl. abgelaufen. Melde dich ab und wieder an',
-    GIT_GENERIC: (p) => `Synchronisierungsfehler: ${p.detail}`
+    GIT_GENERIC: (p) => `Synchronisierungsfehler: ${p.detail}`,
+    SUPPORT_SEND_FAILED: () => 'Senden fehlgeschlagen. Versuche es gleich noch einmal.',
+    SUPPORT_RATE_LIMITED: (p) =>
+      p.time ? `Zu viele Versuche — versuche es gegen ${p.time} erneut.` : 'Zu viele Versuche — warte kurz und versuche es erneut.'
   }
 }

@@ -7,7 +7,7 @@
 <p align="center">🇺🇸 English · <a href="README.uk.md">🇺🇦 Українська</a></p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.6.3-8A6CFF?style=flat-square&labelColor=10131C" alt="Version">
+  <img src="https://img.shields.io/badge/version-0.7.0-8A6CFF?style=flat-square&labelColor=10131C" alt="Version">
   <img src="https://img.shields.io/badge/platform-Windows-36E2E8?style=flat-square&labelColor=10131C" alt="Platform">
   <img src="https://img.shields.io/badge/stack-Electron%20%2B%20TS-5AA9FF?style=flat-square&labelColor=10131C" alt="Stack">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Noncommercial-79839A?style=flat-square&labelColor=10131C" alt="License"></a>
@@ -80,6 +80,8 @@ installer — the same warning appears on the installer's first screen too.
   still pending.
 - 🗑️ **Delete the shared storage** — a guarded, two-step confirmation (with a short
   countdown) if you ever want to start over.
+- 💬 **Support button** — send bug reports, game requests (with a live Steam search),
+  or ideas straight from the app, no need to email the developer directly.
 - 🌍 **10 languages** — English, French, German, Polish, Portuguese (Brazil), Russian,
   Chinese (Simplified), Spanish, Turkish, and Ukrainian.
 

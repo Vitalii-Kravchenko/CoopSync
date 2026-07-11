@@ -52,7 +52,8 @@ export const es: Translation = {
     acceptedBadge: 'Aceptado',
     noStorage: 'Primero configura el almacenamiento compartido en Ajustes',
     emptyFriends: 'Todavía no hay amigos — invita a alguien arriba',
-    inviteError: 'No se pudo invitar'
+    inviteError: 'No se pudo invitar',
+    loadError: 'No se pudo comprobar el estado del almacenamiento'
   },
   history: {
     title: 'Historial de sincronización',
@@ -118,6 +119,7 @@ export const es: Translation = {
     title: 'Ajustes',
     changeAvatar: 'Cambiar imagen',
     avatarError: 'No se pudo cargar la imagen',
+    saveError: 'No se pudo guardar el ajuste — inténtalo de nuevo',
     githubUser: 'Usuario de GitHub',
     logout: 'Cerrar sesión',
     storage: 'Almacenamiento',
@@ -193,6 +195,8 @@ export const es: Translation = {
     NO_INTERNET: () => 'Sin conexión a internet — comprueba tu red e inténtalo de nuevo',
     GIT_AUTH_FAILED: () => 'Sin acceso a GitHub — el token pudo haber caducado. Cierra sesión y vuelve a iniciarla',
     GIT_GENERIC: (p) => `Error de sincronización: ${p.detail}`,
+    GITHUB_RATE_LIMITED: (p) =>
+      p.time ? `Límite de solicitudes de GitHub alcanzado — inténtalo de nuevo alrededor de las ${p.time}.` : 'Límite de solicitudes de GitHub alcanzado — espera un poco e inténtalo de nuevo.',
     SUPPORT_SEND_FAILED: () => 'No se pudo enviar. Inténtalo de nuevo en un momento.',
     SUPPORT_RATE_LIMITED: (p) =>
       p.time ? `Demasiados intentos — inténtalo de nuevo alrededor de las ${p.time}.` : 'Demasiados intentos — espera un poco e inténtalo de nuevo.'

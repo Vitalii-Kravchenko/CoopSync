@@ -21,17 +21,25 @@ function FriendsScreen({ user, avatarDataUrl }: Props): React.JSX.Element {
   const [friend, setFriend] = useState('')
   const [busy, setBusy] = useState(false)
   const [inviteError, setInviteError] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   useEffect(() => {
     void load()
   }, [])
 
   async function load(): Promise<void> {
-    const r = await window.api.repo.getStatus()
-    setRepo(r)
-    if (r.state === 'ready') {
-      setInvites(await window.api.repo.listInvitations())
-      setCollaborators(await window.api.repo.listCollaborators())
+    try {
+      const r = await window.api.repo.getStatus()
+      setRepo(r)
+      setLoadError(null)
+      if (r.state === 'ready') {
+        setInvites(await window.api.repo.listInvitations())
+        setCollaborators(await window.api.repo.listCollaborators())
+      }
+    } catch (e) {
+      // Раніше збій тут (напр. нема інтернету) тихо показував "сховище не
+      // підключено", хоча реальний стан невідомий.
+      setLoadError(describeError(e, t, t.friends.loadError))
     }
   }
 
@@ -56,7 +64,14 @@ function FriendsScreen({ user, avatarDataUrl }: Props): React.JSX.Element {
     <div style={styles.screen}>
       <div style={styles.h1}>{t.friends.title}</div>
 
-      {repo?.state !== 'ready' ? (
+      {loadError ? (
+        <div style={styles.card}>
+          <div style={styles.error}>{loadError}</div>
+          <Button variant="secondary" style={{ marginTop: 10 }} onClick={() => void load()}>
+            {t.main.retry}
+          </Button>
+        </div>
+      ) : repo?.state !== 'ready' ? (
         <div style={styles.card}>
           <div style={styles.muted}>{t.friends.noStorage}</div>
         </div>

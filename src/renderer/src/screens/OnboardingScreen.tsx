@@ -35,16 +35,23 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    window.api.auth.getStatus().then(async (a) => {
-      setAuth(a)
-      if (a.state === 'logged-in') {
-        const cfg = await window.api.role.get()
-        if (cfg) {
-          setRole(cfg.role)
-          if (cfg.role === 'host') await loadRepo()
+    window.api.auth
+      .getStatus()
+      .then(async (a) => {
+        setAuth(a)
+        if (a.state === 'logged-in') {
+          const cfg = await window.api.role.get()
+          if (cfg) {
+            setRole(cfg.role)
+            if (cfg.role === 'host') await loadRepo()
+          }
         }
-      }
-    })
+      })
+      .catch((e) => {
+        // Раніше збій тут (напр. нема інтернету) губився мовчки — крок 3
+        // тихо показував "Створити сховище", хоча реальний стан невідомий.
+        setError(describeError(e, t, t.onboarding.genericError))
+      })
     return window.api.auth.onDeviceCode(setDeviceCode)
   }, [])
 

@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { colors, fonts } from './theme'
 import { useI18n } from './i18n'
-import { describeSyncResult } from './errors'
+import { describeError, describeSyncResult } from './errors'
 import TitleBar from './components/TitleBar'
 import Sidebar, { type Screen } from './components/Sidebar'
 import Banner, { type BannerState } from './components/Banner'
+import Button from './components/Button'
 import OnboardingScreen from './screens/OnboardingScreen'
 import MainScreen from './screens/MainScreen'
 import FriendsScreen from './screens/FriendsScreen'
@@ -12,11 +13,12 @@ import HistoryScreen from './screens/HistoryScreen'
 import SettingsScreen from './screens/SettingsScreen'
 import type { AuthUser } from '../../shared/types'
 
-type Phase = 'loading' | 'onboarding' | 'app'
+type Phase = 'loading' | 'onboarding' | 'app' | 'error'
 
 function App(): React.JSX.Element {
   const { t } = useI18n()
   const [phase, setPhase] = useState<Phase>('loading')
+  const [errorMessage, setErrorMessage] = useState('')
   const [screen, setScreen] = useState<Screen>('main')
   const [user, setUser] = useState<AuthUser | null>(null)
   const [avatarDataUrl, setAvatarDataUrl] = useState<string | null>(null)
@@ -39,28 +41,45 @@ function App(): React.JSX.Element {
   }, [])
 
   async function init(): Promise<void> {
-    const auth = await window.api.auth.getStatus()
-    if (auth.state !== 'logged-in') {
-      setPhase('onboarding')
-      return
-    }
-    setUser(auth.user)
-
-    // Роль ще не вибрана → онбординг.
-    const cfg = await window.api.role.get()
-    if (!cfg) {
-      setPhase('onboarding')
-      return
-    }
-    // Host без готового сховища — теж онбординг.
-    if (cfg.role === 'host') {
-      const repo = await window.api.repo.getStatus()
-      if (repo.state !== 'ready') {
+    setPhase('loading')
+    try {
+      const auth = await window.api.auth.getStatus()
+      if (auth.state === 'error') {
+        // Тимчасовий збій перевірки (нема інтернету, ліміт GitHub API) — НЕ
+        // токен насправді невалідний, тож не викидаємо в онбординг, а даємо
+        // повідомлення + Retry.
+        setErrorMessage(t.errors[auth.code](auth.params ?? {}))
+        setPhase('error')
+        return
+      }
+      if (auth.state !== 'logged-in') {
         setPhase('onboarding')
         return
       }
+      setUser(auth.user)
+
+      // Роль ще не вибрана → онбординг.
+      const cfg = await window.api.role.get()
+      if (!cfg) {
+        setPhase('onboarding')
+        return
+      }
+      // Host без готового сховища — теж онбординг.
+      if (cfg.role === 'host') {
+        const repo = await window.api.repo.getStatus()
+        if (repo.state !== 'ready') {
+          setPhase('onboarding')
+          return
+        }
+      }
+      void enterApp()
+    } catch (e) {
+      // Раніше будь-який збій тут (напр. нема інтернету при repo.getStatus())
+      // лишав phase='loading' навіки без пояснення — тепер показуємо
+      // повідомлення й даємо спробувати ще раз.
+      setErrorMessage(describeError(e, t, t.main.syncErrorFallback))
+      setPhase('error')
     }
-    void enterApp()
   }
 
   // Перехід у робочий застосунок + запуск автосинхронізації.
@@ -91,7 +110,12 @@ function App(): React.JSX.Element {
   useEffect(() => {
     if (phase !== 'app') return
     return window.api.watcher.onAutoSync((e) => {
-      const text = `${e.name}: ${describeSyncResult(e.code, e.params, t)}`
+      // watcher-error не прив'язана до конкретної гри (напр. не вдалось
+      // перевірити список запущених процесів) — без префікса назви гри.
+      const text =
+        e.action === 'watcher-error'
+          ? describeSyncResult(e.code, e.params, t)
+          : `${e.name}: ${describeSyncResult(e.code, e.params, t)}`
       if (e.code === 'push-skipped-nochange') {
         // Грали, але сейв не змінився — не проблема і не привід для тривоги
         // (як і ручне "вже синхронізовано"), тому info-тон, а не warning.
@@ -125,6 +149,17 @@ function App(): React.JSX.Element {
       <TitleBar user={phase === 'app' ? user : null} avatarDataUrl={avatarDataUrl} />
 
       {phase === 'loading' && <div style={styles.center}>{t.app.loading}</div>}
+
+      {phase === 'error' && (
+        <div style={styles.center}>
+          <div style={styles.errorBox}>
+            <div>{errorMessage}</div>
+            <Button variant="secondary" onClick={() => void init()}>
+              {t.main.retry}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {phase === 'onboarding' && (
         <div style={styles.onboarding}>
@@ -183,6 +218,14 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'center',
     color: colors.text3
+  },
+  errorBox: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 14,
+    maxWidth: 360,
+    textAlign: 'center'
   },
   onboarding: { flex: 1, overflowY: 'auto', display: 'flex', alignItems: 'flex-start' },
   appBody: { flex: 1, display: 'flex', minHeight: 0 }

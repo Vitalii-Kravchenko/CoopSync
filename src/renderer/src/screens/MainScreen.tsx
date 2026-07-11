@@ -36,25 +36,36 @@ function MainScreen({ active, syncVersion, onSynced, onBanner }: Props): React.J
   // Якщо перевірка статусів впала (мережа, гіт) — показуємо це явно, а не мовчимо
   // вічним "Перевіряю..." на картках без жодного пояснення.
   const [statusesError, setStatusesError] = useState<string | null>(null)
+  // Так само для самого списку ігор — раніше збій тут (напр. нема прав на
+  // папку Steam-бібліотеки) лишав "Завантаження ігор..." навіки.
+  const [gamesError, setGamesError] = useState<string | null>(null)
 
   useEffect(() => {
-    Promise.all([window.api.games.allInstalled(), window.api.games.catalog()]).then(
-      ([list, cat]) => {
-        setInstalled(list)
-        setCatalog(cat)
-        setLoading(false)
-      }
-    )
+    void loadGames()
     // Статуси тягнемо окремо — вони повільніші (clone/pull сховища).
     void loadStatuses()
     window.api.settings.getGeneral().then((s) => setShowCloudWarning(s.showCloudWarning))
   }, [])
 
+  async function loadGames(): Promise<void> {
+    setLoading(true)
+    try {
+      const [list, cat] = await Promise.all([window.api.games.allInstalled(), window.api.games.catalog()])
+      setInstalled(list)
+      setCatalog(cat)
+      setGamesError(null)
+    } catch (e) {
+      setGamesError(describeError(e, t, t.main.statusesError))
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // syncVersion === 0 на монтуванні — той випадок вже покриває ефект вище.
   useEffect(() => {
     if (syncVersion > 0) {
       void loadStatuses()
-      window.api.games.allInstalled().then(setInstalled)
+      window.api.games.allInstalled().then(setInstalled).catch(() => {})
     }
   }, [syncVersion])
 
@@ -165,9 +176,18 @@ function MainScreen({ active, syncVersion, onSynced, onBanner }: Props): React.J
         </div>
       )}
 
-      {loading && <div style={styles.muted}>{t.main.loadingGames}</div>}
+      {gamesError && (
+        <div style={styles.statusesError}>
+          <span>{gamesError}</span>
+          <button style={styles.retryLink} onClick={() => void loadGames()}>
+            {t.main.retry}
+          </button>
+        </div>
+      )}
 
-      {!loading && (
+      {loading && !gamesError && <div style={styles.muted}>{t.main.loadingGames}</div>}
+
+      {!loading && !gamesError && (
         <>
           <div style={styles.sectionTitle}>{t.main.installedGames}</div>
           {filteredInstalled.length > 0 ? (

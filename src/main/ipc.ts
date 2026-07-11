@@ -1,7 +1,7 @@
 import { app, ipcMain, shell, clipboard, BrowserWindow, dialog } from 'electron'
 import { readFileSync, statSync } from 'fs'
 import { extname } from 'path'
-import { makeAppError } from '../shared/errors'
+import { makeAppError, parseAppError } from '../shared/errors'
 import { readSettings, writeSettings } from './services/settingsStore'
 import { updateTrayLanguage } from './trayIcon'
 import {
@@ -92,8 +92,15 @@ export function registerIpcHandlers(): void {
     try {
       const user = await fetchUser(token)
       return { state: 'logged-in', user }
-    } catch {
-      // Токен протух або відкликаний — вважаємо, що не залогінені.
+    } catch (e) {
+      const parsed = parseAppError(e instanceof Error ? e.message : String(e))
+      // GIT_AUTH_FAILED (401 — токен справді протух/відкликаний) — це і є
+      // "не залогінені". Будь-що інше (нема інтернету, вичерпано ліміт
+      // GitHub API) — тимчасовий збій перевірки, не привід тихо викидати
+      // вже залогіненого користувача назад в онбординг.
+      if (parsed && parsed.code !== 'GIT_AUTH_FAILED') {
+        return { state: 'error', code: parsed.code, params: parsed.params }
+      }
       return { state: 'logged-out' }
     }
   })

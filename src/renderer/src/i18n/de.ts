@@ -52,7 +52,8 @@ export const de: Translation = {
     acceptedBadge: 'Angenommen',
     noStorage: 'Richte zuerst den gemeinsamen Speicher in den Einstellungen ein',
     emptyFriends: 'Noch keine Freunde — lade oben jemanden ein',
-    inviteError: 'Einladung fehlgeschlagen'
+    inviteError: 'Einladung fehlgeschlagen',
+    loadError: 'Speicherstatus konnte nicht geprüft werden'
   },
   history: {
     title: 'Synchronisierungsverlauf',
@@ -118,6 +119,7 @@ export const de: Translation = {
     title: 'Einstellungen',
     changeAvatar: 'Bild ändern',
     avatarError: 'Bild konnte nicht geladen werden',
+    saveError: 'Einstellung konnte nicht gespeichert werden — versuche es erneut',
     githubUser: 'GitHub-Benutzer',
     logout: 'Abmelden',
     storage: 'Speicher',
@@ -193,6 +195,8 @@ export const de: Translation = {
     NO_INTERNET: () => 'Keine Internetverbindung — prüfe dein Netzwerk und versuche es erneut',
     GIT_AUTH_FAILED: () => 'Kein Zugriff auf GitHub — das Token ist evtl. abgelaufen. Melde dich ab und wieder an',
     GIT_GENERIC: (p) => `Synchronisierungsfehler: ${p.detail}`,
+    GITHUB_RATE_LIMITED: (p) =>
+      p.time ? `GitHub-Anfragelimit erreicht — versuche es gegen ${p.time} erneut.` : 'GitHub-Anfragelimit erreicht — warte kurz und versuche es erneut.',
     SUPPORT_SEND_FAILED: () => 'Senden fehlgeschlagen. Versuche es gleich noch einmal.',
     SUPPORT_RATE_LIMITED: (p) =>
       p.time ? `Zu viele Versuche — versuche es gegen ${p.time} erneut.` : 'Zu viele Versuche — warte kurz und versuche es erneut.'

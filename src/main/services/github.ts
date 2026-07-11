@@ -38,12 +38,47 @@ function authHeaders(token: string): Record<string, string> {
   }
 }
 
+// Обгортка над fetch: сирий мережевий виняток (нема інтернету, DNS не
+// резолвиться) інакше летів би нелокалізованим технічним текстом — на
+// відміну від git-шляху (wrapGitError у sync.ts), де таке вже розпізнається.
+async function githubFetch(url: string, init?: RequestInit): Promise<Response> {
+  try {
+    return await fetch(url, init)
+  } catch {
+    throw makeAppError('NO_INTERNET')
+  }
+}
+
+// Токен протух/відкликаний (401) чи вичерпано ліміт запитів GitHub API (403
+// саме з x-ratelimit-remaining: 0 — звичайний "нема прав" 403 сюди не
+// потрапляє) — розпізнаємо однаково для будь-якого REST-виклику, замість
+// голого номера статусу в кожному окремому *_FAILED коді.
+function checkAuthAndRateLimit(res: Response): void {
+  if (res.status === 401) throw makeAppError('GIT_AUTH_FAILED')
+  if (res.status === 403 && res.headers.get('x-ratelimit-remaining') === '0') {
+    throw rateLimitError(res)
+  }
+}
+
+function rateLimitError(res: Response): Error {
+  const resetHeader = res.headers.get('x-ratelimit-reset')
+  const time = resetHeader ? formatResetTime(Number(resetHeader) * 1000) : ''
+  return makeAppError('GITHUB_RATE_LIMITED', { time })
+}
+
+// Локальний час у форматі HH:MM, округлений вгору до наступної хвилини —
+// той самий підхід, що й для SUPPORT_RATE_LIMITED у support.ts.
+function formatResetTime(epochMs: number): string {
+  const d = new Date(Math.ceil(epochMs / 60000) * 60000)
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+
 /** Крок 1: отримати device code + код для користувача. */
 export async function requestDeviceCode(): Promise<{
   deviceCode: string
   info: DeviceCodeInfo
 }> {
-  const res = await fetch('https://github.com/login/device/code', {
+  const res = await githubFetch('https://github.com/login/device/code', {
     method: 'POST',
     headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
     body: JSON.stringify({ client_id: GITHUB_CLIENT_ID, scope: GITHUB_SCOPE })
@@ -66,20 +101,36 @@ export async function requestDeviceCode(): Promise<{
 /** Крок 2: опитувати GitHub, поки користувач не підтвердить (або не вийде час). */
 export async function pollForToken(deviceCode: string, interval: number): Promise<string> {
   let waitSeconds = interval
+  // Один тимчасовий мережевий збій під час хвилин очікування не повинен
+  // обривати весь логін — пробуємо далі, і лише якщо збої йдуть поспіль
+  // забагато разів, здаємось із чітким NO_INTERNET замість вічного мовчазного
+  // опитування.
+  let consecutiveNetworkFailures = 0
+  const MAX_CONSECUTIVE_NETWORK_FAILURES = 5
 
   // eslint-disable-next-line no-constant-condition
   while (true) {
     await sleep(waitSeconds * 1000)
 
-    const res = await fetch('https://github.com/login/oauth/access_token', {
-      method: 'POST',
-      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        client_id: GITHUB_CLIENT_ID,
-        device_code: deviceCode,
-        grant_type: 'urn:ietf:params:oauth:grant-type:device_code'
+    let res: Response
+    try {
+      res = await fetch('https://github.com/login/oauth/access_token', {
+        method: 'POST',
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          client_id: GITHUB_CLIENT_ID,
+          device_code: deviceCode,
+          grant_type: 'urn:ietf:params:oauth:grant-type:device_code'
+        })
       })
-    })
+    } catch {
+      consecutiveNetworkFailures++
+      if (consecutiveNetworkFailures >= MAX_CONSECUTIVE_NETWORK_FAILURES) {
+        throw makeAppError('NO_INTERNET')
+      }
+      continue
+    }
+    consecutiveNetworkFailures = 0
     const data = (await res.json()) as AccessTokenResponse
 
     if (data.access_token) return data.access_token
@@ -98,7 +149,8 @@ export async function pollForToken(deviceCode: string, interval: number): Promis
 
 /** Крок 3: дізнатись логін користувача за токеном. */
 export async function fetchUser(token: string): Promise<AuthUser> {
-  const res = await fetch(`${API}/user`, { headers: authHeaders(token) })
+  const res = await githubFetch(`${API}/user`, { headers: authHeaders(token) })
+  checkAuthAndRateLimit(res)
   if (!res.ok) {
     throw makeAppError('USER_FETCH_FAILED', { status: String(res.status) })
   }
@@ -115,10 +167,11 @@ interface RepoResponse {
 
 /** Перевірити, чи існує репо сейвів. Повертає його дані або null. */
 export async function getSavesRepo(token: string, owner: string): Promise<SavesRepo | null> {
-  const res = await fetch(`${API}/repos/${owner}/${SAVES_REPO_NAME}`, {
+  const res = await githubFetch(`${API}/repos/${owner}/${SAVES_REPO_NAME}`, {
     headers: authHeaders(token)
   })
   if (res.status === 404) return null
+  checkAuthAndRateLimit(res)
   if (!res.ok) throw makeAppError('REPO_CHECK_FAILED', { status: String(res.status) })
   const data = (await res.json()) as RepoResponse
   return { fullName: data.full_name, url: data.html_url }
@@ -129,7 +182,7 @@ export async function createSavesRepo(token: string, owner: string): Promise<Sav
   const existing = await getSavesRepo(token, owner)
   if (existing) return existing
 
-  const res = await fetch(`${API}/user/repos`, {
+  const res = await githubFetch(`${API}/user/repos`, {
     method: 'POST',
     headers: authHeaders(token),
     body: JSON.stringify({
@@ -139,6 +192,7 @@ export async function createSavesRepo(token: string, owner: string): Promise<Sav
       description: 'CoopSync — спільне сховище сейвів'
     })
   })
+  checkAuthAndRateLimit(res)
   if (!res.ok) throw makeAppError('REPO_CREATE_FAILED', { status: String(res.status) })
   const data = (await res.json()) as RepoResponse
   return { fullName: data.full_name, url: data.html_url }
@@ -150,7 +204,7 @@ export async function inviteCollaborator(
   owner: string,
   username: string
 ): Promise<void> {
-  const res = await fetch(
+  const res = await githubFetch(
     `${API}/repos/${owner}/${SAVES_REPO_NAME}/collaborators/${username}`,
     {
       method: 'PUT',
@@ -165,12 +219,13 @@ export async function inviteCollaborator(
   // гарантована (UI показує форму запрошення лише після repoReady), тож 404 тут
   // однозначно означає "нема такого юзера", а не "нема сховища".
   if (res.status === 404) throw makeAppError('GITHUB_USER_NOT_FOUND', { username })
+  checkAuthAndRateLimit(res)
   throw makeAppError('INVITE_FAILED', { status: String(res.status) })
 }
 
 /** Список запрошень, які ще не прийняті. */
 export async function listInvitations(token: string, owner: string): Promise<PendingInvite[]> {
-  const res = await fetch(`${API}/repos/${owner}/${SAVES_REPO_NAME}/invitations`, {
+  const res = await githubFetch(`${API}/repos/${owner}/${SAVES_REPO_NAME}/invitations`, {
     headers: authHeaders(token)
   })
   if (!res.ok) return []
@@ -180,7 +235,7 @@ export async function listInvitations(token: string, owner: string): Promise<Pen
 
 /** Список співавторів, які вже мають доступ (без власника). */
 export async function listCollaborators(token: string, owner: string): Promise<Collaborator[]> {
-  const res = await fetch(`${API}/repos/${owner}/${SAVES_REPO_NAME}/collaborators`, {
+  const res = await githubFetch(`${API}/repos/${owner}/${SAVES_REPO_NAME}/collaborators`, {
     headers: authHeaders(token)
   })
   if (!res.ok) return []
@@ -192,12 +247,13 @@ export async function listCollaborators(token: string, owner: string): Promise<C
 
 /** Видалити репозиторій сейвів насовсім. Незворотно — підтвердження робить UI. */
 export async function deleteSavesRepo(token: string, owner: string): Promise<void> {
-  const res = await fetch(`${API}/repos/${owner}/${SAVES_REPO_NAME}`, {
+  const res = await githubFetch(`${API}/repos/${owner}/${SAVES_REPO_NAME}`, {
     method: 'DELETE',
     headers: authHeaders(token)
   })
   if (res.status === 204) return
   if (res.status === 404) return // вже видалено — вважаємо успіхом
+  checkAuthAndRateLimit(res)
   if (res.status === 403) {
     throw makeAppError('REPO_DELETE_NO_PERMISSION')
   }

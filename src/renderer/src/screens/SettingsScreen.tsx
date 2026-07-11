@@ -32,6 +32,8 @@ function SettingsScreen({
     startMinimized: false
   })
   const [avatarError, setAvatarError] = useState<string | null>(null)
+  const [repoError, setRepoError] = useState<string | null>(null)
+  const [toggleError, setToggleError] = useState<string | null>(null)
   const [showCloudWarning, setShowCloudWarning] = useState(true)
   const [appVersion, setAppVersion] = useState('')
   const [showDeleteRepo, setShowDeleteRepo] = useState(false)
@@ -48,12 +50,26 @@ function SettingsScreen({
   }, [])
 
   async function handleStartup(patch: Partial<StartupSettings>): Promise<void> {
-    setStartup(await window.api.settings.setStartup(patch))
+    const previous = startup
+    setToggleError(null)
+    try {
+      setStartup(await window.api.settings.setStartup(patch))
+    } catch (e) {
+      setStartup(previous)
+      setToggleError(describeError(e, t, t.settings.saveError))
+    }
   }
 
   async function handleCloudWarningToggle(value: boolean): Promise<void> {
+    const previous = showCloudWarning
     setShowCloudWarning(value)
-    await window.api.settings.setCloudWarning(value)
+    setToggleError(null)
+    try {
+      await window.api.settings.setCloudWarning(value)
+    } catch (e) {
+      setShowCloudWarning(previous)
+      setToggleError(describeError(e, t, t.settings.saveError))
+    }
   }
 
   async function handlePickAvatar(): Promise<void> {
@@ -67,7 +83,15 @@ function SettingsScreen({
   }
 
   async function loadRepo(): Promise<void> {
-    setRepo(await window.api.repo.getStatus())
+    try {
+      setRepo(await window.api.repo.getStatus())
+      setRepoError(null)
+    } catch (e) {
+      // Раніше збій тут (напр. нема інтернету) тихо показував "сховище не
+      // налаштовано" разом із кнопкою "Створити" — навіть якщо сховище
+      // насправді є, ризикуючи створити дубль поверх наявного.
+      setRepoError(describeError(e, t, t.main.statusesError))
+    }
   }
 
   async function handleLogout(): Promise<void> {
@@ -167,6 +191,17 @@ function SettingsScreen({
               {t.settings.deleteRepoButton}
             </Button>
           </>
+        ) : repoError ? (
+          <>
+            <div style={styles.createRepoError}>{repoError}</div>
+            <Button
+              variant="secondary"
+              style={{ alignSelf: 'flex-start', marginTop: 10 }}
+              onClick={() => void loadRepo()}
+            >
+              {t.main.retry}
+            </Button>
+          </>
         ) : (
           <>
             <div style={{ ...styles.muted, marginBottom: 14 }}>{t.settings.storageNotSet}</div>
@@ -219,6 +254,7 @@ function SettingsScreen({
             value={showCloudWarning}
             onChange={handleCloudWarningToggle}
           />
+          {toggleError && <div style={{ ...styles.createRepoError, marginTop: 10 }}>{toggleError}</div>}
         </div>
 
         {/* Про програму */}

@@ -28,6 +28,7 @@ export type ErrorCode =
   | 'NO_INTERNET'
   | 'GIT_AUTH_FAILED'
   | 'GIT_GENERIC'
+  | 'GITHUB_RATE_LIMITED'
   | 'SUPPORT_SEND_FAILED'
   | 'SUPPORT_RATE_LIMITED'
 

@@ -50,7 +50,8 @@ export const zhCN: Translation = {
     acceptedBadge: '已接受',
     noStorage: '请先在设置中创建共享存储',
     emptyFriends: '还没有好友——在上方邀请一位吧',
-    inviteError: '无法邀请'
+    inviteError: '无法邀请',
+    loadError: '无法检查存储状态'
   },
   history: {
     title: '同步历史',
@@ -114,6 +115,7 @@ export const zhCN: Translation = {
     title: '设置',
     changeAvatar: '更换头像',
     avatarError: '无法加载图片',
+    saveError: '无法保存设置——请重试',
     githubUser: 'GitHub 用户',
     logout: '退出登录',
     storage: '存储',
@@ -185,6 +187,7 @@ export const zhCN: Translation = {
     NO_INTERNET: () => '没有网络连接 — 请检查网络后重试',
     GIT_AUTH_FAILED: () => '无法访问 GitHub — 令牌可能已过期。请退出登录后重新登录',
     GIT_GENERIC: (p) => `同步错误：${p.detail}`,
+    GITHUB_RATE_LIMITED: (p) => (p.time ? `已达到 GitHub 请求限制，请在 ${p.time} 左右重试。` : '已达到 GitHub 请求限制，请稍等片刻后重试。'),
     SUPPORT_SEND_FAILED: () => '发送失败，请稍后重试。',
     SUPPORT_RATE_LIMITED: (p) => (p.time ? `请求过多，请在 ${p.time} 左右重试。` : '请求过多，请稍等片刻后重试。')
   }

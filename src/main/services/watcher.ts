@@ -12,6 +12,9 @@ const exec = promisify(execFile)
 let timer: NodeJS.Timeout | null = null
 let running: Record<string, boolean> = {}
 let busy = false
+// Щоб не спамити банером щотіку (5с), якщо tasklist стабільно падає (напр.
+// нема прав) — сповіщаємо один раз, поки збій не мине.
+let processCheckFailing = false
 
 const POLL_MS = 5000
 
@@ -46,7 +49,20 @@ async function tick(
   if (busy) return // не накладаємо тіки один на одного
   busy = true
   try {
-    const procs = await getRunningProcesses()
+    let procs: Set<string>
+    try {
+      procs = await getRunningProcesses()
+    } catch (e) {
+      // Раніше падало сирим unhandled rejection — жодної події, жодного
+      // банера, автосинк мовчки переставав бачити запуск/вихід ігор. Тепер
+      // сповіщаємо один раз (не на кожному тіку) і пробуємо знову наступного разу.
+      if (!processCheckFailing) {
+        processCheckFailing = true
+        onEvent({ appId: '', name: '', action: 'watcher-error', ok: false, ...errorCode(e) })
+      }
+      return
+    }
+    processCheckFailing = false
     for (const game of READY_GAMES) {
       const now = isGameRunning(game, procs)
       const was = running[game.appId] ?? false

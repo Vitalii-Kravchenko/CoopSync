@@ -52,7 +52,8 @@ export const ptBR: Translation = {
     acceptedBadge: 'Aceito',
     noStorage: 'Primeiro configure o armazenamento compartilhado em Configurações',
     emptyFriends: 'Ainda não há amigos — convide alguém acima',
-    inviteError: 'Não foi possível convidar'
+    inviteError: 'Não foi possível convidar',
+    loadError: 'Não foi possível verificar o status do armazenamento'
   },
   history: {
     title: 'Histórico de sincronização',
@@ -118,6 +119,7 @@ export const ptBR: Translation = {
     title: 'Configurações',
     changeAvatar: 'Alterar imagem',
     avatarError: 'Não foi possível carregar a imagem',
+    saveError: 'Não foi possível salvar a configuração — tente novamente',
     githubUser: 'Usuário do GitHub',
     logout: 'Sair',
     storage: 'Armazenamento',
@@ -193,6 +195,8 @@ export const ptBR: Translation = {
     NO_INTERNET: () => 'Sem conexão com a internet — verifique sua rede e tente novamente',
     GIT_AUTH_FAILED: () => 'Sem acesso ao GitHub — o token pode ter expirado. Saia da conta e entre novamente',
     GIT_GENERIC: (p) => `Erro de sincronização: ${p.detail}`,
+    GITHUB_RATE_LIMITED: (p) =>
+      p.time ? `Limite de requisições do GitHub atingido — tente novamente por volta das ${p.time}.` : 'Limite de requisições do GitHub atingido — espere um pouco e tente novamente.',
     SUPPORT_SEND_FAILED: () => 'Não foi possível enviar. Tente novamente em instantes.',
     SUPPORT_RATE_LIMITED: (p) =>
       p.time ? `Muitas tentativas — tente novamente por volta das ${p.time}.` : 'Muitas tentativas — espere um pouco e tente novamente.'

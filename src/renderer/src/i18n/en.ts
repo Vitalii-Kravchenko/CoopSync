@@ -50,7 +50,8 @@ export const en: Translation = {
     acceptedBadge: 'Accepted',
     noStorage: 'Set up shared storage in Settings first',
     emptyFriends: 'No friends yet — invite someone above',
-    inviteError: "Couldn't invite"
+    inviteError: "Couldn't invite",
+    loadError: "Couldn't check storage status"
   },
   history: {
     title: 'Sync history',
@@ -116,6 +117,7 @@ export const en: Translation = {
     title: 'Settings',
     changeAvatar: 'Change picture',
     avatarError: "Couldn't load the image",
+    saveError: "Couldn't save the setting — try again",
     githubUser: 'GitHub user',
     logout: 'Log out',
     storage: 'Storage',
@@ -190,6 +192,8 @@ export const en: Translation = {
     NO_INTERNET: () => "No internet connection — check your network and try again",
     GIT_AUTH_FAILED: () => "No access to GitHub — the token may have expired. Log out and sign in again",
     GIT_GENERIC: (p) => `Sync error: ${p.detail}`,
+    GITHUB_RATE_LIMITED: (p) =>
+      p.time ? `GitHub API request limit reached — try again around ${p.time}.` : 'GitHub API request limit reached — wait a bit and try again.',
     SUPPORT_SEND_FAILED: () => "Couldn't send. Try again in a moment.",
     SUPPORT_RATE_LIMITED: (p) =>
       p.time ? `Too many requests right now — try again around ${p.time}.` : 'Too many requests right now — wait a bit and try again.'

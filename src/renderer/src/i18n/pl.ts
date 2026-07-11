@@ -52,7 +52,8 @@ export const pl: Translation = {
     acceptedBadge: 'Zaakceptowano',
     noStorage: 'Najpierw skonfiguruj wspólny magazyn w Ustawieniach',
     emptyFriends: 'Jeszcze nie masz znajomych — zaproś kogoś powyżej',
-    inviteError: 'Nie udało się zaprosić'
+    inviteError: 'Nie udało się zaprosić',
+    loadError: 'Nie udało się sprawdzić stanu magazynu'
   },
   history: {
     title: 'Historia synchronizacji',
@@ -118,6 +119,7 @@ export const pl: Translation = {
     title: 'Ustawienia',
     changeAvatar: 'Zmień zdjęcie',
     avatarError: 'Nie udało się wczytać obrazu',
+    saveError: 'Nie udało się zapisać ustawienia — spróbuj ponownie',
     githubUser: 'Użytkownik GitHub',
     logout: 'Wyloguj się',
     storage: 'Magazyn',
@@ -193,6 +195,8 @@ export const pl: Translation = {
     NO_INTERNET: () => 'Brak połączenia z internetem — sprawdź sieć i spróbuj ponownie',
     GIT_AUTH_FAILED: () => 'Brak dostępu do GitHub — token mógł wygasnąć. Wyloguj się i zaloguj ponownie',
     GIT_GENERIC: (p) => `Błąd synchronizacji: ${p.detail}`,
+    GITHUB_RATE_LIMITED: (p) =>
+      p.time ? `Osiągnięto limit żądań GitHub — spróbuj ponownie około ${p.time}.` : 'Osiągnięto limit żądań GitHub — poczekaj chwilę i spróbuj ponownie.',
     SUPPORT_SEND_FAILED: () => 'Nie udało się wysłać. Spróbuj ponownie za chwilę.',
     SUPPORT_RATE_LIMITED: (p) =>
       p.time ? `Zbyt wiele prób — spróbuj ponownie około ${p.time}.` : 'Zbyt wiele prób — poczekaj chwilę i spróbuj ponownie.'

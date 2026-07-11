@@ -1,4 +1,5 @@
 // Спільні типи між main, preload і renderer.
+import type { ErrorCode } from './errors'
 
 /** Дані, які GitHub повертає для device flow — їх показуємо користувачу. */
 export interface DeviceCodeInfo {
@@ -19,10 +20,13 @@ export interface AuthUser {
   name?: string
 }
 
-/** Поточний стан авторизації. */
+/** Поточний стан авторизації. 'error' — тимчасовий збій перевірки (нема
+ * інтернету, ліміт GitHub API), НЕ означає, що токен насправді невалідний —
+ * на відміну від 'logged-out', цей стан не повинен викидати назад в онбординг. */
 export type AuthStatus =
   | { state: 'logged-out' }
   | { state: 'logged-in'; user: AuthUser }
+  | { state: 'error'; code: ErrorCode; params?: Record<string, string> }
 
 /** Спільне сховище сейвів (окремий приватний репозиторій). */
 export interface SavesRepo {
@@ -118,11 +122,13 @@ export type SyncResultCode =
   | 'push-skipped-nochange'
   | 'restore-success'
 
-/** Подія автосинхронізації (запуск гри → pull, вихід → push). */
+/** Подія автосинхронізації (запуск гри → pull, вихід → push).
+ * 'watcher-error' — не пов'язана з конкретною грою (напр. не вдалось
+ * перевірити список запущених процесів) — appId/name порожні. */
 export interface AutoSyncEvent {
   appId: string
   name: string
-  action: 'pull' | 'push' | 'push-skipped'
+  action: 'pull' | 'push' | 'push-skipped' | 'watcher-error'
   ok: boolean
   /** Успіх — SyncResultCode (через describeSyncResult); невдача — ErrorCode
    * з shared/errors.ts, закодований так само, як app-error (через describeError). */

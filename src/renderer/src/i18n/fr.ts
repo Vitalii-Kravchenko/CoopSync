@@ -52,7 +52,8 @@ export const fr: Translation = {
     acceptedBadge: 'Accepté',
     noStorage: "Configure d'abord le stockage partagé dans les Paramètres",
     emptyFriends: "Pas encore d'amis — invite quelqu'un ci-dessus",
-    inviteError: "Impossible d'inviter"
+    inviteError: "Impossible d'inviter",
+    loadError: "Impossible de vérifier l'état du stockage"
   },
   history: {
     title: 'Historique de synchronisation',
@@ -118,6 +119,7 @@ export const fr: Translation = {
     title: 'Paramètres',
     changeAvatar: "Changer l'image",
     avatarError: "Impossible de charger l'image",
+    saveError: "Impossible d'enregistrer le réglage — réessaie",
     githubUser: 'Utilisateur GitHub',
     logout: 'Se déconnecter',
     storage: 'Stockage',
@@ -193,6 +195,8 @@ export const fr: Translation = {
     NO_INTERNET: () => 'Pas de connexion internet — vérifie ton réseau et réessaie',
     GIT_AUTH_FAILED: () => "Pas d'accès à GitHub — le token a peut-être expiré. Déconnecte-toi et reconnecte-toi",
     GIT_GENERIC: (p) => `Erreur de synchronisation : ${p.detail}`,
+    GITHUB_RATE_LIMITED: (p) =>
+      p.time ? `Limite de requêtes GitHub atteinte — réessaie vers ${p.time}.` : 'Limite de requêtes GitHub atteinte — attends un peu et réessaie.',
     SUPPORT_SEND_FAILED: () => "Échec de l'envoi. Réessaie dans un instant.",
     SUPPORT_RATE_LIMITED: (p) =>
       p.time ? `Trop de tentatives — réessaie vers ${p.time}.` : 'Trop de tentatives — attends un peu et réessaie.'

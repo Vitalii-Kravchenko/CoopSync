@@ -80,6 +80,7 @@ export interface Translation {
     noStorage: string
     emptyFriends: string
     inviteError: string
+    loadError: string
   }
   history: {
     title: string
@@ -143,6 +144,7 @@ export interface Translation {
     title: string
     changeAvatar: string
     avatarError: string
+    saveError: string
     githubUser: string
     logout: string
     storage: string

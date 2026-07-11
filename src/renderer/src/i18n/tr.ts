@@ -52,7 +52,8 @@ export const tr: Translation = {
     acceptedBadge: 'Kabul edildi',
     noStorage: "Önce Ayarlar'da ortak depoyu oluştur",
     emptyFriends: 'Henüz arkadaş yok — yukarıdan birini davet et',
-    inviteError: 'Davet edilemedi'
+    inviteError: 'Davet edilemedi',
+    loadError: 'Depo durumu kontrol edilemedi'
   },
   history: {
     title: 'Senkronizasyon geçmişi',
@@ -118,6 +119,7 @@ export const tr: Translation = {
     title: 'Ayarlar',
     changeAvatar: 'Resmi değiştir',
     avatarError: 'Resim yüklenemedi',
+    saveError: 'Ayar kaydedilemedi — tekrar dene',
     githubUser: 'GitHub kullanıcısı',
     logout: 'Çıkış yap',
     storage: 'Depo',
@@ -192,6 +194,8 @@ export const tr: Translation = {
     NO_INTERNET: () => 'İnternet bağlantısı yok — ağını kontrol edip tekrar dene',
     GIT_AUTH_FAILED: () => "GitHub'a erişim yok — token süresi dolmuş olabilir. Hesaptan çıkıp tekrar giriş yap",
     GIT_GENERIC: (p) => `Senkronizasyon hatası: ${p.detail}`,
+    GITHUB_RATE_LIMITED: (p) =>
+      p.time ? `GitHub istek limiti doldu — saat ${p.time} civarında tekrar dene.` : 'GitHub istek limiti doldu — biraz bekleyip tekrar dene.',
     SUPPORT_SEND_FAILED: () => 'Gönderilemedi. Birazdan tekrar dene.',
     SUPPORT_RATE_LIMITED: (p) =>
       p.time ? `Çok fazla deneme — saat ${p.time} civarında tekrar dene.` : 'Çok fazla deneme — biraz bekleyip tekrar dene.'

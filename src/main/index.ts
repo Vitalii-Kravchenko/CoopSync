@@ -10,6 +10,14 @@ import { consumeInstallerLanguage, readSettings, writeSettings } from './service
 // для всіх — втрата плавності від софтверного рендерингу непомітна.
 app.disableHardwareAcceleration()
 
+// На частині AMD-карток (напр. RX 6600) навіть disableHardwareAcceleration()
+// не рятує: Chromium все одно піднімає окремий GPU-процес (для software-
+// рендерингу теж), він падає кілька разів поспіль, і після вичерпання спроб
+// застосунок фатально завершується ("GPU process isn't usable. Goodbye.").
+// in-process-gpu прибирає цей окремий процес узагалі — GPU-сервіс працює
+// в основному процесі, падати нема чому.
+app.commandLine.appendSwitch('in-process-gpu')
+
 let mainWindow: BrowserWindow | null = null
 let isQuitting = false // true лише коли користувач справді виходить (через трей)
 

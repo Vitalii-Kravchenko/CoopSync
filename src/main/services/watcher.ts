@@ -43,6 +43,7 @@ function errorCode(e: unknown): { code: string; params?: Record<string, string> 
 async function tick(
   token: string,
   owner: string,
+  actor: string,
   onEvent: (e: AutoSyncEvent) => void,
   initial: boolean
 ): Promise<void> {
@@ -139,7 +140,7 @@ async function tick(
               code: 'push-skipped-stale'
             })
           } else {
-            const result = await uploadGame(token, owner, game.appId)
+            const result = await uploadGame(token, owner, game.appId, actor)
             if (result.pushed === false) {
               // Хеш локального й хмарного вмісту збігся — реально нічого не
               // вивантажувалось (грали, але не зберігали/не міняли сейв).
@@ -175,13 +176,14 @@ async function tick(
 export function startWatcher(
   token: string,
   owner: string,
+  actor: string,
   onEvent: (e: AutoSyncEvent) => void
 ): void {
   stopWatcher()
   running = {}
   // Ініціалізуємо стан без дій (раптом гра вже запущена на момент старту).
-  void tick(token, owner, onEvent, true)
-  timer = setInterval(() => void tick(token, owner, onEvent, false), POLL_MS)
+  void tick(token, owner, actor, onEvent, true)
+  timer = setInterval(() => void tick(token, owner, actor, onEvent, false), POLL_MS)
 }
 
 export function stopWatcher(): void {

@@ -181,7 +181,7 @@ function App(): React.JSX.Element {
             />
           </div>
           <div style={{ flex: 1, display: screen === 'friends' ? 'flex' : 'none', minHeight: 0 }}>
-            <FriendsScreen user={user} avatarDataUrl={avatarDataUrl} />
+            <FriendsScreen user={user} avatarDataUrl={avatarDataUrl} active={screen === 'friends'} />
           </div>
           <div style={{ flex: 1, display: screen === 'history' ? 'flex' : 'none', minHeight: 0 }}>
             <HistoryScreen active={screen === 'history'} syncVersion={syncVersion} />

@@ -67,6 +67,15 @@ function wrapGitError(e: unknown): Error {
   return makeAppError('GIT_GENERIC', { detail })
 }
 
+// Явна ідентичність коміту (-c user.name/user.email) — інакше на машині, де в
+// git ніколи не налаштовували global user.name/user.email (типово для когось,
+// хто поставив CoopSync і більше нічим git не користується), commit падає з
+// "unable to auto-detect email address". noreply-адреса від GitHub не
+// потребує підтвердження, просто валідна для git.
+function identityFlags(actor: string): string[] {
+  return ['-c', `user.name=${actor}`, '-c', `user.email=${actor}@users.noreply.github.com`]
+}
+
 // Запустити git у вже клонованому репо.
 async function git(args: string[]): Promise<string> {
   try {
@@ -256,8 +265,15 @@ async function setLocalVersion(appId: string, version: number): Promise<void> {
   await writeFile(localVersionsPath(), JSON.stringify(all, null, 2))
 }
 
-/** Вивантажити сейви гри на GitHub (push). Піднімає версію. */
-export async function uploadGame(token: string, owner: string, appId: string): Promise<SyncResult> {
+/** Вивантажити сейви гри на GitHub (push). Піднімає версію.
+ * `owner` — чиє сховище (ціль синку, для join це хост); `actor` — хто реально
+ * зараз тисне кнопку (для join це НЕ owner) — саме actor йде в історію/коміт. */
+export async function uploadGame(
+  token: string,
+  owner: string,
+  appId: string,
+  actor: string
+): Promise<SyncResult> {
   await ensureRepo(token, owner)
   const game = findGame(appId)
   if (!existsSync(game.savePath)) throw makeAppError('SAVE_FOLDER_NOT_FOUND')
@@ -285,20 +301,82 @@ export async function uploadGame(token: string, owner: string, appId: string): P
   await copyFiltered(game.savePath, dest, game.saveFilePattern)
 
   const newVersion = (await readRemoteVersion(game.name)) + 1
-  await writeRemoteMeta(game.name, newVersion, owner)
+  await writeRemoteMeta(game.name, newVersion, actor)
   await appendHistory({
     appId,
     gameName: game.name,
     version: newVersion,
-    updatedBy: owner,
+    updatedBy: actor,
     updatedAt: new Date().toISOString()
   })
 
   await git(['add', '-A'])
-  await git(['commit', '-m', `sync: ${game.name} ${formatVersion(newVersion)} (${owner})`])
+  await git([
+    ...identityFlags(actor),
+    'commit',
+    '-m',
+    `sync: ${game.name} ${formatVersion(newVersion)} (${actor})`
+  ])
   await git(['push', 'origin', 'main'])
   await setLocalVersion(appId, newVersion)
   return { version: newVersion, pushed: true }
+}
+
+// --- Аватарки учасників ---
+// Зберігаються прямо в спільному сховищі (.meta/avatars/<нік>.txt — сирий
+// data URL, той самий формат, що й локальний avatarDataUrl), щоб кожен
+// учасник кооп-групи бачив картинку іншого. Аватарка локальна лише до першого
+// вивантаження — після uploadAvatar вона доступна всім, у кого є доступ.
+
+function avatarPath(login: string): string {
+  return join(repoDir(), '.meta', 'avatars', `${login}.txt`)
+}
+
+/** Вивантажити (або прибрати, якщо dataUrl === null) свою аватарку в спільне сховище. */
+export async function uploadAvatar(
+  token: string,
+  owner: string,
+  actor: string,
+  dataUrl: string | null
+): Promise<void> {
+  await ensureRepo(token, owner)
+  await mkdir(join(repoDir(), '.meta', 'avatars'), { recursive: true })
+  const p = avatarPath(actor)
+  if (dataUrl) {
+    await writeFile(p, dataUrl)
+  } else {
+    if (!existsSync(p)) return
+    await rm(p, { force: true })
+  }
+
+  await git(['add', '-A'])
+  // Якщо файл не змінився (та сама картинка вже була запушена) — нема чого
+  // комітити, а голий `git commit` без змін падає з "nothing to commit".
+  const status = await git(['status', '--porcelain'])
+  if (!status.trim()) return
+  await git([...identityFlags(actor), 'commit', '-m', `avatar: ${actor}`])
+  await git(['push', 'origin', 'main'])
+}
+
+/** Аватарки учасників (owner + collaborators) зі спільного сховища, ключ — нік. */
+export async function getAvatars(
+  token: string,
+  owner: string,
+  logins: string[]
+): Promise<Record<string, string>> {
+  await ensureRepo(token, owner)
+  const result: Record<string, string> = {}
+  for (const login of logins) {
+    const p = avatarPath(login)
+    if (existsSync(p)) {
+      try {
+        result[login] = (await readFile(p, 'utf8')).replace(/^﻿/, '')
+      } catch {
+        // Пошкоджений файл — просто пропускаємо, показуватиметься заглушка.
+      }
+    }
+  }
+  return result
 }
 
 /**

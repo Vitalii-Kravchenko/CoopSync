@@ -49,7 +49,10 @@ const api = {
     /** Список ще не прийнятих запрошень. */
     listInvitations: (): Promise<PendingInvite[]> => ipcRenderer.invoke('repo:invitations'),
     /** Список співавторів, які вже прийняли. */
-    listCollaborators: (): Promise<Collaborator[]> => ipcRenderer.invoke('repo:collaborators')
+    listCollaborators: (): Promise<Collaborator[]> => ipcRenderer.invoke('repo:collaborators'),
+    /** Аватарки учасників зі спільного сховища (owner + collaborators), ключ — нік. */
+    getAvatars: (logins: string[]): Promise<Record<string, string>> =>
+      ipcRenderer.invoke('repo:avatars', logins)
   },
   games: {
     /** Список встановлених підтримуваних ігор. */

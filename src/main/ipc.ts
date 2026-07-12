@@ -22,7 +22,9 @@ import {
   downloadGame,
   getSyncStatuses,
   getSyncHistory,
-  resetLocalSaveState
+  resetLocalSaveState,
+  uploadAvatar,
+  getAvatars
 } from './services/sync'
 import { startWatcher, stopWatcher } from './services/watcher'
 import { READY_GAMES } from './games/catalog'
@@ -186,6 +188,15 @@ export function registerIpcHandlers(): void {
     return listCollaborators(token, owner)
   })
 
+  // Аватарки учасників зі спільного сховища (owner + collaborators), ключ — нік.
+  ipcMain.handle(
+    'repo:avatars',
+    async (_event, logins: string[]): Promise<Record<string, string>> => {
+      const { token, owner } = await syncTarget()
+      return getAvatars(token, owner, logins)
+    }
+  )
+
   // --- Ігри ---
 
   // Які підтримувані ігри встановлені та чи знайдено їхні сейви.
@@ -207,10 +218,13 @@ export function registerIpcHandlers(): void {
 
   // --- Синхронізація сейвів ---
 
-  // Вивантажити сейви гри на GitHub (у сховище host'а).
+  // Вивантажити сейви гри на GitHub (у сховище host'а). owner — чиє сховище
+  // (для join це друг-хост), actorLogin — хто реально зараз пушить (я сам) —
+  // саме він, а не owner, має піти в історію синку й автора коміту.
   ipcMain.handle('sync:upload', async (_event, appId: string): Promise<SyncResult> => {
     const { token, owner } = await syncTarget()
-    return uploadGame(token, owner, appId)
+    const { owner: actorLogin } = await requireAuth()
+    return uploadGame(token, owner, appId, actorLogin)
   })
 
   // Завантажити сейви гри з GitHub (зі сховища host'а).
@@ -236,7 +250,8 @@ export function registerIpcHandlers(): void {
   // Запустити: стежимо за іграми, шлемо renderer події 'sync:auto'.
   ipcMain.handle('watcher:start', async (event): Promise<void> => {
     const { token, owner } = await syncTarget()
-    startWatcher(token, owner, (e) => event.sender.send('sync:auto', e))
+    const { owner: actorLogin } = await requireAuth()
+    startWatcher(token, owner, actorLogin, (e) => event.sender.send('sync:auto', e))
   })
 
   ipcMain.handle('watcher:stop', (): void => {
@@ -353,6 +368,16 @@ export function registerIpcHandlers(): void {
 
     const dataUrl = `data:${mime};base64,${readFileSync(filePath).toString('base64')}`
     writeSettings({ avatarDataUrl: dataUrl })
+    // Best-effort: одразу пушимо в спільне сховище, щоб друг побачив нову
+    // аватарку. Якщо ще нема логіну/сховища/інтернету — не критично, просто
+    // пропускаємо: локальна аватарка все одно збережена вище.
+    try {
+      const { token, owner } = await syncTarget()
+      const { owner: actor } = await requireAuth()
+      await uploadAvatar(token, owner, actor, dataUrl)
+    } catch {
+      // тихо ігноруємо — див. коментар вище
+    }
     return dataUrl
   })
 

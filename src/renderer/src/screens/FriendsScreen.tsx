@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { colors, fonts, radii, shadows } from '../theme'
 import { useI18n } from '../i18n'
 import { describeError } from '../errors'
@@ -9,15 +9,20 @@ import type { AuthUser, SavesRepoStatus, PendingInvite, Collaborator } from '../
 interface Props {
   user: AuthUser
   avatarDataUrl: string | null
+  /** Чи вкладка зараз активна — App.tsx лишає екрани змонтованими й лише
+   * перемикає display, тож дані (аватарки друга тощо) треба перечитувати
+   * при кожному поверненні на вкладку, а не лише на самому монтуванні. */
+  active: boolean
 }
 
 // Друзі — окрема вкладка (раніше жила всередині Налаштувань): запросити,
 // побачити список і статус кожного (власник / прийняв / очікує / надсилаю).
-function FriendsScreen({ user, avatarDataUrl }: Props): React.JSX.Element {
+function FriendsScreen({ user, avatarDataUrl, active }: Props): React.JSX.Element {
   const { t } = useI18n()
   const [repo, setRepo] = useState<SavesRepoStatus | null>(null)
   const [invites, setInvites] = useState<PendingInvite[]>([])
   const [collaborators, setCollaborators] = useState<Collaborator[]>([])
+  const [avatars, setAvatars] = useState<Record<string, string>>({})
   const [friend, setFriend] = useState('')
   const [busy, setBusy] = useState(false)
   const [inviteError, setInviteError] = useState<string | null>(null)
@@ -27,6 +32,18 @@ function FriendsScreen({ user, avatarDataUrl }: Props): React.JSX.Element {
     void load()
   }, [])
 
+  // При поверненні на вкладку "Друзі" перечитуємо все — друг міг за цей час
+  // прийняти запрошення чи оновити свою аватарку. Перший рендер (active вже
+  // true на монтуванні) пропускаємо — його покриває ефект монтування вище.
+  const skipFirstActive = useRef(true)
+  useEffect(() => {
+    if (skipFirstActive.current) {
+      skipFirstActive.current = false
+      return
+    }
+    if (active) void load()
+  }, [active])
+
   async function load(): Promise<void> {
     try {
       const r = await window.api.repo.getStatus()
@@ -34,7 +51,20 @@ function FriendsScreen({ user, avatarDataUrl }: Props): React.JSX.Element {
       setLoadError(null)
       if (r.state === 'ready') {
         setInvites(await window.api.repo.listInvitations())
-        setCollaborators(await window.api.repo.listCollaborators())
+        const collabs = await window.api.repo.listCollaborators()
+        setCollaborators(collabs)
+        // Аватарки друга/учасників беремо зі спільного сховища — своя
+        // завжди свіжіша локально (avatarDataUrl), тож її окремо не тягнемо.
+        const owner = r.repo.fullName.split('/')[0]
+        const logins = [owner, ...collabs.map((c) => c.login)].filter((l) => l !== user.login)
+        if (logins.length > 0) {
+          window.api.repo
+            .getAvatars(logins)
+            .then(setAvatars)
+            .catch(() => {
+              // не критично — просто лишаться заглушки
+            })
+        }
       }
     } catch (e) {
       // Раніше збій тут (напр. нема інтернету) тихо показував "сховище не
@@ -106,6 +136,8 @@ function FriendsScreen({ user, avatarDataUrl }: Props): React.JSX.Element {
               <div style={styles.memberAvatar}>
                 {ownerLogin === user.login && avatarDataUrl ? (
                   <img src={avatarDataUrl} alt="" style={styles.memberAvatarImg} />
+                ) : avatars[ownerLogin] ? (
+                  <img src={avatars[ownerLogin]} alt="" style={styles.memberAvatarImg} />
                 ) : (
                   <GitHubIcon size={16} />
                 )}
@@ -115,7 +147,15 @@ function FriendsScreen({ user, avatarDataUrl }: Props): React.JSX.Element {
             </div>
             {collaborators.map((c) => (
               <div key={c.login} style={styles.memberRow}>
-                <div style={styles.memberAvatar}>👤</div>
+                <div style={styles.memberAvatar}>
+                  {c.login === user.login && avatarDataUrl ? (
+                    <img src={avatarDataUrl} alt="" style={styles.memberAvatarImg} />
+                  ) : avatars[c.login] ? (
+                    <img src={avatars[c.login]} alt="" style={styles.memberAvatarImg} />
+                  ) : (
+                    <GitHubIcon size={16} />
+                  )}
+                </div>
                 <span style={{ ...styles.memberName, flex: 1 }}>{c.login}</span>
                 <span style={styles.acceptedBadge}>
                   <CheckIcon size={11} color={colors.success} />
@@ -128,7 +168,9 @@ function FriendsScreen({ user, avatarDataUrl }: Props): React.JSX.Element {
                 <div style={{ ...styles.muted, marginTop: 12, marginBottom: 8 }}>{t.settings.pendingConfirmation}</div>
                 {invites.map((i) => (
                   <div key={i.login} style={styles.memberRow}>
-                    <div style={styles.memberAvatar}>👤</div>
+                    <div style={styles.memberAvatar}>
+                      <GitHubIcon size={16} />
+                    </div>
                     <span style={{ ...styles.memberName, flex: 1 }}>{i.login}</span>
                     <span style={styles.pendingBadge}>{t.settings.pendingBadge}</span>
                   </div>

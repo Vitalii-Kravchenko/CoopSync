@@ -1,5 +1,6 @@
 import { app, BrowserWindow } from 'electron'
 import { autoUpdater } from 'electron-updater'
+import { readSettings } from './settingsStore'
 import type { UpdateStatus } from '../../shared/types'
 
 // autoDownload/autoInstallOnAppQuit are both off — the user decides via the
@@ -45,8 +46,13 @@ export function quitAndInstall(): void {
 // dialogs), same as the manual "Check for updates" button in Settings would
 // trigger. The renderer picks up the result via the 'updater:status' event
 // whenever it's mounted, whether or not anyone is looking at Settings.
+// Reads the setting at fire time (not at schedule time) so flipping the
+// toggle during the delay window still takes effect. The manual "Check for
+// updates" button always works regardless of this setting.
 export function scheduleStartupCheck(): void {
-  setTimeout(checkForUpdates, 10_000)
+  setTimeout(() => {
+    if (readSettings().autoCheckUpdates) checkForUpdates()
+  }, 10_000)
 }
 
 export { checkForUpdates }

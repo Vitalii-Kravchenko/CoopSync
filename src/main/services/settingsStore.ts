@@ -17,10 +17,17 @@ interface AppSettings {
   avatarDataUrl?: string
   /** Whether to show the Steam Cloud warning on every launch. */
   showCloudWarning: boolean
+  /** Whether to silently check GitHub for a new release shortly after launch. */
+  autoCheckUpdates: boolean
 }
 
 // English — universal fallback if the installer's language couldn't be determined.
-const DEFAULTS: AppSettings = { startMinimized: false, language: 'en', showCloudWarning: true }
+const DEFAULTS: AppSettings = {
+  startMinimized: false,
+  language: 'en',
+  showCloudWarning: true,
+  autoCheckUpdates: true
+}
 
 function settingsPath(): string {
   return join(app.getPath('userData'), 'app-settings.json')

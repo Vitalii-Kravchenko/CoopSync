@@ -337,7 +337,8 @@ export function registerIpcHandlers(): void {
     return {
       language: s.language,
       avatarDataUrl: s.avatarDataUrl ?? null,
-      showCloudWarning: s.showCloudWarning
+      showCloudWarning: s.showCloudWarning,
+      autoCheckUpdates: s.autoCheckUpdates
     }
   })
 
@@ -348,6 +349,10 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle('settings:set-cloud-warning', (_event, showCloudWarning: boolean): void => {
     writeSettings({ showCloudWarning })
+  })
+
+  ipcMain.handle('settings:set-auto-check-updates', (_event, autoCheckUpdates: boolean): void => {
+    writeSettings({ autoCheckUpdates })
   })
 
   // Open a file picker dialog, read the image, and save it as a data URL.

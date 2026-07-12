@@ -123,7 +123,10 @@ const api = {
     pickAvatar: (): Promise<string | null> => ipcRenderer.invoke('settings:pick-avatar'),
     /** Enable/disable the Steam Cloud warning on launch. */
     setCloudWarning: (show: boolean): Promise<void> =>
-      ipcRenderer.invoke('settings:set-cloud-warning', show)
+      ipcRenderer.invoke('settings:set-cloud-warning', show),
+    /** Enable/disable the silent update check shortly after launch. */
+    setAutoCheckUpdates: (enabled: boolean): Promise<void> =>
+      ipcRenderer.invoke('settings:set-auto-check-updates', enabled)
   },
   role: {
     /** Current role (or null, if not chosen yet). */

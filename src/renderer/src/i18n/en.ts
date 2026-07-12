@@ -139,6 +139,7 @@ export const en: Translation = {
     autostart: 'Launch with Windows',
     startMinimized: 'Start minimized to tray',
     cloudWarningToggle: 'Show Steam Cloud warning on launch',
+    autoCheckUpdatesToggle: 'Automatically check for updates',
     smartAppWarningTitle: 'Windows Smart App Control',
     smartAppWarningText:
       "On Windows 11, keep Smart App Control turned off (Settings -> Windows Security -> App & browser control) — otherwise future CoopSync updates may fail to install, since the app isn't digitally signed yet.",
@@ -149,7 +150,7 @@ export const en: Translation = {
     checkForUpdates: 'Check for updates',
     checkingForUpdates: 'Checking for updates…',
     updateAvailable: (v) => `Update available: v${v}`,
-    updateNotAvailable: "You're on the latest version",
+    updateNotAvailable: "You're on the latest version.",
     downloadUpdate: 'Download update',
     updateDownloading: (percent) => `Downloading update… ${percent}%`,
     updateDownloaded: (v) => `Update v${v} downloaded — restart to install`,

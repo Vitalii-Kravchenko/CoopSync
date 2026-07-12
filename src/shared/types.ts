@@ -155,6 +155,8 @@ export interface GeneralSettings {
   avatarDataUrl: string | null
   /** Whether to show the Steam Cloud warning on every launch. */
   showCloudWarning: boolean
+  /** Whether to silently check GitHub for a new release shortly after launch. */
+  autoCheckUpdates: boolean
 }
 
 /** A single sync history entry — one push (upload) of some game. */

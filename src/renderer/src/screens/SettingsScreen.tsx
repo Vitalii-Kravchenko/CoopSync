@@ -37,6 +37,7 @@ function SettingsScreen({
   const [repoError, setRepoError] = useState<string | null>(null)
   const [toggleError, setToggleError] = useState<string | null>(null)
   const [showCloudWarning, setShowCloudWarning] = useState(true)
+  const [autoCheckUpdates, setAutoCheckUpdates] = useState(true)
   const [appVersion, setAppVersion] = useState('')
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus>({ state: 'idle' })
   const [showDeleteRepo, setShowDeleteRepo] = useState(false)
@@ -48,7 +49,10 @@ function SettingsScreen({
   useEffect(() => {
     void loadRepo()
     window.api.settings.getStartup().then(setStartup)
-    window.api.settings.getGeneral().then((s) => setShowCloudWarning(s.showCloudWarning))
+    window.api.settings.getGeneral().then((s) => {
+      setShowCloudWarning(s.showCloudWarning)
+      setAutoCheckUpdates(s.autoCheckUpdates)
+    })
     window.api.getAppVersion().then(setAppVersion)
     return window.api.updater.onStatus(setUpdateStatus)
   }, [])
@@ -65,6 +69,18 @@ function SettingsScreen({
       setStartup(await window.api.settings.setStartup(patch))
     } catch (e) {
       setStartup(previous)
+      setToggleError(describeError(e, t, t.settings.saveError))
+    }
+  }
+
+  async function handleAutoCheckUpdatesToggle(value: boolean): Promise<void> {
+    const previous = autoCheckUpdates
+    setAutoCheckUpdates(value)
+    setToggleError(null)
+    try {
+      await window.api.settings.setAutoCheckUpdates(value)
+    } catch (e) {
+      setAutoCheckUpdates(previous)
       setToggleError(describeError(e, t, t.settings.saveError))
     }
   }
@@ -253,6 +269,12 @@ function SettingsScreen({
             value={showCloudWarning}
             onChange={handleCloudWarningToggle}
           />
+          <div style={styles.divider} />
+          <Toggle
+            label={t.settings.autoCheckUpdatesToggle}
+            value={autoCheckUpdates}
+            onChange={handleAutoCheckUpdatesToggle}
+          />
           {toggleError && <div style={{ ...styles.createRepoError, marginTop: 10 }}>{toggleError}</div>}
         </div>
 
@@ -291,12 +313,14 @@ function SettingsScreen({
               )}
             </span>
             {(updateStatus.state === 'idle' ||
+              updateStatus.state === 'checking' ||
               updateStatus.state === 'not-available' ||
               updateStatus.state === 'error') && (
               <Button
                 variant="secondary"
                 style={{ height: 30, padding: '0 12px', fontSize: 12 }}
                 onClick={handleCheckForUpdates}
+                disabled={updateStatus.state === 'checking'}
               >
                 {t.settings.checkForUpdates}
               </Button>
@@ -358,6 +382,8 @@ function Toggle({
   onChange: (v: boolean) => void
   disabled?: boolean
 }): React.JSX.Element {
+  const borderColor = disabled ? colors.borderSubtle : value ? 'transparent' : colors.borderDefault
+
   return (
     <div style={styles.toggleRow}>
       <span style={{ fontSize: 14, color: disabled ? colors.textDisabled : colors.text1 }}>{label}</span>
@@ -373,16 +399,21 @@ function Toggle({
           width: 46,
           height: 26,
           padding: 0,
+          border: 'none',
           borderRadius: radii.pill,
           background: disabled ? 'rgba(11,14,22,.5)' : value ? gradients.energy : colors.bgRaised,
-          // Always a 1px border (transparent when "on") — so the inner height
-          // doesn't change between states and the knob stays centered.
-          border: disabled
-            ? `1px solid ${colors.borderSubtle}`
-            : value
-              ? '1px solid transparent'
-              : `1px solid ${colors.borderDefault}`,
-          boxShadow: !disabled && value ? shadows.glowCy : 'none',
+          // An inset box-shadow instead of a real border: a real `border`
+          // shrinks the box the knob is absolutely positioned against (its
+          // containing block is the padding box, not the border box), which
+          // knocked the knob 1-2px off-center. box-shadow doesn't affect the
+          // box model, so the knob's top:3/left:3|23 math below stays exact
+          // against the full 46x26 track.
+          boxShadow: [
+            `inset 0 0 0 1px ${borderColor}`,
+            !disabled && value ? shadows.glowCy : null
+          ]
+            .filter(Boolean)
+            .join(', '),
           opacity: disabled ? 0.5 : 1,
           appearance: 'none',
           WebkitAppearance: 'none',

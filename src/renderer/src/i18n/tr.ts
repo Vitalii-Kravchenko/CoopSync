@@ -141,6 +141,7 @@ export const tr: Translation = {
     autostart: 'Windows ile başlat',
     startMinimized: 'Tepsi alanında küçültülmüş başlat',
     cloudWarningToggle: 'Başlangıçta Steam Cloud uyarısını göster',
+    autoCheckUpdatesToggle: 'Güncellemeleri otomatik denetle',
     smartAppWarningTitle: 'Windows Smart App Control',
     smartAppWarningText:
       "Windows 11'de Smart App Control'ü kapalı tut (Ayarlar -> Windows Güvenliği -> Uygulama ve tarayıcı denetimi) — aksi halde uygulama henüz dijital olarak imzalanmadığı için CoopSync'in gelecekteki güncellemeleri yüklenemeyebilir.",
@@ -151,7 +152,7 @@ export const tr: Translation = {
     checkForUpdates: 'Güncellemeleri denetle',
     checkingForUpdates: 'Güncellemeler denetleniyor…',
     updateAvailable: (v) => `Güncelleme mevcut: v${v}`,
-    updateNotAvailable: 'En son sürümdesin',
+    updateNotAvailable: 'En son sürümdesin.',
     downloadUpdate: 'Güncellemeyi indir',
     updateDownloading: (percent) => `Güncelleme indiriliyor… %${percent}`,
     updateDownloaded: (v) => `v${v} güncellemesi indirildi — yüklemek için yeniden başlat`,

@@ -141,6 +141,7 @@ export const ru: Translation = {
     autostart: 'Запускать вместе с Windows',
     startMinimized: 'Стартовать свёрнутым в трей',
     cloudWarningToggle: 'Показывать предупреждение о Steam Cloud при запуске',
+    autoCheckUpdatesToggle: 'Автоматически проверять обновления',
     smartAppWarningTitle: 'Smart App Control (Windows 11)',
     smartAppWarningText:
       'Если ты на Windows 11, держи Smart App Control выключенным (Параметры → Безопасность Windows → Управление приложениями и браузером) — иначе будущие обновления CoopSync могут не установиться, так как приложение пока без цифровой подписи.',
@@ -151,7 +152,7 @@ export const ru: Translation = {
     checkForUpdates: 'Проверить обновления',
     checkingForUpdates: 'Проверяем обновления…',
     updateAvailable: (v) => `Доступно обновление: v${v}`,
-    updateNotAvailable: 'У тебя последняя версия',
+    updateNotAvailable: 'У тебя последняя версия.',
     downloadUpdate: 'Скачать обновление',
     updateDownloading: (percent) => `Загрузка обновления… ${percent}%`,
     updateDownloaded: (v) => `Обновление v${v} загружено — перезапусти для установки`,

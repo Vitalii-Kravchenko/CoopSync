@@ -136,6 +136,7 @@ export const zhCN: Translation = {
     autostart: '随 Windows 启动',
     startMinimized: '启动时最小化到托盘',
     cloudWarningToggle: '启动时显示 Steam Cloud 提示',
+    autoCheckUpdatesToggle: '自动检查更新',
     smartAppWarningTitle: 'Windows Smart App Control',
     smartAppWarningText:
       '如果你使用 Windows 11，请保持 Smart App Control 关闭状态（设置 -> Windows 安全中心 -> 应用和浏览器控制）——否则由于应用程序尚未进行数字签名，CoopSync 未来的更新可能无法安装。',
@@ -146,7 +147,7 @@ export const zhCN: Translation = {
     checkForUpdates: '检查更新',
     checkingForUpdates: '正在检查更新…',
     updateAvailable: (v) => `发现新版本：v${v}`,
-    updateNotAvailable: '你已是最新版本',
+    updateNotAvailable: '你已是最新版本。',
     downloadUpdate: '下载更新',
     updateDownloading: (percent) => `正在下载更新… ${percent}%`,
     updateDownloaded: (v) => `已下载 v${v} 更新 —— 重启以安装`,

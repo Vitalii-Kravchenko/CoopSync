@@ -165,6 +165,7 @@ export interface Translation {
     autostart: string
     startMinimized: string
     cloudWarningToggle: string
+    autoCheckUpdatesToggle: string
     smartAppWarningTitle: string
     smartAppWarningText: string
     about: string

@@ -84,7 +84,7 @@ export function quitAndInstall(): void {
 export function scheduleStartupCheck(): void {
   setTimeout(() => {
     if (readSettings().autoCheckUpdates) checkForUpdates()
-  }, 10_000)
+  }, 2_000)
 
   // CoopSync minimizes to the tray instead of quitting (see index.ts), so
   // the app process can easily stay alive for days without a fresh launch —

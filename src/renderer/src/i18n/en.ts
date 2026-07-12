@@ -41,7 +41,8 @@ export const en: Translation = {
     gameNotSupported: 'game not supported',
     notInstalled: 'not installed',
     lastSyncLabel: 'Last synced:',
-    savesSizeLabel: 'Save size:'
+    savesSizeLabel: 'Save size:',
+    details: 'Details'
   },
   friends: {
     title: 'Friends',

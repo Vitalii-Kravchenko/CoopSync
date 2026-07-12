@@ -43,7 +43,8 @@ export const tr: Translation = {
     gameNotSupported: 'oyun desteklenmiyor',
     notInstalled: 'yüklü değil',
     lastSyncLabel: 'Son senkronizasyon:',
-    savesSizeLabel: 'Kayıt boyutu:'
+    savesSizeLabel: 'Kayıt boyutu:',
+    details: 'Ayrıntılar'
   },
   friends: {
     title: 'Arkadaşlar',

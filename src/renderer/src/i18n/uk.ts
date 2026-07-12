@@ -43,7 +43,8 @@ export const uk: Translation = {
     gameNotSupported: 'гра не підтримується',
     notInstalled: 'не встановлено',
     lastSyncLabel: 'Останній синк:',
-    savesSizeLabel: 'Розмір сейвів:'
+    savesSizeLabel: 'Розмір сейвів:',
+    details: 'Деталі'
   },
   friends: {
     title: 'Друзі',

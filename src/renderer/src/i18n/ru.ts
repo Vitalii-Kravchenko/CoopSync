@@ -43,7 +43,8 @@ export const ru: Translation = {
     gameNotSupported: 'игра не поддерживается',
     notInstalled: 'не установлено',
     lastSyncLabel: 'Последняя синхронизация:',
-    savesSizeLabel: 'Размер сейвов:'
+    savesSizeLabel: 'Размер сейвов:',
+    details: 'Подробнее'
   },
   friends: {
     title: 'Друзья',

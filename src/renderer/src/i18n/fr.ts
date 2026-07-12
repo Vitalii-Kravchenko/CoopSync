@@ -43,7 +43,8 @@ export const fr: Translation = {
     gameNotSupported: 'jeu non pris en charge',
     notInstalled: 'non installé',
     lastSyncLabel: 'Dernière synchro :',
-    savesSizeLabel: 'Taille des sauvegardes :'
+    savesSizeLabel: 'Taille des sauvegardes :',
+    details: 'Détails'
   },
   friends: {
     title: 'Amis',

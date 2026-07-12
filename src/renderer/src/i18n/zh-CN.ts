@@ -41,7 +41,8 @@ export const zhCN: Translation = {
     gameNotSupported: '该游戏不受支持',
     notInstalled: '未安装',
     lastSyncLabel: '上次同步：',
-    savesSizeLabel: '存档大小：'
+    savesSizeLabel: '存档大小：',
+    details: '详情'
   },
   friends: {
     title: '好友',

@@ -71,6 +71,7 @@ export interface Translation {
     notInstalled: string
     lastSyncLabel: string
     savesSizeLabel: string
+    details: string
   }
   friends: {
     title: string

@@ -113,6 +113,14 @@ export function ChevronDownIcon({ size = 16, color }: IconProps): React.JSX.Elem
   )
 }
 
+export function ChevronRightIcon({ size = 16, color }: IconProps): React.JSX.Element {
+  return (
+    <svg {...base(size)} style={{ color }}>
+      <polyline points="9 6 15 12 9 18" />
+    </svg>
+  )
+}
+
 export function CheckIcon({ size = 16, color }: IconProps): React.JSX.Element {
   return (
     <svg {...base(size)} style={{ color }}>

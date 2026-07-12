@@ -43,7 +43,8 @@ export const ptBR: Translation = {
     gameNotSupported: 'jogo não suportado',
     notInstalled: 'não instalado',
     lastSyncLabel: 'Última sincronização:',
-    savesSizeLabel: 'Tamanho dos saves:'
+    savesSizeLabel: 'Tamanho dos saves:',
+    details: 'Detalhes'
   },
   friends: {
     title: 'Amigos',

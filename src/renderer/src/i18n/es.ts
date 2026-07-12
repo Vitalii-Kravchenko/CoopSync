@@ -43,7 +43,8 @@ export const es: Translation = {
     gameNotSupported: 'juego no compatible',
     notInstalled: 'no instalado',
     lastSyncLabel: 'Última sincronización:',
-    savesSizeLabel: 'Tamaño de las partidas:'
+    savesSizeLabel: 'Tamaño de las partidas:',
+    details: 'Detalles'
   },
   friends: {
     title: 'Amigos',

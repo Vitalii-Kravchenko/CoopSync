@@ -27,6 +27,15 @@ function App(): React.JSX.Element {
   // and don't find out about such changes on their own, so they reread data on this signal.
   const [syncVersion, setSyncVersion] = useState(0)
   const bumpSyncVersion = (): void => setSyncVersion((v) => v + 1)
+  // Bumped every time the Sidebar's "Games" item is clicked — including when
+  // 'main' is already the active screen (e.g. a game's detail sub-view is open) —
+  // so MainScreen knows to back out of that sub-view even though `screen` itself
+  // doesn't change and its own effects wouldn't otherwise fire.
+  const [mainResetSignal, setMainResetSignal] = useState(0)
+  function handleNavigate(next: Screen): void {
+    setScreen(next)
+    if (next === 'main') setMainResetSignal((v) => v + 1)
+  }
   // Global sync toast — rendered outside the tabs (styles.appBody),
   // so it stays visible regardless of which tab is currently open.
   const [banner, setBanner] = useState<BannerState | null>(null)
@@ -181,6 +190,7 @@ function App(): React.JSX.Element {
             <MainScreen
               active={screen === 'main'}
               syncVersion={syncVersion}
+              resetSignal={mainResetSignal}
               onSynced={bumpSyncVersion}
               onBanner={setBanner}
             />
@@ -207,7 +217,7 @@ function App(): React.JSX.Element {
             />
           </div>
 
-          <Sidebar active={screen} onNavigate={setScreen} />
+          <Sidebar active={screen} onNavigate={handleNavigate} />
           <Banner banner={banner} onDismiss={() => setBanner(null)} />
         </div>
       )}

@@ -7,6 +7,7 @@ import CloudWarningBanner from '../components/CloudWarningBanner'
 import UpdateAvailableBanner from '../components/UpdateAvailableBanner'
 import type { BannerState } from '../components/Banner'
 import { SearchIcon } from '../components/icons'
+import GameDetailScreen from './GameDetailScreen'
 import type { InstalledGame, CatalogGame, GameSyncStatus, UpdateStatus } from '../../../shared/types'
 
 interface Props {
@@ -17,6 +18,9 @@ interface Props {
    *  real sync (push/pull) — a signal to reread sync statuses
    *  (MainScreen stays mounted in the background). */
   syncVersion: number
+  /** Bumped every time the Sidebar's "Games" item is clicked, even if 'main'
+   *  is already the active screen — backs out of a game's detail sub-view. */
+  resetSignal: number
   /** Call after a real push (manual or automatic) — a signal for
    *  HistoryScreen (also stays mounted in the background) to reread history. */
   onSynced: () => void
@@ -24,11 +28,13 @@ interface Props {
   onBanner: (banner: BannerState) => void
 }
 
-function MainScreen({ active, syncVersion, onSynced, onBanner }: Props): React.JSX.Element {
+function MainScreen({ active, syncVersion, resetSignal, onSynced, onBanner }: Props): React.JSX.Element {
   const { t } = useI18n()
   const [installed, setInstalled] = useState<InstalledGame[]>([])
   const [catalog, setCatalog] = useState<CatalogGame[]>([])
   const [query, setQuery] = useState('')
+  // Selected game -> show GameDetailScreen (its own sync history) instead of the grid.
+  const [selectedGame, setSelectedGame] = useState<{ appId: string; name: string } | null>(null)
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState<string | null>(null)
   const [syncStatuses, setSyncStatuses] = useState<Record<string, GameSyncStatus>>({})
@@ -66,6 +72,11 @@ function MainScreen({ active, syncVersion, onSynced, onBanner }: Props): React.J
       setLoading(false)
     }
   }
+
+  // resetSignal === 0 on mount — nothing to back out of yet.
+  useEffect(() => {
+    if (resetSignal > 0) setSelectedGame(null)
+  }, [resetSignal])
 
   // syncVersion === 0 on mount — that case is already covered by the effect above.
   useEffect(() => {
@@ -157,6 +168,17 @@ function MainScreen({ active, syncVersion, onSynced, onBanner }: Props): React.J
     }
   }
 
+  if (selectedGame) {
+    return (
+      <GameDetailScreen
+        appId={selectedGame.appId}
+        name={selectedGame.name}
+        syncVersion={syncVersion}
+        onBack={() => setSelectedGame(null)}
+      />
+    )
+  }
+
   const showUpdateBanner =
     !updateBannerDismissed &&
     (updateStatus.state === 'available' ||
@@ -231,6 +253,7 @@ function MainScreen({ active, syncVersion, onSynced, onBanner }: Props): React.J
                   busy={syncing === g.appId}
                   onUpload={() => handleSync(g.appId, 'upload')}
                   onDownload={() => handleSync(g.appId, 'download')}
+                  onOpenDetails={() => setSelectedGame({ appId: g.appId, name: g.name })}
                 />
               ))}
             </div>
@@ -257,6 +280,7 @@ function MainScreen({ active, syncVersion, onSynced, onBanner }: Props): React.J
                     busy={syncing === g.appId}
                     onUpload={() => handleSync(g.appId, 'upload')}
                     onDownload={() => handleSync(g.appId, 'download')}
+                    onOpenDetails={() => setSelectedGame({ appId: g.appId, name: g.name })}
                   />
                 ) : (
                   <GameCard key={g.appId} appId={g.appId} name={g.name} installed={false} />

@@ -27,6 +27,8 @@ interface Props {
   busy?: boolean
   onUpload?: () => void
   onDownload?: () => void
+  /** Open the game's own detail screen (its own sync history, future restore points). */
+  onOpenDetails?: () => void
 }
 
 // 0/undefined -> "—", otherwise formatVersion.
@@ -125,7 +127,8 @@ function GameCard({
   sizeBytes,
   busy,
   onUpload,
-  onDownload
+  onDownload,
+  onOpenDetails
 }: Props): React.JSX.Element {
   const { t, language } = useI18n()
   const [hover, setHover] = useState(false)
@@ -184,6 +187,10 @@ function GameCard({
                 <Button variant="secondary" style={styles.overlayBtn} onClick={onDownload} tabIndex={-1}>
                   <DownloadIcon size={15} color={colors.text1} />
                   {t.gameCard.download}
+                </Button>
+                <Button variant="ghost" style={styles.overlayBtn} onClick={onOpenDetails} tabIndex={-1}>
+                  <HistoryIcon size={15} color={colors.text2} />
+                  {t.gameCard.details}
                 </Button>
                 {(lastSyncAt || sizeBytes != null) && (
                   <div style={styles.overlayMeta}>

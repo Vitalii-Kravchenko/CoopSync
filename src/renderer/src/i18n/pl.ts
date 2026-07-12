@@ -43,7 +43,8 @@ export const pl: Translation = {
     gameNotSupported: 'gra nieobsługiwana',
     notInstalled: 'niezainstalowana',
     lastSyncLabel: 'Ostatnia synchronizacja:',
-    savesSizeLabel: 'Rozmiar zapisów:'
+    savesSizeLabel: 'Rozmiar zapisów:',
+    details: 'Szczegóły'
   },
   friends: {
     title: 'Znajomi',

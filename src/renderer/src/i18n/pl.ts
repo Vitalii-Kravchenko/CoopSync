@@ -54,7 +54,11 @@ export const pl: Translation = {
     noStorage: 'Najpierw skonfiguruj wspólny magazyn w Ustawieniach',
     emptyFriends: 'Jeszcze nie masz znajomych — zaproś kogoś powyżej',
     inviteError: 'Nie udało się zaprosić',
-    loadError: 'Nie udało się sprawdzić stanu magazynu'
+    loadError: 'Nie udało się sprawdzić stanu magazynu',
+    removeMember: 'Usuń',
+    removeConfirmTitle: (login) => `Usunąć ${login} ze wspólnego magazynu?`,
+    removeConfirmDesc: 'Straci dostęp do zapisów na GitHub — można zaprosić go ponownie później.',
+    removeError: 'Nie udało się usunąć'
   },
   history: {
     title: 'Historia synchronizacji',
@@ -142,6 +146,10 @@ export const pl: Translation = {
     deleteRepoConfirmTitle: 'Usunąć repozytorium zapisów?',
     deleteRepoConfirmDesc:
       'To trwale usunie wspólny magazyn na GitHub — całą historię zapisów obu graczy. Lokalne pliki gry na Twoim komputerze nie zostaną naruszone. Tej czynności nie można cofnąć.',
+    leaveRepoButton: 'Opuść wspólny magazyn',
+    leaveRepoConfirmTitle: 'Opuścić wspólny magazyn?',
+    leaveRepoConfirmDesc:
+      'Stracisz dostęp do zapisów na GitHub. Lokalne pliki gry na Twoim komputerze nie zostaną naruszone — potem możesz utworzyć własny magazyn albo dołączyć do innego znajomego.',
     cancel: 'Anuluj',
     general: 'Ogólne',
     language: 'Język',
@@ -204,6 +212,9 @@ export const pl: Translation = {
     REPO_DELETE_NO_PERMISSION: () =>
       'Brak uprawnień do usunięcia (wymagany scope delete_repo). Wyloguj się i zaloguj ponownie.',
     REPO_DELETE_FAILED: (p) => `Nie udało się usunąć magazynu (${p.status})`,
+    NOT_REPO_OWNER: () => 'Może to zrobić tylko właściciel magazynu',
+    REMOVE_COLLABORATOR_FAILED: (p) => `Nie udało się usunąć współpracownika (${p.status})`,
+    LEAVE_REPO_FAILED: (p) => `Nie udało się opuścić magazynu (${p.status})`,
     ENCRYPTION_UNAVAILABLE: () =>
       'Szyfrowanie jest niedostępne w systemie — nie można bezpiecznie zapisać tokenu',
     GAME_NOT_SUPPORTED: () => 'Gra nieobsługiwana',

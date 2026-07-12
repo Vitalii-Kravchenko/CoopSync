@@ -54,7 +54,11 @@ export const ru: Translation = {
     noStorage: 'Сначала создай общее хранилище в Настройках',
     emptyFriends: 'Пока нет друзей — пригласи кого-нибудь выше',
     inviteError: 'Не удалось пригласить',
-    loadError: 'Не удалось проверить состояние хранилища'
+    loadError: 'Не удалось проверить состояние хранилища',
+    removeMember: 'Убрать',
+    removeConfirmTitle: (login) => `Убрать ${login} из общего хранилища?`,
+    removeConfirmDesc: 'Он потеряет доступ к сейвам на GitHub — можно пригласить снова позже.',
+    removeError: 'Не удалось убрать'
   },
   history: {
     title: 'История синхронизаций',
@@ -142,6 +146,10 @@ export const ru: Translation = {
     deleteRepoConfirmTitle: 'Удалить репозиторий сейвов?',
     deleteRepoConfirmDesc:
       'Это навсегда удалит общее хранилище на GitHub — всю историю сейвов обоих игроков. Локальные файлы игр на твоём ПК не пострадают. Действие нельзя отменить.',
+    leaveRepoButton: 'Покинуть общее хранилище',
+    leaveRepoConfirmTitle: 'Покинуть общее хранилище?',
+    leaveRepoConfirmDesc:
+      'Ты потеряешь доступ к сейвам на GitHub. Локальные файлы игр на твоём ПК не пострадают — потом можно создать своё хранилище или подключиться к другому другу.',
     cancel: 'Отмена',
     general: 'Общее',
     language: 'Язык',
@@ -204,6 +212,9 @@ export const ru: Translation = {
     REPO_DELETE_NO_PERMISSION: () =>
       'Нет прав на удаление (нужен скоуп delete_repo). Выйди из аккаунта и войди снова.',
     REPO_DELETE_FAILED: (p) => `Не удалось удалить хранилище (${p.status})`,
+    NOT_REPO_OWNER: () => 'Это может сделать только владелец хранилища',
+    REMOVE_COLLABORATOR_FAILED: (p) => `Не удалось убрать участника (${p.status})`,
+    LEAVE_REPO_FAILED: (p) => `Не удалось покинуть хранилище (${p.status})`,
     ENCRYPTION_UNAVAILABLE: () => 'Шифрование недоступно в системе — не могу безопасно сохранить токен',
     GAME_NOT_SUPPORTED: () => 'Игра не поддерживается',
     SAVE_FOLDER_NOT_FOUND: () => 'Папка сейвов не найдена',

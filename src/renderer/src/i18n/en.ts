@@ -52,7 +52,11 @@ export const en: Translation = {
     noStorage: 'Set up shared storage in Settings first',
     emptyFriends: 'No friends yet — invite someone above',
     inviteError: "Couldn't invite",
-    loadError: "Couldn't check storage status"
+    loadError: "Couldn't check storage status",
+    removeMember: 'Remove',
+    removeConfirmTitle: (login) => `Remove ${login} from the shared storage?`,
+    removeConfirmDesc: "They'll lose access to the saves on GitHub — you can invite them again later.",
+    removeError: "Couldn't remove"
   },
   history: {
     title: 'Sync history',
@@ -140,6 +144,10 @@ export const en: Translation = {
     deleteRepoConfirmTitle: 'Delete the saves repository?',
     deleteRepoConfirmDesc:
       "This permanently deletes the shared storage on GitHub — the entire save history for both players. Your local game files aren't touched. This can't be undone.",
+    leaveRepoButton: 'Leave shared storage',
+    leaveRepoConfirmTitle: 'Leave the shared storage?',
+    leaveRepoConfirmDesc:
+      "You'll lose access to the saves on GitHub. Your local game files aren't touched — you can create your own storage or join another friend's afterward.",
     cancel: 'Cancel',
     general: 'General',
     language: 'Language',
@@ -202,6 +210,9 @@ export const en: Translation = {
     REPO_DELETE_NO_PERMISSION: () =>
       "No permission to delete (needs the delete_repo scope). Log out and sign in again.",
     REPO_DELETE_FAILED: (p) => `Couldn't delete storage (${p.status})`,
+    NOT_REPO_OWNER: () => 'Only the storage owner can do this',
+    REMOVE_COLLABORATOR_FAILED: (p) => `Couldn't remove the collaborator (${p.status})`,
+    LEAVE_REPO_FAILED: (p) => `Couldn't leave the storage (${p.status})`,
     ENCRYPTION_UNAVAILABLE: () => "Encryption isn't available on this system — can't store the token safely",
     GAME_NOT_SUPPORTED: () => 'Game not supported',
     SAVE_FOLDER_NOT_FOUND: () => 'Save folder not found',

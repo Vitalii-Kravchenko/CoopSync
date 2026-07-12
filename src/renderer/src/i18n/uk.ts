@@ -54,7 +54,11 @@ export const uk: Translation = {
     noStorage: 'Спершу створи спільне сховище в Налаштуваннях',
     emptyFriends: 'Ще немає друзів — запроси когось вище',
     inviteError: 'Не вдалось запросити',
-    loadError: 'Не вдалось перевірити стан сховища'
+    loadError: 'Не вдалось перевірити стан сховища',
+    removeMember: 'Прибрати',
+    removeConfirmTitle: (login) => `Прибрати ${login} зі спільного сховища?`,
+    removeConfirmDesc: 'Він втратить доступ до сейвів на GitHub — можна запросити знову пізніше.',
+    removeError: 'Не вдалось прибрати'
   },
   history: {
     title: 'Історія синхронізацій',
@@ -142,6 +146,10 @@ export const uk: Translation = {
     deleteRepoConfirmTitle: 'Видалити репозиторій сейвів?',
     deleteRepoConfirmDesc:
       'Це назавжди видалить спільне сховище на GitHub — всю історію сейвів обох гравців. Локальні файли ігор на твоєму ПК не постраждають. Дію не можна скасувати.',
+    leaveRepoButton: 'Покинути спільне сховище',
+    leaveRepoConfirmTitle: 'Покинути спільне сховище?',
+    leaveRepoConfirmDesc:
+      'Ти втратиш доступ до сейвів на GitHub. Локальні файли ігор на твоєму ПК не постраждають — потім можна створити своє сховище або підключитись до іншого друга.',
     cancel: 'Скасувати',
     general: 'Загальне',
     language: 'Мова',
@@ -204,6 +212,9 @@ export const uk: Translation = {
     REPO_DELETE_NO_PERMISSION: () =>
       'Немає прав на видалення (потрібен скоуп delete_repo). Вийди з акаунта і залогінься знову.',
     REPO_DELETE_FAILED: (p) => `Не вдалось видалити сховище (${p.status})`,
+    NOT_REPO_OWNER: () => 'Це може зробити лише власник сховища',
+    REMOVE_COLLABORATOR_FAILED: (p) => `Не вдалось прибрати колаборатора (${p.status})`,
+    LEAVE_REPO_FAILED: (p) => `Не вдалось покинути сховище (${p.status})`,
     ENCRYPTION_UNAVAILABLE: () => 'Шифрування недоступне в системі — не можу безпечно зберегти токен',
     GAME_NOT_SUPPORTED: () => 'Гра не підтримується',
     SAVE_FOLDER_NOT_FOUND: () => 'Папку сейвів не знайдено',

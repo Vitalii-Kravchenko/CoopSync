@@ -246,6 +246,38 @@ export async function listCollaborators(token: string, owner: string): Promise<C
     .map((c) => ({ login: c.login }))
 }
 
+/** Owner removes a friend's access to the shared repo (kick). */
+export async function removeCollaborator(
+  token: string,
+  owner: string,
+  username: string
+): Promise<void> {
+  const res = await githubFetch(
+    `${API}/repos/${owner}/${SAVES_REPO_NAME}/collaborators/${username}`,
+    { method: 'DELETE', headers: authHeaders(token) }
+  )
+  if (res.status === 204 || res.status === 404) return // 404 — already not a collaborator
+  checkAuthAndRateLimit(res)
+  throw makeAppError('REMOVE_COLLABORATOR_FAILED', { status: String(res.status) })
+}
+
+/** A collaborator leaves the host's shared repo (removes themselves) — the
+ * same GitHub endpoint as removeCollaborator, GitHub allows a collaborator
+ * with push access to remove themselves without needing admin rights. */
+export async function leaveSharedRepo(
+  token: string,
+  hostOwner: string,
+  selfLogin: string
+): Promise<void> {
+  const res = await githubFetch(
+    `${API}/repos/${hostOwner}/${SAVES_REPO_NAME}/collaborators/${selfLogin}`,
+    { method: 'DELETE', headers: authHeaders(token) }
+  )
+  if (res.status === 204 || res.status === 404) return
+  checkAuthAndRateLimit(res)
+  throw makeAppError('LEAVE_REPO_FAILED', { status: String(res.status) })
+}
+
 /** Delete the saves repo for good. Irreversible — confirmation is handled by the UI. */
 export async function deleteSavesRepo(token: string, owner: string): Promise<void> {
   const res = await githubFetch(`${API}/repos/${owner}/${SAVES_REPO_NAME}`, {

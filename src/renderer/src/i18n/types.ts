@@ -82,6 +82,10 @@ export interface Translation {
     emptyFriends: string
     inviteError: string
     loadError: string
+    removeMember: string
+    removeConfirmTitle: (login: string) => string
+    removeConfirmDesc: string
+    removeError: string
   }
   history: {
     title: string
@@ -166,6 +170,9 @@ export interface Translation {
     deleteRepoButton: string
     deleteRepoConfirmTitle: string
     deleteRepoConfirmDesc: string
+    leaveRepoButton: string
+    leaveRepoConfirmTitle: string
+    leaveRepoConfirmDesc: string
     cancel: string
     general: string
     language: string

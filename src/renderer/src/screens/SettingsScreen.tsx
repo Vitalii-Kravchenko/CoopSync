@@ -18,6 +18,9 @@ interface Props {
   /** MainScreen stays mounted in the background — we notify it to recompute
    *  sync statuses when the repo is deleted or recreated. */
   onRepoChanged: () => void
+  /** Called after successfully leaving a shared repo — our role is reset,
+   *  so App sends us back to onboarding's "choose a role" step. */
+  onLeftRepo: () => void
 }
 
 function SettingsScreen({
@@ -25,7 +28,8 @@ function SettingsScreen({
   onLoggedOut,
   avatarDataUrl,
   onAvatarChange,
-  onRepoChanged
+  onRepoChanged,
+  onLeftRepo
 }: Props): React.JSX.Element {
   const { t, language, setLanguage } = useI18n()
   const [repo, setRepo] = useState<SavesRepoStatus | null>(null)
@@ -45,6 +49,9 @@ function SettingsScreen({
   const [deleteRepoError, setDeleteRepoError] = useState<string | null>(null)
   const [creatingRepo, setCreatingRepo] = useState(false)
   const [createRepoError, setCreateRepoError] = useState<string | null>(null)
+  const [showLeaveRepo, setShowLeaveRepo] = useState(false)
+  const [leavingRepo, setLeavingRepo] = useState(false)
+  const [leaveRepoError, setLeaveRepoError] = useState<string | null>(null)
 
   useEffect(() => {
     void loadRepo()
@@ -157,6 +164,20 @@ function SettingsScreen({
     }
   }
 
+  async function handleLeaveRepo(): Promise<void> {
+    setLeavingRepo(true)
+    setLeaveRepoError(null)
+    try {
+      await window.api.repo.leave()
+      setShowLeaveRepo(false)
+      onLeftRepo()
+    } catch (e) {
+      setLeaveRepoError(describeError(e, t, t.settings.leaveRepoConfirmTitle))
+    } finally {
+      setLeavingRepo(false)
+    }
+  }
+
   return (
     <div style={styles.screen}>
       <div style={styles.h1}>{t.settings.title}</div>
@@ -203,13 +224,23 @@ function SettingsScreen({
               {repo.repo.url} ⧉
             </button>
             <div style={{ ...styles.divider, marginTop: 18 }} />
-            <Button
-              variant="danger"
-              style={{ marginTop: 4 }}
-              onClick={() => setShowDeleteRepo(true)}
-            >
-              {t.settings.deleteRepoButton}
-            </Button>
+            {repo.repo.fullName.split('/')[0] === user.login ? (
+              <Button
+                variant="danger"
+                style={{ marginTop: 4 }}
+                onClick={() => setShowDeleteRepo(true)}
+              >
+                {t.settings.deleteRepoButton}
+              </Button>
+            ) : (
+              <Button
+                variant="danger"
+                style={{ marginTop: 4 }}
+                onClick={() => setShowLeaveRepo(true)}
+              >
+                {t.settings.leaveRepoButton}
+              </Button>
+            )}
           </>
         ) : repoError ? (
           <>
@@ -367,6 +398,22 @@ function SettingsScreen({
           onCancel={() => {
             setShowDeleteRepo(false)
             setDeleteRepoError(null)
+          }}
+        />
+      )}
+
+      {showLeaveRepo && (
+        <ConfirmModal
+          title={t.settings.leaveRepoConfirmTitle}
+          description={t.settings.leaveRepoConfirmDesc}
+          confirmLabel={t.settings.leaveRepoButton}
+          cancelLabel={t.settings.cancel}
+          busy={leavingRepo}
+          error={leaveRepoError}
+          onConfirm={handleLeaveRepo}
+          onCancel={() => {
+            setShowLeaveRepo(false)
+            setLeaveRepoError(null)
           }}
         />
       )}

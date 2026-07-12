@@ -114,6 +114,14 @@ function App(): React.JSX.Element {
     setPhase('onboarding')
   }
 
+  // After leaving a shared repo (repo:leave already reset our role on the
+  // main side) — stay logged in, just drop back to onboarding's "choose a
+  // role" step so the user can host their own storage or join someone else.
+  function handleLeftSharedRepo(): void {
+    void window.api.watcher.stop()
+    setPhase('onboarding')
+  }
+
   // Reaction to auto-sync (game launch/exit in the background) — handled at the App
   // level, not MainScreen, so the push/pull banner is visible on any tab.
   useEffect(() => {
@@ -214,6 +222,7 @@ function App(): React.JSX.Element {
               avatarDataUrl={avatarDataUrl}
               onAvatarChange={setAvatarDataUrl}
               onRepoChanged={bumpSyncVersion}
+              onLeftRepo={handleLeftSharedRepo}
             />
           </div>
 

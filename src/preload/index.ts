@@ -53,7 +53,12 @@ const api = {
     listCollaborators: (): Promise<Collaborator[]> => ipcRenderer.invoke('repo:collaborators'),
     /** Avatars of members from the shared repo (owner + collaborators), keyed by login. */
     getAvatars: (logins: string[]): Promise<Record<string, string>> =>
-      ipcRenderer.invoke('repo:avatars', logins)
+      ipcRenderer.invoke('repo:avatars', logins),
+    /** Owner kicks a collaborator off the shared repo. */
+    removeCollaborator: (username: string): Promise<void> =>
+      ipcRenderer.invoke('repo:remove-collaborator', username),
+    /** A 'join' member leaves the host's shared repo. */
+    leave: (): Promise<void> => ipcRenderer.invoke('repo:leave')
   },
   games: {
     /** List of installed supported games. */

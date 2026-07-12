@@ -54,7 +54,11 @@ export const de: Translation = {
     noStorage: 'Richte zuerst den gemeinsamen Speicher in den Einstellungen ein',
     emptyFriends: 'Noch keine Freunde — lade oben jemanden ein',
     inviteError: 'Einladung fehlgeschlagen',
-    loadError: 'Speicherstatus konnte nicht geprüft werden'
+    loadError: 'Speicherstatus konnte nicht geprüft werden',
+    removeMember: 'Entfernen',
+    removeConfirmTitle: (login) => `${login} aus dem gemeinsamen Speicher entfernen?`,
+    removeConfirmDesc: 'Der Zugriff auf die Spielstände auf GitHub geht verloren — du kannst später erneut einladen.',
+    removeError: 'Entfernen fehlgeschlagen'
   },
   history: {
     title: 'Synchronisierungsverlauf',
@@ -142,6 +146,10 @@ export const de: Translation = {
     deleteRepoConfirmTitle: 'Speicherstand-Repository löschen?',
     deleteRepoConfirmDesc:
       'Dies löscht den gemeinsamen Speicher auf GitHub endgültig — den gesamten Spielstandverlauf beider Spieler. Deine lokalen Spieldateien bleiben unberührt. Das kann nicht rückgängig gemacht werden.',
+    leaveRepoButton: 'Gemeinsamen Speicher verlassen',
+    leaveRepoConfirmTitle: 'Gemeinsamen Speicher verlassen?',
+    leaveRepoConfirmDesc:
+      'Du verlierst den Zugriff auf die Spielstände auf GitHub. Deine lokalen Spieldateien bleiben unberührt — danach kannst du einen eigenen Speicher erstellen oder einem anderen Freund beitreten.',
     cancel: 'Abbrechen',
     general: 'Allgemein',
     language: 'Sprache',
@@ -204,6 +212,9 @@ export const de: Translation = {
     REPO_DELETE_NO_PERMISSION: () =>
       'Keine Berechtigung zum Löschen (Scope delete_repo erforderlich). Melde dich ab und wieder an.',
     REPO_DELETE_FAILED: (p) => `Speicher konnte nicht gelöscht werden (${p.status})`,
+    NOT_REPO_OWNER: () => 'Das kann nur der Besitzer des Speichers tun',
+    REMOVE_COLLABORATOR_FAILED: (p) => `Mitwirkender konnte nicht entfernt werden (${p.status})`,
+    LEAVE_REPO_FAILED: (p) => `Speicher konnte nicht verlassen werden (${p.status})`,
     ENCRYPTION_UNAVAILABLE: () =>
       'Verschlüsselung ist auf diesem System nicht verfügbar — Token kann nicht sicher gespeichert werden',
     GAME_NOT_SUPPORTED: () => 'Spiel nicht unterstützt',

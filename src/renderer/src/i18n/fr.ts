@@ -54,7 +54,11 @@ export const fr: Translation = {
     noStorage: "Configure d'abord le stockage partagé dans les Paramètres",
     emptyFriends: "Pas encore d'amis — invite quelqu'un ci-dessus",
     inviteError: "Impossible d'inviter",
-    loadError: "Impossible de vérifier l'état du stockage"
+    loadError: "Impossible de vérifier l'état du stockage",
+    removeMember: 'Retirer',
+    removeConfirmTitle: (login) => `Retirer ${login} du stockage partagé ?`,
+    removeConfirmDesc: "Il perdra l'accès aux sauvegardes sur GitHub — tu pourras l'inviter à nouveau plus tard.",
+    removeError: 'Impossible de retirer'
   },
   history: {
     title: 'Historique de synchronisation',
@@ -142,6 +146,10 @@ export const fr: Translation = {
     deleteRepoConfirmTitle: 'Supprimer le dépôt des sauvegardes ?',
     deleteRepoConfirmDesc:
       "Cela supprime définitivement le stockage partagé sur GitHub — tout l'historique des sauvegardes des deux joueurs. Tes fichiers de jeu locaux ne sont pas touchés. Cette action est irréversible.",
+    leaveRepoButton: 'Quitter le stockage partagé',
+    leaveRepoConfirmTitle: 'Quitter le stockage partagé ?',
+    leaveRepoConfirmDesc:
+      "Tu perdras l'accès aux sauvegardes sur GitHub. Tes fichiers de jeu locaux ne sont pas touchés — tu pourras ensuite créer ton propre stockage ou rejoindre un autre ami.",
     cancel: 'Annuler',
     general: 'Général',
     language: 'Langue',
@@ -204,6 +212,9 @@ export const fr: Translation = {
     REPO_DELETE_NO_PERMISSION: () =>
       "Pas la permission de supprimer (le scope delete_repo est requis). Déconnecte-toi et reconnecte-toi.",
     REPO_DELETE_FAILED: (p) => `Impossible de supprimer le stockage (${p.status})`,
+    NOT_REPO_OWNER: () => 'Seul le propriétaire du stockage peut faire ça',
+    REMOVE_COLLABORATOR_FAILED: (p) => `Impossible de retirer le collaborateur (${p.status})`,
+    LEAVE_REPO_FAILED: (p) => `Impossible de quitter le stockage (${p.status})`,
     ENCRYPTION_UNAVAILABLE: () =>
       "Le chiffrement n'est pas disponible sur ce système — impossible de stocker le token en sécurité",
     GAME_NOT_SUPPORTED: () => 'Jeu non pris en charge',

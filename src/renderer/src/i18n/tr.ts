@@ -54,7 +54,11 @@ export const tr: Translation = {
     noStorage: "Önce Ayarlar'da ortak depoyu oluştur",
     emptyFriends: 'Henüz arkadaş yok — yukarıdan birini davet et',
     inviteError: 'Davet edilemedi',
-    loadError: 'Depo durumu kontrol edilemedi'
+    loadError: 'Depo durumu kontrol edilemedi',
+    removeMember: 'Kaldır',
+    removeConfirmTitle: (login) => `${login} ortak depodan kaldırılsın mı?`,
+    removeConfirmDesc: "GitHub'daki kayıtlara erişimini kaybedecek — daha sonra tekrar davet edebilirsin.",
+    removeError: 'Kaldırılamadı'
   },
   history: {
     title: 'Senkronizasyon geçmişi',
@@ -142,6 +146,10 @@ export const tr: Translation = {
     deleteRepoConfirmTitle: 'Kayıt deposu silinsin mi?',
     deleteRepoConfirmDesc:
       "Bu, GitHub'daki ortak depoyu kalıcı olarak siler — her iki oyuncunun da tüm kayıt geçmişini. Yerel oyun dosyaların etkilenmez. Bu işlem geri alınamaz.",
+    leaveRepoButton: 'Ortak depodan ayrıl',
+    leaveRepoConfirmTitle: 'Ortak depodan ayrılınsın mı?',
+    leaveRepoConfirmDesc:
+      "GitHub'daki kayıtlara erişimini kaybedeceksin. Yerel oyun dosyaların etkilenmez — sonra kendi deponu oluşturabilir ya da başka bir arkadaşınınkine katılabilirsin.",
     cancel: 'İptal',
     general: 'Genel',
     language: 'Dil',
@@ -204,6 +212,9 @@ export const tr: Translation = {
     REPO_DELETE_NO_PERMISSION: () =>
       "Silme izni yok (delete_repo kapsamı gerekiyor). Hesaptan çıkıp tekrar giriş yap.",
     REPO_DELETE_FAILED: (p) => `Depo silinemedi (${p.status})`,
+    NOT_REPO_OWNER: () => 'Bunu yalnızca deponun sahibi yapabilir',
+    REMOVE_COLLABORATOR_FAILED: (p) => `Katılımcı kaldırılamadı (${p.status})`,
+    LEAVE_REPO_FAILED: (p) => `Depodan ayrılınamadı (${p.status})`,
     ENCRYPTION_UNAVAILABLE: () => 'Bu sistemde şifreleme kullanılamıyor — token güvenli şekilde saklanamıyor',
     GAME_NOT_SUPPORTED: () => 'Oyun desteklenmiyor',
     SAVE_FOLDER_NOT_FOUND: () => 'Kayıt klasörü bulunamadı',

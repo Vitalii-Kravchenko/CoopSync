@@ -54,7 +54,11 @@ export const ptBR: Translation = {
     noStorage: 'Primeiro configure o armazenamento compartilhado em Configurações',
     emptyFriends: 'Ainda não há amigos — convide alguém acima',
     inviteError: 'Não foi possível convidar',
-    loadError: 'Não foi possível verificar o status do armazenamento'
+    loadError: 'Não foi possível verificar o status do armazenamento',
+    removeMember: 'Remover',
+    removeConfirmTitle: (login) => `Remover ${login} do armazenamento compartilhado?`,
+    removeConfirmDesc: 'Ele perderá o acesso aos saves no GitHub — você pode convidá-lo novamente depois.',
+    removeError: 'Não foi possível remover'
   },
   history: {
     title: 'Histórico de sincronização',
@@ -142,6 +146,10 @@ export const ptBR: Translation = {
     deleteRepoConfirmTitle: 'Excluir o repositório de saves?',
     deleteRepoConfirmDesc:
       'Isso exclui permanentemente o armazenamento compartilhado no GitHub — todo o histórico de saves dos dois jogadores. Seus arquivos de jogo locais não são afetados. Essa ação não pode ser desfeita.',
+    leaveRepoButton: 'Sair do armazenamento compartilhado',
+    leaveRepoConfirmTitle: 'Sair do armazenamento compartilhado?',
+    leaveRepoConfirmDesc:
+      'Você perderá o acesso aos saves no GitHub. Seus arquivos de jogo locais não são afetados — depois você pode criar seu próprio armazenamento ou entrar no de outro amigo.',
     cancel: 'Cancelar',
     general: 'Geral',
     language: 'Idioma',
@@ -204,6 +212,9 @@ export const ptBR: Translation = {
     REPO_DELETE_NO_PERMISSION: () =>
       'Sem permissão para excluir (é necessário o scope delete_repo). Saia da conta e entre novamente.',
     REPO_DELETE_FAILED: (p) => `Não foi possível excluir o armazenamento (${p.status})`,
+    NOT_REPO_OWNER: () => 'Só o dono do armazenamento pode fazer isso',
+    REMOVE_COLLABORATOR_FAILED: (p) => `Não foi possível remover o colaborador (${p.status})`,
+    LEAVE_REPO_FAILED: (p) => `Não foi possível sair do armazenamento (${p.status})`,
     ENCRYPTION_UNAVAILABLE: () =>
       'A criptografia não está disponível neste sistema — não é possível salvar o token com segurança',
     GAME_NOT_SUPPORTED: () => 'Jogo não suportado',

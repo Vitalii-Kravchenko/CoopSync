@@ -52,7 +52,11 @@ export const zhCN: Translation = {
     noStorage: '请先在设置中创建共享存储',
     emptyFriends: '还没有好友——在上方邀请一位吧',
     inviteError: '无法邀请',
-    loadError: '无法检查存储状态'
+    loadError: '无法检查存储状态',
+    removeMember: '移除',
+    removeConfirmTitle: (login) => `要将 ${login} 从共享存储中移除吗？`,
+    removeConfirmDesc: '他将失去对 GitHub 上存档的访问权限——之后可以再次邀请。',
+    removeError: '无法移除'
   },
   history: {
     title: '同步历史',
@@ -137,6 +141,9 @@ export const zhCN: Translation = {
     deleteRepoButton: '删除仓库',
     deleteRepoConfirmTitle: '删除存档仓库？',
     deleteRepoConfirmDesc: '这将永久删除 GitHub 上的共享存储——两位玩家的全部存档历史。你本地的游戏文件不受影响。此操作无法撤销。',
+    leaveRepoButton: '退出共享存储',
+    leaveRepoConfirmTitle: '退出共享存储？',
+    leaveRepoConfirmDesc: '你将失去对 GitHub 上存档的访问权限。你本地的游戏文件不受影响——之后可以创建自己的存储，或加入另一位好友的存储。',
     cancel: '取消',
     general: '通用',
     language: '语言',
@@ -197,6 +204,9 @@ export const zhCN: Translation = {
     INVITE_FAILED: (p) => `无法发送邀请 (${p.status})`,
     REPO_DELETE_NO_PERMISSION: () => '没有删除权限（需要 delete_repo 权限范围）。请退出登录后重新登录。',
     REPO_DELETE_FAILED: (p) => `无法删除存储 (${p.status})`,
+    NOT_REPO_OWNER: () => '只有存储的所有者可以执行此操作',
+    REMOVE_COLLABORATOR_FAILED: (p) => `无法移除协作者 (${p.status})`,
+    LEAVE_REPO_FAILED: (p) => `无法退出存储 (${p.status})`,
     ENCRYPTION_UNAVAILABLE: () => '此系统上加密不可用 — 无法安全保存令牌',
     GAME_NOT_SUPPORTED: () => '该游戏不受支持',
     SAVE_FOLDER_NOT_FOUND: () => '未找到存档文件夹',

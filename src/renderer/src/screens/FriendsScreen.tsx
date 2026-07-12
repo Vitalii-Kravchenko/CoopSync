@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import { colors, fonts, radii, shadows } from '../theme'
 import { useI18n } from '../i18n'
 import { describeError } from '../errors'
-import { CheckIcon } from '../components/icons'
+import { CheckIcon, CloseIcon } from '../components/icons'
 import Avatar from '../components/Avatar'
 import Button from '../components/Button'
+import ConfirmModal from '../components/ConfirmModal'
 import type { AuthUser, SavesRepoStatus, PendingInvite, Collaborator } from '../../../shared/types'
 
 interface Props {
@@ -28,6 +29,9 @@ function FriendsScreen({ user, avatarDataUrl, active }: Props): React.JSX.Elemen
   const [busy, setBusy] = useState(false)
   const [inviteError, setInviteError] = useState<string | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
+  const [removeTarget, setRemoveTarget] = useState<string | null>(null)
+  const [removing, setRemoving] = useState(false)
+  const [removeError, setRemoveError] = useState<string | null>(null)
 
   useEffect(() => {
     void load()
@@ -93,6 +97,24 @@ function FriendsScreen({ user, avatarDataUrl, active }: Props): React.JSX.Elemen
   // The repo owner isn't always the logged-in user: in the "join" role it's
   // the friend acting as host. fullName looks like "owner/coopsync-saves".
   const ownerLogin = repo?.state === 'ready' ? repo.repo.fullName.split('/')[0] : user.login
+  // Only the owner manages membership (invite/kick) — a 'join' member has
+  // push access on GitHub but must not be able to touch the group itself.
+  const isOwner = ownerLogin === user.login
+
+  async function handleRemove(): Promise<void> {
+    if (!removeTarget) return
+    setRemoving(true)
+    setRemoveError(null)
+    try {
+      await window.api.repo.removeCollaborator(removeTarget)
+      setRemoveTarget(null)
+      await load()
+    } catch (e) {
+      setRemoveError(describeError(e, t, t.friends.removeConfirmTitle(removeTarget)))
+    } finally {
+      setRemoving(false)
+    }
+  }
 
   return (
     <div style={styles.screen}>
@@ -111,36 +133,38 @@ function FriendsScreen({ user, avatarDataUrl, active }: Props): React.JSX.Elemen
         </div>
       ) : (
         <>
-          <div style={styles.card}>
-            <div style={styles.h2}>{t.friends.inviteTitle}</div>
-            <div style={styles.row}>
-              <input
-                className="input-field"
-                style={{
-                  ...styles.input,
-                  ...(inviteError
-                    ? {
-                        borderColor: colors.danger,
-                        boxShadow: 'inset 0 1px 2px rgba(0,0,0,.3), 0 0 0 3px rgba(255,107,124,.15)'
-                      }
-                    : null)
-                }}
-                placeholder={t.settings.friendPlaceholder}
-                value={friend}
-                onChange={(e) => {
-                  setFriend(e.target.value)
-                  if (inviteError) setInviteError(null)
-                }}
-                disabled={busy}
-                onKeyDown={(e) => e.key === 'Enter' && handleInvite()}
-              />
-              <Button variant="primary" onClick={handleInvite} disabled={busy || !friend.trim()}>
-                {t.settings.invite}
-              </Button>
+          {isOwner && (
+            <div style={styles.card}>
+              <div style={styles.h2}>{t.friends.inviteTitle}</div>
+              <div style={styles.row}>
+                <input
+                  className="input-field"
+                  style={{
+                    ...styles.input,
+                    ...(inviteError
+                      ? {
+                          borderColor: colors.danger,
+                          boxShadow: 'inset 0 1px 2px rgba(0,0,0,.3), 0 0 0 3px rgba(255,107,124,.15)'
+                        }
+                      : null)
+                  }}
+                  placeholder={t.settings.friendPlaceholder}
+                  value={friend}
+                  onChange={(e) => {
+                    setFriend(e.target.value)
+                    if (inviteError) setInviteError(null)
+                  }}
+                  disabled={busy}
+                  onKeyDown={(e) => e.key === 'Enter' && handleInvite()}
+                />
+                <Button variant="primary" onClick={handleInvite} disabled={busy || !friend.trim()}>
+                  {t.settings.invite}
+                </Button>
+              </div>
+              {busy && <div style={styles.sending}>{t.friends.sending}</div>}
+              {inviteError && <div style={styles.error}>{inviteError}</div>}
             </div>
-            {busy && <div style={styles.sending}>{t.friends.sending}</div>}
-            {inviteError && <div style={styles.error}>{inviteError}</div>}
-          </div>
+          )}
 
           <div style={styles.card}>
             <div style={styles.h2}>{t.settings.members(collaborators.length + 1)}</div>
@@ -163,6 +187,19 @@ function FriendsScreen({ user, avatarDataUrl, active }: Props): React.JSX.Elemen
                   <CheckIcon size={11} color={colors.success} />
                   {t.friends.acceptedBadge}
                 </span>
+                {isOwner && (
+                  <button
+                    className="icon-btn-plain"
+                    onClick={() => {
+                      setRemoveTarget(c.login)
+                      setRemoveError(null)
+                    }}
+                    title={t.friends.removeMember}
+                    aria-label={t.friends.removeMember}
+                  >
+                    <CloseIcon size={13} />
+                  </button>
+                )}
               </div>
             ))}
             {invites.length > 0 && (
@@ -180,6 +217,22 @@ function FriendsScreen({ user, avatarDataUrl, active }: Props): React.JSX.Elemen
             {noFriendsYet && <div style={styles.muted}>{t.friends.emptyFriends}</div>}
           </div>
         </>
+      )}
+
+      {removeTarget && (
+        <ConfirmModal
+          title={t.friends.removeConfirmTitle(removeTarget)}
+          description={t.friends.removeConfirmDesc}
+          confirmLabel={t.friends.removeMember}
+          cancelLabel={t.settings.cancel}
+          busy={removing}
+          error={removeError}
+          onConfirm={handleRemove}
+          onCancel={() => {
+            setRemoveTarget(null)
+            setRemoveError(null)
+          }}
+        />
       )}
     </div>
   )

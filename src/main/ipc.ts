@@ -13,7 +13,9 @@ import {
   deleteSavesRepo,
   inviteCollaborator,
   listInvitations,
-  listCollaborators
+  listCollaborators,
+  removeCollaborator,
+  leaveSharedRepo
 } from './services/github'
 import { detectGames, detectAllInstalled } from './services/steam'
 import { searchSteamStore } from './services/steamSearch'
@@ -83,6 +85,16 @@ async function syncTarget(): Promise<{ token: string; owner: string }> {
     if (!token) throw makeAppError('NOT_LOGGED_IN')
     return { token, owner: settings.hostOwner }
   }
+  return requireAuth()
+}
+
+// Only the actual owner (host role — or no role chosen yet, which defaults
+// to your own account) may manage the shared repo. A 'join' member has push
+// access on GitHub but must never be able to delete the repo, invite
+// someone else, or kick a collaborator — those stay host-only.
+async function requireOwner(): Promise<{ token: string; owner: string }> {
+  const settings = readSettings()
+  if (settings.role === 'join') throw makeAppError('NOT_REPO_OWNER')
   return requireAuth()
 }
 
@@ -164,17 +176,36 @@ export function registerIpcHandlers(): void {
   })
 
   // Delete the saves repo for good (irreversible — confirmation already happened in the UI).
+  // Owner-only: a 'join' member must use repo:leave instead.
   ipcMain.handle('repo:delete', async (): Promise<void> => {
-    const { token, owner } = await requireAuth()
+    const { token, owner } = await requireOwner()
     await deleteSavesRepo(token, owner)
     stopWatcher()
     await resetLocalSaveState()
   })
 
-  // Invite a friend as a collaborator.
+  // Invite a friend as a collaborator. Owner-only.
   ipcMain.handle('repo:invite', async (_event, username: string): Promise<void> => {
-    const { token, owner } = await requireAuth()
+    const { token, owner } = await requireOwner()
     await inviteCollaborator(token, owner, username.trim())
+  })
+
+  // Owner kicks a collaborator off the shared repo.
+  ipcMain.handle('repo:remove-collaborator', async (_event, username: string): Promise<void> => {
+    const { token, owner } = await requireOwner()
+    await removeCollaborator(token, owner, username.trim())
+  })
+
+  // A 'join' member leaves the host's shared repo — resets our role so the
+  // app drops back into onboarding's "choose a role" step (still logged in).
+  ipcMain.handle('repo:leave', async (): Promise<void> => {
+    const settings = readSettings()
+    if (settings.role !== 'join' || !settings.hostOwner) throw makeAppError('REPO_NOT_FOUND')
+    const { token, owner: selfLogin } = await requireAuth()
+    await leaveSharedRepo(token, settings.hostOwner, selfLogin)
+    writeSettings({ role: undefined, hostOwner: undefined })
+    stopWatcher()
+    await resetLocalSaveState()
   })
 
   // List invitations that haven't been accepted yet (host's repo).

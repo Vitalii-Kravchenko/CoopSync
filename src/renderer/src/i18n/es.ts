@@ -54,7 +54,11 @@ export const es: Translation = {
     noStorage: 'Primero configura el almacenamiento compartido en Ajustes',
     emptyFriends: 'Todavía no hay amigos — invita a alguien arriba',
     inviteError: 'No se pudo invitar',
-    loadError: 'No se pudo comprobar el estado del almacenamiento'
+    loadError: 'No se pudo comprobar el estado del almacenamiento',
+    removeMember: 'Quitar',
+    removeConfirmTitle: (login) => `¿Quitar a ${login} del almacenamiento compartido?`,
+    removeConfirmDesc: 'Perderá el acceso a las partidas en GitHub — puedes invitarlo de nuevo más adelante.',
+    removeError: 'No se pudo quitar'
   },
   history: {
     title: 'Historial de sincronización',
@@ -142,6 +146,10 @@ export const es: Translation = {
     deleteRepoConfirmTitle: '¿Eliminar el repositorio de partidas guardadas?',
     deleteRepoConfirmDesc:
       'Esto elimina permanentemente el almacenamiento compartido en GitHub — todo el historial de partidas de ambos jugadores. Tus archivos de juego locales no se ven afectados. No se puede deshacer.',
+    leaveRepoButton: 'Abandonar el almacenamiento compartido',
+    leaveRepoConfirmTitle: '¿Abandonar el almacenamiento compartido?',
+    leaveRepoConfirmDesc:
+      'Perderás el acceso a las partidas guardadas en GitHub. Tus archivos de juego locales no se ven afectados — después puedes crear tu propio almacenamiento o unirte al de otro amigo.',
     cancel: 'Cancelar',
     general: 'General',
     language: 'Idioma',
@@ -204,6 +212,9 @@ export const es: Translation = {
     REPO_DELETE_NO_PERMISSION: () =>
       'Sin permiso para eliminar (se requiere el scope delete_repo). Cierra sesión y vuelve a iniciarla.',
     REPO_DELETE_FAILED: (p) => `No se pudo eliminar el almacenamiento (${p.status})`,
+    NOT_REPO_OWNER: () => 'Solo el propietario del almacenamiento puede hacer esto',
+    REMOVE_COLLABORATOR_FAILED: (p) => `No se pudo quitar al colaborador (${p.status})`,
+    LEAVE_REPO_FAILED: (p) => `No se pudo abandonar el almacenamiento (${p.status})`,
     ENCRYPTION_UNAVAILABLE: () =>
       'El cifrado no está disponible en este sistema — no se puede guardar el token de forma segura',
     GAME_NOT_SUPPORTED: () => 'Juego no compatible',

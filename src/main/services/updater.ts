@@ -17,19 +17,51 @@ function send(status: UpdateStatus): void {
   }
 }
 
+// Watchdog for a stuck check: if the underlying HTTP request to GitHub never
+// settles (seen in the wild with Windows' "automatically detect proxy
+// settings"), electron-updater emits nothing at all and the Settings screen
+// is left showing "Checking for updates..." forever. Force an error after a
+// grace period so the button always recovers.
+let checkTimeout: ReturnType<typeof setTimeout> | null = null
+
+function clearCheckTimeout(): void {
+  if (checkTimeout) {
+    clearTimeout(checkTimeout)
+    checkTimeout = null
+  }
+}
+
 autoUpdater.on('checking-for-update', () => send({ state: 'checking' }))
-autoUpdater.on('update-available', (info) => send({ state: 'available', version: info.version }))
-autoUpdater.on('update-not-available', () => send({ state: 'not-available' }))
+autoUpdater.on('update-available', (info) => {
+  clearCheckTimeout()
+  send({ state: 'available', version: info.version })
+})
+autoUpdater.on('update-not-available', () => {
+  clearCheckTimeout()
+  send({ state: 'not-available' })
+})
 autoUpdater.on('download-progress', (p) =>
   send({ state: 'downloading', percent: Math.round(p.percent) })
 )
 autoUpdater.on('update-downloaded', (info) => send({ state: 'downloaded', version: info.version }))
-autoUpdater.on('error', (err) => send({ state: 'error', message: err.message }))
+autoUpdater.on('error', (err) => {
+  clearCheckTimeout()
+  send({ state: 'error', message: err.message })
+})
 
 // In dev (unpackaged) there's no app-update.yml, so checkForUpdates() would
-// just throw — checks are a no-op outside a real install.
+// just throw — checks are a no-op outside a real install, but still report
+// back so the UI doesn't sit on "Checking..." forever if triggered by hand.
 function checkForUpdates(): void {
-  if (!app.isPackaged) return
+  if (!app.isPackaged) {
+    send({ state: 'error', message: 'not available in a dev build' })
+    return
+  }
+  clearCheckTimeout()
+  checkTimeout = setTimeout(() => {
+    checkTimeout = null
+    send({ state: 'error', message: 'timed out' })
+  }, 20_000)
   void autoUpdater.checkForUpdates()
 }
 

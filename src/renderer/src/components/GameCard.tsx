@@ -227,7 +227,10 @@ function GameCard({
                 ...(syncStatus === 'remote-newer' || syncStatus === 'cloud-only' ? styles.badgeDotPulse : null)
               }}
             />
-            {status.text}
+            {/* Chakra Petch's glyphs sit slightly above the line box's
+                geometric center, so align-items:center alone leaves the
+                text looking a hair higher than the dot — nudge it down. */}
+            <span style={{ position: 'relative', top: 1 }}>{status.text}</span>
           </span>
         )}
         {playable && (

@@ -17,6 +17,13 @@ publish:
 win:
   target: nsis
 nsis:
+  # No spaces: electron-builder's own auto-updater metadata (latest.yml) always
+  # references a GitHub-safe filename (spaces -> dashes) regardless of this
+  # setting -- if the actual built installer still has spaces, `gh release
+  # upload` lets GitHub rewrite them to dots instead, and the two names stop
+  # matching (404 when the app tries to download the update). Building the
+  # installer with the same dash-based name from the start keeps them in sync.
+  artifactName: '${productName}-Setup-${version}.${ext}'
   oneClick: false
   perMachine: false
   allowToChangeInstallationDirectory: true

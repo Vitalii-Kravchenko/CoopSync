@@ -300,7 +300,7 @@ function SettingsScreen({
           </button>
           <div style={{ ...styles.divider, margin: '14px 0' }} />
           <div style={styles.updateRow}>
-            <span style={styles.muted}>
+            <span style={{ ...styles.muted, flex: 1, minWidth: 0 }}>
               {updateStatus.state === 'idle' && ' '}
               {updateStatus.state === 'checking' && t.settings.checkingForUpdates}
               {updateStatus.state === 'not-available' && t.settings.updateNotAvailable}
@@ -321,7 +321,7 @@ function SettingsScreen({
               updateStatus.state === 'error') && (
               <Button
                 variant="secondary"
-                style={{ height: 30, padding: '0 12px', fontSize: 12 }}
+                style={{ height: 30, padding: '0 12px', fontSize: 12, flexShrink: 0, whiteSpace: 'nowrap' }}
                 onClick={handleCheckForUpdates}
                 disabled={updateStatus.state === 'checking'}
               >
@@ -331,7 +331,7 @@ function SettingsScreen({
             {updateStatus.state === 'available' && (
               <Button
                 variant="primary"
-                style={{ height: 30, padding: '0 12px', fontSize: 12 }}
+                style={{ height: 30, padding: '0 12px', fontSize: 12, flexShrink: 0, whiteSpace: 'nowrap' }}
                 onClick={() => window.api.updater.download()}
               >
                 {t.settings.downloadUpdate}
@@ -340,7 +340,7 @@ function SettingsScreen({
             {updateStatus.state === 'downloaded' && (
               <Button
                 variant="primary"
-                style={{ height: 30, padding: '0 12px', fontSize: 12 }}
+                style={{ height: 30, padding: '0 12px', fontSize: 12, flexShrink: 0, whiteSpace: 'nowrap' }}
                 onClick={() => window.api.updater.install()}
               >
                 {t.settings.restartToInstall}

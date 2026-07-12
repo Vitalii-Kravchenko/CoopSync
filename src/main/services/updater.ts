@@ -74,17 +74,29 @@ export function quitAndInstall(): void {
   autoUpdater.quitAndInstall()
 }
 
-// Called once on startup, after a delay — a silent background check (no
-// dialogs), same as the manual "Check for updates" button in Settings would
-// trigger. The renderer picks up the result via the 'updater:status' event
-// whenever it's mounted, whether or not anyone is looking at Settings.
-// Reads the setting at fire time (not at schedule time) so flipping the
-// toggle during the delay window still takes effect. The manual "Check for
-// updates" button always works regardless of this setting.
+// A silent background check (no dialogs), same as the manual "Check for
+// updates" button in Settings would trigger. The renderer picks up the
+// result via the 'updater:status' event whenever it's mounted, whether or
+// not anyone is looking at Settings. Reads the setting at fire time (not at
+// schedule time) so flipping the toggle during the delay window still takes
+// effect. The manual "Check for updates" button always works regardless of
+// this setting.
 export function scheduleStartupCheck(): void {
   setTimeout(() => {
     if (readSettings().autoCheckUpdates) checkForUpdates()
   }, 10_000)
+
+  // CoopSync minimizes to the tray instead of quitting (see index.ts), so
+  // the app process can easily stay alive for days without a fresh launch —
+  // a check that only ever fires once at startup could miss a release
+  // entirely for that whole stretch. Re-check periodically on top of the
+  // startup check so a long-lived tray session still notices new releases.
+  setInterval(
+    () => {
+      if (readSettings().autoCheckUpdates) checkForUpdates()
+    },
+    6 * 60 * 60 * 1000
+  )
 }
 
 export { checkForUpdates }

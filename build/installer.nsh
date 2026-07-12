@@ -1,22 +1,22 @@
-; Вмикаємо вбудований у NSIS механізм "запам'ятати мову інсталятора в реєстрі".
-; Без цього MUI_LANGDLL_DISPLAY завжди показує діалог — навіть у "внутрішньому"
-; процесі після перезапуску через UAC (для "встановити для всіх"), тому
-; користувач бачив питання про мову ДВІЧІ. З цим define'ом і SAVELANGUAGE
-; (у customInit нижче) другий запуск MUI_LANGDLL_DISPLAY бачить збережене
-; значення й діалог просто не показує.
+; Enables NSIS's built-in "remember installer language in the registry" mechanism.
+; Without this, MUI_LANGDLL_DISPLAY always shows the dialog — even in the "inner"
+; process after a UAC relaunch (for "install for all users"), so the user would
+; see the language prompt TWICE. With this define and SAVELANGUAGE (in customInit
+; below), the second MUI_LANGDLL_DISPLAY run sees the saved value and just skips
+; the dialog.
 !macro customHeader
   !define MUI_LANGDLL_REGISTRY_ROOT "HKCU"
   !define MUI_LANGDLL_REGISTRY_KEY "Software\CoopSyncInstaller"
   !define MUI_LANGDLL_REGISTRY_VALUENAME "InstallerLanguage"
 
-  ; Текст попередження про Smart App Control (Windows 11 22H2+) для Welcome-сторінки
-  ; нижче (customWelcomePage). LangString можна оголошувати лише ПІСЛЯ того, як
-  ; відповідний ${LANG_X} вже визначений — а це відбувається через !insertmacro
-  ; addLangs, який виконується РАНІШЕ за customHeader (installer.nsi: спершу
-  ; addLangs, потім customHeader). MUI_WELCOMEPAGE_TEXT/TITLE у customWelcomePage
-  ; використовують $(...) — це посилання на LangString-таблицю, що резолвиться
-  ; в рантаймі, тож не важливо, що сам customWelcomePage вставляється РАНІШЕ
-  ; за ці оголошення (до assistedInstaller.nsh, до addLangs).
+  ; Smart App Control warning text (Windows 11 22H2+) for the Welcome page below
+  ; (customWelcomePage). LangString can only be declared AFTER the corresponding
+  ; ${LANG_X} is already defined — which happens via !insertmacro addLangs, run
+  ; BEFORE customHeader (installer.nsi: addLangs first, then customHeader).
+  ; MUI_WELCOMEPAGE_TEXT/TITLE in customWelcomePage use $(...) — a reference into
+  ; the LangString table that resolves at runtime, so it doesn't matter that
+  ; customWelcomePage itself is inserted BEFORE these declarations (before
+  ; assistedInstaller.nsh, before addLangs).
   LangString smartAppTitle ${LANG_ENGLISH} "Important: Windows Security Notice"
   LangString smartAppTitle ${LANG_UKRAINIAN} "Важливо: попередження безпеки Windows"
   LangString smartAppTitle ${LANG_GERMAN} "Wichtig: Windows-Sicherheitshinweis"
@@ -40,35 +40,34 @@
   LangString smartAppText ${LANG_SIMPCHINESE} "CoopSync 尚未进行数字签名。Windows 11 的 Smart App Control 功能可能会阻止此安装程序或应用程序本身运行。$\r$\n$\r$\n继续之前，请检查：设置 -> 隐私和安全性 -> Windows 安全中心 -> 应用和浏览器控制 -> Smart App Control，如果它处于开启或评估模式，请将其关闭。$\r$\n$\r$\n这样做是安全的，之后可以重新开启。$\r$\n$\r$\n点击“下一步”继续。"
 !macroend
 
-; Власна Welcome-сторінка (за замовчуванням її нема — вмикається лише через цей
-; хук) з попередженням про Smart App Control (Windows 11 22H2+): непідписані
-; програми він блокує ще ДО того, як застосунок взагалі відкриється, тож
-; попереджати всередині самого застосунку вже запізно — має бути тут, на
-; найпершому екрані інсталятора.
+; Custom Welcome page (not present by default — only enabled via this hook)
+; with a Smart App Control warning (Windows 11 22H2+): it blocks unsigned apps
+; BEFORE the app even opens, so warning inside the app itself would already be
+; too late — it has to be here, on the very first installer screen.
 !macro customWelcomePage
   !define MUI_WELCOMEPAGE_TITLE "$(smartAppTitle)"
   !define MUI_WELCOMEPAGE_TEXT "$(smartAppText)"
   !insertmacro MUI_PAGE_WELCOME
 !macroend
 
-; Реєстровий запис із SAVELANGUAGE (нижче) переживає й НАСТУПНІ, зовсім окремі
-; запуски інсталятора — а нам треба, щоб він діяв ЛИШЕ в межах одного запуску
-; (для UAC-перезапуску). Тож стираємо його на самому старті кожного НОВОГО
-; (не-внутрішнього) запуску, перед тим як MUI_LANGDLL_DISPLAY встигне його
-; побачити — так діалог вибору мови знову показується щоразу, коли користувач
-; реально запускає інсталятор заново.
+; The registry entry from SAVELANGUAGE (below) survives into SUBSEQUENT, entirely
+; separate installer runs too — but we need it to apply ONLY within a single run
+; (for the UAC relaunch). So we clear it right at the start of every NEW
+; (non-inner) run, before MUI_LANGDLL_DISPLAY gets a chance to see it — this way
+; the language dialog shows up again every time the user actually launches the
+; installer fresh.
 !macro preInit
   ${IfNot} ${UAC_IsInnerInstance}
     DeleteRegValue HKCU "Software\CoopSyncInstaller" "InstallerLanguage"
   ${EndIf}
 !macroend
 
-; Коли користувач обирає "встановити для всіх користувачів", NSIS перезапускає
-; інсталятор заново з правами адміністратора (UAC) — і цей "внутрішній" процес
-; НЕ успадковує $LANGUAGE з першого діалогу вибору мови автоматично. Тому мову
-; фіксуємо одразу після діалогу у два місця: (1) реєстр — щоб другий запуск
-; MUI_LANGDLL_DISPLAY не показував діалог знову; (2) тимчасовий файл — його
-; читає customInstall (простіше, ніж парсити реєстр там же).
+; When the user picks "install for all users", NSIS relaunches the installer
+; with admin rights (UAC) — and this "inner" process does NOT automatically
+; inherit $LANGUAGE from the first language-selection dialog. So we record the
+; language right after the dialog in two places: (1) the registry — so the
+; second MUI_LANGDLL_DISPLAY run doesn't show the dialog again; (2) a temp file —
+; read by customInstall (simpler than parsing the registry there too).
 !macro customInit
   !insertmacro MUI_LANGDLL_SAVELANGUAGE
   ${IfNot} ${UAC_IsInnerInstance}
@@ -79,8 +78,8 @@
 !macroend
 
 !macro customInstall
-  ; Читаємо мову з тимчасового файлу (переживає UAC-перезапуск). Якщо його
-  ; нема (наприклад, дуже старий інсталятор без customInit) — фолбек на $LANGUAGE.
+  ; Read the language from the temp file (survives the UAC relaunch). If it's
+  ; missing (e.g. a very old installer without customInit) — fall back to $LANGUAGE.
   ClearErrors
   FileOpen $8 "$TEMP\coopsync-installer-lang.txt" r
   ${IfNot} ${Errors}
@@ -113,10 +112,9 @@
     StrCpy $0 "en"
   ${EndIf}
 
-  ; Пишемо в $INSTDIR (папку встановлення), а НЕ в $APPDATA — при "для всіх
-  ; користувачів" деінсталятор-адмінська сесія й пізніший запуск застосунку
-  ; звичайним користувачем можуть бачити РІЗНІ $APPDATA. $INSTDIR один і той
-  ; самий незалежно від того, хто саме встановлював.
+  ; Written to $INSTDIR (the install folder), NOT $APPDATA — with "for all
+  ; users", the admin installer session and a later launch by a regular user
+  ; can see DIFFERENT $APPDATA. $INSTDIR is the same no matter who installed it.
   FileOpen $1 "$INSTDIR\installer-language.txt" w
   FileWrite $1 "$0"
   FileClose $1

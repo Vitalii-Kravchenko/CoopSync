@@ -320,7 +320,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: fonts.display,
     fontWeight: 600,
     fontSize: 11.5,
-    lineHeight: 1.3,
+    lineHeight: 1,
     letterSpacing: '.04em',
     borderRadius: radii.pill,
     border: '1px solid'

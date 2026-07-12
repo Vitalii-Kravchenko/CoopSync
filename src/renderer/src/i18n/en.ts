@@ -77,6 +77,12 @@ export const en: Translation = {
     settingsHint: 'You can turn off this warning in Settings → General.',
     dismiss: 'Dismiss'
   },
+  updateBanner: {
+    title: 'Update available',
+    message: (v) => `CoopSync v${v} is ready to download.`,
+    readyTitle: 'Update ready to install',
+    readyMessage: 'Restart CoopSync to finish installing the update.'
+  },
   onboarding: {
     welcomeTitle: 'Welcome to CoopSync!',
     welcomeSubtitle: "Let's set up sync in a few steps",

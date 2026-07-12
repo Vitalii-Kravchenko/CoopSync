@@ -79,6 +79,12 @@ export const tr: Translation = {
     settingsHint: 'Bu uyarıyı Ayarlar → Genel bölümünden kapatabilirsin.',
     dismiss: 'Kapat'
   },
+  updateBanner: {
+    title: 'Güncelleme mevcut',
+    message: (v) => `CoopSync v${v} indirilmeye hazır.`,
+    readyTitle: 'Güncelleme yüklenmeye hazır',
+    readyMessage: 'Güncellemenin yüklenmesini tamamlamak için CoopSync\'i yeniden başlat.'
+  },
   onboarding: {
     welcomeTitle: "CoopSync'e hoş geldin!",
     welcomeSubtitle: 'Senkronizasyonu birkaç adımda ayarlayalım',

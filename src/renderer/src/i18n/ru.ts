@@ -79,6 +79,12 @@ export const ru: Translation = {
     settingsHint: 'Это предупреждение можно отключить в Настройках → Общее.',
     dismiss: 'Закрыть'
   },
+  updateBanner: {
+    title: 'Доступно обновление',
+    message: (v) => `CoopSync v${v} готов к загрузке.`,
+    readyTitle: 'Обновление готово к установке',
+    readyMessage: 'Перезапусти CoopSync, чтобы завершить установку обновления.'
+  },
   onboarding: {
     welcomeTitle: 'Добро пожаловать в CoopSync!',
     welcomeSubtitle: 'Настроим синхронизацию за несколько шагов',

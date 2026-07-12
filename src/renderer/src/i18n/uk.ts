@@ -79,6 +79,12 @@ export const uk: Translation = {
     settingsHint: 'Це попередження можна вимкнути в Налаштуваннях → Загальне.',
     dismiss: 'Закрити'
   },
+  updateBanner: {
+    title: 'Доступне оновлення',
+    message: (v) => `CoopSync v${v} готовий до завантаження.`,
+    readyTitle: 'Оновлення готове до встановлення',
+    readyMessage: 'Перезапусти CoopSync, щоб завершити встановлення оновлення.'
+  },
   onboarding: {
     welcomeTitle: 'Ласкаво просимо до CoopSync!',
     welcomeSubtitle: 'Налаштуймо синхронізацію за кілька кроків',

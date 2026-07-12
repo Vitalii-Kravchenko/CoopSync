@@ -4,9 +4,10 @@ import { useI18n } from '../i18n'
 import { describeError, describeSyncResult } from '../errors'
 import GameCard from '../components/GameCard'
 import CloudWarningBanner from '../components/CloudWarningBanner'
+import UpdateAvailableBanner from '../components/UpdateAvailableBanner'
 import type { BannerState } from '../components/Banner'
 import { SearchIcon } from '../components/icons'
-import type { InstalledGame, CatalogGame, GameSyncStatus } from '../../../shared/types'
+import type { InstalledGame, CatalogGame, GameSyncStatus, UpdateStatus } from '../../../shared/types'
 
 interface Props {
   /** Whether this tab is currently active (MainScreen stays mounted in the
@@ -33,6 +34,10 @@ function MainScreen({ active, syncVersion, onSynced, onBanner }: Props): React.J
   const [syncStatuses, setSyncStatuses] = useState<Record<string, GameSyncStatus>>({})
   // Steam Cloud warning: shown once per launch, until dismissed via the close icon.
   const [showCloudWarning, setShowCloudWarning] = useState(false)
+  // Update banner: mirrors the same 'updater:status' events Settings listens to,
+  // so it's visible without opening Settings. Dismissible, same as the Cloud warning.
+  const [updateStatus, setUpdateStatus] = useState<UpdateStatus>({ state: 'idle' })
+  const [updateBannerDismissed, setUpdateBannerDismissed] = useState(false)
   // If the status check fails (network, git) — show it explicitly instead of
   // silently leaving cards stuck on "Checking..." with no explanation.
   const [statusesError, setStatusesError] = useState<string | null>(null)
@@ -45,6 +50,7 @@ function MainScreen({ active, syncVersion, onSynced, onBanner }: Props): React.J
     // Statuses are fetched separately — they're slower (repo clone/pull).
     void loadStatuses()
     window.api.settings.getGeneral().then((s) => setShowCloudWarning(s.showCloudWarning))
+    return window.api.updater.onStatus(setUpdateStatus)
   }, [])
 
   async function loadGames(): Promise<void> {
@@ -151,8 +157,25 @@ function MainScreen({ active, syncVersion, onSynced, onBanner }: Props): React.J
     }
   }
 
+  const showUpdateBanner =
+    !updateBannerDismissed &&
+    (updateStatus.state === 'available' ||
+      updateStatus.state === 'downloading' ||
+      updateStatus.state === 'downloaded')
+
   return (
     <div style={styles.screen}>
+      {showUpdateBanner && (
+        <UpdateAvailableBanner
+          status={
+            updateStatus as Extract<
+              UpdateStatus,
+              { state: 'available' | 'downloading' | 'downloaded' }
+            >
+          }
+          onDismiss={() => setUpdateBannerDismissed(true)}
+        />
+      )}
       {showCloudWarning && <CloudWarningBanner onDismiss={() => setShowCloudWarning(false)} />}
 
       <div style={styles.searchWrap}>

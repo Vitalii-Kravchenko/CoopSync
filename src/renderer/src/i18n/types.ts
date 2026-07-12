@@ -104,6 +104,12 @@ export interface Translation {
     settingsHint: string
     dismiss: string
   }
+  updateBanner: {
+    title: string
+    message: (v: string) => string
+    readyTitle: string
+    readyMessage: string
+  }
   onboarding: {
     welcomeTitle: string
     welcomeSubtitle: string

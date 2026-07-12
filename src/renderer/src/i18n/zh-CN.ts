@@ -75,6 +75,12 @@ export const zhCN: Translation = {
     settingsHint: '你可以在 设置 → 通用 中关闭此提示。',
     dismiss: '关闭'
   },
+  updateBanner: {
+    title: '有可用更新',
+    message: (v) => `CoopSync v${v} 已准备好下载。`,
+    readyTitle: '更新已准备好安装',
+    readyMessage: '重启 CoopSync 以完成更新安装。'
+  },
   onboarding: {
     welcomeTitle: '欢迎使用 CoopSync！',
     welcomeSubtitle: '让我们用几个步骤设置同步',

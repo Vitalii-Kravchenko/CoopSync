@@ -309,7 +309,10 @@ function SettingsScreen({
                 t.settings.updateDownloading(updateStatus.percent)}
               {updateStatus.state === 'downloaded' && t.settings.updateDownloaded(updateStatus.version)}
               {updateStatus.state === 'error' && (
-                <span style={{ color: colors.danger }}>{t.settings.updateCheckError}</span>
+                <span style={{ color: colors.danger }} title={updateStatus.message}>
+                  {t.settings.updateCheckError}
+                  {updateStatus.message ? ` (${updateStatus.message})` : ''}
+                </span>
               )}
             </span>
             {(updateStatus.state === 'idle' ||

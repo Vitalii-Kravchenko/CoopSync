@@ -79,6 +79,12 @@ export const fr: Translation = {
     settingsHint: 'Tu peux désactiver cet avertissement dans Paramètres → Général.',
     dismiss: 'Fermer'
   },
+  updateBanner: {
+    title: 'Mise à jour disponible',
+    message: (v) => `CoopSync v${v} est prêt à être téléchargé.`,
+    readyTitle: 'Mise à jour prête à être installée',
+    readyMessage: "Redémarre CoopSync pour terminer l'installation de la mise à jour."
+  },
   onboarding: {
     welcomeTitle: 'Bienvenue sur CoopSync !',
     welcomeSubtitle: 'Configurons la synchronisation en quelques étapes',

@@ -110,6 +110,20 @@ async function doEnsureRepo(token: string, owner: string, retried = false): Prom
   } else {
     // Оновлюємо токен у remote (міг змінитись) і підтягуємо свіже.
     await git(['remote', 'set-url', 'origin', url])
+    // Скидаємо будь-які незакомічені зміни в цьому внутрішньому клоні перед
+    // пулом. Це технічна робоча копія, не джерело істини (справжні сейви
+    // копіюються сюди наново з реальної папки гри при кожному uploadGame) —
+    // якщо застосунок впав/закрився посеред копіювання файлів (після
+    // copyFiltered, до git commit), клон лишається "брудним" і pull назавжди
+    // падає з "local changes would be overwritten by merge", ламаючи взагалі
+    // весь синк (історію, upload, download) до ручного втручання.
+    try {
+      await git(['reset', '--hard', 'HEAD'])
+      await git(['clean', '-fd'])
+    } catch {
+      // Якщо навіть reset/clean не вдався — не блокуємо спробу pull нижче,
+      // хай вона впаде своєю власною, зрозумілішою помилкою.
+    }
     try {
       await exec('git', [...NO_HELPER, 'pull', '--no-rebase', 'origin', 'main'], {
         cwd: dir,

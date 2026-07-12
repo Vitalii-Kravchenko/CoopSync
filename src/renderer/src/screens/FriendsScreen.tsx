@@ -59,6 +59,9 @@ function FriendsScreen({ user, avatarDataUrl }: Props): React.JSX.Element {
   }
 
   const noFriendsYet = collaborators.length === 0 && invites.length === 0
+  // Власник сховища — не завжди залогінений користувач: у ролі "join" це
+  // друг-хост. fullName має вигляд "owner/coopsync-saves".
+  const ownerLogin = repo?.state === 'ready' ? repo.repo.fullName.split('/')[0] : user.login
 
   return (
     <div style={styles.screen}>
@@ -101,9 +104,13 @@ function FriendsScreen({ user, avatarDataUrl }: Props): React.JSX.Element {
             <div style={styles.h2}>{t.settings.members(collaborators.length + 1)}</div>
             <div style={styles.memberRow}>
               <div style={styles.memberAvatar}>
-                {avatarDataUrl ? <img src={avatarDataUrl} alt="" style={styles.memberAvatarImg} /> : <GitHubIcon size={16} />}
+                {ownerLogin === user.login && avatarDataUrl ? (
+                  <img src={avatarDataUrl} alt="" style={styles.memberAvatarImg} />
+                ) : (
+                  <GitHubIcon size={16} />
+                )}
               </div>
-              <span style={styles.memberName}>{user.login}</span>
+              <span style={styles.memberName}>{ownerLogin}</span>
               <span style={styles.muted}>{t.settings.owner}</span>
             </div>
             {collaborators.map((c) => (

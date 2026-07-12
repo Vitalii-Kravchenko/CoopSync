@@ -455,7 +455,7 @@ const styles: Record<string, React.CSSProperties> = {
   memberOk: { fontSize: 13, color: colors.success },
   memberPending: { fontSize: 13, color: colors.text3 },
   muted: { fontSize: 13, color: colors.text3 },
-  error: { color: colors.danger, fontSize: 13, marginTop: 8 },
+  error: { color: colors.danger, fontSize: 13, marginTop: 8, marginLeft: 44 },
   footer: {
     display: 'flex',
     alignItems: 'center',

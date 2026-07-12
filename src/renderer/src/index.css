@@ -96,6 +96,15 @@ body {
     background: transparent;
   }
 }
+@keyframes glowpulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.001ms !important;
@@ -147,9 +156,22 @@ body {
    пасує до темної теми). :focus-visible — тільки для клавіатури, не для миші. */
 .btn:focus-visible,
 .icon-btn:focus-visible,
-.icon-btn-plain:focus-visible {
+.icon-btn-plain:focus-visible,
+.nav-item:focus-visible,
+.switch:focus-visible,
+.reset-btn:focus-visible {
   outline: 2px solid #36e2e8;
   outline-offset: 3px;
+}
+
+/* Скидання нативного вигляду для "голих" <button> без власного класу
+   (текстові посилання, клікабельні рядки/картки) — інакше Chromium/Windows
+   малює свою дефолтну (жовтаву) рамку фокуса замість нашого єдиного
+   ціанового кільця вище. */
+.reset-btn {
+  appearance: none;
+  -webkit-appearance: none;
+  outline: none;
 }
 .btn-primary {
   position: relative;
@@ -349,4 +371,26 @@ body {
 .win-ctrl.win-close:hover {
   background: #ff6b7c;
   color: #06080d;
+}
+/* outline+offset поза вікном обрізався б браузером (кнопки впритул до краю) —
+   тому тут кільце inset, а не єдиний outline-стиль системи. */
+.win-ctrl:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px #36e2e8;
+}
+
+/* Пункт бічної навігації (Sidebar) — hover/active-фон керується інлайн-стилями
+   (залежить від того, чи це поточний екран), тут лише те, що CSS може дати
+   краще за JS: справжній :focus-visible і "натискання" в реальному часі. */
+.nav-item {
+  outline: none;
+}
+.nav-item:active {
+  transform: scale(0.99) translateY(1px);
+}
+
+/* Перемикач (Toggle) — той самий фокус-стиль системи; сам перемикач лишається
+   inline-стильним (форма/колір залежать від value/disabled). */
+.switch {
+  outline: none;
 }

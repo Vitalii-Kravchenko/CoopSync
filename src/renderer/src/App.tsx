@@ -146,8 +146,6 @@ function App(): React.JSX.Element {
 
   return (
     <div style={styles.root}>
-      <TitleBar user={phase === 'app' ? user : null} avatarDataUrl={avatarDataUrl} />
-
       {phase === 'loading' && <div style={styles.center}>{t.app.loading}</div>}
 
       {phase === 'error' && (
@@ -168,11 +166,18 @@ function App(): React.JSX.Element {
       )}
 
       {phase === 'app' && user && (
+        // grid-template-areas (не flex-direction!) — DOM-порядок (= Tab-порядок)
+        // навмисно "контент екрана → Sidebar", а grid-area ставить Sidebar
+        // зліва суто візуально, незалежно від DOM-порядку. flex-direction:
+        // row-reverse тут НЕ підходить — Chromium рахує Tab-порядок від
+        // візуальної (реверснутої) позиції, а не від DOM, тож reverse-трюк
+        // просто повертав старий (неправильний) порядок фокуса.
         <div style={styles.appBody}>
-          <Sidebar active={screen} onNavigate={setScreen} />
           {/* Обидва екрани лишаються змонтованими — перемикаємо лише видимість,
               щоб Settings не перезавантажував дані при кожному вході. */}
-          <div style={{ flex: 1, display: screen === 'main' ? 'flex' : 'none', minHeight: 0 }}>
+          <div
+            style={{ gridArea: 'content', display: screen === 'main' ? 'flex' : 'none', minHeight: 0 }}
+          >
             <MainScreen
               active={screen === 'main'}
               syncVersion={syncVersion}
@@ -180,13 +185,19 @@ function App(): React.JSX.Element {
               onBanner={setBanner}
             />
           </div>
-          <div style={{ flex: 1, display: screen === 'friends' ? 'flex' : 'none', minHeight: 0 }}>
+          <div
+            style={{ gridArea: 'content', display: screen === 'friends' ? 'flex' : 'none', minHeight: 0 }}
+          >
             <FriendsScreen user={user} avatarDataUrl={avatarDataUrl} active={screen === 'friends'} />
           </div>
-          <div style={{ flex: 1, display: screen === 'history' ? 'flex' : 'none', minHeight: 0 }}>
+          <div
+            style={{ gridArea: 'content', display: screen === 'history' ? 'flex' : 'none', minHeight: 0 }}
+          >
             <HistoryScreen active={screen === 'history'} syncVersion={syncVersion} />
           </div>
-          <div style={{ flex: 1, display: screen === 'settings' ? 'flex' : 'none', minHeight: 0 }}>
+          <div
+            style={{ gridArea: 'content', display: screen === 'settings' ? 'flex' : 'none', minHeight: 0 }}
+          >
             <SettingsScreen
               user={user}
               onLoggedOut={handleLoggedOut}
@@ -196,9 +207,16 @@ function App(): React.JSX.Element {
             />
           </div>
 
-          <Banner banner={banner} />
+          <Sidebar active={screen} onNavigate={setScreen} />
+          <Banner banner={banner} onDismiss={() => setBanner(null)} />
         </div>
       )}
+
+      {/* TitleBar — останній у DOM (не перший), Tab доходить до Підтримки й
+          кнопок вікна лише ПІСЛЯ контенту поточної вкладки й Sidebar. Візуально
+          зверху все одно — grid-area:'titlebar' у root ставить його в перший
+          рядок сітки незалежно від DOM-порядку. */}
+      <TitleBar user={phase === 'app' ? user : null} avatarDataUrl={avatarDataUrl} />
     </div>
   )
 }
@@ -206,14 +224,18 @@ function App(): React.JSX.Element {
 const styles: Record<string, React.CSSProperties> = {
   root: {
     height: '100vh',
-    display: 'flex',
-    flexDirection: 'column',
+    // grid-template-areas — TitleBar останній у DOM (Tab-порядок), але
+    // gridArea:'titlebar' (у TitleBar.tsx) ставить його в перший рядок сітки
+    // незалежно від DOM-порядку. Див. коментар біля <TitleBar>.
+    display: 'grid',
+    gridTemplateRows: 'auto 1fr',
+    gridTemplateAreas: '"titlebar" "body"',
     color: colors.text1,
     fontFamily: fonts.body,
     overflow: 'hidden'
   },
   center: {
-    flex: 1,
+    gridArea: 'body',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -227,8 +249,18 @@ const styles: Record<string, React.CSSProperties> = {
     maxWidth: 360,
     textAlign: 'center'
   },
-  onboarding: { flex: 1, overflowY: 'auto', display: 'flex', alignItems: 'flex-start' },
-  appBody: { flex: 1, display: 'flex', minHeight: 0 }
+  onboarding: { gridArea: 'body', overflowY: 'auto', display: 'flex', alignItems: 'flex-start', minHeight: 0 },
+  // grid-template-areas — Sidebar останній у DOM (Tab-порядок), а
+  // gridArea:'sidebar' (у Sidebar.tsx) ставить його зліва суто візуально.
+  // Див. коментар біля <Sidebar> вище.
+  appBody: {
+    gridArea: 'body',
+    display: 'grid',
+    gridTemplateColumns: '196px 1fr',
+    gridTemplateAreas: '"sidebar content"',
+    minHeight: 0,
+    minWidth: 0
+  }
 }
 
 export default App

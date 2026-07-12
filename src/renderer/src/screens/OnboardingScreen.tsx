@@ -3,6 +3,7 @@ import { colors, fonts, gradients, radii, shadows, transitions } from '../theme'
 import { useI18n } from '../i18n'
 import { describeError } from '../errors'
 import { GitHubIcon, CheckIcon, CrownIcon, UsersIcon } from '../components/icons'
+import Avatar from '../components/Avatar'
 import Button from '../components/Button'
 import type {
   AuthStatus,
@@ -175,13 +176,7 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
         )}
         {loggedIn && (
           <div style={styles.okRow}>
-            <div style={styles.avatar}>
-              {avatarDataUrl ? (
-                <img src={avatarDataUrl} alt="" style={styles.avatarImg} />
-              ) : (
-                <GitHubIcon size={18} />
-              )}
-            </div>
+            <Avatar src={avatarDataUrl} size={30} />
             <span style={styles.okName}>{auth.user.login}</span>
           </div>
         )}
@@ -191,20 +186,20 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
       <Step n={2} done={role !== null} title={t.onboarding.step2Title} disabled={!loggedIn} last={role === 'join'}>
         {role === null && (
           <div style={styles.roleRow}>
-            <button style={styles.roleCard} onClick={handleSetHost} disabled={busy}>
-              <div style={styles.roleIconBox}>
-                <CrownIcon size={18} color={colors.cy} />
-              </div>
-              <div style={styles.roleTitle}>{t.onboarding.hostTitle}</div>
-              <div style={styles.roleDesc}>{t.onboarding.hostDesc}</div>
-            </button>
-            <button style={styles.roleCard} onClick={() => setRole('join')} disabled={busy}>
-              <div style={styles.roleIconBox}>
-                <UsersIcon size={18} color={colors.cy} />
-              </div>
-              <div style={styles.roleTitle}>{t.onboarding.joinTitle}</div>
-              <div style={styles.roleDesc}>{t.onboarding.joinDesc}</div>
-            </button>
+            <RoleCard
+              icon={<CrownIcon size={18} color={colors.cy} />}
+              title={t.onboarding.hostTitle}
+              desc={t.onboarding.hostDesc}
+              onClick={handleSetHost}
+              disabled={busy}
+            />
+            <RoleCard
+              icon={<UsersIcon size={18} color={colors.cy} />}
+              title={t.onboarding.joinTitle}
+              desc={t.onboarding.joinDesc}
+              onClick={() => setRole('join')}
+              disabled={busy}
+            />
           </div>
         )}
         {role === 'host' && (
@@ -317,6 +312,44 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
   )
 }
 
+// Клікабельна картка вибору ролі — hover керується JS-станом (не CSS :hover),
+// бо border/box-shadow вже задані інлайн і перекрили б будь-яке CSS-правило
+// (та сама пастка, що з пунктами Sidebar/GameCard — див. коментарі там).
+function RoleCard({
+  icon,
+  title,
+  desc,
+  onClick,
+  disabled
+}: {
+  icon: React.ReactNode
+  title: string
+  desc: string
+  onClick: () => void
+  disabled?: boolean
+}): React.JSX.Element {
+  const [hover, setHover] = useState(false)
+  return (
+    <button
+      className="reset-btn"
+      style={{
+        ...styles.roleCard,
+        borderColor: hover ? colors.borderAccent : colors.borderSubtle,
+        boxShadow: hover ? `${shadows.sh3}, ${shadows.glowCy}` : shadows.sheen,
+        transform: hover ? 'translateY(-2px)' : 'none'
+      }}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      onClick={onClick}
+      disabled={disabled}
+    >
+      <div style={styles.roleIconBox}>{icon}</div>
+      <div style={styles.roleTitle}>{title}</div>
+      <div style={styles.roleDesc}>{desc}</div>
+    </button>
+  )
+}
+
 function Step({
   n,
   title,
@@ -425,18 +458,6 @@ const styles: Record<string, React.CSSProperties> = {
     color: colors.cy
   },
   okRow: { display: 'flex', alignItems: 'center', gap: 9 },
-  avatar: {
-    width: 30,
-    height: 30,
-    borderRadius: '50%',
-    background: colors.bgInset,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    border: `1px solid ${colors.borderDefault}`,
-    overflow: 'hidden'
-  },
-  avatarImg: { width: '100%', height: '100%', objectFit: 'cover' },
   okName: { fontSize: 14, fontWeight: 600, color: colors.text1 },
   input: {
     flex: 1,
@@ -448,7 +469,7 @@ const styles: Record<string, React.CSSProperties> = {
     boxShadow: 'inset 0 1px 2px rgba(0,0,0,.3)',
     color: colors.text1,
     fontFamily: fonts.body,
-    fontSize: 13.5,
+    fontSize: 14,
     outline: 'none'
   },
   members: { display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 4 },

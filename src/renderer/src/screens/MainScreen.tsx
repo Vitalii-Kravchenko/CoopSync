@@ -170,7 +170,7 @@ function MainScreen({ active, syncVersion, onSynced, onBanner }: Props): React.J
       {statusesError && (
         <div style={styles.statusesError}>
           <span>{statusesError}</span>
-          <button style={styles.retryLink} onClick={() => void loadStatuses()}>
+          <button className="reset-btn" style={styles.retryLink} onClick={() => void loadStatuses()}>
             {t.main.retry}
           </button>
         </div>
@@ -179,7 +179,7 @@ function MainScreen({ active, syncVersion, onSynced, onBanner }: Props): React.J
       {gamesError && (
         <div style={styles.statusesError}>
           <span>{gamesError}</span>
-          <button style={styles.retryLink} onClick={() => void loadGames()}>
+          <button className="reset-btn" style={styles.retryLink} onClick={() => void loadGames()}>
             {t.main.retry}
           </button>
         </div>
@@ -289,9 +289,10 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     gap: 10,
     marginBottom: 20,
-    padding: '10px 14px',
+    padding: '13px 15px',
     borderRadius: radii.md,
     border: `1px solid ${colors.warningBd}`,
+    borderLeft: `3px solid ${colors.warning}`,
     background: colors.warningBg,
     color: colors.text1,
     fontSize: 13

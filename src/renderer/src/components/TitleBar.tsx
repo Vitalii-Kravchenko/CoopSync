@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { colors, fonts, radii, shadows } from '../theme'
 import { useI18n } from '../i18n'
-import { GitHubIcon, Logo, SupportIcon } from './icons'
+import { Logo, SupportIcon } from './icons'
+import Avatar from './Avatar'
 import WindowControls from './WindowControls'
 import SupportModal from './SupportModal'
 import type { AuthUser } from '../../../shared/types'
@@ -42,13 +43,7 @@ function TitleBar({ user, avatarDataUrl }: Props): React.JSX.Element {
           {user && (
             <div className="no-drag" style={styles.userPill}>
               <div style={styles.onlineDot} />
-              <div style={styles.avatar}>
-                {avatarDataUrl ? (
-                  <img src={avatarDataUrl} alt="" style={styles.avatarImg} />
-                ) : (
-                  <GitHubIcon size={16} />
-                )}
-              </div>
+              <Avatar src={avatarDataUrl} size={24} />
               <span style={styles.userName}>{user.login}</span>
             </div>
           )}
@@ -66,14 +61,17 @@ function TitleBar({ user, avatarDataUrl }: Props): React.JSX.Element {
 
 const styles: Record<string, React.CSSProperties> = {
   bar: {
+    // gridArea — App.tsx монтує <TitleBar> останнім у DOM (щоб Tab доходив
+    // до Підтримки/кнопок вікна тільки після контенту й Sidebar), тож
+    // візуальну позицію "зверху" тримає лише ця grid-область, не DOM-порядок.
+    gridArea: 'titlebar',
     display: 'flex',
     alignItems: 'stretch',
     justifyContent: 'space-between',
     height: 52,
     padding: '0 0 0 18px',
     background: colors.bgBase,
-    borderBottom: `1px solid ${colors.borderSubtle}`,
-    flexShrink: 0
+    borderBottom: `1px solid ${colors.borderSubtle}`
   },
   left: { display: 'flex', alignItems: 'center', gap: 11 },
   brand: {
@@ -108,17 +106,6 @@ const styles: Record<string, React.CSSProperties> = {
     boxShadow: `0 0 8px ${colors.success}`,
     marginLeft: 6
   },
-  avatar: {
-    width: 24,
-    height: 24,
-    borderRadius: '50%',
-    background: colors.bgInset,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden'
-  },
-  avatarImg: { width: '100%', height: '100%', objectFit: 'cover' },
   userName: { fontSize: 12.5, color: colors.text1, fontWeight: 500 }
 }
 

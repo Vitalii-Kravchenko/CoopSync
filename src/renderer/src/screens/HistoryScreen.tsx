@@ -289,8 +289,14 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'inline-flex',
     alignItems: 'center',
     gap: 6,
-    fontSize: 12,
-    color: colors.success
+    height: 24,
+    padding: '0 10px',
+    fontSize: 11.5,
+    fontWeight: 600,
+    color: colors.success,
+    background: colors.successBg,
+    border: `1px solid ${colors.successBd}`,
+    borderRadius: radii.pill
   },
   actionDot: { width: 6, height: 6, borderRadius: '50%', background: colors.success, flexShrink: 0 },
   mono: { fontFamily: fonts.mono, fontSize: 12, color: colors.text3 },

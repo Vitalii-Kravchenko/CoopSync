@@ -5,7 +5,8 @@ import { describeError } from '../errors'
 import { useFocusTrap } from '../hooks/useFocusTrap'
 import Button from './Button'
 import GamePoster from './GamePoster'
-import { SupportIcon, CloseIcon, CheckIcon, SearchIcon, ChevronDownIcon } from './icons'
+import Select from './Select'
+import { SupportIcon, CloseIcon, CheckIcon, SearchIcon } from './icons'
 import { MAX_GAME_REQUESTS } from '../../../shared/types'
 import type { SupportCategory, SteamSearchResult } from '../../../shared/types'
 
@@ -30,9 +31,6 @@ function SupportModal({ onClose }: Props): React.JSX.Element {
   const [searching, setSearching] = useState(false)
   const [state, setState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
   const [error, setError] = useState<string | null>(null)
-  const [categoryOpen, setCategoryOpen] = useState(false)
-  const [hoveredCategory, setHoveredCategory] = useState<SupportCategory | null>(null)
-  const categoryRef = useRef<HTMLDivElement>(null)
   const searchToken = useRef(0)
   // Закривати кліком по фону — лише якщо саме НАТИСКАННЯ миші теж було на
   // фоні, а не всередині картки. Інакше виділення тексту (mousedown у полі →
@@ -73,22 +71,8 @@ function SupportModal({ onClose }: Props): React.JSX.Element {
     return () => clearTimeout(timer)
   }, [query, category, gameLimitReached])
 
-  // Закрити власний dropdown категорії по кліку поза ним — нативних select
-  // тут немає, тож самі відстежуємо клік "назовні".
-  useEffect(() => {
-    if (!categoryOpen) return
-    function handleOutside(e: MouseEvent): void {
-      if (categoryRef.current && !categoryRef.current.contains(e.target as Node)) {
-        setCategoryOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handleOutside)
-    return () => document.removeEventListener('mousedown', handleOutside)
-  }, [categoryOpen])
-
   function handleCategoryChange(c: SupportCategory): void {
     setCategory(c)
-    setCategoryOpen(false)
     setError(null)
     setSelectedGames([])
     setQuery('')
@@ -175,55 +159,13 @@ function SupportModal({ onClose }: Props): React.JSX.Element {
             </div>
           ) : (
             <>
-              <div style={styles.selectWrap} ref={categoryRef}>
-                <button
-                  type="button"
-                  className="input-field"
-                  style={styles.categorySelect}
-                  onClick={() => !busy && setCategoryOpen((o) => !o)}
-                  disabled={busy}
-                  aria-haspopup="listbox"
-                  aria-expanded={categoryOpen}
-                >
-                  <span>{categoryLabel[category]}</span>
-                  <span
-                    style={{
-                      display: 'flex',
-                      transform: categoryOpen ? 'rotate(180deg)' : undefined,
-                      transition: 'transform var(--t-hover)'
-                    }}
-                  >
-                    <ChevronDownIcon size={16} color={colors.text3} />
-                  </span>
-                </button>
-
-                {categoryOpen && (
-                  <div style={styles.categoryDropdown} role="listbox">
-                    {CATEGORIES.map((c) => {
-                      const active = c === category
-                      const hovered = c === hoveredCategory
-                      return (
-                        <button
-                          key={c}
-                          type="button"
-                          role="option"
-                          aria-selected={active}
-                          style={{
-                            ...styles.categoryOption,
-                            ...(active ? styles.categoryOptionActive : hovered ? styles.categoryOptionHover : {})
-                          }}
-                          onMouseEnter={() => setHoveredCategory(c)}
-                          onMouseLeave={() => setHoveredCategory(null)}
-                          onClick={() => handleCategoryChange(c)}
-                        >
-                          {active && <CheckIcon size={13} color={colors.cy} />}
-                          {categoryLabel[c]}
-                        </button>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
+              <Select
+                style={styles.selectWrap}
+                value={category}
+                onChange={handleCategoryChange}
+                disabled={busy}
+                options={CATEGORIES.map((c) => ({ value: c, label: categoryLabel[c] }))}
+              />
 
               {category === 'game-request' ? (
                 <>
@@ -278,7 +220,12 @@ function SupportModal({ onClose }: Props): React.JSX.Element {
                             results
                               .filter((r) => !selectedGames.some((g) => g.appId === r.appId))
                               .map((r) => (
-                                <button key={r.appId} style={styles.resultRow} onClick={() => addGame(r)}>
+                                <button
+                                  key={r.appId}
+                                  className="reset-btn"
+                                  style={styles.resultRow}
+                                  onClick={() => addGame(r)}
+                                >
                                   <GamePoster appId={r.appId} imageUrl={r.imageUrl} style={styles.resultPoster} />
                                   <span style={styles.resultName}>{r.name}</span>
                                 </button>
@@ -332,7 +279,7 @@ const styles: Record<string, React.CSSProperties> = {
   backdrop: {
     position: 'fixed',
     inset: 0,
-    background: 'radial-gradient(circle at 20% -10%, rgba(30,40,60,.5), #06080D 60%)',
+    background: `radial-gradient(circle at 20% -10%, rgba(30,40,60,.5), ${colors.bgVoid} 60%)`,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -369,57 +316,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexShrink: 0
   },
   title: { fontFamily: fonts.display, fontWeight: 600, fontSize: 17, color: colors.text1 },
-  selectWrap: { position: 'relative', marginBottom: 14 },
-  categorySelect: {
-    width: '100%',
-    height: 42,
-    padding: '0 14px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    fontSize: 14,
-    fontFamily: fonts.body,
-    color: colors.text1,
-    background: colors.bgInset,
-    border: `1px solid ${colors.borderDefault}`,
-    borderRadius: radii.md,
-    boxShadow: 'inset 0 1px 2px rgba(0,0,0,.3)',
-    boxSizing: 'border-box',
-    outline: 'none',
-    cursor: 'pointer'
-  },
-  categoryDropdown: {
-    position: 'absolute',
-    top: 'calc(100% + 6px)',
-    left: 0,
-    right: 0,
-    border: `1px solid ${colors.borderStrong}`,
-    borderRadius: radii.md,
-    background: colors.bgOverlay,
-    boxShadow: shadows.sh4,
-    padding: '7px 6px',
-    zIndex: 10
-  },
-  categoryOption: {
-    width: '100%',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    padding: '9px 10px',
-    fontSize: 14,
-    fontFamily: fonts.body,
-    color: colors.text2,
-    background: 'transparent',
-    border: 'none',
-    borderRadius: radii.sm,
-    cursor: 'pointer',
-    textAlign: 'left'
-  },
-  categoryOptionHover: { background: colors.bgHover, color: colors.text1 },
-  categoryOptionActive: {
-    color: colors.text1,
-    background: 'linear-gradient(90deg, rgba(54,226,232,.14), rgba(54,226,232,.04))'
-  },
+  selectWrap: { marginBottom: 14 },
   textarea: {
     width: '100%',
     resize: 'vertical',

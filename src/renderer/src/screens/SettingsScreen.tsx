@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { colors, fonts, gradients, radii, shadows, transitions } from '../theme'
-import { LANGUAGES, useI18n, type LanguageCode } from '../i18n'
+import { LANGUAGES, useI18n } from '../i18n'
 import { describeError } from '../errors'
 import { GitHubIcon, Logo } from '../components/icons'
+import Avatar from '../components/Avatar'
 import Button from '../components/Button'
 import ConfirmModal from '../components/ConfirmModal'
+import Select from '../components/Select'
 import type { AuthUser, SavesRepoStatus, StartupSettings } from '../../../shared/types'
 
 interface Props {
@@ -139,13 +141,7 @@ function SettingsScreen({
       {/* Профіль */}
       <div style={styles.card}>
         <div style={styles.profileLeft}>
-          <div style={styles.avatar}>
-            {avatarDataUrl ? (
-              <img src={avatarDataUrl} alt="" style={styles.avatarImg} />
-            ) : (
-              <GitHubIcon size={40} />
-            )}
-          </div>
+          <Avatar src={avatarDataUrl} size={72} />
           <Button
             variant="ghost"
             style={{ height: 30, padding: '0 12px', fontSize: 12 }}
@@ -172,11 +168,12 @@ function SettingsScreen({
             <div style={styles.repoRow}>
               <div style={styles.repoIcon}>🔒</div>
               <div>
-                <div style={styles.repoName}>{repo.repo.fullName}</div>
+                <div style={styles.repoFullName}>{repo.repo.fullName}</div>
                 <div style={styles.muted}>{t.settings.privateRepo}</div>
               </div>
             </div>
             <button
+              className="reset-btn"
               style={styles.linkBtn}
               onClick={() => window.api.openExternal(repo.repo.url)}
             >
@@ -224,17 +221,12 @@ function SettingsScreen({
           <div style={styles.h2}>{t.settings.general}</div>
           <div style={styles.langRow}>
             <span style={{ fontSize: 14, color: colors.text1 }}>{t.settings.language}</span>
-            <select
-              style={styles.langSelect}
+            <Select
+              style={{ width: 180 }}
               value={language}
-              onChange={(e) => setLanguage(e.target.value as LanguageCode)}
-            >
-              {LANGUAGES.map((l) => (
-                <option key={l.code} value={l.code}>
-                  {l.flag} {l.label}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => setLanguage(v)}
+              options={LANGUAGES.map((l) => ({ value: l.code, label: `${l.flag} ${l.label}` }))}
+            />
           </div>
           <div style={styles.divider} />
           <Toggle
@@ -264,13 +256,14 @@ function SettingsScreen({
             <Logo size={42} />
             <div>
               <div style={styles.repoName}>CoopSync</div>
-              <div style={styles.muted}>{t.settings.version(appVersion)}</div>
+              <div style={styles.mutedMono}>{t.settings.version(appVersion)}</div>
             </div>
           </div>
           <div style={{ ...styles.muted, lineHeight: 1.5, margin: '4px 0 14px' }}>
             {t.settings.aboutDescription}
           </div>
           <button
+            className="reset-btn"
             style={styles.linkBtn}
             onClick={() => window.api.openExternal('https://github.com/Vitalii-Kravchenko/CoopSync')}
           >
@@ -306,46 +299,62 @@ function SettingsScreen({
 function Toggle({
   label,
   value,
-  onChange
+  onChange,
+  disabled
 }: {
   label: string
   value: boolean
   onChange: (v: boolean) => void
+  disabled?: boolean
 }): React.JSX.Element {
   return (
     <div style={styles.toggleRow}>
-      <span style={{ fontSize: 14, color: colors.text1 }}>{label}</span>
-      <div
+      <span style={{ fontSize: 14, color: disabled ? colors.textDisabled : colors.text1 }}>{label}</span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={value}
+        aria-label={label}
+        className="switch"
+        disabled={disabled}
         onClick={() => onChange(!value)}
         style={{
-          width: 44,
-          height: 25,
+          width: 46,
+          height: 26,
+          padding: 0,
           borderRadius: radii.pill,
-          background: value ? gradients.energy : colors.bgRaised,
+          background: disabled ? 'rgba(11,14,22,.5)' : value ? gradients.energy : colors.bgRaised,
           // Завжди 1px рамки (прозора при "увімкнено") — щоб внутрішня висота
           // не змінювалась між станами і кружечок лишався по центру.
-          border: value ? '1px solid transparent' : `1px solid ${colors.borderDefault}`,
-          boxShadow: value ? shadows.glowCy : 'none',
+          border: disabled
+            ? `1px solid ${colors.borderSubtle}`
+            : value
+              ? '1px solid transparent'
+              : `1px solid ${colors.borderDefault}`,
+          boxShadow: !disabled && value ? shadows.glowCy : 'none',
+          opacity: disabled ? 0.5 : 1,
+          appearance: 'none',
+          WebkitAppearance: 'none',
           position: 'relative',
-          cursor: 'pointer',
+          cursor: disabled ? 'not-allowed' : 'pointer',
           transition: `background ${transitions.hover}, box-shadow ${transitions.hover}`,
           flexShrink: 0
         }}
       >
-        <div
+        <span
           style={{
             position: 'absolute',
-            top: 2,
-            left: value ? 21 : 2,
-            width: 19,
-            height: 19,
+            top: 3,
+            left: value ? 23 : 3,
+            width: 20,
+            height: 20,
             borderRadius: '50%',
-            background: value ? '#fff' : colors.text3,
+            background: disabled ? colors.textDisabled : value ? '#fff' : colors.text3,
             boxShadow: shadows.sh1,
             transition: `left ${transitions.hover}`
           }}
         />
-      </div>
+      </button>
     </div>
   )
 }
@@ -374,18 +383,6 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '20px 24px'
   },
   profileLeft: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 },
-  avatar: {
-    width: 72,
-    height: 72,
-    borderRadius: '50%',
-    background: colors.bgInset,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    border: `1px solid ${colors.borderDefault}`,
-    overflow: 'hidden'
-  },
-  avatarImg: { width: '100%', height: '100%', objectFit: 'cover' },
   avatarError: { fontSize: 11, color: colors.danger, maxWidth: 100, textAlign: 'center' },
   createRepoError: { fontSize: 12.5, color: colors.danger, marginTop: 10 },
   userName: { fontFamily: fonts.display, fontSize: 20, fontWeight: 700, color: colors.text1 },
@@ -403,6 +400,10 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 16
   },
   repoName: { fontFamily: fonts.display, fontSize: 15, fontWeight: 600, color: colors.text1 },
+  // Технічний ідентифікатор (owner/repo) — моношрифт, як і решта технічних
+  // дрібниць у системі (хеші, версії, шляхи), на відміну від repoName (назва застосунку).
+  repoFullName: { fontFamily: fonts.mono, fontSize: 14, fontWeight: 600, color: colors.text1 },
+  mutedMono: { fontFamily: fonts.mono, fontSize: 13, color: colors.text3 },
   linkBtn: {
     display: 'block',
     width: '100%',
@@ -431,18 +432,6 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'space-between',
     padding: '8px 0'
   },
-  langSelect: {
-    height: 36,
-    padding: '0 12px',
-    borderRadius: radii.md,
-    border: `1px solid ${colors.borderDefault}`,
-    background: colors.bgInset,
-    color: colors.text1,
-    fontFamily: fonts.body,
-    fontSize: 13,
-    cursor: 'pointer',
-    outline: 'none'
-  },
   divider: { height: 1, background: colors.borderSubtle, margin: '6px 0' },
   aboutRow: { display: 'flex', alignItems: 'center', gap: 13, marginBottom: 14 },
   smartAppWarning: {
@@ -450,6 +439,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '10px 12px',
     borderRadius: radii.md,
     border: `1px solid ${colors.warningBd}`,
+    borderLeft: `3px solid ${colors.warning}`,
     background: colors.warningBg
   },
   smartAppWarningTitle: {

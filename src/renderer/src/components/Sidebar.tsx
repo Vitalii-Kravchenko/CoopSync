@@ -5,6 +5,11 @@ import { LibraryIcon, FriendsIcon, HistoryIcon, SettingsIcon } from './icons'
 
 export type Screen = 'main' | 'friends' | 'history' | 'settings'
 
+// Фон активного пункту навігації — той самий, що й у дизайн-системі
+// (docs/design-system.html, 4.12 Навігація): одноколірний ціановий фейд
+// зліва направо, а не двоколірний grad-energy (той — лише для CTA/акцентних смужок).
+const ACTIVE_BG = 'linear-gradient(90deg, rgba(54,226,232,.14), transparent)'
+
 interface Props {
   active: Screen
   onNavigate: (screen: Screen) => void
@@ -62,12 +67,13 @@ function NavItem({
 
   return (
     <button
+      className="nav-item"
       onClick={onClick}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
         ...styles.item,
-        background: active ? gradients.energySoft : hover ? colors.bgHover : 'transparent',
+        background: active ? ACTIVE_BG : hover ? colors.bgHover : 'transparent',
         color: active ? colors.text1 : hover ? colors.text1 : colors.text3
       }}
     >
@@ -80,14 +86,17 @@ function NavItem({
 
 const styles: Record<string, React.CSSProperties> = {
   rail: {
-    width: 196,
+    // gridArea — App.tsx монтує <Sidebar> останнім серед дітей appBody (щоб
+    // Tab доходив до нав-пунктів тільки після контенту поточної вкладки),
+    // тож зліва його ставить лише ця grid-область, не DOM-порядок.
+    gridArea: 'sidebar',
     background: colors.bgBase,
     borderRight: `1px solid ${colors.borderSubtle}`,
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'space-between',
     padding: 10,
-    flexShrink: 0
+    minHeight: 0
   },
   top: { display: 'flex', flexDirection: 'column', gap: 2 },
   item: {

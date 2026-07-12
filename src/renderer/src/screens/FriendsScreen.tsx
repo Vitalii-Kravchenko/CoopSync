@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { colors, fonts, radii, shadows } from '../theme'
 import { useI18n } from '../i18n'
 import { describeError } from '../errors'
-import { GitHubIcon, CheckIcon } from '../components/icons'
+import { CheckIcon } from '../components/icons'
+import Avatar from '../components/Avatar'
 import Button from '../components/Button'
 import type { AuthUser, SavesRepoStatus, PendingInvite, Collaborator } from '../../../shared/types'
 
@@ -115,10 +116,21 @@ function FriendsScreen({ user, avatarDataUrl, active }: Props): React.JSX.Elemen
             <div style={styles.row}>
               <input
                 className="input-field"
-                style={styles.input}
+                style={{
+                  ...styles.input,
+                  ...(inviteError
+                    ? {
+                        borderColor: colors.danger,
+                        boxShadow: 'inset 0 1px 2px rgba(0,0,0,.3), 0 0 0 3px rgba(255,107,124,.15)'
+                      }
+                    : null)
+                }}
                 placeholder={t.settings.friendPlaceholder}
                 value={friend}
-                onChange={(e) => setFriend(e.target.value)}
+                onChange={(e) => {
+                  setFriend(e.target.value)
+                  if (inviteError) setInviteError(null)
+                }}
                 disabled={busy}
                 onKeyDown={(e) => e.key === 'Enter' && handleInvite()}
               />
@@ -133,29 +145,19 @@ function FriendsScreen({ user, avatarDataUrl, active }: Props): React.JSX.Elemen
           <div style={styles.card}>
             <div style={styles.h2}>{t.settings.members(collaborators.length + 1)}</div>
             <div style={styles.memberRow}>
-              <div style={styles.memberAvatar}>
-                {ownerLogin === user.login && avatarDataUrl ? (
-                  <img src={avatarDataUrl} alt="" style={styles.memberAvatarImg} />
-                ) : avatars[ownerLogin] ? (
-                  <img src={avatars[ownerLogin]} alt="" style={styles.memberAvatarImg} />
-                ) : (
-                  <GitHubIcon size={16} />
-                )}
-              </div>
+              <Avatar
+                src={ownerLogin === user.login ? avatarDataUrl : avatars[ownerLogin]}
+                size={AVATAR_SIZE}
+              />
               <span style={styles.memberName}>{ownerLogin}</span>
               <span style={styles.muted}>{t.settings.owner}</span>
             </div>
             {collaborators.map((c) => (
               <div key={c.login} style={styles.memberRow}>
-                <div style={styles.memberAvatar}>
-                  {c.login === user.login && avatarDataUrl ? (
-                    <img src={avatarDataUrl} alt="" style={styles.memberAvatarImg} />
-                  ) : avatars[c.login] ? (
-                    <img src={avatars[c.login]} alt="" style={styles.memberAvatarImg} />
-                  ) : (
-                    <GitHubIcon size={16} />
-                  )}
-                </div>
+                <Avatar
+                  src={c.login === user.login ? avatarDataUrl : avatars[c.login]}
+                  size={AVATAR_SIZE}
+                />
                 <span style={{ ...styles.memberName, flex: 1 }}>{c.login}</span>
                 <span style={styles.acceptedBadge}>
                   <CheckIcon size={11} color={colors.success} />
@@ -168,9 +170,7 @@ function FriendsScreen({ user, avatarDataUrl, active }: Props): React.JSX.Elemen
                 <div style={{ ...styles.muted, marginTop: 12, marginBottom: 8 }}>{t.settings.pendingConfirmation}</div>
                 {invites.map((i) => (
                   <div key={i.login} style={styles.memberRow}>
-                    <div style={styles.memberAvatar}>
-                      <GitHubIcon size={16} />
-                    </div>
+                    <Avatar size={AVATAR_SIZE} />
                     <span style={{ ...styles.memberName, flex: 1 }}>{i.login}</span>
                     <span style={styles.pendingBadge}>{t.settings.pendingBadge}</span>
                   </div>
@@ -184,6 +184,11 @@ function FriendsScreen({ user, avatarDataUrl, active }: Props): React.JSX.Elemen
     </div>
   )
 }
+
+// Онлайн/away-крапку на аватарах свідомо НЕ додаємо: у CoopSync немає
+// реального відстеження присутності (Collaborator/PendingInvite несуть лише
+// login), а малювати вигадану крапку означало б брехати статусом.
+const AVATAR_SIZE = 36
 
 const styles: Record<string, React.CSSProperties> = {
   screen: { flex: 1, overflowY: 'auto', padding: '28px 36px 40px' },
@@ -202,7 +207,7 @@ const styles: Record<string, React.CSSProperties> = {
   row: { display: 'flex', gap: 10 },
   input: {
     flex: 1,
-    height: 40,
+    height: 42,
     padding: '0 14px',
     border: `1px solid ${colors.borderDefault}`,
     borderRadius: radii.md,
@@ -210,47 +215,40 @@ const styles: Record<string, React.CSSProperties> = {
     boxShadow: 'inset 0 1px 2px rgba(0,0,0,.3)',
     color: colors.text1,
     fontFamily: fonts.body,
-    fontSize: 13,
+    fontSize: 14,
     outline: 'none'
   },
   sending: { fontSize: 12, color: colors.text3, marginTop: 10 },
   error: { fontSize: 12.5, color: colors.danger, marginTop: 10 },
   memberRow: { display: 'flex', alignItems: 'center', gap: 11, marginBottom: 12 },
-  memberAvatar: {
-    width: 30,
-    height: 30,
-    borderRadius: '50%',
-    background: colors.bgInset,
-    border: `1px solid ${colors.borderDefault}`,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: 13,
-    overflow: 'hidden'
-  },
-  memberAvatarImg: { width: '100%', height: '100%', objectFit: 'cover' },
   memberName: { fontSize: 14, color: colors.text1 },
   pendingBadge: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    height: 26,
     fontFamily: fonts.display,
-    fontSize: 10.5,
+    fontSize: 11.5,
     fontWeight: 600,
+    letterSpacing: '.04em',
     color: colors.warning,
     background: colors.warningBg,
     border: `1px solid ${colors.warningBd}`,
-    padding: '3px 10px',
+    padding: '0 11px',
     borderRadius: radii.pill
   },
   acceptedBadge: {
     display: 'inline-flex',
     alignItems: 'center',
-    gap: 5,
+    gap: 7,
+    height: 26,
     fontFamily: fonts.display,
-    fontSize: 10.5,
+    fontSize: 11.5,
     fontWeight: 600,
+    letterSpacing: '.04em',
     color: colors.success,
     background: colors.successBg,
     border: `1px solid ${colors.successBd}`,
-    padding: '3px 10px',
+    padding: '0 11px',
     borderRadius: radii.pill
   }
 }

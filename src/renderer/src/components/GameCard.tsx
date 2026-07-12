@@ -137,7 +137,7 @@ function GameCard({
   const status = playable ? syncDisplay(syncStatus, t) : null
 
   return (
-    <div style={styles.wrap}>
+    <div style={{ ...styles.wrap, opacity: playable ? 1 : 0.7 }}>
       <div
         style={{
           ...styles.poster,
@@ -173,11 +173,15 @@ function GameCard({
               <div style={styles.syncing}>{t.gameCard.syncing}</div>
             ) : (
               <div style={styles.overlayContent}>
-                <Button variant="primary" style={styles.overlayBtn} onClick={onUpload}>
+                {/* tabIndex=-1 — навмисно поза Tab-порядком: із десятками
+                    встановлених ігор по 2 кнопки на кожній перетворили б Tab
+                    на тортури. Дія й так мишею/ховером — картка не єдиний
+                    спосіб синку (є ще ручний тригер по кліку). */}
+                <Button variant="primary" style={styles.overlayBtn} onClick={onUpload} tabIndex={-1}>
                   <UploadIcon size={15} color={colors.textOnAccent} />
                   {t.gameCard.upload}
                 </Button>
-                <Button variant="secondary" style={styles.overlayBtn} onClick={onDownload}>
+                <Button variant="secondary" style={styles.overlayBtn} onClick={onDownload} tabIndex={-1}>
                   <DownloadIcon size={15} color={colors.text1} />
                   {t.gameCard.download}
                 </Button>
@@ -214,7 +218,15 @@ function GameCard({
         <div style={styles.name}>{name}</div>
         {status && (
           <span style={{ ...styles.badge, color: status.color, background: status.bg, borderColor: status.bd }}>
-            <span style={{ ...styles.badgeDot, background: status.color }} />
+            <span
+              style={{
+                ...styles.badgeDot,
+                background: status.color,
+                // "Оновлення" (дизайн-система 4.7) — інфо-крапка пульсує, сигналізуючи
+                // про свіжу версію в хмарі, яку ще не підтягнули локально.
+                ...(syncStatus === 'remote-newer' || syncStatus === 'cloud-only' ? styles.badgeDotPulse : null)
+              }}
+            />
             {status.text}
           </span>
         )}
@@ -301,19 +313,20 @@ const styles: Record<string, React.CSSProperties> = {
   badge: {
     display: 'inline-flex',
     alignItems: 'center',
-    gap: 6,
-    minHeight: 22,
-    padding: '4px 9px',
+    gap: 7,
+    height: 26,
+    padding: '0 11px',
     marginTop: 6,
     fontFamily: fonts.display,
     fontWeight: 600,
-    fontSize: 10.5,
+    fontSize: 11.5,
     lineHeight: 1.3,
-    letterSpacing: '.03em',
+    letterSpacing: '.04em',
     borderRadius: radii.pill,
     border: '1px solid'
   },
-  badgeDot: { width: 5, height: 5, borderRadius: '50%', flexShrink: 0 },
+  badgeDot: { width: 6, height: 6, borderRadius: '50%', flexShrink: 0 },
+  badgeDotPulse: { animation: 'glowpulse 1.4s ease-in-out infinite' },
   notInstalled: { marginTop: 6, fontSize: 12.5, color: colors.text3 },
   versions: {
     marginTop: 5,

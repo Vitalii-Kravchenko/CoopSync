@@ -18,12 +18,13 @@ function CloudWarningBanner({ onDismiss }: Props): React.JSX.Element {
         <div style={styles.settingsHint}>{t.cloudWarning.settingsHint}</div>
       </div>
       <button
+        className="icon-btn-plain"
         style={styles.closeBtn}
         onClick={onDismiss}
         aria-label={t.cloudWarning.dismiss}
         title={t.cloudWarning.dismiss}
       >
-        <CloseIcon size={16} color={colors.text2} />
+        <CloseIcon size={15} />
       </button>
     </div>
   )
@@ -36,8 +37,9 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 16,
     padding: '14px 18px',
     marginBottom: 24,
-    borderRadius: radii.lg,
+    borderRadius: radii.md,
     border: `1px solid ${colors.warningBd}`,
+    borderLeft: `3px solid ${colors.warning}`,
     background: colors.warningBg,
     boxShadow: shadows.sheen
   },
@@ -68,15 +70,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 11.5,
     color: colors.text3
   },
-  closeBtn: {
-    background: 'transparent',
-    border: 'none',
-    cursor: 'pointer',
-    padding: 4,
-    borderRadius: radii.sm,
-    display: 'flex',
-    flexShrink: 0
-  }
+  closeBtn: { flexShrink: 0 }
 }
 
 export default CloudWarningBanner

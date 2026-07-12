@@ -4,22 +4,22 @@ import { readFileSync, unlinkSync, writeFileSync } from 'fs'
 
 import type { UserRole } from '../../shared/types'
 
-// Прості налаштування застосунку (окрім автозапуску, який зберігає система).
+// Simple app settings (except autostart, which the OS stores).
 interface AppSettings {
   startMinimized: boolean
-  /** Роль користувача (host/join). undefined = ще не вибрано (треба онбординг). */
+  /** User role (host/join). undefined = not chosen yet (onboarding needed). */
   role?: UserRole
-  /** Чиє сховище синхронізуємо (логін host'а). */
+  /** Whose repo we're syncing (host's login). */
   hostOwner?: string
-  /** Мова інтерфейсу. */
+  /** UI language. */
   language: string
-  /** Кастомний аватар користувача (data URL), якщо завантажив свій. */
+  /** Custom user avatar (data URL), if they uploaded one. */
   avatarDataUrl?: string
-  /** Показувати попередження про Steam Cloud при кожному запуску. */
+  /** Whether to show the Steam Cloud warning on every launch. */
   showCloudWarning: boolean
 }
 
-// Англійська — універсальний фолбек, якщо мову з інсталятора визначити не вдалось.
+// English — universal fallback if the installer's language couldn't be determined.
 const DEFAULTS: AppSettings = { startMinimized: false, language: 'en', showCloudWarning: true }
 
 function settingsPath(): string {
@@ -41,14 +41,14 @@ export function writeSettings(patch: Partial<AppSettings>): void {
 }
 
 /**
- * Мова, яку користувач обрав у діалозі вибору мови NSIS-інсталятора
- * (записана в build/installer.nsh) у папку встановлення — НЕ в userData,
- * бо при "встановити для всіх користувачів" адмінська сесія інсталятора і
- * пізніший запуск застосунку звичайним користувачем можуть мати різний
- * %APPDATA%, а $INSTDIR (= папка поруч з .exe) завжди той самий.
- * Файл одноразовий — читаємо й намагаємось видалити (може не вдатись, якщо
- * застосунок встановлено в Program Files і запущено не від адміністратора —
- * це нешкідливо, просто лишиться порожній файл).
+ * Language the user picked in the NSIS installer's language selection dialog
+ * (written to build/installer.nsh) into the install folder — NOT userData,
+ * because with "install for all users" the installer's admin session and the
+ * later app launch by a regular user can have different %APPDATA%, while
+ * $INSTDIR (the folder next to the .exe) is always the same.
+ * The file is one-time use — we read it and try to delete it (this can fail
+ * if the app is installed in Program Files and launched without admin
+ * rights — harmless, it just leaves an empty file behind).
  */
 export function consumeInstallerLanguage(): string | null {
   const markerPath = join(dirname(app.getPath('exe')), 'installer-language.txt')
@@ -57,7 +57,7 @@ export function consumeInstallerLanguage(): string | null {
     try {
       unlinkSync(markerPath)
     } catch {
-      // Немає прав видалити (Program Files, не-адмін) — не критично.
+      // No permission to delete (Program Files, non-admin) — not critical.
     }
     return lang || null
   } catch {

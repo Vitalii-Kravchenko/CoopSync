@@ -1,7 +1,8 @@
-// Cloudflare Worker — приймає звернення з кнопки "Підтримка" в CoopSync і шле
-// лист на пошту Віталія через Resend. Це єдине місце, де живе реальний секрет
-// (RESEND_API_KEY, env-секрет Worker'а) — застосунок на комп'ютерах друзів
-// стукається сюди звичайним POST без жодних кредів.
+// Cloudflare Worker — receives messages from the "Support" button in
+// CoopSync and sends an email to my address via Resend. This is the only
+// place where the real secret lives (RESEND_API_KEY, the Worker's env
+// secret) — the app on friends' computers hits this with a plain POST, no
+// credentials involved.
 
 export interface Env {
   RESEND_API_KEY: string
@@ -12,8 +13,8 @@ export interface Env {
 interface SteamGame {
   appId?: string
   name?: string
-  // Готове посилання від Steam search API — новіші ігри роздаються з
-  // хеш-версіонованих шляхів, які неможливо зібрати самому з appId.
+  // Ready-made link from the Steam search API — newer games are served from
+  // hash-versioned paths that can't be built manually from the appId.
   imageUrl?: string
 }
 
@@ -29,24 +30,26 @@ interface SupportPayload {
 
 const ALLOWED_CATEGORIES = new Set(['bug', 'game-request', 'idea', 'other'])
 const MAX_MESSAGE_LENGTH = 4000
-// Скільки ігор дозволено вибрати в одному зверненні "Хочу гру" — щоб пул
-// кандидатів на майбутнє голосування не засипали за раз. Перевіряємо тут,
-// а не тільки в UI застосунку, бо прямий POST в обхід застосунку теж можливий.
+// How many games are allowed to be selected in a single "I want a game"
+// request — so the pool of candidates for future voting doesn't get flooded
+// at once. Checked here, not just in the app's UI, because a direct POST
+// bypassing the app is also possible.
 const MAX_GAME_REQUESTS = 3
-// Скільки звернень дозволено з одного IP за вікно — щоб хтось не засипав
-// пошту напряму, в обхід застосунку.
+// How many requests are allowed from a single IP per window — so no one can
+// flood the inbox directly, bypassing the app.
 const RATE_LIMIT_MAX = 10
 const RATE_LIMIT_WINDOW_SECONDS = 60 * 60
 
 interface RateEntry {
   count: number
-  /** Epoch ms, коли поточне вікно ліміту закінчується (і лічильник скидається). */
+  /** Epoch ms when the current rate-limit window ends (and the counter resets). */
   resetAt: number
 }
 
-// Стара версія ліміту зберігала в KV просто число (лічильник) без resetAt —
-// перевіряємо форму об'єкта, а не довіряємо JSON.parse наосліп, інакше запис
-// зі старого формату (ще живий за TTL з попередньої версії) зламав би логіку.
+// An older version of the rate limiter stored just a plain number (counter)
+// in KV without resetAt — we check the object's shape rather than blindly
+// trusting JSON.parse, otherwise an entry in the old format (still alive
+// under the previous version's TTL) would break the logic.
 function isRateEntry(value: unknown): value is RateEntry {
   return (
     typeof value === 'object' &&
@@ -56,8 +59,8 @@ function isRateEntry(value: unknown): value is RateEntry {
   )
 }
 
-// Повертає resetAt завжди — щоб користувачу можна було показати, о котрій
-// годині ліміт знову дозволить надсилати, навіть коли зараз дозволено.
+// Always returns resetAt — so the user can be shown what time the limit will
+// allow sending again, even when it's currently allowed.
 async function checkRateLimit(env: Env, ip: string): Promise<{ allowed: boolean; resetAt: number }> {
   const key = `rl:${ip}`
   const raw = await env.RATE_LIMIT.get(key)
@@ -81,7 +84,7 @@ async function checkRateLimit(env: Env, ip: string): Promise<{ allowed: boolean;
   }
 
   entry.count += 1
-  // KV не дозволяє TTL менший за 60с — на випадок, якщо вікно от-от закінчиться.
+  // KV doesn't allow a TTL below 60s — in case the window is about to end.
   const ttlSeconds = Math.max(60, Math.ceil((entry.resetAt - now) / 1000))
   await env.RATE_LIMIT.put(key, JSON.stringify(entry), { expirationTtl: ttlSeconds })
   return { allowed: true, resetAt: entry.resetAt }
@@ -100,14 +103,14 @@ function categoryLabel(category: string): string {
   }
 }
 
-// Максимум ігор — MAX_GAME_REQUESTS (3), тому досить форм для 1 і 2-4.
+// Max games is MAX_GAME_REQUESTS (3), so forms for 1 and 2-4 are enough.
 function pluralGames(n: number): string {
   return n === 1 ? `${n} гру` : `${n} ігри`
 }
 
-// Природне речення-заголовок листа — і для теми, і для тіла. sender —
-// GitHub-нік/ім'я того, хто звернувся (може бути відсутнім, якщо main-процес
-// не зміг його дізнатись — тоді просто "Хтось").
+// A natural headline sentence for the email — used for both the subject and
+// the body. sender — the GitHub login/name of whoever sent the request (may
+// be missing if the main process couldn't determine it — then just "Хтось").
 function actionHeadline(category: string, sender: string, games: SteamGame[]): string {
   switch (category) {
     case 'bug':
@@ -123,14 +126,14 @@ function actionHeadline(category: string, sender: string, games: SteamGame[]): s
   }
 }
 
-// Прибираємо переноси рядків з довільного тексту перед вставкою в заголовок
-// листа (subject) — інакше можна "інʼєктнути" зайві email-заголовки.
+// Strip line breaks from arbitrary text before inserting it into the
+// email's subject header — otherwise it's possible to "inject" extra email headers.
 function sanitizeHeader(value: string): string {
   return value.replace(/[\r\n]+/g, ' ').trim()
 }
 
-// Колір бейджа категорії — суто косметика в листі, узгоджено з палітрою
-// застосунку (ціан/фіолет — фірмова пара, danger/warning — семантичні).
+// Category badge color — purely cosmetic in the email, matched to the app's
+// palette (cyan/violet is the brand pair, danger/warning are semantic).
 function categoryColor(category: string): { fg: string; bg: string } {
   switch (category) {
     case 'bug':
@@ -144,8 +147,8 @@ function categoryColor(category: string): { fg: string; bg: string } {
   }
 }
 
-// Текст (message/ім'я гри/sender) — недовірений ввід користувача, обов'язково
-// екранувати перед вставкою в HTML листа.
+// Text (message/game name/sender) is untrusted user input — must always be
+// escaped before inserting it into the email's HTML.
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, '&amp;')
@@ -170,9 +173,9 @@ function gameBlockHtml(game: SteamGame): string {
     </div>`
 }
 
-// Підписана "цитата" коментаря — той самий прийом, що в самому застосунку
-// (акцентна смужка зліва, як "The Seam" у дизайн-системі), тільки безпечними
-// для email-клієнтів засобами (без градієнтів на бордері, без кастомних шрифтів).
+// A signed "quote" block for the comment — the same trick used in the app
+// itself (an accent stripe on the left, like "The Seam" in the design
+// system), just done with email-client-safe means (no border gradients, no custom fonts).
 function commentBlockHtml(message: string): string {
   if (!message) return ''
   return `
@@ -261,8 +264,9 @@ export default {
     }
 
     const sender = sanitizeHeader(payload.sender ?? '') || 'Хтось'
-    // Без префікса "[CoopSync]" — адреса-відправник (coopsync.support@...) і
-    // так однозначно каже, звідки лист, дублювати назву в темі зайве.
+    // No "[CoopSync]" prefix — the sender address (coopsync.support@...)
+    // already makes it unambiguous where the email is from, repeating the
+    // name in the subject would be redundant.
     const subject = sanitizeHeader(actionHeadline(category, sender, games))
 
     const res = await fetch('https://api.resend.com/emails', {

@@ -1,8 +1,8 @@
-// Дизайн-система CoopSync — "RIFT//SYNC" (кодова назва стилю Kinetic Edge).
-// Єдине джерело кольорів/токенів для UI. Ніколи не хардкодити hex напряму в екранах.
+// CoopSync design system — "RIFT//SYNC" (code name for the Kinetic Edge style).
+// The single source of colors/tokens for the UI. Never hardcode hex values directly in screens.
 
 export const colors = {
-  // глибина / поверхні
+  // depth / surfaces
   bgVoid: '#06080D',
   bgBase: '#0A0D14',
   bgSurface: '#10131C',
@@ -11,13 +11,13 @@ export const colors = {
   bgInset: '#0B0E16',
   bgHover: '#1C2230',
 
-  // межі
+  // borders
   borderSubtle: 'rgba(255,255,255,.06)',
   borderDefault: 'rgba(255,255,255,.10)',
   borderStrong: 'rgba(255,255,255,.16)',
   borderAccent: 'rgba(54,226,232,.45)',
 
-  // енергетична пара
+  // energy pair
   cy: '#36E2E8',
   cyStrong: '#16C7CE',
   cyDeep: '#0B8E96',
@@ -25,7 +25,7 @@ export const colors = {
   viStrong: '#6B4DF0',
   viDeep: '#4A33B8',
 
-  // семантичні
+  // semantic
   success: '#3FD9A6',
   successBg: 'rgba(63,217,166,.12)',
   successBd: 'rgba(63,217,166,.38)',
@@ -39,7 +39,7 @@ export const colors = {
   infoBg: 'rgba(90,169,255,.12)',
   infoBd: 'rgba(90,169,255,.38)',
 
-  // текст
+  // text
   text1: '#EDF1FA',
   text2: '#B6BFD2',
   text3: '#79839A',
@@ -74,36 +74,36 @@ export const fonts = {
 } as const
 
 /**
- * Єдині тривалості transition — щоб однотипні ефекти по всьому застосунку
- * рухались однаково, а не розходились самі по собі (.12s/.15s/.18s хаотично).
- * Значення продубльовані як CSS-змінні в index.css (--t-fast/--t-hover/--t-fade) —
- * міняти в обох місцях одночасно.
+ * Consistent transition durations — so effects of the same kind move the same
+ * way across the whole app, instead of drifting apart on their own (.12s/.15s/.18s at random).
+ * Values are duplicated as CSS variables in index.css (--t-fast/--t-hover/--t-fade) —
+ * change both places together.
  */
 export const transitions = {
-  /** Миттєва зміна кольору/фону без руху (nav-пункти, кнопки вікна, рядки таблиць). */
+  /** Instant color/background change with no motion (nav items, window buttons, table rows). */
   fast: '120ms ease',
-  /** Підсвічування при наведенні (рамка/тінь/фон карток, кнопок, тумблерів, інпутів). */
+  /** Hover highlight (border/shadow/background of cards, buttons, toggles, inputs). */
   hover: '150ms ease',
-  /** Поява/зникнення оверлеїв (hover-оверлей картки гри). */
+  /** Overlays appearing/disappearing (game card hover overlay). */
   fade: '200ms ease'
 } as const
 
-/** Фірмовий кутовий зріз ("The Cut") — тільки для CTA й ключових поверхонь, не всюди. */
+/** Brand corner cut ("The Cut") — only for CTAs and key surfaces, not everywhere. */
 export function cutClip(px = 10): string {
   return `polygon(0 0, calc(100% - ${px}px) 0, 100% ${px}px, 100% 100%, ${px}px 100%, 0 calc(100% - ${px}px))`
 }
 
-// Chromium кешує <img> на диску практично назавжди в межах локальної сесії
-// (застосунок не перезавантажує сторінку), тож без зміни самого URL нова
-// обкладинка з CDN ніколи не підхопиться, навіть коли Steam її оновить.
-// fetch() з cache:'no-cache' сюди не підходить — крос-доменні fetch-запити
-// підпадають під CORS (на відміну від <img src>), а CDN потрібних заголовків
-// не віддає, тож запит просто падає. Натомість кеш-бастер міняється раз при
-// кожному старті рендер-процесу (не персистентно) — це гарантує, що при
-// кожному запуску CoopSync тягнеться свіжа версія з CDN, без CORS-проблем.
+// Chromium caches <img> on disk for essentially the whole local session
+// (the app never reloads the page), so without changing the URL itself, a new
+// CDN cover would never get picked up, even after Steam updates it.
+// fetch() with cache:'no-cache' doesn't work here — cross-origin fetch requests
+// are subject to CORS (unlike <img src>), and the CDN doesn't send the required
+// headers, so the request just fails. The cache-buster instead changes once per
+// renderer process start (not persisted) — this guarantees that every time
+// CoopSync launches it pulls a fresh version from the CDN, with no CORS issues.
 const POSTER_CACHE_BUST = Date.now()
 
-/** URL вертикального постера гри зі Steam (2:3). */
+/** URL of the vertical game poster from Steam (2:3). */
 export function steamPoster(appId: string): string {
   return `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/library_600x900.jpg?v=${POSTER_CACHE_BUST}`
 }

@@ -9,12 +9,12 @@ import type { AuthUser } from '../../../shared/types'
 
 interface Props {
   user: AuthUser | null
-  /** Кастомний аватар (data URL) — той самий, що обраний у Settings. */
+  /** Custom avatar (data URL) — the same one selected in Settings. */
   avatarDataUrl?: string | null
 }
 
-// Власний titlebar (вікно frameless). Уся смуга — зона перетягування,
-// інтерактивні елементи позначені класом no-drag.
+// Custom titlebar (frameless window). The whole bar is a drag region,
+// interactive elements are marked with the no-drag class.
 function TitleBar({ user, avatarDataUrl }: Props): React.JSX.Element {
   const { t } = useI18n()
   const [supportOpen, setSupportOpen] = useState(false)
@@ -61,9 +61,9 @@ function TitleBar({ user, avatarDataUrl }: Props): React.JSX.Element {
 
 const styles: Record<string, React.CSSProperties> = {
   bar: {
-    // gridArea — App.tsx монтує <TitleBar> останнім у DOM (щоб Tab доходив
-    // до Підтримки/кнопок вікна тільки після контенту й Sidebar), тож
-    // візуальну позицію "зверху" тримає лише ця grid-область, не DOM-порядок.
+    // gridArea — App.tsx mounts <TitleBar> last in the DOM (so Tab reaches
+    // Support/window buttons only after the content and Sidebar), so
+    // the visual "top" position is held only by this grid area, not DOM order.
     gridArea: 'titlebar',
     display: 'flex',
     alignItems: 'stretch',
@@ -82,9 +82,9 @@ const styles: Record<string, React.CSSProperties> = {
     color: colors.text1
   },
   right: { display: 'flex', alignItems: 'center', gap: 12 },
-  // Висота 34px — щоб вирівнятись з userPill (теж 34px) у компактному 52px
-  // titlebar; сам клас .icon-btn (дизайн-система 4.1) за замовчуванням 40x40
-  // квадратний для звичайних toolbar-контекстів, тут — з текстом, тому width auto.
+  // Height 34px — to align with userPill (also 34px) in the compact 52px
+  // titlebar; the .icon-btn class itself (design system 4.1) defaults to a 40x40
+  // square for regular toolbar contexts, but here it has text, hence width auto.
   supportBtn: { width: 'auto', height: 34, padding: '0 14px 0 12px', gap: 8 },
   supportBtnLabel: { fontFamily: fonts.display, fontWeight: 600, fontSize: 12.5 },
   userPill: {

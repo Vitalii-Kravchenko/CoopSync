@@ -1,5 +1,5 @@
-// Невеликі SVG-іконки, які переюзуємо в UI. Лінійний стиль (stroke ~1.7) —
-// узгоджено з дизайн-системою RIFT//SYNC.
+// Small SVG icons reused across the UI. Line style (stroke ~1.7) —
+// matches the RIFT//SYNC design system.
 
 export function GitHubIcon({ size = 16, color = '#cdd6f4' }: { size?: number; color?: string }): React.JSX.Element {
   return (
@@ -14,10 +14,10 @@ interface IconProps {
   color?: string
 }
 
-// Лого CoopSync: два кола (двоє друзів), що перетинаються, на темному тлі з
-// фірмовою зрізаною фаскою (The Cut). Та сама форма, що й в іконці застосунку
-// та треї (build/logo.svg, src/main/trayIcon.ts) — тримати проміжний колір
-// перетину #5AB6F2 синхронним, якщо міняти градієнт.
+// CoopSync logo: two overlapping circles (two friends) on a dark background with
+// the brand's cut corner (The Cut). The same shape as the app icon
+// and tray icon (build/logo.svg, src/main/trayIcon.ts) — keep the intermediate
+// overlap color #5AB6F2 in sync if the gradient changes.
 export function Logo({ size = 24 }: { size?: number }): React.JSX.Element {
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
@@ -138,8 +138,8 @@ export function CloseIcon({ size = 16, color }: IconProps): React.JSX.Element {
   )
 }
 
-// Іконка "Друзі" для бічного меню — той самий силует, що й у дизайн-системі
-// (docs/design-system.html, 4.12 Навігація): один більший силует + один менший.
+// "Friends" icon for the sidebar — the same silhouette as in the design system
+// (docs/design-system.html, 4.12 Navigation): one bigger silhouette + one smaller.
 export function FriendsIcon({ size = 16, color }: IconProps): React.JSX.Element {
   return (
     <svg {...base(size)} style={{ color }}>

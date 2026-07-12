@@ -3,9 +3,9 @@ import { formatVersion } from '../../shared/format'
 import type { Translation } from './i18n'
 
 /**
- * Перетворити помилку з window.api-виклику на читабельний локалізований текст.
- * Розпізнані (AppError-закодовані) помилки йдуть через t.errors[code]; нерозпізнані —
- * очищені від технічного Electron-префікса "Error invoking remote method '...': ".
+ * Turn an error from a window.api call into a readable localized text.
+ * Recognized (AppError-encoded) errors go through t.errors[code]; unrecognized ones
+ * are cleaned of the technical Electron prefix "Error invoking remote method '...': ".
  */
 export function describeError(e: unknown, t: Translation, fallback: string): string {
   const raw = e instanceof Error ? e.message : String(e)
@@ -18,7 +18,7 @@ export function describeError(e: unknown, t: Translation, fallback: string): str
   return cleaned || fallback
 }
 
-/** Текст для коду результату upload/download — той самий і для ручного синку, і для автосинку. */
+/** Text for an upload/download result code — the same for manual sync and auto-sync. */
 export function describeSyncResult(code: string, params: Record<string, string> | undefined, t: Translation): string {
   switch (code) {
     case 'upload-success':

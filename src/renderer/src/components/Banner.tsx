@@ -5,13 +5,13 @@ import { UploadIcon, DownloadIcon, CheckIcon, CloseIcon } from './icons'
 export interface BannerState {
   text: string
   kind: 'success' | 'info' | 'error' | 'warning'
-  /** Іконка синку (свій UploadIcon/DownloadIcon), якщо банер про push/pull. */
+  /** Sync icon (own UploadIcon/DownloadIcon) if the banner is about push/pull. */
   icon?: 'upload' | 'download'
 }
 
 interface Props {
   banner: BannerState | null
-  /** Якщо задано — показуємо кнопку ручного закриття (дизайн-система 4.10 Toast). */
+  /** If set, shows a manual close button (design system 4.10 Toast). */
   onDismiss?: () => void
 }
 
@@ -22,8 +22,8 @@ const TONE: Record<BannerState['kind'], { color: string; bg: string; bd: string 
   error: { color: colors.danger, bg: colors.dangerBg, bd: colors.dangerBd }
 }
 
-// Глобальний тост про синхронізацію — рендериться на рівні App, поза табами,
-// щоб бути видимим незалежно від того, яка вкладка зараз відкрита.
+// Global sync toast — rendered at the App level, outside the tabs,
+// so it stays visible regardless of which tab is currently open.
 function Banner({ banner, onDismiss }: Props): React.JSX.Element | null {
   const { t } = useI18n()
   if (!banner) return null

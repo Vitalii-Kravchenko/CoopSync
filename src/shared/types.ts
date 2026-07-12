@@ -1,119 +1,123 @@
-// Спільні типи між main, preload і renderer.
+// Shared types between main, preload, and renderer.
 import type { ErrorCode } from './errors'
 
-/** Дані, які GitHub повертає для device flow — їх показуємо користувачу. */
+/** Data GitHub returns for device flow — shown to the user. */
 export interface DeviceCodeInfo {
-  /** Код, який користувач вводить на github.com (напр. "ABCD-1234"). */
+  /** Code the user types in on github.com (e.g. "ABCD-1234"). */
   userCode: string
-  /** Сторінка, куди йти вводити код (https://github.com/login/device). */
+  /** Page to go to and enter the code (https://github.com/login/device). */
   verificationUri: string
-  /** Скільки секунд код дійсний. */
+  /** How many seconds the code is valid for. */
   expiresIn: number
-  /** Як часто (сек) можна опитувати GitHub про результат. */
+  /** How often (sec) we're allowed to poll GitHub for the result. */
   interval: number
 }
 
-/** Інформація про залогіненого користувача GitHub. */
+/** Info about the logged-in GitHub user. */
 export interface AuthUser {
   login: string
-  /** Публічне ім'я з GitHub-профілю, якщо користувач його вказав. */
+  /** Public name from the GitHub profile, if the user set one. */
   name?: string
 }
 
-/** Поточний стан авторизації. 'error' — тимчасовий збій перевірки (нема
- * інтернету, ліміт GitHub API), НЕ означає, що токен насправді невалідний —
- * на відміну від 'logged-out', цей стан не повинен викидати назад в онбординг. */
+/** Current auth state. 'error' — a temporary check failure (no internet,
+ * GitHub API rate limit), does NOT mean the token is actually invalid —
+ * unlike 'logged-out', this state must not kick the user back into onboarding. */
 export type AuthStatus =
   | { state: 'logged-out' }
   | { state: 'logged-in'; user: AuthUser }
   | { state: 'error'; code: ErrorCode; params?: Record<string, string> }
 
-/** Спільне сховище сейвів (окремий приватний репозиторій). */
+/** Shared saves repo (a dedicated private repository). */
 export interface SavesRepo {
-  /** owner/назва, напр. "Vitalii-Kravchenko/coopsync-saves". */
+  /** owner/name, e.g. "Vitalii-Kravchenko/coopsync-saves". */
   fullName: string
-  /** Посилання на репо на github.com. */
+  /** Link to the repo on github.com. */
   url: string
 }
 
-/** Стан спільного сховища. */
+/** State of the shared repo. */
 export type SavesRepoStatus =
-  | { state: 'none' } // ще не створене
+  | { state: 'none' } // not created yet
   | { state: 'ready'; repo: SavesRepo }
 
-/** Запрошений, але ще не підтверджений співавтор. */
+/** An invited but not-yet-accepted collaborator. */
 export interface PendingInvite {
   login: string
 }
 
-/** Співавтор, який уже прийняв запрошення і має доступ. */
+/** A collaborator who has already accepted the invitation and has access. */
 export interface Collaborator {
   login: string
 }
 
-/** Виявлена встановлена гра, яку підтримує CoopSync. */
+/** A detected installed game supported by CoopSync. */
 export interface DetectedGame {
   appId: string
   name: string
-  /** Абсолютний шлях до папки сейвів. */
+  /** Absolute path to the saves folder. */
   savePath: string
-  /** Чи реально існує папка сейвів на диску. */
+  /** Whether the saves folder actually exists on disk. */
   saveFound: boolean
 }
 
-/** Гра з каталогу підтримуваних (незалежно від того, чи встановлена). */
+/** A game from the catalog of supported games (regardless of whether it's installed). */
 export interface CatalogGame {
   appId: string
   name: string
 }
 
-/** Будь-яка встановлена Steam-гра + чи підтримує її CoopSync. */
+/** Any installed Steam game + whether CoopSync supports it. */
 export interface InstalledGame {
   appId: string
   name: string
   supported: boolean
 }
 
-/** Стан синхронізації сейвів гри (порівняння локального з GitHub). */
+/** Sync status of a game's saves (comparing local against GitHub). */
 export type SyncStatus =
-  | 'synced' // локальне = хмара
-  | 'local-newer' // локальне новіше → вивантажити
-  | 'remote-newer' // у хмарі новіше → завантажити
-  | 'local-stale' // локальне відрізняється, але не змінювалось після останнього синку (напр. старий бекап) → завантажити
-  | 'not-uploaded' // локальне є, у хмарі ще нема
-  | 'cloud-only' // у хмарі є, локально нема
-  | 'no-saves' // нема ні там, ні там
-  | 'no-repo' // сховище видалене/не підключене — версії з хмарою звіряти нема з чим
+  | 'synced' // local = cloud
+  | 'local-newer' // local is newer → upload
+  | 'remote-newer' // cloud is newer → download
+  | 'local-stale' // local differs, but hasn't changed since the last sync (e.g. an old backup) → download
+  | 'not-uploaded' // local exists, cloud doesn't yet
+  | 'cloud-only' // cloud exists, local doesn't
+  | 'no-saves' // neither exists
+  | 'no-repo' // repo deleted/not connected — nothing to compare cloud versions against
 
 export interface GameSyncStatus {
   appId: string
   status: SyncStatus
-  /** Версія локальних сейвів (0 = ще не синхронізовано). */
+  /** Local saves version (0 = not synced yet). */
   localVersion: number
-  /** Версія сейвів на GitHub (0 = ще не вивантажено). */
+  /** Saves version on GitHub (0 = not uploaded yet). */
   remoteVersion: number
-  /** ISO timestamp останнього push у хмару (спільний для обох гравців), якщо колись синкали. */
+  /** ISO timestamp of the last push to the cloud (shared by both players), if ever synced. */
   lastSyncAt?: string
-  /** Розмір сейвів у байтах — хмарної копії, якщо є, інакше локальної. */
+  /** Saves size in bytes — of the cloud copy if it exists, otherwise the local one. */
   sizeBytes?: number
 }
 
-/** Результат вивантаження/завантаження — версія, а не готовий текст, щоб
- * renderer сам зібрав локалізоване повідомлення (main-процес мови не знає). */
+/** Upload/download result — a version rather than ready-made text, so the
+ * renderer can assemble the localized message itself (the main process
+ * doesn't know the language). */
 export interface SyncResult {
   version: number
-  /** Чи реально пішов push (upload). false — контент і так вже збігався з
-   *  хмарою, версію просто підтягнули до вже актуальної, нічого не змінилось. */
+  /** Whether a push (upload) actually happened. false — content already
+   *  matched the cloud, the version was just synced to the already-current
+   *  one, nothing changed. */
   pushed?: boolean
 }
 
-/** Код результату автосинку — те саме, що й ручний sync, показуємо тим самим
- * describeSyncResult(). 'push-skipped' — хмара вже випередила нашу відому версію.
- * 'push-skipped-stale' — локальний вміст застарілий (не змінювався після
- * останнього синку), автопуш пропущено, щоб не затерти хмару.
- * 'push-skipped-nochange' — грали, але вміст сейву не змінився (хеш співпав
- * з хмарою) — push і не мав сенсу, не показуємо це як "вивантажено".
- * 'restore-success' — довантажено файли, яких бракувало локально (без повного pull). */
+/** Auto-sync result code — the same set as manual sync, shown via the same
+ * describeSyncResult(). 'push-skipped' — the cloud already got ahead of our
+ * known version.
+ * 'push-skipped-stale' — local content is stale (hasn't changed since the
+ * last sync), auto-push was skipped to avoid overwriting the cloud.
+ * 'push-skipped-nochange' — we played, but the save content didn't change
+ * (hash matched the cloud) — a push wouldn't have made sense, so we don't
+ * show this as "uploaded".
+ * 'restore-success' — files missing locally were downloaded (without a full pull). */
 export type SyncResultCode =
   | 'upload-success'
   | 'download-success'
@@ -122,80 +126,81 @@ export type SyncResultCode =
   | 'push-skipped-nochange'
   | 'restore-success'
 
-/** Подія автосинхронізації (запуск гри → pull, вихід → push).
- * 'watcher-error' — не пов'язана з конкретною грою (напр. не вдалось
- * перевірити список запущених процесів) — appId/name порожні. */
+/** Auto-sync event (game launch → pull, exit → push).
+ * 'watcher-error' — not tied to a specific game (e.g. failed to check the
+ * list of running processes) — appId/name are empty. */
 export interface AutoSyncEvent {
   appId: string
   name: string
   action: 'pull' | 'push' | 'push-skipped' | 'watcher-error'
   ok: boolean
-  /** Успіх — SyncResultCode (через describeSyncResult); невдача — ErrorCode
-   * з shared/errors.ts, закодований так само, як app-error (через describeError). */
+  /** Success — a SyncResultCode (via describeSyncResult); failure — an
+   * ErrorCode from shared/errors.ts, encoded the same way as app-error (via describeError). */
   code: string
   params?: Record<string, string>
 }
 
-/** Налаштування запуску. */
+/** Startup settings. */
 export interface StartupSettings {
-  /** Запускати разом із Windows. */
+  /** Launch together with Windows. */
   openAtLogin: boolean
-  /** Стартувати згорнутим у трей. */
+  /** Start minimized to the tray. */
   startMinimized: boolean
 }
 
-/** Загальні налаштування (мова, аватар). */
+/** General settings (language, avatar). */
 export interface GeneralSettings {
   language: string
-  /** Кастомний аватар (data URL) або null, якщо не завантажений. */
+  /** Custom avatar (data URL), or null if none uploaded. */
   avatarDataUrl: string | null
-  /** Показувати попередження про Steam Cloud при кожному запуску. */
+  /** Whether to show the Steam Cloud warning on every launch. */
   showCloudWarning: boolean
 }
 
-/** Один запис в історії синхронізацій — один push (вивантаження) якоїсь гри. */
+/** A single sync history entry — one push (upload) of some game. */
 export interface SyncHistoryEntry {
   appId: string
   gameName: string
-  /** Версія, яку саме тоді запушили. */
+  /** The version that was pushed at that moment. */
   version: number
-  /** Логін того, хто вивантажив. */
+  /** Login of whoever uploaded it. */
   updatedBy: string
-  /** ISO timestamp моменту push. */
+  /** ISO timestamp of the push moment. */
   updatedAt: string
 }
 
-/** Роль користувача в коопі. */
+/** User's role in the co-op. */
 export type UserRole = 'host' | 'join'
 
-/** Конфіг ролі: хто головний і чиє сховище синхронізуємо. */
+/** Role config: who's the host and whose repo we're syncing. */
 export interface RoleConfig {
   role: UserRole
-  /** Логін власника сховища (host'а). Для ролі host = я сам. */
+  /** Login of the repo owner (the host). For role host = myself. */
   hostOwner: string
 }
 
-/** Тип звернення в кнопці "Підтримка". */
+/** Type of message from the "Support" button. */
 export type SupportCategory = 'bug' | 'game-request' | 'idea' | 'other'
 
-/** Гра, знайдена через пошук по Steam-магазину (не по встановлених — по всьому Steam). */
+/** A game found via Steam store search (not among installed games — across all of Steam). */
 export interface SteamSearchResult {
   appId: string
   name: string
-  /** Готове посилання на картинку від самого Steam (search API) — новіші ігри
-   *  роздають картинки з хеш-шляхів, які не зібрати самому з appId. */
+  /** Ready-made image link from Steam itself (search API) — newer games
+   *  serve images from hash paths that can't be built manually from appId. */
   imageUrl?: string
 }
 
-/** Максимум ігор в одному зверненні "Хочу гру" — щоб пул кандидатів на
- *  голосування не засипали за раз (обмеження і в UI, і на боці Worker'а). */
+/** Max games in a single "I want a game" request — so the pool of
+ *  candidates for future voting doesn't get flooded at once (enforced both
+ *  in the UI and on the Worker side). */
 export const MAX_GAME_REQUESTS = 3
 
-/** Звернення користувача, яке йде на пошту Віталія через Worker-проксі. */
+/** A user's message sent to my email via the Worker proxy. */
 export interface SupportRequest {
   category: SupportCategory
-  /** Для 'bug'/'other' — сам текст звернення. Для 'game-request' — необов'язковий коментар. */
+  /** For 'bug'/'other' — the message text itself. For 'game-request' — an optional comment. */
   message: string
-  /** Обрані ігри зі Steam-пошуку — тільки для категорії 'game-request', до MAX_GAME_REQUESTS штук. */
+  /** Games chosen from Steam search — only for the 'game-request' category, up to MAX_GAME_REQUESTS. */
   games?: SteamSearchResult[]
 }

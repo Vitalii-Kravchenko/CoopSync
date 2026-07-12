@@ -1,15 +1,16 @@
 import type { SteamSearchResult } from '../../shared/types'
 
-// Публічний, без-авторизаційний пошук по всьому Steam-магазину (не по
-// встановлених іграх — для кнопки "Підтримка" → "Хочу, щоб додали гру").
+// Public, no-auth search across the whole Steam store (not installed games —
+// used for the "Support" → "I want a game added" button).
 const SEARCH_URL = 'https://store.steampowered.com/api/storesearch/'
 
 interface StoreSearchItem {
   id: number
   name: string
-  // Новіші ігри Steam роздає з хеш-версіонованих шляхів (store_item_assets/...),
-  // тому дінамічно зібрати URL картинки з самого appId вже не завжди можна —
-  // беремо готове посилання прямо з відповіді пошуку.
+  // Newer Steam games are served from hash-versioned paths
+  // (store_item_assets/...), so the image URL can no longer always be built
+  // dynamically from the appId alone — we take the ready-made link directly
+  // from the search response.
   tiny_image?: string
 }
 
@@ -17,7 +18,7 @@ interface StoreSearchResponse {
   items?: StoreSearchItem[]
 }
 
-/** Пошук ігор у Steam-магазині за назвою. Порожній масив, якщо запит закороткий чи нічого не знайдено. */
+/** Search games in the Steam store by name. Empty array if the query is too short or nothing was found. */
 export async function searchSteamStore(term: string): Promise<SteamSearchResult[]> {
   const query = term.trim()
   if (query.length < 2) return []

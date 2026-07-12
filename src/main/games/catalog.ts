@@ -1,31 +1,33 @@
 import { join } from 'path'
 import { homedir } from 'os'
 
-// Каталог ігор, які підтримує CoopSync.
-// Сейви лежать не в папці Steam, а в системних папках — у кожної гри свій шлях.
-// Щоб додати нову гру — допиши сюди запис.
+// Catalog of games supported by CoopSync.
+// Saves don't live in the Steam folder but in system folders — each game has
+// its own path.
+// To add a new game — append an entry here.
 
 export interface SupportedGame {
-  /** Steam AppID — за ним визначаємо, чи встановлена гра. */
+  /** Steam AppID — used to detect whether the game is installed. */
   appId: string
-  /** Назва для показу. */
+  /** Display name. */
   name: string
-  /** Абсолютний шлях до папки сейвів (залежить від системних змінних). */
+  /** Absolute path to the saves folder (depends on system env vars). */
   getSavePath: () => string
-  /** Можливі назви процесів гри (.exe) — для детекту запуску/виходу. */
+  /** Possible game process names (.exe) — used to detect launch/exit. */
   processNames: string[]
   /**
-   * Чи готова повноцінна підтримка синку цієї гри.
-   * false = ми знаємо гру, але ще не доопрацювали її специфіку
-   * (структура сейвів, персонажі тощо) → показуємо "не підтримується".
+   * Whether full sync support for this game is ready.
+   * false = we know the game, but haven't finished handling its specifics
+   * yet (save structure, characters, etc.) → shown as "not supported".
    */
   ready: boolean
   /**
-   * Якщо задано — синкаємо (upload/download) лише файли, чиє ІМ'Я (не шлях)
-   * матчиться цим паттерном; папки завжди прохідні. Потрібно для ігор, у яких
-   * та сама папка сейвів містить ще й файли облікового запису/платформи
-   * (кеш логіну, entitlements тощо) — їх копіювати між різними ПК не можна.
-   * Якщо не задано — синкається вся папка як є (як для решти ігор).
+   * If set — only sync (upload/download) files whose NAME (not path)
+   * matches this pattern; folders always pass through. Needed for games
+   * where the same saves folder also contains account/platform files
+   * (login cache, entitlements, etc.) that must not be copied between
+   * different PCs.
+   * If not set — the whole folder is synced as-is (like for the other games).
    */
   saveFilePattern?: RegExp
 }
@@ -55,19 +57,20 @@ export const SUPPORTED_GAMES: SupportedGame[] = [
   {
     appId: '1962700',
     name: 'Subnautica 2',
-    // Unreal Engine кладе сейви в стандартну "Saved/SaveGames" поруч з LOCALAPPDATA
-    // (не Unity LocalLow, як в оригінальній Subnautica). Світ + прогрес усіх
-    // гравців — в одному файлі на хості, окремих файлів на гравця нема.
+    // Unreal Engine puts saves in the standard "Saved/SaveGames" next to
+    // LOCALAPPDATA (not Unity LocalLow, like the original Subnautica). The
+    // world + progress of all players lives in a single file on the host,
+    // there are no per-player files.
     getSavePath: () => join(process.env.LOCALAPPDATA ?? '', 'Subnautica2', 'Saved', 'SaveGames'),
     processNames: ['Subnautica2.exe', 'Subnautica2-Win64-Shipping.exe'],
     ready: true,
-    // Папка SaveGames тут ще й містить файли акаунта/платформи (GPPGuestFile,
-    // PlatformEntitlementsCache, RecentLoginPlatform, steam_autocloud.vdf) —
-    // вони прив'язані до Steam/GDK-акаунта того ПК і НЕ повинні їхати на чужий
-    // комп'ютер. Синкаємо лише самі файли світу.
+    // The SaveGames folder here also contains account/platform files
+    // (GPPGuestFile, PlatformEntitlementsCache, RecentLoginPlatform,
+    // steam_autocloud.vdf) — they're tied to that PC's Steam/GDK account and
+    // must NOT travel to another computer. We only sync the actual world files.
     saveFilePattern: /^savegame_\d+(_\d+)?\.(sav|bak)$/i
   }
 ]
 
-// Лише ігри з готовою підтримкою синку (для синку/автосинку/статусів).
+// Only games with ready sync support (used for sync/autosync/statuses).
 export const READY_GAMES = SUPPORTED_GAMES.filter((g) => g.ready)

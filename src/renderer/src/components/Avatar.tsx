@@ -2,14 +2,14 @@ import { colors } from '../theme'
 import { GitHubIcon } from './icons'
 
 interface Props {
-  /** Фото (реальний аватар з GitHub / кастомний). Falsy → іконка GitHub. */
+  /** Photo (real GitHub avatar / custom). Falsy -> GitHub icon. */
   src?: string | null
   size?: number
 }
 
-// Один компонент для TitleBar/Settings/Onboarding/Friends — раніше кожне
-// місце малювало заглушку по-своєму (десь іконка GitHub, десь монограма),
-// і це виглядало як різні системи в одному застосунку.
+// A single component for TitleBar/Settings/Onboarding/Friends — previously each
+// spot drew its own placeholder (a GitHub icon here, a monogram there),
+// and it looked like different systems within one app.
 function Avatar({ src, size = 30 }: Props): React.JSX.Element {
   const base: React.CSSProperties = {
     width: size,

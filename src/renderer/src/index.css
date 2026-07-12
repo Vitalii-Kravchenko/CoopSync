@@ -1,5 +1,5 @@
-/* Глобальний скид: прибираємо дефолтні відступи браузера і
-   заповнюємо все вікно темним фоном без білих щілин по краях. */
+/* Global reset: remove the browser's default margins and
+   fill the whole window with a dark background, no white gaps at the edges. */
 *,
 *::before,
 *::after {
@@ -14,8 +14,8 @@ body,
   height: 100%;
 }
 
-/* Ті самі тривалості, що й transitions у theme.ts (--t-fast/--t-hover/--t-fade) —
-   theme.ts керує inline-стилями компонентів, тут — глобальні CSS-класи (.btn/.input-field/.win-ctrl). */
+/* The same durations as the transitions in theme.ts (--t-fast/--t-hover/--t-fade) —
+   theme.ts drives components' inline styles, here we have global CSS classes (.btn/.input-field/.win-ctrl). */
 :root {
   --t-fast: 120ms ease;
   --t-hover: 150ms ease;
@@ -30,7 +30,7 @@ body {
   color: #edf1fa;
   font-family: 'Sora', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
-  overflow: hidden; /* прокрутку дають внутрішні контейнери, не вся сторінка */
+  overflow: hidden; /* scrolling is handled by inner containers, not the whole page */
 }
 
 ::selection {
@@ -38,7 +38,7 @@ body {
   color: #fff;
 }
 
-/* Скролбари в нашому стилі (Chromium / Electron). */
+/* Scrollbars in our own style (Chromium / Electron). */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -55,7 +55,7 @@ body {
   background: #2e394d;
 }
 
-/* Зони перетягування вікна для власного titlebar (frameless). */
+/* Window drag regions for the custom titlebar (frameless). */
 .drag {
   -webkit-app-region: drag;
 }
@@ -113,9 +113,9 @@ body {
   }
 }
 
-/* Перевикористовувані кнопки — єдиний стиль + справжні :hover.
-   Primary/success мають фірмовий кутовий зріз ("The Cut") — це підпис для CTA,
-   тому secondary/ghost/danger лишаються прямокутними. */
+/* Reusable buttons — a single style + real :hover.
+   Primary/success have the brand's corner cut ("The Cut") — it's a signature for CTAs,
+   so secondary/ghost/danger stay rectangular. */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -130,10 +130,11 @@ body {
   letter-spacing: 0.02em;
   height: 40px;
   padding: 0 20px;
-  /* Прибирає нативну "хромку" <button> (включно з платформним фокус-станом) —
-     без цього на primary/success (clip-path зрізає кут) нативний фокус-стан
-     ЧАСТКОВО малювався ПІД власним фоном кнопки і визирав сірим прямокутником
-     саме в зрізаному кутку, де кнопка сама себе не перекриває. */
+  /* Removes the native <button> "chrome" (including the platform focus state) —
+     without this, on primary/success (where clip-path cuts a corner) the native
+     focus state was PARTIALLY drawn UNDER the button's own background and peeked
+     out as a gray rectangle exactly at the cut corner, where the button doesn't
+     cover itself. */
   appearance: none;
   -webkit-appearance: none;
   outline: none;
@@ -151,9 +152,9 @@ body {
   box-shadow: none !important;
   transform: none !important;
 }
-/* Фокус клавіатурою (Tab) — той самий ціановий контур по всій системі,
-   замість дивного нативного (у Chromium зазвичай синій прямокутник, що не
-   пасує до темної теми). :focus-visible — тільки для клавіатури, не для миші. */
+/* Keyboard focus (Tab) — the same cyan outline throughout the system,
+   instead of the odd native one (usually a blue rectangle in Chromium that
+   doesn't fit the dark theme). :focus-visible — keyboard only, not mouse. */
 .btn:focus-visible,
 .icon-btn:focus-visible,
 .icon-btn-plain:focus-visible,
@@ -164,10 +165,10 @@ body {
   outline-offset: 3px;
 }
 
-/* Скидання нативного вигляду для "голих" <button> без власного класу
-   (текстові посилання, клікабельні рядки/картки) — інакше Chromium/Windows
-   малює свою дефолтну (жовтаву) рамку фокуса замість нашого єдиного
-   ціанового кільця вище. */
+/* Resets the native look for "bare" <button> elements without their own class
+   (text links, clickable rows/cards) — otherwise Chromium/Windows draws its
+   default (yellowish) focus ring instead of our single cyan
+   ring defined above. */
 .reset-btn {
   appearance: none;
   -webkit-appearance: none;
@@ -202,22 +203,23 @@ body {
   filter: brightness(1.08);
   transform: translateY(-1px);
 }
-/* primary/success мають ЗМІШАНУ форму: 2 кути зрізані (clip-path), 2 —
-   заокруглені (border-radius, він і далі працює там, де clip-path не сягає).
-   Ані outline, ані box-shadow не рахуються з clip-path — тому кільце навколо
-   всієї кнопки виходить нерівним. Рішення: власний шар ВСЕРЕДИНІ кнопки
-   (::before, відступ 3px — ніколи не виходить за межі, тому ніде не
-   обрізається), з ТІЄЮ Ж парою форм, коректно перерахованою під менший
-   розмір.
-   Заокруглення (звичайне коло) — лінійне зменшення: 9-3=6px.
-   Похилий зріз (45°) рахується ІНАКШЕ: рівномірна товщина рамки d навколо
-   діагональної лінії відповідає зменшенню зрізу на d×(2-√2)≈0.586d, а не на
-   2d — з цим раніше й була помилка (2d давало L'=3, що збігалося з лінією
-   зовнішнього зрізу і робило рамку там нульової товщини — саме тому вона й
-   зникала на зрізаних кутах). 9-3×0.586 ≈ 7.24, округлено до 7px.
-   z-index:0 на самій кнопці — щоб z-index:-1 цього шару лишався одразу під
-   власним фоном кнопки, а не "втікав" у чужий шар малювання.
-   transition: none — щоб поява кільця не сіпалась окремо від зміни фону. */
+/* primary/success have a MIXED shape: 2 corners are cut (clip-path), 2 are
+   rounded (border-radius, which still works where clip-path doesn't reach).
+   Neither outline nor box-shadow account for clip-path — so a ring around
+   the whole button comes out uneven. Solution: a dedicated layer INSIDE the
+   button (::before, 3px inset — never goes past the edges, so it's never
+   clipped anywhere), with the SAME pair of shapes, correctly recalculated for
+   the smaller size.
+   Rounding (a regular circle) — linear shrink: 9-3=6px.
+   The diagonal cut (45°) is calculated DIFFERENTLY: a uniform border thickness d
+   around the diagonal line corresponds to shrinking the cut by d×(2-√2)≈0.586d,
+   not by 2d — that was the earlier bug (2d gave L'=3, which coincided with the
+   outer cut's line and made the border zero-thickness there — which is exactly
+   why it vanished on the cut corners). 9-3×0.586 ≈ 7.24, rounded to 7px.
+   z-index:0 on the button itself — so this layer's z-index:-1 stays right under
+   the button's own background, instead of "leaking" into a different paint layer.
+   transition: none — so the ring's appearance doesn't jitter separately from the
+   background change. */
 .btn-primary:focus-visible,
 .btn-success:focus-visible {
   outline: none;
@@ -268,14 +270,13 @@ body {
   background: rgba(255, 107, 124, 0.12);
 }
 
-/* Поля вводу — фокус: ціановий контур + м'яке кільце (єдиний фокус-стиль системи).
-   :focus-visible, не :focus — інакше цей клас (він же на кнопці-дропдауні
-   категорії) показує кільце навіть коли фокус прийшов програмно при
-   відкритті модалки (наша пастка фокуса ставить фокус на перший елемент),
-   а не від реального натискання Tab користувачем. Для звичайних text-полів
-   поведінка не зміниться — :focus-visible для них спрацьовує так само, як
-   :focus (браузер завжди показує фокус на текстових полях, незалежно від
-   миші/клавіатури). */
+/* Input fields — focus: cyan outline + soft ring (the system's single focus style).
+   :focus-visible, not :focus — otherwise this class (also used on the category
+   dropdown button) would show the ring even when focus arrived programmatically
+   on modal open (our focus trap sets focus on the first element), rather than
+   from the user's actual Tab press. For regular text fields the behavior doesn't
+   change — :focus-visible behaves the same as :focus for them (the browser
+   always shows focus on text fields, regardless of mouse/keyboard). */
 .input-field {
   transition:
     border-color var(--t-hover),
@@ -286,9 +287,9 @@ body {
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3), 0 0 0 3px rgba(54, 226, 232, 0.18) !important;
 }
 
-/* Кругла/квадратна icon-only кнопка (дизайн-система 4.1 "icon-only") — окремий
-   клас, а не інлайн-стилі, бо інлайн background завжди перекриває CSS :hover
-   (та сама пастка, що вже була з пунктами Sidebar). */
+/* Round/square icon-only button (design system 4.1 "icon-only") — a separate
+   class rather than inline styles, because an inline background always overrides
+   CSS :hover (the same pitfall we already hit with the Sidebar items). */
 .icon-btn {
   width: 40px;
   height: 40px;
@@ -315,10 +316,11 @@ body {
   background: #1c2230;
 }
 
-/* "Гола" icon-only кнопка — без рамки й фону, лише іконка (напр. прибрати
-   один пункт зі списку). Свідомо відрізняється від .icon-btn (рамка+фон),
-   щоб не виглядати як дубль кнопки закриття модалки поруч. Hover — у
-   небезпечний (danger) відтінок, бо дія завжди про видалення чогось. */
+/* "Bare" icon-only button — no border or background, just the icon (e.g. to
+   remove one item from a list). Deliberately different from .icon-btn (border+
+   background), so it doesn't look like a duplicate of a nearby modal close
+   button. Hover uses a danger shade, since the action is always about removing
+   something. */
 .icon-btn-plain {
   width: 28px;
   height: 28px;
@@ -346,7 +348,7 @@ body {
   cursor: not-allowed;
 }
 
-/* Кнопки керування вікном. */
+/* Window control buttons. */
 .win-ctrl {
   width: 46px;
   height: 100%;
@@ -372,16 +374,17 @@ body {
   background: #ff6b7c;
   color: #06080d;
 }
-/* outline+offset поза вікном обрізався б браузером (кнопки впритул до краю) —
-   тому тут кільце inset, а не єдиний outline-стиль системи. */
+/* outline+offset outside the window would get clipped by the browser (buttons
+   sit flush with the edge) — so this uses an inset ring instead of the system's
+   usual outline style. */
 .win-ctrl:focus-visible {
   outline: none;
   box-shadow: inset 0 0 0 2px #36e2e8;
 }
 
-/* Пункт бічної навігації (Sidebar) — hover/active-фон керується інлайн-стилями
-   (залежить від того, чи це поточний екран), тут лише те, що CSS може дати
-   краще за JS: справжній :focus-visible і "натискання" в реальному часі. */
+/* Sidebar nav item — hover/active background is controlled by inline styles
+   (depends on whether this is the current screen); here we only have what CSS
+   can do better than JS: a real :focus-visible and a live "press" state. */
 .nav-item {
   outline: none;
 }
@@ -389,8 +392,8 @@ body {
   transform: scale(0.99) translateY(1px);
 }
 
-/* Перемикач (Toggle) — той самий фокус-стиль системи; сам перемикач лишається
-   inline-стильним (форма/колір залежать від value/disabled). */
+/* Toggle switch — the same system focus style; the switch itself stays
+   inline-styled (shape/color depend on value/disabled). */
 .switch {
   outline: none;
 }

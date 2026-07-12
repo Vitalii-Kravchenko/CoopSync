@@ -4,16 +4,16 @@ const FOCUSABLE_SELECTOR =
   'button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])'
 
 /**
- * Тримає фокус клавіатурою (Tab/Shift+Tab) усередині модалки — без цього Tab
- * веде далі по звичайному DOM-порядку й потрапляє на елементи застосунку під
- * оверлеєм (титлбар, сайдбар тощо), перш ніж дійти до самої модалки.
+ * Keeps keyboard focus (Tab/Shift+Tab) inside a modal — without this, Tab
+ * continues along the normal DOM order and lands on app elements beneath
+ * the overlay (titlebar, sidebar, etc.) before reaching the modal itself.
  *
- * При монтуванні фокусує САМ КОНТЕЙНЕР (не конкретний елемент усередині) —
- * якщо програмно сфокусувати ПЕРШЕ поле форми, то перший реальний Tab від
- * користувача переміщує фокус на ДРУГЕ поле (бо перше вже "зайняте"), і
- * виглядає так, ніби Tab "перестрибнув" через перше. Фокус на контейнері
- * (tabindex="-1", у звичайний Tab-порядок сторінки не потрапляє) — тоді
- * перший Tab природно веде саме на перший фокусований елемент усередині.
+ * On mount, focuses the CONTAINER ITSELF (not a specific element inside it) —
+ * if we programmatically focus the FIRST form field, the user's first real
+ * Tab press moves focus to the SECOND field (since the first is already
+ * "occupied"), and it looks like Tab "skipped" the first one. Focusing the
+ * container (tabindex="-1", which isn't part of the page's normal Tab order)
+ * means the first Tab naturally lands on the first focusable element inside.
  */
 export function useFocusTrap(containerRef: RefObject<HTMLElement | null>): void {
   useEffect(() => {

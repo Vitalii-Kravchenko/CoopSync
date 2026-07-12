@@ -1,9 +1,10 @@
-// Локалізовані помилки з main-процесу. Electron IPC серіалізує кинуту помилку
-// лише як рядок (message) — усі кастомні поля/класи губляться. Тому код+параметри
-// кодуємо прямо в message з маркером, а renderer (де є Translation) розкодовує їх
-// і показує локалізований текст через t.errors[code]. Нерозпізнані помилки (напр.
-// ще не класифікований git-виняток) renderer показує як очищений сирий текст —
-// див. describeError у renderer/src/errors.ts.
+// Localized errors from the main process. Electron IPC serializes a thrown
+// error only as a string (message) — all custom fields/classes are lost. So
+// we encode the code+params directly in the message with a marker, and the
+// renderer (which has Translation) decodes them and shows localized text via
+// t.errors[code]. Unrecognized errors (e.g. an as-yet-unclassified git
+// exception) are shown by the renderer as cleaned-up raw text — see
+// describeError in renderer/src/errors.ts.
 
 export type ErrorCode =
   | 'NOT_LOGGED_IN'
@@ -34,16 +35,16 @@ export type ErrorCode =
 
 const MARKER = 'app-error:'
 
-/** Створити Error, з якого renderer зможе розкодувати код + параметри. */
+/** Create an Error from which the renderer can decode the code + params. */
 export function makeAppError(code: ErrorCode, params?: Record<string, string>): Error {
   return new Error(MARKER + JSON.stringify({ code, params }))
 }
 
 /**
- * Розкодувати помилку. Приймає як сирий Error.message з main (без обгортки),
- * так і те, що прилетіло через ipcRenderer.invoke — Electron додає префікс
- * "Error invoking remote method 'x': Error: " перед нашим маркером, тому шукаємо
- * маркер через indexOf, а не якорим на початок рядка.
+ * Decode an error. Accepts both the raw Error.message from main (unwrapped)
+ * and what arrives via ipcRenderer.invoke — Electron prepends
+ * "Error invoking remote method 'x': Error: " before our marker, so we look
+ * for the marker via indexOf instead of anchoring to the start of the string.
  */
 export function parseAppError(message: string): { code: ErrorCode; params?: Record<string, string> } | null {
   const idx = message.indexOf(MARKER)

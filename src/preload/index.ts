@@ -19,18 +19,18 @@ import type {
   SteamSearchResult
 } from '../shared/types'
 
-// API, доступне в renderer як window.api.
-// Це єдиний "місток" — renderer не має прямого доступу до системи,
-// а лише до цих чітко визначених функцій.
+// API exposed to the renderer as window.api.
+// This is the only "bridge" — the renderer has no direct access to the
+// system, only to these clearly defined functions.
 const api = {
   auth: {
-    /** Перевірити, чи вже залогінені. */
+    /** Check whether we're already logged in. */
     getStatus: (): Promise<AuthStatus> => ipcRenderer.invoke('auth:get-status'),
-    /** Запустити логін. Поверне фінальний статус, коли користувач підтвердить. */
+    /** Start login. Resolves with the final status once the user confirms. */
     login: (): Promise<AuthStatus> => ipcRenderer.invoke('auth:login'),
-    /** Вийти. */
+    /** Log out. */
     logout: (): Promise<AuthStatus> => ipcRenderer.invoke('auth:logout'),
-    /** Підписатись на отримання коду device flow. Повертає функцію відписки. */
+    /** Subscribe to receive the device flow code. Returns an unsubscribe function. */
     onDeviceCode: (callback: (info: DeviceCodeInfo) => void): (() => void) => {
       const listener = (_event: unknown, info: DeviceCodeInfo): void => callback(info)
       ipcRenderer.on('auth:device-code', listener)
@@ -38,49 +38,49 @@ const api = {
     }
   },
   repo: {
-    /** Поточний стан спільного сховища. */
+    /** Current state of the shared repo. */
     getStatus: (): Promise<SavesRepoStatus> => ipcRenderer.invoke('repo:get-status'),
-    /** Створити (або підключити наявне) сховище. */
+    /** Create (or connect to the existing) repo. */
     create: (): Promise<SavesRepoStatus> => ipcRenderer.invoke('repo:create'),
-    /** Видалити сховище насовсім (незворотно). */
+    /** Delete the repo for good (irreversible). */
     delete: (): Promise<void> => ipcRenderer.invoke('repo:delete'),
-    /** Запросити друга у співавтори. */
+    /** Invite a friend as a collaborator. */
     invite: (username: string): Promise<void> => ipcRenderer.invoke('repo:invite', username),
-    /** Список ще не прийнятих запрошень. */
+    /** List of invitations not yet accepted. */
     listInvitations: (): Promise<PendingInvite[]> => ipcRenderer.invoke('repo:invitations'),
-    /** Список співавторів, які вже прийняли. */
+    /** List of collaborators who have already accepted. */
     listCollaborators: (): Promise<Collaborator[]> => ipcRenderer.invoke('repo:collaborators'),
-    /** Аватарки учасників зі спільного сховища (owner + collaborators), ключ — нік. */
+    /** Avatars of members from the shared repo (owner + collaborators), keyed by login. */
     getAvatars: (logins: string[]): Promise<Record<string, string>> =>
       ipcRenderer.invoke('repo:avatars', logins)
   },
   games: {
-    /** Список встановлених підтримуваних ігор. */
+    /** List of installed supported games. */
     list: (): Promise<DetectedGame[]> => ipcRenderer.invoke('games:list'),
-    /** Усі встановлені Steam-ігри (+ чи підтримуються). */
+    /** All installed Steam games (+ whether they're supported). */
     allInstalled: (): Promise<InstalledGame[]> => ipcRenderer.invoke('games:all-installed'),
-    /** Повний каталог підтримуваних ігор. */
+    /** Full catalog of supported games. */
     catalog: (): Promise<CatalogGame[]> => ipcRenderer.invoke('games:catalog'),
-    /** Пошук по всьому Steam-магазину (не лише встановлені). */
+    /** Search across the whole Steam store (not just installed games). */
     searchStore: (term: string): Promise<SteamSearchResult[]> =>
       ipcRenderer.invoke('games:search-store', term)
   },
   sync: {
-    /** Вивантажити сейви гри на GitHub. */
+    /** Upload the game's saves to GitHub. */
     upload: (appId: string): Promise<SyncResult> => ipcRenderer.invoke('sync:upload', appId),
-    /** Завантажити сейви гри з GitHub. */
+    /** Download the game's saves from GitHub. */
     download: (appId: string): Promise<SyncResult> => ipcRenderer.invoke('sync:download', appId),
-    /** Статус синку всіх ігор. */
+    /** Sync status for all games. */
     statuses: (): Promise<GameSyncStatus[]> => ipcRenderer.invoke('sync:statuses'),
-    /** Історія push-подій (найновіші перші). */
+    /** Push event history (newest first). */
     history: (): Promise<SyncHistoryEntry[]> => ipcRenderer.invoke('sync:history')
   },
   watcher: {
-    /** Запустити автосинхронізацію (стеження за процесами ігор). */
+    /** Start auto-sync (watching game processes). */
     start: (): Promise<void> => ipcRenderer.invoke('watcher:start'),
-    /** Зупинити автосинхронізацію. */
+    /** Stop auto-sync. */
     stop: (): Promise<void> => ipcRenderer.invoke('watcher:stop'),
-    /** Підписка на події авто-синку. Повертає функцію відписки. */
+    /** Subscribe to auto-sync events. Returns an unsubscribe function. */
     onAutoSync: (callback: (event: AutoSyncEvent) => void): (() => void) => {
       const listener = (_e: unknown, event: AutoSyncEvent): void => callback(event)
       ipcRenderer.on('sync:auto', listener)
@@ -88,19 +88,19 @@ const api = {
     }
   },
   window: {
-    /** Згорнути вікно. */
+    /** Minimize the window. */
     minimize: (): Promise<void> => ipcRenderer.invoke('window:minimize'),
-    /** Розгорнути/відновити вікно (кнопка ▢). */
+    /** Maximize/restore the window (▢ button). */
     toggleMaximize: (): Promise<void> => ipcRenderer.invoke('window:toggle-maximize'),
-    /** Розгорнути на весь екран (після onboarding). */
+    /** Maximize the window (after onboarding). */
     maximize: (): Promise<void> => ipcRenderer.invoke('window:maximize'),
-    /** Закрити вікно. */
+    /** Close the window. */
     close: (): Promise<void> => ipcRenderer.invoke('window:close'),
-    /** Чи вікно зараз розгорнуте. */
+    /** Whether the window is currently maximized. */
     isMaximized: (): Promise<boolean> => ipcRenderer.invoke('window:is-maximized'),
-    /** Чи запущено з автозапуску приховано (--hidden) — тоді maximize() викликати не можна. */
+    /** Whether launched from autostart hidden (--hidden) — then maximize() must not be called. */
     wasStartedHidden: (): Promise<boolean> => ipcRenderer.invoke('window:was-started-hidden'),
-    /** Підписка на зміну стану розгортання. Повертає функцію відписки. */
+    /** Subscribe to maximize state changes. Returns an unsubscribe function. */
     onMaximizeChange: (callback: (maximized: boolean) => void): (() => void) => {
       const listener = (_event: unknown, maximized: boolean): void => callback(maximized)
       ipcRenderer.on('window:maximized-change', listener)
@@ -108,39 +108,39 @@ const api = {
     }
   },
   settings: {
-    /** Поточні налаштування запуску. */
+    /** Current startup settings. */
     getStartup: (): Promise<StartupSettings> => ipcRenderer.invoke('settings:get-startup'),
-    /** Змінити налаштування запуску. */
+    /** Change startup settings. */
     setStartup: (patch: Partial<StartupSettings>): Promise<StartupSettings> =>
       ipcRenderer.invoke('settings:set-startup', patch),
-    /** Мова та аватар. */
+    /** Language and avatar. */
     getGeneral: (): Promise<GeneralSettings> => ipcRenderer.invoke('settings:get-general'),
-    /** Змінити мову інтерфейсу. */
+    /** Change the UI language. */
     setLanguage: (language: string): Promise<void> =>
       ipcRenderer.invoke('settings:set-language', language),
-    /** Відкрити діалог вибору файлу аватара. null = скасовано. */
+    /** Open the avatar file picker dialog. null = cancelled. */
     pickAvatar: (): Promise<string | null> => ipcRenderer.invoke('settings:pick-avatar'),
-    /** Увімкнути/вимкнути показ попередження про Steam Cloud при запуску. */
+    /** Enable/disable the Steam Cloud warning on launch. */
     setCloudWarning: (show: boolean): Promise<void> =>
       ipcRenderer.invoke('settings:set-cloud-warning', show)
   },
   role: {
-    /** Поточна роль (або null, якщо ще не вибрано). */
+    /** Current role (or null, if not chosen yet). */
     get: (): Promise<RoleConfig | null> => ipcRenderer.invoke('role:get'),
-    /** Стати хостом (синхронізувати власне сховище). */
+    /** Become host (sync our own repo). */
     setHost: (): Promise<RoleConfig> => ipcRenderer.invoke('role:set-host'),
-    /** Підключитися до сховища друга-хоста. */
+    /** Connect to a host friend's repo. */
     join: (hostLogin: string): Promise<RoleConfig> => ipcRenderer.invoke('role:join', hostLogin)
   },
   support: {
-    /** Надіслати звернення (баг / хочу гру / інше) на пошту Віталія. */
+    /** Send a message (bug / game request / other) to my email. */
     send: (request: SupportRequest): Promise<void> => ipcRenderer.invoke('support:send', request)
   },
-  /** Відкрити URL у системному браузері. */
+  /** Open a URL in the system browser. */
   openExternal: (url: string): Promise<void> => ipcRenderer.invoke('shell:open-external', url),
-  /** Версія застосунку (з package.json). */
+  /** App version (from package.json). */
   getAppVersion: (): Promise<string> => ipcRenderer.invoke('app:get-version'),
-  /** Скопіювати текст у буфер обміну. */
+  /** Copy text to the clipboard. */
   copyToClipboard: (text: string): Promise<void> => ipcRenderer.invoke('clipboard:write', text)
 }
 

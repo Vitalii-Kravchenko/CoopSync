@@ -7,7 +7,7 @@ import { HistoryIcon } from '../components/icons'
 import type { SyncHistoryEntry } from '../../../shared/types'
 import { formatVersion as fmtVersion } from '../../../shared/format'
 
-// ISO timestamp → "2 хв тому" / "1 год тому" / "3 дн тому" (локалізовано).
+// ISO timestamp -> "2 min ago" / "1 hr ago" / "3 days ago" (localized).
 function formatRelativeTime(iso: string, t: Translation): string {
   const diffMin = Math.floor((Date.now() - new Date(iso).getTime()) / 60000)
   if (diffMin < 1) return t.history.justNow
@@ -19,12 +19,12 @@ function formatRelativeTime(iso: string, t: Translation): string {
 }
 
 interface Props {
-  /** Чи активна зараз ця вкладка (HistoryScreen лишається змонтованим у фоні,
-   *  навіть коли відкрита інша вкладка). */
+  /** Whether this tab is currently active (HistoryScreen stays mounted in the
+   *  background even when another tab is open). */
   active: boolean
-  /** Змінюється при видаленні/створенні сховища й після кожного реального push —
-   *  сигнал перечитати історію (HistoryScreen лишається змонтованим у фоні,
-   *  сам по собі про такі події не дізнається). */
+  /** Changes when a repo is deleted/created and after every real push —
+   *  a signal to reread the history (HistoryScreen stays mounted in the
+   *  background and doesn't find out about such events on its own). */
   syncVersion: number
 }
 
@@ -37,29 +37,30 @@ function HistoryScreen({ active, syncVersion }: Props): React.JSX.Element {
   const [entries, setEntries] = useState<SyncHistoryEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
-  // Що реально рендериться з анімацією зараз.
+  // What's actually rendering with the "new" animation right now.
   const [newKeys, setNewKeys] = useState<Set<string>>(new Set())
-  // Дзеркало entries для читання всередині асинхронних колбеків без затримки
-  // на цикл рендеру (setEntries асинхронний — ref оновлюємо синхронно одразу).
+  // Mirror of entries for reading inside async callbacks without waiting
+  // a render cycle (setEntries is async — we update the ref synchronously right away).
   const entriesRef = useRef<SyncHistoryEntry[]>([])
-  // Найсвіжіший список з останнього фетчу — навіть якщо вкладка неактивна
-  // і entries/newKeys ще не оновлені (чекають моменту, коли стане видимою).
+  // The freshest list from the last fetch — even if the tab is inactive
+  // and entries/newKeys haven't been updated yet (waiting for the moment it becomes visible).
   const latestListRef = useRef<SyncHistoryEntry[]>([])
   const fetchInFlightRef = useRef(false)
   const clearNewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  // Актуальне значення active всередині асинхронних колбеків (де замикання
-  // інакше бачило б те, яким active було в момент виклику loadHistory).
+  // Current value of active inside async callbacks (where a closure would
+  // otherwise see whatever active was at the moment loadHistory was called).
   const activeRef = useRef(active)
   useEffect(() => {
     activeRef.current = active
   }, [active])
 
-  // Показати список і "нове" ОДНІЄЮ атомарною дією — інакше, якщо контент
-  // з'являється окремо від анімації (напр. список оновився тихо у фоні, поки
-  // вкладка була неактивна, а анімація прилетіла пізніше самим фетчем), вийде
-  // або "показало все, а потім ще раз щось підсвітилось", або навпаки.
-  // "Нове" — це просто діф проти того, що користувач УЖЕ бачив на екрані
-  // (entriesRef), а не якийсь окремий трекер стану.
+  // Show the list and "new" in ONE atomic action — otherwise, if the content
+  // appears separately from the animation (e.g. the list updated silently in the
+  // background while the tab was inactive, and the animation arrived later with
+  // the fetch itself), you'd get either "showed everything, then something
+  // highlighted again" or the reverse.
+  // "New" is simply a diff against what the user has ALREADY seen on screen
+  // (entriesRef), not some separate state tracker.
   function reveal(list: SyncHistoryEntry[]): void {
     const shownKeys = new Set(entriesRef.current.map(historyKey))
     const fresh = new Set(list.map(historyKey).filter((k) => !shownKeys.has(k)))
@@ -75,19 +76,19 @@ function HistoryScreen({ active, syncVersion }: Props): React.JSX.Element {
   function loadHistory(): void {
     if (fetchInFlightRef.current) return
     fetchInFlightRef.current = true
-    // Скелетон — тільки якщо на екрані ще справді нічого немає.
+    // Skeleton — only if there's really nothing on screen yet.
     if (entriesRef.current.length === 0) setLoading(true)
     window.api.sync
       .history()
       .then((list) => {
         latestListRef.current = list
         setLoadError(null)
-        // Вкладка неактивна — не чіпаємо видимий список/анімацію взагалі,
-        // вони оновляться разом, щойно вкладка стане видимою (див. нижче).
+        // Tab inactive — don't touch the visible list/animation at all,
+        // they'll update together as soon as the tab becomes visible (see below).
         if (activeRef.current) reveal(list)
       })
       .catch((e) => {
-        // Є що показати — мовчки лишаємо старий список замість помилки.
+        // There's something to show — silently keep the old list instead of an error.
         if (entriesRef.current.length === 0) {
           setLoadError(describeError(e, t, t.history.loadError))
         }
@@ -106,18 +107,18 @@ function HistoryScreen({ active, syncVersion }: Props): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // syncVersion > 0 — це не монтування (те вже покрив ефект вище), а сигнал
-  // "щось реально засинхронізувалось" — перечитуємо.
+  // syncVersion > 0 — not a mount (the effect above already covers that), but a
+  // signal that "something actually synced" — reread.
   useEffect(() => {
     if (syncVersion > 0) loadHistory()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [syncVersion])
 
-  // При поверненні на вкладку "Історія": одразу показуємо те, що вже знаємо
-  // з останнього фетчу (могло прийти, поки вкладка була неактивна) — без
-  // затримки, і заразом тихо перевіряємо, чи нема чогось ще новішого.
-  // Перший рендер (active вже true на монтуванні) пропускаємо — покриває
-  // ефект монтування вище.
+  // On returning to the "History" tab: immediately show what we already know
+  // from the last fetch (may have arrived while the tab was inactive) — no
+  // delay, while also silently checking for anything even newer.
+  // Skip the first render (active is already true on mount) — covered by
+  // the mount effect above.
   const skipFirstActive = useRef(true)
   useEffect(() => {
     if (skipFirstActive.current) {
@@ -182,9 +183,9 @@ function HistoryRow({
   entry: SyncHistoryEntry
   t: Translation
   last: boolean
-  /** true — щойно з'явився в цьому фетчі, треба програти анімацію появи.
-   *  false — вже бачили раніше; без анімації, навіть якщо DOM щойно став видимим
-   *  (вкладка була display:none — браузер інакше переграв би анімацію знову). */
+  /** true — just appeared in this fetch, play the entrance animation.
+   *  false — already seen before; no animation, even if the DOM just became visible
+   *  (the tab was display:none — the browser would otherwise replay the animation). */
   isNew: boolean
 }): React.JSX.Element {
   const [hover, setHover] = useState(false)

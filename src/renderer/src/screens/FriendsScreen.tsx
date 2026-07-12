@@ -10,14 +10,14 @@ import type { AuthUser, SavesRepoStatus, PendingInvite, Collaborator } from '../
 interface Props {
   user: AuthUser
   avatarDataUrl: string | null
-  /** Чи вкладка зараз активна — App.tsx лишає екрани змонтованими й лише
-   * перемикає display, тож дані (аватарки друга тощо) треба перечитувати
-   * при кожному поверненні на вкладку, а не лише на самому монтуванні. */
+  /** Whether the tab is currently active — App.tsx keeps screens mounted and
+   * only toggles display, so data (friend avatars, etc.) needs to be reread
+   * every time the tab regains focus, not just on mount. */
   active: boolean
 }
 
-// Друзі — окрема вкладка (раніше жила всередині Налаштувань): запросити,
-// побачити список і статус кожного (власник / прийняв / очікує / надсилаю).
+// Friends — a separate tab (used to live inside Settings): invite,
+// see the list and each person's status (owner / accepted / pending / sending).
 function FriendsScreen({ user, avatarDataUrl, active }: Props): React.JSX.Element {
   const { t } = useI18n()
   const [repo, setRepo] = useState<SavesRepoStatus | null>(null)
@@ -33,9 +33,9 @@ function FriendsScreen({ user, avatarDataUrl, active }: Props): React.JSX.Elemen
     void load()
   }, [])
 
-  // При поверненні на вкладку "Друзі" перечитуємо все — друг міг за цей час
-  // прийняти запрошення чи оновити свою аватарку. Перший рендер (active вже
-  // true на монтуванні) пропускаємо — його покриває ефект монтування вище.
+  // On returning to the "Friends" tab, reread everything — the friend might have
+  // accepted the invite or updated their avatar in the meantime. Skip the first
+  // render (active is already true on mount) — it's covered by the mount effect above.
   const skipFirstActive = useRef(true)
   useEffect(() => {
     if (skipFirstActive.current) {
@@ -54,8 +54,8 @@ function FriendsScreen({ user, avatarDataUrl, active }: Props): React.JSX.Elemen
         setInvites(await window.api.repo.listInvitations())
         const collabs = await window.api.repo.listCollaborators()
         setCollaborators(collabs)
-        // Аватарки друга/учасників беремо зі спільного сховища — своя
-        // завжди свіжіша локально (avatarDataUrl), тож її окремо не тягнемо.
+        // We fetch friend/member avatars from the shared repo — our own
+        // avatar is always fresher locally (avatarDataUrl), so we don't fetch it separately.
         const owner = r.repo.fullName.split('/')[0]
         const logins = [owner, ...collabs.map((c) => c.login)].filter((l) => l !== user.login)
         if (logins.length > 0) {
@@ -63,13 +63,13 @@ function FriendsScreen({ user, avatarDataUrl, active }: Props): React.JSX.Elemen
             .getAvatars(logins)
             .then(setAvatars)
             .catch(() => {
-              // не критично — просто лишаться заглушки
+              // not critical — placeholders will just stay in place
             })
         }
       }
     } catch (e) {
-      // Раніше збій тут (напр. нема інтернету) тихо показував "сховище не
-      // підключено", хоча реальний стан невідомий.
+      // Previously a failure here (e.g. no internet) silently showed "repo not
+      // connected", even though the real state was unknown.
       setLoadError(describeError(e, t, t.friends.loadError))
     }
   }
@@ -90,8 +90,8 @@ function FriendsScreen({ user, avatarDataUrl, active }: Props): React.JSX.Elemen
   }
 
   const noFriendsYet = collaborators.length === 0 && invites.length === 0
-  // Власник сховища — не завжди залогінений користувач: у ролі "join" це
-  // друг-хост. fullName має вигляд "owner/coopsync-saves".
+  // The repo owner isn't always the logged-in user: in the "join" role it's
+  // the friend acting as host. fullName looks like "owner/coopsync-saves".
   const ownerLogin = repo?.state === 'ready' ? repo.repo.fullName.split('/')[0] : user.login
 
   return (
@@ -185,9 +185,9 @@ function FriendsScreen({ user, avatarDataUrl, active }: Props): React.JSX.Elemen
   )
 }
 
-// Онлайн/away-крапку на аватарах свідомо НЕ додаємо: у CoopSync немає
-// реального відстеження присутності (Collaborator/PendingInvite несуть лише
-// login), а малювати вигадану крапку означало б брехати статусом.
+// We deliberately do NOT add an online/away dot on avatars: CoopSync has no
+// real presence tracking (Collaborator/PendingInvite only carry a
+// login), and drawing a made-up dot would mean faking a status.
 const AVATAR_SIZE = 36
 
 const styles: Record<string, React.CSSProperties> = {

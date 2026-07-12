@@ -6,7 +6,7 @@ interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant
 }
 
-// Єдина кнопка для всього застосунку. Стилі й hover — у index.css (.btn .btn-*).
+// A single button for the whole app. Styles and hover are in index.css (.btn .btn-*).
 function Button({ variant = 'primary', className, ...rest }: Props): React.JSX.Element {
   return <button className={`btn btn-${variant}${className ? ' ' + className : ''}`} {...rest} />
 }

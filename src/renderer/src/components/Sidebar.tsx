@@ -5,9 +5,9 @@ import { LibraryIcon, FriendsIcon, HistoryIcon, SettingsIcon } from './icons'
 
 export type Screen = 'main' | 'friends' | 'history' | 'settings'
 
-// Фон активного пункту навігації — той самий, що й у дизайн-системі
-// (docs/design-system.html, 4.12 Навігація): одноколірний ціановий фейд
-// зліва направо, а не двоколірний grad-energy (той — лише для CTA/акцентних смужок).
+// Active nav item background — the same one used in the design system
+// (docs/design-system.html, 4.12 Navigation): a single-color cyan fade
+// left to right, not the two-color grad-energy (that one is only for CTA/accent stripes).
 const ACTIVE_BG = 'linear-gradient(90deg, rgba(54,226,232,.14), transparent)'
 
 interface Props {
@@ -15,8 +15,8 @@ interface Props {
   onNavigate: (screen: Screen) => void
 }
 
-// Ліва панель: зверху розділи, "Налаштування" — внизу.
-// Активний пункт має фірмову акцентну смужку зліва + м'який градієнтний фон.
+// Left panel: sections at the top, "Settings" at the bottom.
+// The active item has the brand accent stripe on the left + a soft gradient background.
 function Sidebar({ active, onNavigate }: Props): React.JSX.Element {
   const { t } = useI18n()
   return (
@@ -86,9 +86,9 @@ function NavItem({
 
 const styles: Record<string, React.CSSProperties> = {
   rail: {
-    // gridArea — App.tsx монтує <Sidebar> останнім серед дітей appBody (щоб
-    // Tab доходив до нав-пунктів тільки після контенту поточної вкладки),
-    // тож зліва його ставить лише ця grid-область, не DOM-порядок.
+    // gridArea — App.tsx mounts <Sidebar> last among appBody's children (so
+    // Tab reaches the nav items only after the current tab's content),
+    // so it's placed on the left only by this grid area, not by DOM order.
     gridArea: 'sidebar',
     background: colors.bgBase,
     borderRight: `1px solid ${colors.borderSubtle}`,

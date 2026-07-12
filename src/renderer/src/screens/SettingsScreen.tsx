@@ -12,11 +12,11 @@ import type { AuthUser, SavesRepoStatus, StartupSettings } from '../../../shared
 interface Props {
   user: AuthUser
   onLoggedOut: () => void
-  /** Кастомний аватар (data URL) — спільний з titlebar і онбордингом. */
+  /** Custom avatar (data URL) — shared with titlebar and onboarding. */
   avatarDataUrl: string | null
   onAvatarChange: (dataUrl: string) => void
-  /** MainScreen лишається змонтованим у фоні — сповіщаємо його перерахувати
-   *  статуси синку, коли сховище видалене або створене заново. */
+  /** MainScreen stays mounted in the background — we notify it to recompute
+   *  sync statuses when the repo is deleted or recreated. */
   onRepoChanged: () => void
 }
 
@@ -89,9 +89,9 @@ function SettingsScreen({
       setRepo(await window.api.repo.getStatus())
       setRepoError(null)
     } catch (e) {
-      // Раніше збій тут (напр. нема інтернету) тихо показував "сховище не
-      // налаштовано" разом із кнопкою "Створити" — навіть якщо сховище
-      // насправді є, ризикуючи створити дубль поверх наявного.
+      // Previously a failure here (e.g. no internet) silently showed "repo not
+      // set up" along with a "Create" button — even if the repo actually
+      // existed, risking a duplicate being created on top of it.
       setRepoError(describeError(e, t, t.main.statusesError))
     }
   }
@@ -108,9 +108,9 @@ function SettingsScreen({
       await window.api.repo.create()
       await loadRepo()
       onRepoChanged()
-      // repo:delete зупиняє автосинк (watcher.stopWatcher()), а сам він більше
-      // ніде не перезапускається — без цього гра/вихід з гри після пересоздання
-      // репо мовчки ігноруються до перезапуску застосунку.
+      // repo:delete stops auto-sync (watcher.stopWatcher()), and it isn't
+      // restarted anywhere else on its own — without this, playing/exiting a game
+      // after recreating the repo would be silently ignored until the app restarts.
       void window.api.watcher.start()
     } catch (e) {
       setCreateRepoError(describeError(e, t, t.onboarding.createRepoError))
@@ -138,7 +138,7 @@ function SettingsScreen({
     <div style={styles.screen}>
       <div style={styles.h1}>{t.settings.title}</div>
 
-      {/* Профіль */}
+      {/* Profile */}
       <div style={styles.card}>
         <div style={styles.profileLeft}>
           <Avatar src={avatarDataUrl} size={72} />
@@ -160,7 +160,7 @@ function SettingsScreen({
         </Button>
       </div>
 
-      {/* Сховище */}
+      {/* Storage */}
       <div style={{ ...styles.card2, marginBottom: 22 }}>
         <div style={styles.h2}>{t.settings.storage}</div>
         {repo?.state === 'ready' ? (
@@ -216,7 +216,7 @@ function SettingsScreen({
       </div>
 
       <div style={styles.cols}>
-        {/* Загальне */}
+        {/* General */}
         <div style={styles.card2}>
           <div style={styles.h2}>{t.settings.general}</div>
           <div style={styles.langRow}>
@@ -249,7 +249,7 @@ function SettingsScreen({
           {toggleError && <div style={{ ...styles.createRepoError, marginTop: 10 }}>{toggleError}</div>}
         </div>
 
-        {/* Про програму */}
+        {/* About */}
         <div style={styles.card2}>
           <div style={styles.h2}>{t.settings.about}</div>
           <div style={styles.aboutRow}>
@@ -324,8 +324,8 @@ function Toggle({
           padding: 0,
           borderRadius: radii.pill,
           background: disabled ? 'rgba(11,14,22,.5)' : value ? gradients.energy : colors.bgRaised,
-          // Завжди 1px рамки (прозора при "увімкнено") — щоб внутрішня висота
-          // не змінювалась між станами і кружечок лишався по центру.
+          // Always a 1px border (transparent when "on") — so the inner height
+          // doesn't change between states and the knob stays centered.
           border: disabled
             ? `1px solid ${colors.borderSubtle}`
             : value
@@ -400,8 +400,8 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 16
   },
   repoName: { fontFamily: fonts.display, fontSize: 15, fontWeight: 600, color: colors.text1 },
-  // Технічний ідентифікатор (owner/repo) — моношрифт, як і решта технічних
-  // дрібниць у системі (хеші, версії, шляхи), на відміну від repoName (назва застосунку).
+  // Technical identifier (owner/repo) — monospace, like the rest of the technical
+  // bits in the system (hashes, versions, paths), unlike repoName (the app's name).
   repoFullName: { fontFamily: fonts.mono, fontSize: 14, fontWeight: 600, color: colors.text1 },
   mutedMono: { fontFamily: fonts.mono, fontSize: 13, color: colors.text3 },
   linkBtn: {

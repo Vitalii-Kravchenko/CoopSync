@@ -15,9 +15,9 @@ import type {
 } from '../../../shared/types'
 
 interface Props {
-  /** Викликається, коли все налаштовано і можна переходити до ігор. */
+  /** Called when everything is set up and we can move on to games. */
   onComplete: () => void
-  /** Кастомний аватар (data URL) — спільний з titlebar і Settings. */
+  /** Custom avatar (data URL) — shared with titlebar and Settings. */
   avatarDataUrl?: string | null
 }
 
@@ -49,8 +49,8 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
         }
       })
       .catch((e) => {
-        // Раніше збій тут (напр. нема інтернету) губився мовчки — крок 3
-        // тихо показував "Створити сховище", хоча реальний стан невідомий.
+        // Previously a failure here (e.g. no internet) was silently lost — step 3
+        // quietly showed "Create repo", even though the real state was unknown.
         setError(describeError(e, t, t.onboarding.genericError))
       })
     return window.api.auth.onDeviceCode(setDeviceCode)
@@ -147,7 +147,7 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
         <div style={styles.subtitle}>{t.onboarding.welcomeSubtitle}</div>
       </div>
 
-      {/* КРОК 1 — логін */}
+      {/* STEP 1 — login */}
       <Step n={1} done={loggedIn} title={t.onboarding.step1Title}>
         {!loggedIn && !deviceCode && (
           <Button variant="ghost" style={{ alignSelf: 'flex-start' }} onClick={handleLogin} disabled={busy}>
@@ -182,7 +182,7 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
         )}
       </Step>
 
-      {/* КРОК 2 — вибір ролі */}
+      {/* STEP 2 — role selection */}
       <Step n={2} done={role !== null} title={t.onboarding.step2Title} disabled={!loggedIn} last={role === 'join'}>
         {role === null && (
           <div style={styles.roleRow}>
@@ -237,7 +237,7 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
         )}
       </Step>
 
-      {/* КРОК 3 (тільки host) — сховище + друг */}
+      {/* STEP 3 (host only) — repo + friend */}
       {role === 'host' && (
         <>
           <Step n={3} done={repoReady} title={t.onboarding.step3Title}>
@@ -292,7 +292,7 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
 
       {error && <div style={styles.error}>⚠ {error}</div>}
 
-      {/* Кнопка "до ігор" — лише для host (join переходить одразу після підключення) */}
+      {/* "Go to games" button — host only (join moves on right after connecting) */}
       {role === 'host' && (
         <div style={styles.footer}>
           <div style={styles.muted}>
@@ -312,9 +312,9 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
   )
 }
 
-// Клікабельна картка вибору ролі — hover керується JS-станом (не CSS :hover),
-// бо border/box-shadow вже задані інлайн і перекрили б будь-яке CSS-правило
-// (та сама пастка, що з пунктами Sidebar/GameCard — див. коментарі там).
+// Clickable role selection card — hover is driven by JS state (not CSS :hover),
+// since border/box-shadow are already set inline and would override any CSS rule
+// (the same pitfall as with the Sidebar/GameCard items — see the comments there).
 function RoleCard({
   icon,
   title,

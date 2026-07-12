@@ -1,11 +1,11 @@
-// Спільне форматування номера версії між main і renderer.
+// Shared version number formatting between main and renderer.
 
 /**
- * Внутрішній лічильник версії — суцільне число, що піднімається на 1 при
- * кожному push (0 = ще не вивантажено, 1 = перший push). Показуємо як
- * "v<major>.<minor>", з відліком мінорної частини від нуля: перший push —
- * v1.000, далі v1.001 ... v1.999, тоді мінорна скидається і піднімається
- * старша (v2.000, v2.001, ... v2.999, v3.000, ...).
+ * Internal version counter — a plain integer that increments by 1 on every
+ * push (0 = not uploaded yet, 1 = first push). Displayed as
+ * "v<major>.<minor>", with the minor part counted from zero: first push is
+ * v1.000, then v1.001 ... v1.999, at which point minor resets and major
+ * increments (v2.000, v2.001, ... v2.999, v3.000, ...).
  */
 export function formatVersion(n: number): string {
   const i = Math.max(0, n - 1)

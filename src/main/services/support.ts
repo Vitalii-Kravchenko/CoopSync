@@ -6,20 +6,20 @@ import { loadToken } from './tokenStore'
 import { fetchUser } from './github'
 import type { SupportRequest } from '../../shared/types'
 
-// Обмеження на довжину повідомлення — узгоджено з тим, що приймає Worker
-// (worker/support-mailer/src/index.ts), щоб довгий текст не летів у нікуди
-// і не роздував лист.
+// Message length limit — matches what the Worker accepts
+// (worker/support-mailer/src/index.ts), so long text doesn't get dropped
+// or bloat the email.
 const MAX_MESSAGE_LENGTH = 4000
 
-/** Надіслати звернення з кнопки "Підтримка" через Worker-проксі на пошту Віталія. */
+/** Send a message from the "Support" button via the Worker proxy to my email. */
 export async function sendSupportMessage(request: SupportRequest): Promise<void> {
   const message = request.message.trim().slice(0, MAX_MESSAGE_LENGTH)
-  // Для 'game-request' повідомлення необов'язкове (є обрані ігри) — для решти категорій обов'язкове.
+  // For 'game-request' the message is optional (games are selected) — required for the other categories.
   if (!message && !request.games?.length) throw makeAppError('SUPPORT_SEND_FAILED')
 
-  // Хто звертається — щоб у листі було "Віталій хоче..." замість безликого
-  // "CoopSync хоче...". Якщо з якоїсь причини не вдалось дізнатись — просто
-  // не додаємо відправника, лист однаково піде.
+  // Who's sending — so the email reads "Vitalii wants..." instead of the
+  // generic "CoopSync wants...". If we can't determine this for some
+  // reason, just skip the sender — the email still gets sent.
   const sender = await fetchSenderName()
 
   const res = await fetch(SUPPORT_ENDPOINT_URL, {
@@ -30,7 +30,7 @@ export async function sendSupportMessage(request: SupportRequest): Promise<void>
       message,
       games: request.games,
       sender,
-      // Контекст для діагностики — не персональні дані, лише версія/платформа.
+      // Context for diagnostics — no personal data, just version/platform.
       appVersion: app.getVersion(),
       platform: process.platform,
       language: readSettings().language
@@ -58,9 +58,10 @@ async function fetchSenderName(): Promise<string | undefined> {
 }
 
 /**
- * Локальний час у форматі HH:MM, округлений ВГОРУ до наступної хвилини —
- * інакше показуємо момент, коли ліміт технічно ще діє (напр. resetAt о
- * 12:00:45 показував би "12:00", хоча реально можна тільки з 12:01).
+ * Local time in HH:MM format, rounded UP to the next minute — otherwise
+ * we'd show a moment when the limit is technically still in effect (e.g.
+ * resetAt at 12:00:45 would display "12:00", even though it's actually only
+ * allowed from 12:01).
  */
 function formatTime(epochMs: number): string {
   const d = new Date(Math.ceil(epochMs / 60000) * 60000)

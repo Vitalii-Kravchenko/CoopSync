@@ -7,18 +7,18 @@ import type { AutoSyncEvent } from '../../shared/types'
 
 const exec = promisify(execFile)
 
-// Стежимо за процесами ігор: запуск → pull свіжих сейвів, вихід → push.
+// Watches game processes: launch → pull fresh saves, exit → push.
 
 let timer: NodeJS.Timeout | null = null
 let running: Record<string, boolean> = {}
 let busy = false
-// Щоб не спамити банером щотіку (5с), якщо tasklist стабільно падає (напр.
-// нема прав) — сповіщаємо один раз, поки збій не мине.
+// So we don't spam a banner every tick (5s) if tasklist consistently fails
+// (e.g. no permissions) — notify once and stay quiet until it recovers.
 let processCheckFailing = false
 
 const POLL_MS = 5000
 
-// Множина запущених процесів (image-назви у нижньому регістрі).
+// Set of running processes (image names, lowercased).
 async function getRunningProcesses(): Promise<Set<string>> {
   const { stdout } = await exec('tasklist', ['/fo', 'csv', '/nh'], { maxBuffer: 16 * 1024 * 1024 })
   const set = new Set<string>()
@@ -33,8 +33,9 @@ function isGameRunning(game: SupportedGame, procs: Set<string>): boolean {
   return game.processNames.some((p) => procs.has(p.toLowerCase()))
 }
 
-// Розкодовує AppError (main-процес не знає мови — далі локалізує renderer через
-// describeError/describeSyncResult). Нерозпізнані винятки йдуть як GIT_GENERIC.
+// Decodes an AppError (the main process doesn't know the language — the
+// renderer localizes it later via describeError/describeSyncResult).
+// Unrecognized exceptions become GIT_GENERIC.
 function errorCode(e: unknown): { code: string; params?: Record<string, string> } {
   const raw = e instanceof Error ? e.message : String(e)
   return parseAppError(raw) ?? { code: 'GIT_GENERIC', params: { detail: raw } }
@@ -47,16 +48,16 @@ async function tick(
   onEvent: (e: AutoSyncEvent) => void,
   initial: boolean
 ): Promise<void> {
-  if (busy) return // не накладаємо тіки один на одного
+  if (busy) return // don't let ticks overlap
   busy = true
   try {
     let procs: Set<string>
     try {
       procs = await getRunningProcesses()
     } catch (e) {
-      // Раніше падало сирим unhandled rejection — жодної події, жодного
-      // банера, автосинк мовчки переставав бачити запуск/вихід ігор. Тепер
-      // сповіщаємо один раз (не на кожному тіку) і пробуємо знову наступного разу.
+      // This used to fail as a raw unhandled rejection — no event, no
+      // banner, auto-sync would silently stop seeing games launch/exit. Now
+      // we notify once (not on every tick) and try again next time.
       if (!processCheckFailing) {
         processCheckFailing = true
         onEvent({ appId: '', name: '', action: 'watcher-error', ok: false, ...errorCode(e) })
@@ -69,14 +70,14 @@ async function tick(
       const was = running[game.appId] ?? false
       running[game.appId] = now
 
-      // Перший тік лише запам'ятовує стан — без синку.
+      // The first tick just records state — no sync.
       if (initial) continue
 
       if (!was && now) {
-        // Гра щойно запустилася → спершу довантажуємо файли, яких бракує
-        // локально (напр. видалений світ), не чіпаючи наявні локальні файли —
-        // це безпечно завжди, незалежно від версій. Далі повний pull, АЛЕ
-        // лише якщо хмара новіша. Інакше затерли б новіший локальний прогрес.
+        // The game just launched → first, download files missing locally
+        // (e.g. a deleted world), without touching existing local files —
+        // this is always safe, regardless of versions. Then a full pull,
+        // BUT only if the cloud is newer. Otherwise we'd overwrite newer local progress.
         try {
           const restored = await restoreMissingFiles(token, owner, game.appId)
           const statuses = await getSyncStatuses(token, owner)
@@ -104,22 +105,23 @@ async function tick(
               params: { count: String(restored) }
             })
           }
-          // synced / local-newer (без відновлених файлів) → нічого тягнути не треба.
+          // synced / local-newer (no files restored) → nothing to pull.
         } catch (e) {
           onEvent({ appId: game.appId, name: game.name, action: 'pull', ok: false, ...errorCode(e) })
         }
       } else if (was && !now) {
-        // Гра закрилася → вивантажуємо сейви, АЛЕ спершу перевіряємо статус:
-        // - хтось інший (напр. друг-хост) уже запушив новішу версію, поки ми
-        //   грали — інакше ми б мовчки затерли його прогрес своїм сейвом;
-        // - локальний вміст відрізняється від хмарного, але не тому, що ми
-        //   реально грали (жоден файл не змінювався після останнього синку,
-        //   напр. підмінили сейви старим бекапом) — інакше застаріле мовчки
-        //   затре актуальний хмарний прогрес.
+        // The game closed → upload saves, BUT first check the status:
+        // - someone else (e.g. the host friend) already pushed a newer
+        //   version while we were playing — otherwise we'd silently overwrite
+        //   their progress with our save;
+        // - local content differs from the cloud, but not because we
+        //   actually played (no file changed since the last sync, e.g. saves
+        //   were swapped for an old backup) — otherwise stale data would
+        //   silently overwrite current cloud progress.
         try {
           const statuses = await getSyncStatuses(token, owner)
           const st = statuses.find((s) => s.appId === game.appId)
-          // TODO(тимчасово): діагностика "зберіг у грі, вийшов — нічого не запушилось".
+          // TODO(temporary): diagnostics for "saved in-game, exited — nothing got pushed".
           console.log(
             `[watcher] exit ${game.name}: status=${st?.status} localVer=${st?.localVersion} remoteVer=${st?.remoteVersion} lastSyncAt=${st?.lastSyncAt}`
           )
@@ -142,9 +144,9 @@ async function tick(
           } else {
             const result = await uploadGame(token, owner, game.appId, actor)
             if (result.pushed === false) {
-              // Хеш локального й хмарного вмісту збігся — реально нічого не
-              // вивантажувалось (грали, але не зберігали/не міняли сейв).
-              // "Вивантажено" тут була б брехнею, тож окремий, чесний код.
+              // The local and cloud content hashes matched — nothing was
+              // actually uploaded (we played, but didn't save/change the
+              // save). "Uploaded" would be a lie here, so a separate, honest code.
               onEvent({
                 appId: game.appId,
                 name: game.name,
@@ -181,7 +183,7 @@ export function startWatcher(
 ): void {
   stopWatcher()
   running = {}
-  // Ініціалізуємо стан без дій (раптом гра вже запущена на момент старту).
+  // Initialize state without taking action (in case a game is already running at startup).
   void tick(token, owner, actor, onEvent, true)
   timer = setInterval(() => void tick(token, owner, actor, onEvent, false), POLL_MS)
 }

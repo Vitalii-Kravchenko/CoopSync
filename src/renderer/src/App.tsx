@@ -22,21 +22,21 @@ function App(): React.JSX.Element {
   const [screen, setScreen] = useState<Screen>('main')
   const [user, setUser] = useState<AuthUser | null>(null)
   const [avatarDataUrl, setAvatarDataUrl] = useState<string | null>(null)
-  // Бампається при видаленні/створенні сховища або будь-якому реальному push'і.
-  // MainScreen і HistoryScreen лишаються змонтованими у фоні (див. коментар нижче)
-  // і самі не дізнаються про такі зміни, тож перечитують дані по цьому сигналу.
+  // Bumped when a repo is deleted/created or on any real push.
+  // MainScreen and HistoryScreen stay mounted in the background (see comment below)
+  // and don't find out about such changes on their own, so they reread data on this signal.
   const [syncVersion, setSyncVersion] = useState(0)
   const bumpSyncVersion = (): void => setSyncVersion((v) => v + 1)
-  // Глобальний тост про синхронізацію — рендериться поза табами (styles.appBody),
-  // тому видимий незалежно від того, яка вкладка зараз відкрита.
+  // Global sync toast — rendered outside the tabs (styles.appBody),
+  // so it stays visible regardless of which tab is currently open.
   const [banner, setBanner] = useState<BannerState | null>(null)
 
-  // При старті визначаємо: чи все вже налаштовано (повторний запуск),
-  // чи треба показати майстер налаштування.
+  // On startup, determine whether everything is already configured (repeat launch)
+  // or whether we need to show the setup wizard.
   useEffect(() => {
     void init()
-    // Аватар — окреме локальне налаштування, не пов'язане з логіном,
-    // тож тягнемо його паралельно і показуємо всюди (titlebar, onboarding, учасники).
+    // Avatar is a separate local setting, not tied to login,
+    // so we fetch it in parallel and show it everywhere (titlebar, onboarding, members).
     window.api.settings.getGeneral().then((g) => setAvatarDataUrl(g.avatarDataUrl))
   }, [])
 
@@ -45,9 +45,9 @@ function App(): React.JSX.Element {
     try {
       const auth = await window.api.auth.getStatus()
       if (auth.state === 'error') {
-        // Тимчасовий збій перевірки (нема інтернету, ліміт GitHub API) — НЕ
-        // токен насправді невалідний, тож не викидаємо в онбординг, а даємо
-        // повідомлення + Retry.
+        // Temporary check failure (no internet, GitHub API rate limit) — the
+        // token isn't actually invalid, so we don't kick the user to onboarding,
+        // we show a message + Retry instead.
         setErrorMessage(t.errors[auth.code](auth.params ?? {}))
         setPhase('error')
         return
@@ -58,13 +58,13 @@ function App(): React.JSX.Element {
       }
       setUser(auth.user)
 
-      // Роль ще не вибрана → онбординг.
+      // Role not chosen yet -> onboarding.
       const cfg = await window.api.role.get()
       if (!cfg) {
         setPhase('onboarding')
         return
       }
-      // Host без готового сховища — теж онбординг.
+      // Host without a ready repo — also onboarding.
       if (cfg.role === 'host') {
         const repo = await window.api.repo.getStatus()
         if (repo.state !== 'ready') {
@@ -74,20 +74,20 @@ function App(): React.JSX.Element {
       }
       void enterApp()
     } catch (e) {
-      // Раніше будь-який збій тут (напр. нема інтернету при repo.getStatus())
-      // лишав phase='loading' навіки без пояснення — тепер показуємо
-      // повідомлення й даємо спробувати ще раз.
+      // Previously any failure here (e.g. no internet during repo.getStatus())
+      // left phase='loading' forever with no explanation — now we show
+      // a message and let the user retry.
       setErrorMessage(describeError(e, t, t.main.syncErrorFallback))
       setPhase('error')
     }
   }
 
-  // Перехід у робочий застосунок + запуск автосинхронізації.
+  // Transition into the main app + start auto-sync.
   async function enterApp(): Promise<void> {
     setPhase('app')
     setScreen('main')
-    // maximize() у Electron завжди показує вікно, навіть приховане — тож при
-    // автозапуску "у трей" його викликати не можна, інакше вікно вилазить саме.
+    // Electron's maximize() always shows the window, even if hidden — so on
+    // auto-launch "to tray" we must not call it, or the window will pop up on its own.
     const hidden = await window.api.window.wasStartedHidden()
     if (!hidden) void window.api.window.maximize()
     void window.api.watcher.start()
@@ -105,39 +105,39 @@ function App(): React.JSX.Element {
     setPhase('onboarding')
   }
 
-  // Реакція на автосинхронізацію (запуск/вихід гри у фоні) — на рівні App, а не
-  // MainScreen, щоб банер про push/pull був видимий на будь-якій вкладці.
+  // Reaction to auto-sync (game launch/exit in the background) — handled at the App
+  // level, not MainScreen, so the push/pull banner is visible on any tab.
   useEffect(() => {
     if (phase !== 'app') return
     return window.api.watcher.onAutoSync((e) => {
-      // watcher-error не прив'язана до конкретної гри (напр. не вдалось
-      // перевірити список запущених процесів) — без префікса назви гри.
+      // watcher-error isn't tied to a specific game (e.g. failed to
+      // check the list of running processes) — no game name prefix.
       const text =
         e.action === 'watcher-error'
           ? describeSyncResult(e.code, e.params, t)
           : `${e.name}: ${describeSyncResult(e.code, e.params, t)}`
       if (e.code === 'push-skipped-nochange') {
-        // Грали, але сейв не змінився — не проблема і не привід для тривоги
-        // (як і ручне "вже синхронізовано"), тому info-тон, а не warning.
+        // Played, but the save didn't change — not a problem or cause for alarm
+        // (same as manual "already synced"), so info tone, not warning.
         setBanner({ text, kind: 'info' })
       } else if (e.action === 'push-skipped') {
-        // Свідомо пропущений автопуш (конфлікт версій) — це не помилка,
-        // але й не мовчати можна: тут людина могла б втратити прогрес друга.
+        // Deliberately skipped auto-push (version conflict) — not an error,
+        // but we shouldn't stay silent either: the user could lose a friend's progress here.
         setBanner({ text, kind: 'warning' })
       } else if (e.ok) {
         setBanner({ text, kind: 'success', icon: e.action === 'pull' ? 'download' : 'upload' })
       } else {
-        // Раніше помилки автосинку мовчки губились — тепер теж показуємо їх.
+        // Previously auto-sync errors were silently swallowed — now we show them too.
         setBanner({ text, kind: 'error' })
       }
-      // Будь-яка реальна синхронізація (push ДОДАЄ запис; pull МІГ підтягнути
-      // git-пул чужий новий запис, якого локально ще не було видно) — окрім
-      // свідомо пропущених/no-change випадків — сигналимо MainScreen/HistoryScreen.
+      // Any real sync (push ADDS an entry; pull MAY have pulled in
+      // someone else's new entry via git that wasn't visible locally yet) — except
+      // for deliberately skipped/no-change cases — signals MainScreen/HistoryScreen.
       if (e.ok && e.action !== 'push-skipped') bumpSyncVersion()
     })
   }, [phase, t])
 
-  // Банер сам зникає через 5 секунд.
+  // The banner dismisses itself after 5 seconds.
   useEffect(() => {
     if (!banner) return
     const timer = setTimeout(() => setBanner(null), 5000)
@@ -166,15 +166,15 @@ function App(): React.JSX.Element {
       )}
 
       {phase === 'app' && user && (
-        // grid-template-areas (не flex-direction!) — DOM-порядок (= Tab-порядок)
-        // навмисно "контент екрана → Sidebar", а grid-area ставить Sidebar
-        // зліва суто візуально, незалежно від DOM-порядку. flex-direction:
-        // row-reverse тут НЕ підходить — Chromium рахує Tab-порядок від
-        // візуальної (реверснутої) позиції, а не від DOM, тож reverse-трюк
-        // просто повертав старий (неправильний) порядок фокуса.
+        // grid-template-areas (not flex-direction!) — DOM order (= Tab order)
+        // is intentionally "screen content -> Sidebar", while grid-area places the Sidebar
+        // on the left purely visually, independent of DOM order. flex-direction:
+        // row-reverse doesn't work here — Chromium computes Tab order from the
+        // visual (reversed) position, not from the DOM, so the reverse trick
+        // just brought back the old (wrong) focus order.
         <div style={styles.appBody}>
-          {/* Обидва екрани лишаються змонтованими — перемикаємо лише видимість,
-              щоб Settings не перезавантажував дані при кожному вході. */}
+          {/* Both screens stay mounted — we only toggle visibility,
+              so Settings doesn't reload data on every entry. */}
           <div
             style={{ gridArea: 'content', display: screen === 'main' ? 'flex' : 'none', minHeight: 0 }}
           >
@@ -212,10 +212,10 @@ function App(): React.JSX.Element {
         </div>
       )}
 
-      {/* TitleBar — останній у DOM (не перший), Tab доходить до Підтримки й
-          кнопок вікна лише ПІСЛЯ контенту поточної вкладки й Sidebar. Візуально
-          зверху все одно — grid-area:'titlebar' у root ставить його в перший
-          рядок сітки незалежно від DOM-порядку. */}
+      {/* TitleBar — last in the DOM (not first), Tab reaches Support and
+          window buttons only AFTER the current tab's content and Sidebar. Visually
+          it's still on top — grid-area:'titlebar' on root puts it in the first
+          grid row regardless of DOM order. */}
       <TitleBar user={phase === 'app' ? user : null} avatarDataUrl={avatarDataUrl} />
     </div>
   )
@@ -224,9 +224,9 @@ function App(): React.JSX.Element {
 const styles: Record<string, React.CSSProperties> = {
   root: {
     height: '100vh',
-    // grid-template-areas — TitleBar останній у DOM (Tab-порядок), але
-    // gridArea:'titlebar' (у TitleBar.tsx) ставить його в перший рядок сітки
-    // незалежно від DOM-порядку. Див. коментар біля <TitleBar>.
+    // grid-template-areas — TitleBar is last in the DOM (Tab order), but
+    // gridArea:'titlebar' (in TitleBar.tsx) puts it in the first grid row
+    // regardless of DOM order. See the comment near <TitleBar>.
     display: 'grid',
     gridTemplateRows: 'auto 1fr',
     gridTemplateAreas: '"titlebar" "body"',
@@ -250,9 +250,9 @@ const styles: Record<string, React.CSSProperties> = {
     textAlign: 'center'
   },
   onboarding: { gridArea: 'body', overflowY: 'auto', display: 'flex', alignItems: 'flex-start', minHeight: 0 },
-  // grid-template-areas — Sidebar останній у DOM (Tab-порядок), а
-  // gridArea:'sidebar' (у Sidebar.tsx) ставить його зліва суто візуально.
-  // Див. коментар біля <Sidebar> вище.
+  // grid-template-areas — Sidebar is last in the DOM (Tab order), while
+  // gridArea:'sidebar' (in Sidebar.tsx) places it on the left purely visually.
+  // See the comment near <Sidebar> above.
   appBody: {
     gridArea: 'body',
     display: 'grid',

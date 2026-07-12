@@ -15,10 +15,10 @@ interface Props<T extends string> {
   style?: React.CSSProperties
 }
 
-// Кастомний dropdown (дизайн-система 4.3 "Селекти") — заміна нативного
-// <select>, чий фокус/hover/список опцій браузер малює сам і не пускає під
-// наш дизайн. Той самий патерн, що раніше жив лише в SupportModal (вибір
-// категорії) — тепер спільний, щоб обидва місця не розходились візуально.
+// Custom dropdown (design system 4.3 "Selects") — replaces the native
+// <select>, whose focus/hover/option list the browser draws itself and won't let
+// us restyle. The same pattern that used to live only in SupportModal (category
+// selection) — now shared, so the two places don't drift visually apart.
 function Select<T extends string>({ value, options, onChange, disabled, style }: Props<T>): React.JSX.Element {
   const [open, setOpen] = useState(false)
   const [hovered, setHovered] = useState<T | null>(null)
@@ -138,10 +138,10 @@ const styles: Record<string, React.CSSProperties> = {
     appearance: 'none',
     WebkitAppearance: 'none',
     outline: 'none',
-    // role="option"+aria-selected примушує Chromium на Windows перемальовувати
-    // фон системним Highlight-кольором (forced-colors для ARIA listbox-патернів),
-    // ігноруючи будь-який інлайн-стиль — тому наш активний градієнт не було
-    // видно. forced-color-adjust:none каже рушію лишити наш вигляд як є.
+    // role="option"+aria-selected forces Chromium on Windows to repaint the
+    // background with the system Highlight color (forced-colors for ARIA listbox
+    // patterns), ignoring any inline style — which is why our active gradient
+    // wasn't visible. forced-color-adjust:none tells the engine to leave our look as is.
     forcedColorAdjust: 'none'
   } as React.CSSProperties,
   optionHover: { background: colors.bgHover, color: colors.text1 },

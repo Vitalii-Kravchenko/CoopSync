@@ -8,7 +8,7 @@ interface Props {
   description: string
   confirmLabel: string
   cancelLabel: string
-  /** Якщо задано — кнопка підтвердження заблокована цю кількість секунд. */
+  /** If set, the confirm button is locked for this many seconds. */
   countdownSeconds?: number
   busy?: boolean
   error?: string | null
@@ -16,9 +16,9 @@ interface Props {
   onCancel: () => void
 }
 
-// Модалка підтвердження незворотної дії ("The Cut" — тонка градієнтна смужка
-// зверху, як у дизайн-системі 4.11 Оверлеї). Danger-варіант: червона рамка й
-// смужка замість фірмової бірюзово-фіолетової.
+// Confirmation modal for an irreversible action ("The Cut" — a thin gradient stripe
+// at the top, as in design system 4.11 Overlays). Danger variant: red border and
+// stripe instead of the brand teal-purple.
 function ConfirmModal({
   title,
   description,
@@ -31,10 +31,11 @@ function ConfirmModal({
   onCancel
 }: Props): React.JSX.Element {
   const [remaining, setRemaining] = useState(countdownSeconds ?? 0)
-  // Закривати кліком по фону — лише якщо саме натискання миші теж було на
-  // фоні, а не всередині картки. Інакше виділення тексту (mousedown усередині
-  // → рух за межі модалки → mouseup на фоні) браузер трактує як клік по фону
-  // (спільний предок mousedown/mouseup-цілей), і модалка заплющувалась сама.
+  // Only close on a backdrop click if the mousedown itself was also on the
+  // backdrop, not inside the card. Otherwise selecting text (mousedown inside
+  // -> drag outside the modal -> mouseup on the backdrop) is treated by the
+  // browser as a backdrop click (common ancestor of the mousedown/mouseup targets),
+  // and the modal would close on its own.
   const mouseDownOnBackdrop = useRef(false)
   const cardRef = useRef<HTMLDivElement>(null)
   useFocusTrap(cardRef)

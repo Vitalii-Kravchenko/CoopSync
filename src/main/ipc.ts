@@ -48,7 +48,7 @@ import type {
   SteamSearchResult
 } from '../shared/types'
 
-// Максимальний розмір файлу аватара — щоб не роздувати settings.json.
+// Max avatar file size — to keep settings.json from bloating.
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024
 const AVATAR_MIME: Record<string, string> = {
   '.png': 'image/png',
@@ -58,10 +58,10 @@ const AVATAR_MIME: Record<string, string> = {
   '.webp': 'image/webp'
 }
 
-// Кеш ніку користувача, щоб не питати GitHub при кожному запиті (важливо для поллінгу).
+// Cache the user's login so we don't ask GitHub on every request (important for polling).
 let cachedOwner: string | null = null
 
-// Перевіряє, що користувач залогінений, і повертає токен + його нік (owner).
+// Verifies the user is logged in and returns the token + their login (owner).
 async function requireAuth(): Promise<{ token: string; owner: string }> {
   const token = loadToken()
   if (!token) throw makeAppError('NOT_LOGGED_IN')
@@ -72,9 +72,9 @@ async function requireAuth(): Promise<{ token: string; owner: string }> {
   return { token, owner: cachedOwner }
 }
 
-// Ціль синхронізації: токен + власник сховища, з яким працюємо.
-// Для ролі host це я сам; для join — друг-хост. Якщо роль ще не вибрана —
-// дефолтимось на свій логін.
+// Sync target: token + the repo owner we're working with.
+// For the host role this is myself; for join — the friend hosting. If a
+// role hasn't been chosen yet, we default to our own login.
 async function syncTarget(): Promise<{ token: string; owner: string }> {
   const settings = readSettings()
   if (settings.hostOwner) {
@@ -85,9 +85,9 @@ async function syncTarget(): Promise<{ token: string; owner: string }> {
   return requireAuth()
 }
 
-// Реєструє всі IPC-канали (виклики з renderer у main).
+// Registers all IPC channels (calls from renderer into main).
 export function registerIpcHandlers(): void {
-  // Перевірити поточний стан: чи є збережений токен і чи він робочий.
+  // Check the current state: whether there's a stored token and whether it works.
   ipcMain.handle('auth:get-status', async (): Promise<AuthStatus> => {
     const token = loadToken()
     if (!token) return { state: 'logged-out' }
@@ -96,10 +96,10 @@ export function registerIpcHandlers(): void {
       return { state: 'logged-in', user }
     } catch (e) {
       const parsed = parseAppError(e instanceof Error ? e.message : String(e))
-      // GIT_AUTH_FAILED (401 — токен справді протух/відкликаний) — це і є
-      // "не залогінені". Будь-що інше (нема інтернету, вичерпано ліміт
-      // GitHub API) — тимчасовий збій перевірки, не привід тихо викидати
-      // вже залогіненого користувача назад в онбординг.
+      // GIT_AUTH_FAILED (401 — the token is genuinely expired/revoked) is what
+      // "logged out" actually means. Anything else (no internet, GitHub API
+      // rate limit hit) is a temporary check failure, not a reason to
+      // silently kick an already-logged-in user back into onboarding.
       if (parsed && parsed.code !== 'GIT_AUTH_FAILED') {
         return { state: 'error', code: parsed.code, params: parsed.params }
       }
@@ -107,16 +107,16 @@ export function registerIpcHandlers(): void {
     }
   })
 
-  // Запустити логін через device flow.
+  // Start login via device flow.
   ipcMain.handle('auth:login', async (event): Promise<AuthStatus> => {
     const { deviceCode, info } = await requestDeviceCode()
 
-    // Віддаємо renderer код, щоб показати його користувачу.
-    // Браузер НЕ відкриваємо автоматично — це робить користувач кнопкою,
-    // щоб встигнути скопіювати код.
+    // Send the code to the renderer to show the user.
+    // We do NOT open the browser automatically — the user does that via a
+    // button, so they have time to copy the code first.
     event.sender.send('auth:device-code', info)
 
-    // Чекаємо, поки користувач підтвердить (це може зайняти час).
+    // Wait for the user to confirm (this can take a while).
     const token = await pollForToken(deviceCode, info.interval)
     saveToken(token)
 
@@ -124,7 +124,7 @@ export function registerIpcHandlers(): void {
     return { state: 'logged-in', user }
   })
 
-  // Вийти: стерти збережений токен і скинути роль (онбординг почнеться знову).
+  // Log out: erase the stored token and reset the role (onboarding starts over).
   ipcMain.handle('auth:logout', async (): Promise<AuthStatus> => {
     clearToken()
     cachedOwner = null
@@ -132,37 +132,37 @@ export function registerIpcHandlers(): void {
     return { state: 'logged-out' }
   })
 
-  // Відкрити URL у системному браузері (за кнопкою користувача).
+  // Open a URL in the system browser (triggered by the user via a button).
   ipcMain.handle('shell:open-external', async (_event, url: string): Promise<void> => {
     await shell.openExternal(url)
   })
 
-  // Версія застосунку (з package.json) — щоб не хардкодити рядок в UI і не
-  // розходитись з реальною версією при кожному релізі.
+  // App version (from package.json) — so we don't hardcode a string in the
+  // UI and don't drift from the real version on every release.
   ipcMain.handle('app:get-version', (): string => app.getVersion())
 
-  // Скопіювати текст у буфер обміну.
+  // Copy text to the clipboard.
   ipcMain.handle('clipboard:write', (_event, text: string): void => {
     clipboard.writeText(text)
   })
 
-  // --- Спільне сховище сейвів ---
+  // --- Shared saves repo ---
 
-  // Поточний стан сховища: створене чи ні (host — своє, join — друга).
+  // Current repo state: created or not (host — their own, join — the friend's).
   ipcMain.handle('repo:get-status', async (): Promise<SavesRepoStatus> => {
     const { token, owner } = await syncTarget()
     const repo = await getSavesRepo(token, owner)
     return repo ? { state: 'ready', repo } : { state: 'none' }
   })
 
-  // Створити (або підключити наявне) сховище.
+  // Create (or connect to the existing) repo.
   ipcMain.handle('repo:create', async (): Promise<SavesRepoStatus> => {
     const { token, owner } = await requireAuth()
     const repo = await createSavesRepo(token, owner)
     return { state: 'ready', repo }
   })
 
-  // Видалити репозиторій сейвів насовсім (незворотно — підтвердження вже пройшло в UI).
+  // Delete the saves repo for good (irreversible — confirmation already happened in the UI).
   ipcMain.handle('repo:delete', async (): Promise<void> => {
     const { token, owner } = await requireAuth()
     await deleteSavesRepo(token, owner)
@@ -170,25 +170,25 @@ export function registerIpcHandlers(): void {
     await resetLocalSaveState()
   })
 
-  // Запросити друга у співавтори.
+  // Invite a friend as a collaborator.
   ipcMain.handle('repo:invite', async (_event, username: string): Promise<void> => {
     const { token, owner } = await requireAuth()
     await inviteCollaborator(token, owner, username.trim())
   })
 
-  // Список ще не прийнятих запрошень (сховища host'а).
+  // List invitations that haven't been accepted yet (host's repo).
   ipcMain.handle('repo:invitations', async (): Promise<PendingInvite[]> => {
     const { token, owner } = await syncTarget()
     return listInvitations(token, owner)
   })
 
-  // Список співавторів, які вже прийняли запрошення.
+  // List collaborators who have already accepted their invitation.
   ipcMain.handle('repo:collaborators', async (): Promise<Collaborator[]> => {
     const { token, owner } = await syncTarget()
     return listCollaborators(token, owner)
   })
 
-  // Аватарки учасників зі спільного сховища (owner + collaborators), ключ — нік.
+  // Avatars of members from the shared repo (owner + collaborators), keyed by login.
   ipcMain.handle(
     'repo:avatars',
     async (_event, logins: string[]): Promise<Record<string, string>> => {
@@ -197,57 +197,58 @@ export function registerIpcHandlers(): void {
     }
   )
 
-  // --- Ігри ---
+  // --- Games ---
 
-  // Які підтримувані ігри встановлені та чи знайдено їхні сейви.
+  // Which supported games are installed and whether their saves were found.
   ipcMain.handle('games:list', async (): Promise<DetectedGame[]> => detectGames())
 
-  // Усі встановлені Steam-ігри (з позначкою, чи підтримуються).
+  // All installed Steam games (flagged with whether they're supported).
   ipcMain.handle('games:all-installed', async (): Promise<InstalledGame[]> => detectAllInstalled())
 
-  // Каталог ГОТОВИХ до синку ігор (для розділу "Усі підтримувані" та пошуку).
+  // Catalog of games READY for sync (for the "All supported" section and search).
   ipcMain.handle('games:catalog', (): CatalogGame[] =>
     READY_GAMES.map((g) => ({ appId: g.appId, name: g.name }))
   )
 
-  // Пошук по всьому Steam-магазину (для "Підтримка" → "Хочу, щоб додали гру").
+  // Search across the whole Steam store (for "Support" → "I want a game added").
   ipcMain.handle(
     'games:search-store',
     async (_event, term: string): Promise<SteamSearchResult[]> => searchSteamStore(term)
   )
 
-  // --- Синхронізація сейвів ---
+  // --- Save sync ---
 
-  // Вивантажити сейви гри на GitHub (у сховище host'а). owner — чиє сховище
-  // (для join це друг-хост), actorLogin — хто реально зараз пушить (я сам) —
-  // саме він, а не owner, має піти в історію синку й автора коміту.
+  // Upload the game's saves to GitHub (into the host's repo). owner — whose
+  // repo (for join it's the host friend), actorLogin — who's actually
+  // pushing right now (myself) — it's them, not owner, that should end up
+  // in the sync history and as the commit author.
   ipcMain.handle('sync:upload', async (_event, appId: string): Promise<SyncResult> => {
     const { token, owner } = await syncTarget()
     const { owner: actorLogin } = await requireAuth()
     return uploadGame(token, owner, appId, actorLogin)
   })
 
-  // Завантажити сейви гри з GitHub (зі сховища host'а).
+  // Download the game's saves from GitHub (from the host's repo).
   ipcMain.handle('sync:download', async (_event, appId: string): Promise<SyncResult> => {
     const { token, owner } = await syncTarget()
     return downloadGame(token, owner, appId)
   })
 
-  // Статус синку для всіх ігор (порівняння локального зі сховищем host'а).
+  // Sync status for all games (comparing local against the host's repo).
   ipcMain.handle('sync:statuses', async (): Promise<GameSyncStatus[]> => {
     const { token, owner } = await syncTarget()
     return getSyncStatuses(token, owner)
   })
 
-  // Історія push-подій (найновіші перші).
+  // Push event history (newest first).
   ipcMain.handle('sync:history', async (): Promise<SyncHistoryEntry[]> => {
     const { token, owner } = await syncTarget()
     return getSyncHistory(token, owner)
   })
 
-  // --- Автосинхронізація (спостерігач процесів) ---
+  // --- Auto-sync (process watcher) ---
 
-  // Запустити: стежимо за іграми, шлемо renderer події 'sync:auto'.
+  // Start it: watch games, send renderer 'sync:auto' events.
   ipcMain.handle('watcher:start', async (event): Promise<void> => {
     const { token, owner } = await syncTarget()
     const { owner: actorLogin } = await requireAuth()
@@ -258,7 +259,7 @@ export function registerIpcHandlers(): void {
     stopWatcher()
   })
 
-  // --- Керування вікном (для власного titlebar) ---
+  // --- Window controls (for the custom titlebar) ---
 
   ipcMain.handle('window:minimize', (event): void => {
     BrowserWindow.fromWebContents(event.sender)?.minimize()
@@ -271,7 +272,7 @@ export function registerIpcHandlers(): void {
     else win.maximize()
   })
 
-  // Розгорнути на весь екран (викликаємо після onboarding).
+  // Maximize the window (called after onboarding).
   ipcMain.handle('window:maximize', (event): void => {
     BrowserWindow.fromWebContents(event.sender)?.maximize()
   })
@@ -284,17 +285,18 @@ export function registerIpcHandlers(): void {
     return BrowserWindow.fromWebContents(event.sender)?.isMaximized() ?? false
   })
 
-  // Чи запущено з автозапуску Windows приховано (--hidden). Якщо так, renderer
-  // не повинен викликати maximize() — це примусово показує вікно (документована
-  // поведінка Electron), що ламає "стартувати згорнутим у трей".
+  // Whether launched from Windows autostart hidden (--hidden). If so, the
+  // renderer must not call maximize() — that forcibly shows the window
+  // (documented Electron behavior), which breaks "start minimized to tray".
   ipcMain.handle('window:was-started-hidden', (): boolean => process.argv.includes('--hidden'))
 
-  // --- Налаштування запуску ---
+  // --- Startup settings ---
 
-  // На Windows getLoginItemSettings() звіряє ТОЧНИЙ збіг шляху+аргументів —
-  // тож перевіряти треба з тими самими args, з якими реєстрували автозапуск
-  // (--hidden, якщо увімкнено "стартувати в трей"), інакше openAtLogin хибно
-  // повертає false, навіть коли запис у реєстрі насправді є.
+  // On Windows, getLoginItemSettings() checks for an EXACT match of
+  // path+args — so it must be checked with the same args that autostart was
+  // registered with (--hidden, if "start minimized to tray" is enabled),
+  // otherwise openAtLogin incorrectly returns false even when the registry
+  // entry actually exists.
   function loginItemArgs(startMinimized: boolean): string[] {
     return startMinimized ? ['--hidden'] : []
   }
@@ -320,14 +322,14 @@ export function registerIpcHandlers(): void {
       writeSettings({ startMinimized: next.startMinimized })
       app.setLoginItemSettings({
         openAtLogin: next.openAtLogin,
-        // На Windows запуск згорнутим робимо через аргумент.
+        // On Windows we handle starting minimized via an argument.
         args: next.startMinimized ? ['--hidden'] : []
       })
       return next
     }
   )
 
-  // --- Загальні налаштування (мова, аватар) ---
+  // --- General settings (language, avatar) ---
 
   ipcMain.handle('settings:get-general', (): GeneralSettings => {
     const s = readSettings()
@@ -347,8 +349,8 @@ export function registerIpcHandlers(): void {
     writeSettings({ showCloudWarning })
   })
 
-  // Відкрити діалог вибору файлу, зчитати картинку і зберегти як data URL.
-  // Повертає null, якщо користувач скасував вибір.
+  // Open a file picker dialog, read the image, and save it as a data URL.
+  // Returns null if the user cancelled the selection.
   ipcMain.handle('settings:pick-avatar', async (event): Promise<string | null> => {
     const win = BrowserWindow.fromWebContents(event.sender)
     const options: Electron.OpenDialogOptions = {
@@ -368,36 +370,36 @@ export function registerIpcHandlers(): void {
 
     const dataUrl = `data:${mime};base64,${readFileSync(filePath).toString('base64')}`
     writeSettings({ avatarDataUrl: dataUrl })
-    // Best-effort: одразу пушимо в спільне сховище, щоб друг побачив нову
-    // аватарку. Якщо ще нема логіну/сховища/інтернету — не критично, просто
-    // пропускаємо: локальна аватарка все одно збережена вище.
+    // Best-effort: push to the shared repo right away so the friend sees the
+    // new avatar. If there's no login/repo/internet yet — not critical, just
+    // skip it: the local avatar is already saved above regardless.
     try {
       const { token, owner } = await syncTarget()
       const { owner: actor } = await requireAuth()
       await uploadAvatar(token, owner, actor, dataUrl)
     } catch {
-      // тихо ігноруємо — див. коментар вище
+      // silently ignore — see comment above
     }
     return dataUrl
   })
 
-  // --- Роль (host / join) ---
+  // --- Role (host / join) ---
 
-  // Поточна роль або null, якщо ще не вибрано.
+  // Current role, or null if not chosen yet.
   ipcMain.handle('role:get', (): RoleConfig | null => {
     const s = readSettings()
     if (!s.role || !s.hostOwner) return null
     return { role: s.role, hostOwner: s.hostOwner }
   })
 
-  // Стати хостом: синхронізуємо власне сховище.
+  // Become host: sync our own repo.
   ipcMain.handle('role:set-host', async (): Promise<RoleConfig> => {
     const { owner } = await requireAuth()
     writeSettings({ role: 'host', hostOwner: owner })
     return { role: 'host', hostOwner: owner }
   })
 
-  // Підключитися до друга-хоста: перевіряємо доступ до його сховища.
+  // Connect to a host friend: verify access to their repo.
   ipcMain.handle('role:join', async (_event, hostLogin: string): Promise<RoleConfig> => {
     const token = loadToken()
     if (!token) throw makeAppError('NOT_LOGGED_IN')
@@ -412,9 +414,9 @@ export function registerIpcHandlers(): void {
     return { role: 'join', hostOwner: host }
   })
 
-  // --- Підтримка ---
+  // --- Support ---
 
-  // Надіслати звернення (баг / хочу гру / інше) на пошту Віталія через Worker-проксі.
+  // Send a message (bug / game request / other) to my email via the Worker proxy.
   ipcMain.handle('support:send', async (_event, request: SupportRequest): Promise<void> => {
     await sendSupportMessage(request)
   })

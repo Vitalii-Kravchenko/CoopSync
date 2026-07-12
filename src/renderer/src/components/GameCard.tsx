@@ -11,25 +11,25 @@ interface Props {
   appId: string
   name: string
   installed: boolean
-  /** Чи підтримує CoopSync цю гру (default true). */
+  /** Whether CoopSync supports this game (default true). */
   supported?: boolean
-  /** Статус синку (тільки для встановлених). undefined = ще перевіряємо. */
+  /** Sync status (installed games only). undefined = still checking. */
   syncStatus?: SyncStatus
-  /** Версія локальних сейвів. */
+  /** Local saves version. */
   localVersion?: number
-  /** Версія сейвів на GitHub. */
+  /** Saves version on GitHub. */
   remoteVersion?: number
-  /** ISO timestamp останнього push у хмару (спільний для обох гравців). */
+  /** ISO timestamp of the last push to the cloud (shared by both players). */
   lastSyncAt?: string
-  /** Розмір сейвів у байтах. */
+  /** Saves size in bytes. */
   sizeBytes?: number
-  /** Триває синхронізація саме цієї гри. */
+  /** Sync in progress for this specific game. */
   busy?: boolean
   onUpload?: () => void
   onDownload?: () => void
 }
 
-// 0/undefined → "—", інакше formatVersion.
+// 0/undefined -> "—", otherwise formatVersion.
 function fmtVersion(n: number | undefined): string {
   return n && n > 0 ? formatVersion(n) : '—'
 }
@@ -38,8 +38,8 @@ function startOfDay(d: Date): number {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
 }
 
-// ISO timestamp → "Сьогодні, 14:32" / "Учора, 14:32" / "8 лип, 14:32" (локалізовано,
-// день через Intl.RelativeTimeFormat — та сама фраза, що й у нативному календарі мови).
+// ISO timestamp -> "Today, 14:32" / "Yesterday, 14:32" / "Jul 8, 14:32" (localized,
+// the day part via Intl.RelativeTimeFormat — the same phrasing as the language's native calendar).
 function formatLastSync(iso: string, locale: string): string {
   const date = new Date(iso)
   const dayDiff = Math.round((startOfDay(date) - startOfDay(new Date())) / 86_400_000)
@@ -53,7 +53,7 @@ function formatLastSync(iso: string, locale: string): string {
   return `${dayPart.charAt(0).toUpperCase()}${dayPart.slice(1)}, ${time}`
 }
 
-// Байти → "482 KB" / "1.3 GB".
+// Bytes -> "482 KB" / "1.3 GB".
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
   const units = ['KB', 'MB', 'GB']
@@ -66,7 +66,7 @@ function formatBytes(bytes: number): string {
   return `${value.toFixed(value < 10 ? 1 : 0)} ${units[unitIndex]}`
 }
 
-// Як показати статус синку: колір, крапка, текст (бейдж-пілюля).
+// How to display the sync status: color, dot, text (badge pill).
 function syncDisplay(
   s: SyncStatus | undefined,
   t: Translation
@@ -131,7 +131,7 @@ function GameCard({
   const [hover, setHover] = useState(false)
   const [imgError, setImgError] = useState(false)
 
-  // Грати/синхронізувати можна лише встановлену + підтримувану гру.
+  // Can only play/sync a game that is installed + supported.
   const playable = installed && supported
   const showOverlay = (hover || busy) && playable
   const status = playable ? syncDisplay(syncStatus, t) : null
@@ -173,10 +173,10 @@ function GameCard({
               <div style={styles.syncing}>{t.gameCard.syncing}</div>
             ) : (
               <div style={styles.overlayContent}>
-                {/* tabIndex=-1 — навмисно поза Tab-порядком: із десятками
-                    встановлених ігор по 2 кнопки на кожній перетворили б Tab
-                    на тортури. Дія й так мишею/ховером — картка не єдиний
-                    спосіб синку (є ще ручний тригер по кліку). */}
+                {/* tabIndex=-1 — deliberately out of the Tab order: with dozens
+                    of installed games, 2 buttons each would turn Tab into
+                    torture. The action is mouse/hover-driven anyway — the card isn't
+                    the only way to sync (there's also a manual click trigger). */}
                 <Button variant="primary" style={styles.overlayBtn} onClick={onUpload} tabIndex={-1}>
                   <UploadIcon size={15} color={colors.textOnAccent} />
                   {t.gameCard.upload}
@@ -222,8 +222,8 @@ function GameCard({
               style={{
                 ...styles.badgeDot,
                 background: status.color,
-                // "Оновлення" (дизайн-система 4.7) — інфо-крапка пульсує, сигналізуючи
-                // про свіжу версію в хмарі, яку ще не підтягнули локально.
+                // "Update" (design system 4.7) — the info dot pulses to signal
+                // a fresh version in the cloud that hasn't been pulled locally yet.
                 ...(syncStatus === 'remote-newer' || syncStatus === 'cloud-only' ? styles.badgeDotPulse : null)
               }}
             />

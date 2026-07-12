@@ -4,33 +4,36 @@ import { registerIpcHandlers } from './ipc'
 import { createTray } from './trayIcon'
 import { consumeInstallerLanguage, readSettings, writeSettings } from './services/settingsStore'
 
-// На частині старих відеокарт (особливо AMD) GPU-процес Electron/Chromium
-// падає при старті, і застосунок взагалі не відкривається. UI простий
-// (картки, легкі анімації), тож вимикаємо апаратне прискорення безумовно
-// для всіх — втрата плавності від софтверного рендерингу непомітна.
+// On some older GPUs (especially AMD) the Electron/Chromium GPU process
+// crashes on startup and the app doesn't open at all. The UI is simple
+// (cards, light animations), so we disable hardware acceleration
+// unconditionally for everyone — the loss of smoothness from software
+// rendering is unnoticeable.
 app.disableHardwareAcceleration()
 
-// На частині AMD-карток (напр. RX 6600) навіть disableHardwareAcceleration()
-// не рятує: Chromium все одно піднімає окремий GPU-процес (для software-
-// рендерингу теж), він падає кілька разів поспіль, і після вичерпання спроб
-// застосунок фатально завершується ("GPU process isn't usable. Goodbye.").
-// in-process-gpu прибирає цей окремий процес узагалі — GPU-сервіс працює
-// в основному процесі, падати нема чому.
+// On some AMD cards (e.g. RX 6600) even disableHardwareAcceleration()
+// doesn't help: Chromium still spins up a separate GPU process (for
+// software rendering too), it crashes several times in a row, and once
+// retries are exhausted the app terminates fatally ("GPU process isn't
+// usable. Goodbye."). in-process-gpu removes that separate process
+// entirely — the GPU service runs in the main process, so there's nothing
+// left to crash.
 app.commandLine.appendSwitch('in-process-gpu')
 
-// Один інстанс застосунку: без цього ручний подвійний запуск .exe (або
-// запуск руками, поки автозапуск уже підняв застосунок у трей) відкривав
-// ДРУГИЙ окремий процес — два watcher'и одночасно смикають той самий git-клон
-// у userData, що може зламати синк гонкою. requestSingleInstanceLock()
-// повертає false в другому процесі — він одразу виходить, а перший (через
-// 'second-instance') підіймає своє вікно.
+// Single app instance: without this, manually launching the .exe a second
+// time (or launching it by hand while autostart already brought the app up
+// in the tray) would open a SECOND separate process — two watchers pulling
+// on the same git clone in userData at once, which can break sync with a
+// race condition. requestSingleInstanceLock() returns false in the second
+// process — it exits immediately, and the first process (via
+// 'second-instance') brings its window up.
 const gotSingleInstanceLock = app.requestSingleInstanceLock()
 
 if (!gotSingleInstanceLock) {
   app.quit()
 } else {
   let mainWindow: BrowserWindow | null = null
-  let isQuitting = false // true лише коли користувач справді виходить (через трей)
+  let isQuitting = false // true only when the user actually quits (via tray)
 
   function createWindow(): void {
     mainWindow = new BrowserWindow({
@@ -39,9 +42,9 @@ if (!gotSingleInstanceLock) {
       minWidth: 880,
       minHeight: 700,
       show: false,
-      // 'hidden' (а не frame:false): ховаємо рідний titlebar, але лишаємо
-      // системну рамку вікна — інакше на Windows 11 з'являються світлі смуги
-      // по краях у віконному режимі.
+      // 'hidden' (not frame:false): hides the native titlebar but keeps
+      // the system window border — otherwise on Windows 11, light stripes
+      // appear along the edges in windowed mode.
       titleBarStyle: 'hidden',
       backgroundColor: '#1e1e2e',
       title: 'CoopSync',
@@ -51,18 +54,18 @@ if (!gotSingleInstanceLock) {
       }
     })
 
-    // Якщо запущено з автозапуску згорнутим (--hidden) — не показуємо вікно,
-    // лишаємо програму в треї.
+    // If launched from autostart minimized (--hidden) — don't show the
+    // window, leave the app in the tray.
     const startHidden = process.argv.includes('--hidden')
     mainWindow.on('ready-to-show', () => {
       if (!startHidden) mainWindow?.show()
     })
 
-    // Повідомляємо renderer про зміну стану розгортання (для іконки кнопки вікна).
+    // Notify the renderer about maximize state changes (for the window button icon).
     mainWindow.on('maximize', () => mainWindow?.webContents.send('window:maximized-change', true))
     mainWindow.on('unmaximize', () => mainWindow?.webContents.send('window:maximized-change', false))
 
-    // Закриття вікна не вимикає програму — ховаємо її в трей (працює у фоні).
+    // Closing the window doesn't quit the app — hide it in the tray (keeps running in the background).
     mainWindow.on('close', (event) => {
       if (!isQuitting) {
         event.preventDefault()
@@ -70,13 +73,13 @@ if (!gotSingleInstanceLock) {
       }
     })
 
-    // Зовнішні посилання відкриваємо в системному браузері, а не у вікні застосунку
+    // Open external links in the system browser, not inside the app window
     mainWindow.webContents.setWindowOpenHandler((details) => {
       shell.openExternal(details.url)
       return { action: 'deny' }
     })
 
-    // У dev-режимі electron-vite дає URL з hot-reload, у продакшені — зібраний файл
+    // In dev mode electron-vite serves a URL with hot-reload, in production — the built file
     if (process.env['ELECTRON_RENDERER_URL']) {
       mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
     } else {
@@ -89,31 +92,33 @@ if (!gotSingleInstanceLock) {
       createWindow()
       return
     }
-    // maximize() і показує вікно, і розгортає його — саме те, що треба після
-    // прихованого автозапуску (де ми свідомо не викликали maximize() раніше)
-    // і після другого запуску .exe, поки перший інстанс сидів у треї.
+    // maximize() both shows the window and maximizes it — exactly what's
+    // needed after a hidden autostart (where we deliberately didn't call
+    // maximize() earlier) and after a second .exe launch while the first
+    // instance was sitting in the tray.
     mainWindow.maximize()
     mainWindow.focus()
   }
 
-  // Хтось запустив .exe вдруге (вручну, або автозапуск + ручний клік по
-  // ярлику) — замість другого процесу просто піднімаємо наявне вікно.
+  // Someone launched the .exe a second time (manually, or autostart +
+  // manual click on the shortcut) — instead of a second process, just bring
+  // up the existing window.
   app.on('second-instance', () => {
     showWindow()
   })
 
   app.whenReady().then(() => {
-    // Малюємо вікно в темному режимі — інакше на світлій темі Windows
-    // системна рамка вікна світла (білі смуги по краях).
+    // Render the window in dark mode — otherwise on Windows light theme the
+    // system window border is light (white stripes along the edges).
     nativeTheme.themeSource = 'dark'
 
-    // Маркер від NSIS-інсталятора (build/installer.nsh) з'являється щоразу, коли
-    // інсталятор щойно відпрацював — і при першому встановленні, і при
-    // перевстановленні поверх наявних налаштувань (без деінсталяції). Раніше
-    // автозапуск+трей вмикались лише за isFirstRun() (відсутність app-settings.json),
-    // тому збивались при повторних встановленнях — тепер прив'язано до того ж
-    // маркера, що й мова, щоб обидва завжди узгоджено вмикались одразу після
-    // роботи інсталятора.
+    // The marker from the NSIS installer (build/installer.nsh) appears every
+    // time the installer just ran — both on first install and on reinstall
+    // over existing settings (without uninstalling). Previously
+    // autostart+tray were only enabled based on isFirstRun() (absence of
+    // app-settings.json), so they'd get reset on reinstalls — now it's tied
+    // to the same marker as the language, so both are always enabled
+    // consistently right after the installer runs.
     const installerLanguage = consumeInstallerLanguage()
     const justInstalled = installerLanguage !== null
     if (installerLanguage) {
@@ -138,9 +143,9 @@ if (!gotSingleInstanceLock) {
     })
   })
 
-  // Вікно сховане в трей — НЕ виходимо, коли всі вікна закриті.
-  // Реальний вихід — лише через пункт трею "Вийти".
+  // The window is hidden in the tray — do NOT quit when all windows are closed.
+  // Actual quitting only happens via the tray's "Quit" item.
   app.on('window-all-closed', () => {
-    // Нічого не робимо: програма живе у фоні з треєм.
+    // Do nothing: the app keeps running in the background with the tray icon.
   })
 }

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useI18n } from '../i18n'
 
-// Кнопки керування вікном. Іконка середньої кнопки міняється:
-// ▢ — розгорнути, ❐ — відновити (коли вікно вже на весь екран).
+// Window control buttons. The middle button's icon changes:
+// ▢ — maximize, ❐ — restore (when the window is already fullscreen).
 function WindowControls(): React.JSX.Element {
   const { t } = useI18n()
   const [maximized, setMaximized] = useState(false)

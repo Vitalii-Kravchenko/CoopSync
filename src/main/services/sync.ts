@@ -12,21 +12,22 @@ import { formatVersion } from '../../shared/format'
 import type { SyncStatus, GameSyncStatus, SyncHistoryEntry, SyncResult } from '../../shared/types'
 
 const exec = promisify(execFile)
-const BIG_BUFFER = 64 * 1024 * 1024 // запас для великих сейвів
+const BIG_BUFFER = 64 * 1024 * 1024 // headroom for large saves
 
-// Локальна папка, куди клонуємо спільне сховище.
+// Local folder we clone the shared repo into.
 function repoDir(): string {
   return join(app.getPath('userData'), 'saves-repo')
 }
 
-// URL репо з токеном для приватного доступу (push/pull без окремого логіну git).
+// Repo URL with the token for private access (push/pull without a separate git login).
 function remoteUrl(token: string, owner: string): string {
   return `https://x-access-token:${token}@github.com/${owner}/${SAVES_REPO_NAME}.git`
 }
 
-// Прапори, що вимикають credential helper (gh/GCM) — інакше при push/pull
-// вискакує вікно "вибери акаунт GitHub". Очищаємо і загальний, і
-// github.com-специфічний helper (його ставить gh). Так git бере токен з URL.
+// Flags that disable the credential helper (gh/GCM) — otherwise a "choose
+// GitHub account" window pops up during push/pull. We clear both the
+// general and the github.com-specific helper (set by gh). This way git
+// takes the token from the URL.
 const NO_HELPER = [
   '-c',
   'credential.helper=',
@@ -34,25 +35,27 @@ const NO_HELPER = [
   'credential.https://github.com.helper='
 ]
 
-// Середовище: забороняємо будь-які інтерактивні запити (вікна/промпти).
+// Environment: disallow any interactive prompts (windows/prompts).
 const GIT_ENV = {
   ...process.env,
   GIT_TERMINAL_PROMPT: '0',
   GCM_INTERACTIVE: 'never'
 }
 
-// Розпізнати сирий exec()-виняток git (технічний stderr, "Command failed: git...")
-// і перетворити на код помилки, зрозумілий користувачу. Нерозпізнані випадки не
-// губимо повністю — лишаємо найзмістовніший рядок stderr (fatal:/error:) як деталь.
+// Recognize a raw git exec() exception (technical stderr, "Command failed:
+// git...") and turn it into a user-friendly error code. Unrecognized cases
+// aren't fully swallowed — we keep the most meaningful stderr line
+// (fatal:/error:) as a detail.
 function wrapGitError(e: unknown): Error {
   const raw = e instanceof Error ? e.message : String(e)
   if (/could not resolve host|network is unreachable|connection timed out|failed to connect|recv failure|could not connect/i.test(raw)) {
     return makeAppError('NO_INTERNET')
   }
-  // Окремо від інших auth-помилок: "repository not found" на git-рівні означає
-  // саме "такого репо більше нема" (видалили на GitHub) — токен тут ні до чого,
-  // тож не радимо переlogінюватись, а даємо код, який вище перетворюємо на
-  // чіткий "сховище не підключено" замість голої git-помилки.
+  // Separate from other auth errors: "repository not found" at the git level
+  // means specifically "this repo doesn't exist anymore" (deleted on
+  // GitHub) — the token has nothing to do with it, so we don't suggest
+  // re-logging in, instead giving a code that we turn upstream into a clear
+  // "repo not connected" instead of a bare git error.
   if (/repository not found/i.test(raw)) {
     return makeAppError('REPO_NOT_FOUND')
   }
@@ -67,16 +70,16 @@ function wrapGitError(e: unknown): Error {
   return makeAppError('GIT_GENERIC', { detail })
 }
 
-// Явна ідентичність коміту (-c user.name/user.email) — інакше на машині, де в
-// git ніколи не налаштовували global user.name/user.email (типово для когось,
-// хто поставив CoopSync і більше нічим git не користується), commit падає з
-// "unable to auto-detect email address". noreply-адреса від GitHub не
-// потребує підтвердження, просто валідна для git.
+// Explicit commit identity (-c user.name/user.email) — otherwise on a
+// machine where global user.name/user.email was never configured in git
+// (typical for someone who installed CoopSync and doesn't otherwise use
+// git), commit fails with "unable to auto-detect email address". A noreply
+// address from GitHub doesn't need verification, it's just valid for git.
 function identityFlags(actor: string): string[] {
   return ['-c', `user.name=${actor}`, '-c', `user.email=${actor}@users.noreply.github.com`]
 }
 
-// Запустити git у вже клонованому репо.
+// Run git inside the already-cloned repo.
 async function git(args: string[]): Promise<string> {
   try {
     const { stdout } = await exec('git', [...NO_HELPER, ...args], {
@@ -90,12 +93,13 @@ async function git(args: string[]): Promise<string> {
   }
 }
 
-// Одночасні виклики (напр. MainScreen і HistoryScreen смикають ensureRepo
-// паралельно на старті) інакше змагаються за той самий клон і ламають один
-// одного (два "git clone" в ту саму папку). Серіалізуємо через спільний proмiс.
+// Concurrent calls (e.g. MainScreen and HistoryScreen both trigger
+// ensureRepo in parallel on startup) would otherwise race for the same
+// clone and break each other (two "git clone" into the same folder).
+// Serialize them through a shared promise.
 let ensureRepoInFlight: Promise<void> | null = null
 
-// Переконатися, що репо склоновано локально й оновлено з GitHub.
+// Make sure the repo is cloned locally and up to date with GitHub.
 async function ensureRepo(token: string, owner: string): Promise<void> {
   if (!ensureRepoInFlight) {
     ensureRepoInFlight = doEnsureRepo(token, owner).finally(() => {
@@ -117,21 +121,21 @@ async function doEnsureRepo(token: string, owner: string, retried = false): Prom
       throw wrapGitError(e)
     }
   } else {
-    // Оновлюємо токен у remote (міг змінитись) і підтягуємо свіже.
+    // Refresh the token in the remote (it may have changed) and pull the latest.
     await git(['remote', 'set-url', 'origin', url])
-    // Скидаємо будь-які незакомічені зміни в цьому внутрішньому клоні перед
-    // пулом. Це технічна робоча копія, не джерело істини (справжні сейви
-    // копіюються сюди наново з реальної папки гри при кожному uploadGame) —
-    // якщо застосунок впав/закрився посеред копіювання файлів (після
-    // copyFiltered, до git commit), клон лишається "брудним" і pull назавжди
-    // падає з "local changes would be overwritten by merge", ламаючи взагалі
-    // весь синк (історію, upload, download) до ручного втручання.
+    // Reset any uncommitted changes in this internal clone before pulling.
+    // This is a technical working copy, not a source of truth (the real
+    // saves are copied here fresh from the actual game folder on every
+    // uploadGame) — if the app crashed/closed mid-copy (after copyFiltered,
+    // before git commit), the clone stays "dirty" and pull permanently fails
+    // with "local changes would be overwritten by merge", breaking all of
+    // sync (history, upload, download) until manual intervention.
     try {
       await git(['reset', '--hard', 'HEAD'])
       await git(['clean', '-fd'])
     } catch {
-      // Якщо навіть reset/clean не вдався — не блокуємо спробу pull нижче,
-      // хай вона впаде своєю власною, зрозумілішою помилкою.
+      // If even reset/clean failed — don't block the pull attempt below,
+      // let it fail with its own clearer error.
     }
     try {
       await exec('git', [...NO_HELPER, 'pull', '--no-rebase', 'origin', 'main'], {
@@ -142,9 +146,9 @@ async function doEnsureRepo(token: string, owner: string, retried = false): Prom
     } catch (e) {
       const raw = e instanceof Error ? e.message : String(e)
       if (!retried && /refusing to merge unrelated histories/i.test(raw)) {
-        // Локальний клон застарів відносно пересозданого на GitHub репо (напр.
-        // хтось видалив і перестворив сховище) — самі перестворюємо клон з нуля
-        // замість падати назавжди з незрозумілою git-помилкою.
+        // The local clone is stale relative to a recreated GitHub repo (e.g.
+        // someone deleted and recreated the repo) — recreate the clone from
+        // scratch ourselves instead of failing forever with a confusing git error.
         await rm(dir, { recursive: true, force: true })
         return doEnsureRepo(token, owner, true)
       }
@@ -159,9 +163,10 @@ function findGame(appId: string): { name: string; savePath: string; saveFilePatt
   return { name: g.name, savePath: g.getSavePath(), saveFilePattern: g.saveFilePattern }
 }
 
-// Копіює папку, пропускаючи файли (не папки), що не матчаться паттерном гри —
-// потрібно для ігор, де та сама папка сейвів містить ще й акаунт-специфічні
-// файли, які не можна переносити на чужий ПК (див. SupportedGame.saveFilePattern).
+// Copies a folder, skipping files (not folders) that don't match the game's
+// pattern — needed for games where the same saves folder also contains
+// account-specific files that must not be moved to a different PC (see
+// SupportedGame.saveFilePattern).
 async function copyFiltered(src: string, dest: string, pattern?: RegExp): Promise<void> {
   await cp(src, dest, {
     recursive: true,
@@ -173,8 +178,8 @@ async function copyFiltered(src: string, dest: string, pattern?: RegExp): Promis
   })
 }
 
-// --- Версії сейвів ---
-// Хмарна версія лежить у репо в .meta/<гра>.json; локальна — у userData.
+// --- Save versions ---
+// The cloud version lives in the repo at .meta/<game>.json; the local one — in userData.
 
 function remoteMetaPath(name: string): string {
   return join(repoDir(), '.meta', `${name}.json`)
@@ -190,7 +195,7 @@ async function readRemoteMeta(name: string): Promise<RemoteMeta | null> {
   const p = remoteMetaPath(name)
   if (!existsSync(p)) return null
   try {
-    // Прибираємо можливий BOM на початку — інакше JSON.parse падає.
+    // Strip a possible leading BOM — otherwise JSON.parse fails.
     const raw = (await readFile(p, 'utf8')).replace(/^﻿/, '')
     return JSON.parse(raw) as RemoteMeta
   } catch {
@@ -209,10 +214,11 @@ async function writeRemoteMeta(name: string, version: number, owner: string): Pr
   await writeFile(remoteMetaPath(name), JSON.stringify(meta, null, 2))
 }
 
-// --- Історія синхронізацій ---
-// Лог push-подій, спільний для host і join (лежить у самому репо, тож
-// синкається разом із сейвами). Тільки push — download локальний, у хмарі
-// нічого не міняє, тож логувати його в спільній історії нема сенсу.
+// --- Sync history ---
+// A log of push events shared between host and join (lives in the repo
+// itself, so it syncs along with the saves). Push only — download is local
+// and doesn't change anything in the cloud, so logging it in the shared
+// history wouldn't make sense.
 
 const MAX_HISTORY_ENTRIES = 50
 
@@ -238,7 +244,7 @@ async function appendHistory(entry: SyncHistoryEntry): Promise<void> {
   await writeFile(historyPath(), JSON.stringify(next, null, 2))
 }
 
-/** Історія push-подій, найновіші перші. */
+/** Push event history, newest first. */
 export async function getSyncHistory(token: string, owner: string): Promise<SyncHistoryEntry[]> {
   await ensureRepo(token, owner)
   return readHistory()
@@ -265,9 +271,10 @@ async function setLocalVersion(appId: string, version: number): Promise<void> {
   await writeFile(localVersionsPath(), JSON.stringify(all, null, 2))
 }
 
-/** Вивантажити сейви гри на GitHub (push). Піднімає версію.
- * `owner` — чиє сховище (ціль синку, для join це хост); `actor` — хто реально
- * зараз тисне кнопку (для join це НЕ owner) — саме actor йде в історію/коміт. */
+/** Upload the game's saves to GitHub (push). Bumps the version.
+ * `owner` — whose repo (the sync target, for join this is the host); `actor`
+ * — who's actually pressing the button right now (for join this is NOT
+ * owner) — it's actor that goes into the history/commit. */
 export async function uploadGame(
   token: string,
   owner: string,
@@ -280,10 +287,10 @@ export async function uploadGame(
 
   const dest = join(repoDir(), game.name)
 
-  // Якщо хмарна копія вже є і вміст співпадає з локальним (реальних змін
-  // немає — типовий випадок: локальний трекінг версій скинувся, а в гру
-  // після цього не заходили) — не бампаємо версію і не створюємо порожній
-  // коміт, просто підтягуємо локальний трекінг до вже актуальної хмарної версії.
+  // If a cloud copy already exists and its content matches the local one
+  // (no real changes — typical case: local version tracking got reset, but
+  // the game hasn't been launched since) — don't bump the version or create
+  // an empty commit, just sync local tracking to the already-current cloud version.
   if (existsSync(dest)) {
     const [localHash, remoteHash] = await Promise.all([
       folderHash(game.savePath, game.saveFilePattern),
@@ -296,7 +303,7 @@ export async function uploadGame(
     }
   }
 
-  // Замінюємо вміст папки гри в репо свіжими локальними сейвами.
+  // Replace the game folder's content in the repo with fresh local saves.
   await rm(dest, { recursive: true, force: true })
   await copyFiltered(game.savePath, dest, game.saveFilePattern)
 
@@ -322,17 +329,17 @@ export async function uploadGame(
   return { version: newVersion, pushed: true }
 }
 
-// --- Аватарки учасників ---
-// Зберігаються прямо в спільному сховищі (.meta/avatars/<нік>.txt — сирий
-// data URL, той самий формат, що й локальний avatarDataUrl), щоб кожен
-// учасник кооп-групи бачив картинку іншого. Аватарка локальна лише до першого
-// вивантаження — після uploadAvatar вона доступна всім, у кого є доступ.
+// --- Member avatars ---
+// Stored directly in the shared repo (.meta/avatars/<login>.txt — a raw data
+// URL, the same format as the local avatarDataUrl), so every member of the
+// co-op group can see the other's picture. The avatar is local only until
+// the first upload — after uploadAvatar it's available to everyone with access.
 
 function avatarPath(login: string): string {
   return join(repoDir(), '.meta', 'avatars', `${login}.txt`)
 }
 
-/** Вивантажити (або прибрати, якщо dataUrl === null) свою аватарку в спільне сховище. */
+/** Upload (or remove, if dataUrl === null) your own avatar to the shared repo. */
 export async function uploadAvatar(
   token: string,
   owner: string,
@@ -350,15 +357,15 @@ export async function uploadAvatar(
   }
 
   await git(['add', '-A'])
-  // Якщо файл не змінився (та сама картинка вже була запушена) — нема чого
-  // комітити, а голий `git commit` без змін падає з "nothing to commit".
+  // If the file didn't change (the same picture was already pushed) — there's
+  // nothing to commit, and a bare `git commit` with no changes fails with "nothing to commit".
   const status = await git(['status', '--porcelain'])
   if (!status.trim()) return
   await git([...identityFlags(actor), 'commit', '-m', `avatar: ${actor}`])
   await git(['push', 'origin', 'main'])
 }
 
-/** Аватарки учасників (owner + collaborators) зі спільного сховища, ключ — нік. */
+/** Member avatars (owner + collaborators) from the shared repo, keyed by login. */
 export async function getAvatars(
   token: string,
   owner: string,
@@ -372,7 +379,7 @@ export async function getAvatars(
       try {
         result[login] = (await readFile(p, 'utf8')).replace(/^﻿/, '')
       } catch {
-        // Пошкоджений файл — просто пропускаємо, показуватиметься заглушка.
+        // Corrupted file — just skip it, a placeholder will be shown instead.
       }
     }
   }
@@ -380,13 +387,14 @@ export async function getAvatars(
 }
 
 /**
- * Довантажити з хмари файли, яких бракує локально — не чіпаючи наявні
- * локальні файли (git-подібна поведінка: додаємо те, чого нема, а не
- * перезаписуємо те, що вже є). Захищає від сценарію, коли гравець видалив
- * частину локальних сейвів (напр. один світ) — при вході в гру ці файли
- * автоматично повертаються з хмари, і застосунок більше не сприймає їхню
- * відсутність як "локальний прогрес", який треба запушити поверх хмари.
- * Повертає кількість відновлених файлів.
+ * Download files from the cloud that are missing locally — without touching
+ * existing local files (git-like behavior: add what's missing, don't
+ * overwrite what's already there). Protects against the scenario where a
+ * player deleted part of their local saves (e.g. one world) — on game
+ * launch these files are automatically restored from the cloud, and the app
+ * no longer treats their absence as "local progress" that needs to be
+ * pushed over the cloud.
+ * Returns the number of restored files.
  */
 export async function restoreMissingFiles(token: string, owner: string, appId: string): Promise<number> {
   await ensureRepo(token, owner)
@@ -415,7 +423,7 @@ export async function restoreMissingFiles(token: string, owner: string, appId: s
   return restored
 }
 
-/** Завантажити сейви гри з GitHub у локальну папку (pull). */
+/** Download the game's saves from GitHub into the local folder (pull). */
 export async function downloadGame(token: string, owner: string, appId: string): Promise<SyncResult> {
   await ensureRepo(token, owner)
   const game = findGame(appId)
@@ -426,22 +434,22 @@ export async function downloadGame(token: string, owner: string, appId: string):
   await mkdir(game.savePath, { recursive: true })
   await copyFiltered(src, game.savePath, game.saveFilePattern)
 
-  // Локальна версія тепер дорівнює хмарній.
+  // Local version now equals the cloud version.
   const remoteVersion = await readRemoteVersion(game.name)
   await setLocalVersion(appId, remoteVersion)
   return { version: remoteVersion }
 }
 
-/** Прибрати локальний клон сховища й забуті версії — після видалення репо на GitHub. */
+/** Remove the local repo clone and stale versions — after the repo is deleted on GitHub. */
 export async function resetLocalSaveState(): Promise<void> {
   await rm(repoDir(), { recursive: true, force: true })
   await rm(localVersionsPath(), { force: true })
 }
 
-// --- Визначення статусу синхронізації ---
+// --- Sync status detection ---
 
-// Відбиток вмісту папки: відсортований список "шлях:хеш" → один хеш.
-// Однаковий відбиток = однаковий вміст.
+// A fingerprint of a folder's content: a sorted list of "path:hash" → a
+// single hash. Same fingerprint = same content.
 async function folderHash(dir: string, pattern?: RegExp): Promise<string> {
   const parts: string[] = []
   async function walk(d: string, rel: string): Promise<void> {
@@ -464,9 +472,9 @@ async function folderHash(dir: string, pattern?: RegExp): Promise<string> {
   return createHash('sha1').update(parts.join('\n')).digest('hex')
 }
 
-// Час останньої зміни файлу в папці (найсвіжіший mtime, мс). 0, якщо файлів нема.
-// Використовується, щоб відрізнити "локально реально новіший прогрес" від
-// "локальний вміст просто відрізняється, бо підмінили старим бекапом".
+// Time of the last file change in the folder (freshest mtime, ms). 0 if there are no files.
+// Used to distinguish "local progress is genuinely newer" from "local
+// content just differs because it was swapped for an old backup".
 async function maxMtime(dir: string, pattern?: RegExp): Promise<number> {
   let max = 0
   async function walk(d: string): Promise<void> {
@@ -483,8 +491,8 @@ async function maxMtime(dir: string, pattern?: RegExp): Promise<number> {
   return max
 }
 
-// Сумарний розмір файлів у папці (з урахуванням того самого паттерна фільтрації,
-// що й copyFiltered/folderHash — щоб цифра відповідала тому, що реально синкається).
+// Total size of files in the folder (respecting the same filter pattern as
+// copyFiltered/folderHash — so the number matches what's actually synced).
 async function folderSize(dir: string, pattern?: RegExp): Promise<number> {
   let total = 0
   async function walk(d: string): Promise<void> {
@@ -501,17 +509,17 @@ async function folderSize(dir: string, pattern?: RegExp): Promise<number> {
   return total
 }
 
-/** Статус синку для всіх підтримуваних ігор (один pull на всі). */
+/** Sync status for all supported games (a single pull covers all of them). */
 export async function getSyncStatuses(token: string, owner: string): Promise<GameSyncStatus[]> {
   try {
     await ensureRepo(token, owner)
   } catch (e) {
     const raw = e instanceof Error ? e.message : String(e)
     if (parseAppError(raw)?.code === 'REPO_NOT_FOUND') {
-      // Сховище видалене на GitHub (і локальний клон або відсутній, або
-      // застарів) — не помилка мережі/токена, а чіткий стан "нема сховища".
-      // Показуємо це явно на кожній картці замість того, щоб падати помилкою
-      // і лишати ігри вічно висіти на "Перевіряю...".
+      // The repo was deleted on GitHub (and the local clone is either
+      // missing or stale) — not a network/token error, but a clear "no
+      // repo" state. We show this explicitly on every card instead of
+      // failing with an error and leaving games stuck on "Checking..." forever.
       return READY_GAMES.map((g) => ({
         appId: g.appId,
         status: 'no-repo',
@@ -542,10 +550,10 @@ export async function getSyncStatuses(token: string, owner: string): Promise<Gam
     } else if (!localExists && remoteExists) {
       status = 'cloud-only'
     } else if (remoteVer > localVer) {
-      // У хмарі новіша версія → треба завантажити.
+      // The cloud has a newer version → needs to be downloaded.
       status = 'remote-newer'
     } else {
-      // Версія не новіша — перевіряємо, чи є незбережені локальні зміни.
+      // Version isn't newer — check for unsaved local changes.
       const [localHash, remoteHash] = await Promise.all([
         folderHash(savePath, g.saveFilePattern),
         folderHash(repoPath, g.saveFilePattern)
@@ -556,20 +564,20 @@ export async function getSyncStatuses(token: string, owner: string): Promise<Gam
         remoteMeta &&
         (await maxMtime(savePath, g.saveFilePattern)) <= new Date(remoteMeta.updatedAt).getTime()
       ) {
-        // Локальний вміст відрізняється від хмарного, але жоден локальний файл
-        // не змінювався ПІСЛЯ останнього відомого хмарного синку — це не новий
-        // прогрес, а застарілі дані (напр. відновлений старий бекап сейвів).
-        // Не можна вважати це "локально новіше" — інакше застаріле мовчки
-        // затре хмарний прогрес при автопуші.
+        // Local content differs from the cloud, but no local file was
+        // modified AFTER the last known cloud sync — this isn't new
+        // progress, it's stale data (e.g. an old save backup was restored).
+        // Can't treat this as "locally newer" — otherwise stale data would
+        // silently overwrite cloud progress on auto-push.
         status = 'local-stale'
       } else {
         status = 'local-newer'
       }
     }
 
-    // Час/розмір показуємо зі спільної (хмарної) копії, коли вона є — це те,
-    // що бачать обидва гравці незалежно від того, хто синкав востаннє.
-    // Інакше (ще нікому не вивантажено) — розмір хоча б локальної папки.
+    // Show time/size from the shared (cloud) copy when it exists — that's
+    // what both players see regardless of who synced last.
+    // Otherwise (nobody has uploaded yet) — at least the local folder's size.
     const sizeBytes = remoteExists
       ? await folderSize(repoPath, g.saveFilePattern)
       : localExists

@@ -4,8 +4,8 @@ import { existsSync, readdirSync, readFileSync } from 'fs'
 import { READY_GAMES } from '../games/catalog'
 import type { DetectedGame, InstalledGame } from '../../shared/types'
 
-// Записи Steam, які не є іграми (інструменти, рантайми, редистрибутиви) —
-// не показуємо їх у бібліотеці.
+// Steam entries that aren't games (tools, runtimes, redistributables) —
+// don't show these in the library.
 const NON_GAME_IDS = new Set([
   '228980', // Steamworks Common Redistributables
   '1070560', // Steam Linux Runtime
@@ -20,7 +20,7 @@ function isRealGame(appId: string, name: string): boolean {
   return !NON_GAME_IDS.has(appId) && !NON_GAME_PATTERN.test(name)
 }
 
-// Знайти, де встановлений Steam (через реєстр Windows, з фолбеком на стандартний шлях).
+// Find where Steam is installed (via the Windows registry, falling back to the default path).
 function findSteamPath(): string | null {
   try {
     const out = execFileSync(
@@ -31,13 +31,13 @@ function findSteamPath(): string | null {
     const match = out.match(/SteamPath\s+REG_SZ\s+(.+)/)
     if (match) return match[1].trim()
   } catch {
-    // реєстр недоступний — спробуємо стандартний шлях нижче
+    // registry unavailable — fall back to the default path below
   }
   const fallback = 'C:\\Program Files (x86)\\Steam'
   return existsSync(fallback) ? fallback : null
 }
 
-// Прочитати всі бібліотеки Steam (їх може бути кілька — на різних дисках).
+// Read all Steam libraries (there can be several — on different drives).
 function getLibraryFolders(steamPath: string): string[] {
   const vdf = join(steamPath, 'steamapps', 'libraryfolders.vdf')
   if (!existsSync(vdf)) return [steamPath]
@@ -47,13 +47,13 @@ function getLibraryFolders(steamPath: string): string[] {
   const regex = /"path"\s+"([^"]+)"/g
   let match: RegExpExecArray | null
   while ((match = regex.exec(content)) !== null) {
-    // У VDF шляхи з подвійними бекслешами — повертаємо їх до звичайних.
+    // Paths in the VDF use double backslashes — convert them back to normal ones.
     paths.push(match[1].replace(/\\\\/g, '\\'))
   }
   return paths.length > 0 ? paths : [steamPath]
 }
 
-// Зібрати всі встановлені ігри (appId → назва) з файлів appmanifest_*.acf.
+// Collect all installed games (appId → name) from appmanifest_*.acf files.
 function getInstalledGames(): Map<string, string> {
   const games = new Map<string, string>()
   const steamPath = findSteamPath()
@@ -78,7 +78,7 @@ function getInstalledGames(): Map<string, string> {
   return games
 }
 
-// Які з ГОТОВИХ ігор встановлені + чи знайдено їхні сейви.
+// Which of the READY games are installed + whether their saves were found.
 export function detectGames(): DetectedGame[] {
   const installed = getInstalledGames()
   return READY_GAMES.filter((game) => installed.has(game.appId)).map((game) => {
@@ -92,8 +92,8 @@ export function detectGames(): DetectedGame[] {
   })
 }
 
-// Усі встановлені Steam-ІГРИ (без інструментів/рантаймів) з позначкою,
-// чи має CoopSync готову підтримку. Підтримувані — спочатку, далі за назвою.
+// All installed Steam GAMES (excluding tools/runtimes) flagged with whether
+// CoopSync has ready support for them. Supported ones come first, then sorted by name.
 export function detectAllInstalled(): InstalledGame[] {
   const installed = getInstalledGames()
   const readyIds = new Set(READY_GAMES.map((g) => g.appId))

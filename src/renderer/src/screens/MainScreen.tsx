@@ -9,17 +9,17 @@ import { SearchIcon } from '../components/icons'
 import type { InstalledGame, CatalogGame, GameSyncStatus } from '../../../shared/types'
 
 interface Props {
-  /** Чи активна зараз ця вкладка (MainScreen лишається змонтованим у фоні,
-   *  навіть коли відкрита інша вкладка). */
+  /** Whether this tab is currently active (MainScreen stays mounted in the
+   *  background even when another tab is open). */
   active: boolean
-  /** Змінюється, коли сховище видалене/створене заново в Settings, або після
-   *  реальної синхронізації (push/pull) — сигнал перечитати статуси синку
-   *  (MainScreen лишається змонтованим у фоні). */
+  /** Changes when the repo is deleted/recreated in Settings, or after a
+   *  real sync (push/pull) — a signal to reread sync statuses
+   *  (MainScreen stays mounted in the background). */
   syncVersion: number
-  /** Викликати після реального push (ручного чи автоматичного) — сигнал для
-   *  HistoryScreen (теж лишається змонтованим у фоні) перечитати історію. */
+  /** Call after a real push (manual or automatic) — a signal for
+   *  HistoryScreen (also stays mounted in the background) to reread history. */
   onSynced: () => void
-  /** Показати глобальний банер (рендериться в App — видимий на всіх вкладках). */
+  /** Show a global banner (rendered in App — visible on all tabs). */
   onBanner: (banner: BannerState) => void
 }
 
@@ -31,18 +31,18 @@ function MainScreen({ active, syncVersion, onSynced, onBanner }: Props): React.J
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState<string | null>(null)
   const [syncStatuses, setSyncStatuses] = useState<Record<string, GameSyncStatus>>({})
-  // Попередження про Steam Cloud: показуємо раз на запуск, поки не закриють хрестиком.
+  // Steam Cloud warning: shown once per launch, until dismissed via the close icon.
   const [showCloudWarning, setShowCloudWarning] = useState(false)
-  // Якщо перевірка статусів впала (мережа, гіт) — показуємо це явно, а не мовчимо
-  // вічним "Перевіряю..." на картках без жодного пояснення.
+  // If the status check fails (network, git) — show it explicitly instead of
+  // silently leaving cards stuck on "Checking..." with no explanation.
   const [statusesError, setStatusesError] = useState<string | null>(null)
-  // Так само для самого списку ігор — раніше збій тут (напр. нема прав на
-  // папку Steam-бібліотеки) лишав "Завантаження ігор..." навіки.
+  // Same for the game list itself — previously a failure here (e.g. no
+  // permissions on the Steam library folder) left "Loading games..." forever.
   const [gamesError, setGamesError] = useState<string | null>(null)
 
   useEffect(() => {
     void loadGames()
-    // Статуси тягнемо окремо — вони повільніші (clone/pull сховища).
+    // Statuses are fetched separately — they're slower (repo clone/pull).
     void loadStatuses()
     window.api.settings.getGeneral().then((s) => setShowCloudWarning(s.showCloudWarning))
   }, [])
@@ -61,7 +61,7 @@ function MainScreen({ active, syncVersion, onSynced, onBanner }: Props): React.J
     }
   }
 
-  // syncVersion === 0 на монтуванні — той випадок вже покриває ефект вище.
+  // syncVersion === 0 on mount — that case is already covered by the effect above.
   useEffect(() => {
     if (syncVersion > 0) {
       void loadStatuses()
@@ -69,9 +69,9 @@ function MainScreen({ active, syncVersion, onSynced, onBanner }: Props): React.J
     }
   }, [syncVersion])
 
-  // При поверненні на вкладку "Ігри" перечитуємо статуси — вони могли застаріти,
-  // поки вкладка була неактивна (напр. друг запушив свою версію). Перший рендер
-  // (active вже true на монтуванні) пропускаємо — його покриває ефект монтування вище.
+  // On returning to the "Games" tab, reread statuses — they may have gone stale
+  // while the tab was inactive (e.g. a friend pushed their version). Skip the
+  // first render (active is already true on mount) — covered by the mount effect above.
   const skipFirstActive = useRef(true)
   useEffect(() => {
     if (skipFirstActive.current) {
@@ -89,17 +89,18 @@ function MainScreen({ active, syncVersion, onSynced, onBanner }: Props): React.J
       setSyncStatuses(map)
       setStatusesError(null)
     } catch (e) {
-      // Не лишаємо застарілі статуси (напр. від видаленого репо) поруч із
-      // помилкою — картки мають впасти в "Перевіряю...", а не брехати старими даними.
+      // Don't leave stale statuses (e.g. from a deleted repo) alongside the
+      // error — cards should fall back to "Checking...", not lie with old data.
       setSyncStatuses({})
       setStatusesError(describeError(e, t, t.main.statusesError))
     }
   }
 
-  // Множина встановлених appId — щоб картки каталогу нижче показували правильний
-  // стан незалежно від того, чи гра вже встановлена (раніше секцію "Усі підтримувані"
-  // фільтрували, виключаючи встановлені — через це встановлена (єдина) ready-гра
-  // зникала з неї повністю, що бентежило: ніби вона там "не підтримується").
+  // Set of installed appIds — so the catalog cards below show the correct
+  // state regardless of whether a game is already installed (previously the
+  // "All supported" section was filtered to exclude installed games — this made an
+  // installed (only) ready game disappear from it entirely, which was confusing:
+  // as if it "wasn't supported" there).
   const installedIds = useMemo(() => new Set(installed.map((g) => g.appId)), [installed])
 
   const q = query.trim().toLowerCase()
@@ -109,7 +110,7 @@ function MainScreen({ active, syncVersion, onSynced, onBanner }: Props): React.J
   async function handleSync(appId: string, action: 'upload' | 'download'): Promise<void> {
     const status = syncStatuses[appId]?.status
 
-    // Випадки, коли діяти не треба — лише акуратно повідомляємо (без виклику синку).
+    // Cases where no action is needed — just notify politely (without triggering a sync).
     if (status === 'synced') {
       onBanner({ text: t.main.alreadySynced, kind: 'info' })
       return
@@ -130,17 +131,17 @@ function MainScreen({ active, syncVersion, onSynced, onBanner }: Props): React.J
           ? await window.api.sync.upload(appId)
           : await window.api.sync.download(appId)
       if (action === 'upload' && result.pushed === false) {
-        // Хеш співпав з хмарою в останній момент (напр. друг щойно запушив те
-        // саме) — реального вивантаження не було, кажемо це чесно.
+        // The hash matched the cloud at the last moment (e.g. a friend just
+        // pushed the same thing) — there was no real upload, and we say so honestly.
         onBanner({ text: describeSyncResult('push-skipped-nochange', undefined, t), kind: 'info' })
       } else {
         const code = action === 'upload' ? 'upload-success' : 'download-success'
         onBanner({ text: describeSyncResult(code, { version: String(result.version) }, t), kind: 'success' })
-        // І push (новий запис), і pull (git pull міг підтягнути чужий новий
-        // запис) — вартий того, щоб HistoryScreen перечитав дані.
+        // Both push (a new entry) and pull (git pull may have pulled in
+        // someone else's new entry) are worth having HistoryScreen reread its data.
         onSynced()
       }
-      // Сейви могли змінитися — оновлюємо ігри та статуси.
+      // Saves may have changed — refresh games and statuses.
       setInstalled(await window.api.games.allInstalled())
       await loadStatuses()
     } catch (e) {

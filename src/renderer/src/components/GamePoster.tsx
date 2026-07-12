@@ -4,22 +4,22 @@ import { LibraryIcon } from './icons'
 
 interface Props {
   appId: string
-  /** Готове горизонтальне посилання на картинку (tiny_image зі Steam search
-   *  API) — резервний варіант в кінці ланцюжка, не першим: більшість ігор
-   *  МАЄ вертикальний постер (той самий, що й в решті застосунку), і його
-   *  завжди пробуємо першим — горизонтальне лише рятує зовсім нові ігри,
-   *  для яких вертикального ще не існує (напр. Black Ops 7 на релізі). */
+  /** Ready-made horizontal image URL (tiny_image from the Steam search
+   *  API) — a fallback at the end of the chain, not first: most games
+   *  HAVE a vertical poster (the same one used elsewhere in the app), and we
+   *  always try that first — the horizontal one only rescues brand-new games
+   *  for which a vertical poster doesn't exist yet (e.g. Black Ops 7 at launch). */
   imageUrl?: string
   alt?: string
   style?: React.CSSProperties
 }
 
-// Не в кожної гри в Steam є постер 600x900 (особливо зовсім нові, ще не
-// випущені ігри) — пробуємо спершу "правильний" вертикальний, потім
-// стандартні розміри по черзі, і лише насамкінець — готове горизонтальне
-// посилання від Steam-пошуку. Якщо взагалі нічого нема — заглушка замість
-// поламаної картинки (той самий патерн, що й "заглушка"-аватар у
-// дизайн-системі, 4.8 Аватари).
+// Not every game on Steam has a 600x900 poster (especially brand-new, not yet
+// released games) — try the "correct" vertical one first, then
+// standard sizes in order, and only as a last resort the ready-made horizontal
+// URL from Steam search. If there's nothing at all — a placeholder instead of a
+// broken image (the same pattern as the "placeholder" avatar in the
+// design system, 4.8 Avatars).
 function posterUrls(appId: string, imageUrl?: string): string[] {
   const base = `https://cdn.cloudflare.steamstatic.com/steam/apps/${encodeURIComponent(appId)}`
   const chain = [`${base}/library_600x900.jpg`, `${base}/header.jpg`, `${base}/capsule_231x87.jpg`]

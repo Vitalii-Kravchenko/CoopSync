@@ -17,10 +17,10 @@ interface Props {
 const CATEGORIES: SupportCategory[] = ['bug', 'game-request', 'idea', 'other']
 const SEARCH_DEBOUNCE_MS = 350
 
-// Модалка кнопки "Підтримка" — вибір категорії + вільний текст (або пошук
-// гри в Steam для категорії "Хочу гру") — шле через window.api.support.send
-// (main → Worker → Resend → пошта Віталія). Секрети відправки листа тут ні
-// в якому вигляді не зʼявляються.
+// Modal for the "Support" button — category selection + free text (or a Steam
+// game search for the "I want a game" category) — sends via window.api.support.send
+// (main -> Worker -> Resend -> my inbox). No email-sending secrets appear here
+// in any form.
 function SupportModal({ onClose }: Props): React.JSX.Element {
   const { t } = useI18n()
   const [category, setCategory] = useState<SupportCategory>('bug')
@@ -32,10 +32,11 @@ function SupportModal({ onClose }: Props): React.JSX.Element {
   const [state, setState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
   const [error, setError] = useState<string | null>(null)
   const searchToken = useRef(0)
-  // Закривати кліком по фону — лише якщо саме НАТИСКАННЯ миші теж було на
-  // фоні, а не всередині картки. Інакше виділення тексту (mousedown у полі →
-  // рух за межі модалки → mouseup на фоні) браузер трактує як клік по фону
-  // (спільний предок mousedown/mouseup-цілей) і модалка заплющувалась сама.
+  // Only close on a backdrop click if the mouse PRESS itself was also on the
+  // backdrop, not inside the card. Otherwise selecting text (mousedown in a field ->
+  // drag outside the modal -> mouseup on the backdrop) is treated by the browser
+  // as a backdrop click (common ancestor of the mousedown/mouseup targets), and
+  // the modal would close on its own.
   const mouseDownOnBackdrop = useRef(false)
   const cardRef = useRef<HTMLDivElement>(null)
   useFocusTrap(cardRef)
@@ -49,7 +50,7 @@ function SupportModal({ onClose }: Props): React.JSX.Element {
 
   const gameLimitReached = selectedGames.length >= MAX_GAME_REQUESTS
 
-  // Пошук по Steam-магазину з дебаунсом — тільки поки не досягнуто ліміту ігор.
+  // Debounced Steam store search — only while the game limit hasn't been reached.
   useEffect(() => {
     if (category !== 'game-request' || gameLimitReached) return
     const term = query.trim()
@@ -99,9 +100,9 @@ function SupportModal({ onClose }: Props): React.JSX.Element {
       setError(t.support.messageRequired)
       return
     }
-    // Свідомо НЕ чистимо попередню помилку тут — інакше вона на мить зникає
-    // і з'являється знову (той самий текст), якщо повторна спроба провалиться
-    // з тією ж причиною. Замінюємо/прибираємо її лише коли відомий новий результат.
+    // Deliberately NOT clearing the previous error here — otherwise it would briefly
+    // disappear and reappear (same text) if a retry fails for the same reason.
+    // We only replace/clear it once the new result is known.
     setState('sending')
     try {
       await window.api.support.send({
@@ -398,7 +399,7 @@ const styles: Record<string, React.CSSProperties> = {
     textAlign: 'left'
   },
   resultPoster: {
-    // Steam-постер 600x900 = точно 2:3.
+    // Steam poster 600x900 = exactly 2:3.
     width: 28,
     height: 42,
     objectFit: 'cover',
@@ -418,7 +419,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: radii.md
   },
   selectedGamePoster: {
-    // Steam-постер 600x900 = точно 2:3.
+    // Steam poster 600x900 = exactly 2:3.
     width: 32,
     height: 48,
     objectFit: 'cover',

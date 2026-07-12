@@ -30,6 +30,7 @@ import { startWatcher, stopWatcher } from './services/watcher'
 import { READY_GAMES } from './games/catalog'
 import { saveToken, loadToken, clearToken } from './services/tokenStore'
 import { sendSupportMessage } from './services/support'
+import { checkForUpdates, downloadUpdate, quitAndInstall } from './services/updater'
 import type {
   AuthStatus,
   SavesRepoStatus,
@@ -420,4 +421,10 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('support:send', async (_event, request: SupportRequest): Promise<void> => {
     await sendSupportMessage(request)
   })
+
+  // --- Auto-update ---
+
+  ipcMain.handle('updater:check', (): void => checkForUpdates())
+  ipcMain.handle('updater:download', (): void => downloadUpdate())
+  ipcMain.handle('updater:install', (): void => quitAndInstall())
 }

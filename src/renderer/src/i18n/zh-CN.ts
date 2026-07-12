@@ -142,7 +142,16 @@ export const zhCN: Translation = {
     about: '关于',
     version: (v) => `版本 ${v}`,
     aboutDescription: '通过 GitHub 在朋友之间同步联机游戏存档。',
-    githubRepoLink: 'GitHub 仓库 →'
+    githubRepoLink: 'GitHub 仓库 →',
+    checkForUpdates: '检查更新',
+    checkingForUpdates: '正在检查更新…',
+    updateAvailable: (v) => `发现新版本：v${v}`,
+    updateNotAvailable: '你已是最新版本',
+    downloadUpdate: '下载更新',
+    updateDownloading: (percent) => `正在下载更新… ${percent}%`,
+    updateDownloaded: (v) => `已下载 v${v} 更新 —— 重启以安装`,
+    restartToInstall: '重启并安装',
+    updateCheckError: '检查更新失败'
   },
   support: {
     tooltip: '支持',

@@ -16,7 +16,8 @@ import type {
   InstalledGame,
   GeneralSettings,
   SupportRequest,
-  SteamSearchResult
+  SteamSearchResult,
+  UpdateStatus
 } from '../shared/types'
 
 // API exposed to the renderer as window.api.
@@ -135,6 +136,20 @@ const api = {
   support: {
     /** Send a message (bug / game request / other) to my email. */
     send: (request: SupportRequest): Promise<void> => ipcRenderer.invoke('support:send', request)
+  },
+  updater: {
+    /** Ask the main process to check GitHub for a newer release. */
+    check: (): Promise<void> => ipcRenderer.invoke('updater:check'),
+    /** Download the update found by the last check. */
+    download: (): Promise<void> => ipcRenderer.invoke('updater:download'),
+    /** Quit and install the downloaded update. */
+    install: (): Promise<void> => ipcRenderer.invoke('updater:install'),
+    /** Subscribe to update status changes. Returns an unsubscribe function. */
+    onStatus: (callback: (status: UpdateStatus) => void): (() => void) => {
+      const listener = (_event: unknown, status: UpdateStatus): void => callback(status)
+      ipcRenderer.on('updater:status', listener)
+      return () => ipcRenderer.removeListener('updater:status', listener)
+    }
   },
   /** Open a URL in the system browser. */
   openExternal: (url: string): Promise<void> => ipcRenderer.invoke('shell:open-external', url),

@@ -147,7 +147,16 @@ export const es: Translation = {
     about: 'Acerca de',
     version: (v) => `Versión ${v}`,
     aboutDescription: 'Sincroniza partidas guardadas de juegos cooperativos entre amigos a través de GitHub.',
-    githubRepoLink: 'Repositorio de GitHub →'
+    githubRepoLink: 'Repositorio de GitHub →',
+    checkForUpdates: 'Buscar actualizaciones',
+    checkingForUpdates: 'Buscando actualizaciones…',
+    updateAvailable: (v) => `Actualización disponible: v${v}`,
+    updateNotAvailable: 'Tienes la última versión',
+    downloadUpdate: 'Descargar actualización',
+    updateDownloading: (percent) => `Descargando actualización… ${percent}%`,
+    updateDownloaded: (v) => `Actualización v${v} descargada — reinicia para instalar`,
+    restartToInstall: 'Reiniciar e instalar',
+    updateCheckError: 'No se pudo comprobar si hay actualizaciones'
   },
   support: {
     tooltip: 'Soporte',

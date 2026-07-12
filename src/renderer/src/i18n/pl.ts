@@ -147,7 +147,16 @@ export const pl: Translation = {
     about: 'O programie',
     version: (v) => `Wersja ${v}`,
     aboutDescription: 'Synchronizacja zapisów gier kooperacyjnych między znajomymi przez GitHub.',
-    githubRepoLink: 'Repozytorium GitHub →'
+    githubRepoLink: 'Repozytorium GitHub →',
+    checkForUpdates: 'Sprawdź aktualizacje',
+    checkingForUpdates: 'Sprawdzanie aktualizacji…',
+    updateAvailable: (v) => `Dostępna aktualizacja: v${v}`,
+    updateNotAvailable: 'Masz najnowszą wersję',
+    downloadUpdate: 'Pobierz aktualizację',
+    updateDownloading: (percent) => `Pobieranie aktualizacji… ${percent}%`,
+    updateDownloaded: (v) => `Pobrano aktualizację v${v} — zrestartuj, aby zainstalować`,
+    restartToInstall: 'Zrestartuj i zainstaluj',
+    updateCheckError: 'Nie udało się sprawdzić aktualizacji'
   },
   support: {
     tooltip: 'Wsparcie',

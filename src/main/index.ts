@@ -3,6 +3,7 @@ import { join } from 'path'
 import { registerIpcHandlers } from './ipc'
 import { createTray } from './trayIcon'
 import { consumeInstallerLanguage, readSettings, writeSettings } from './services/settingsStore'
+import { scheduleStartupCheck } from './services/updater'
 
 // On some older GPUs (especially AMD) the Electron/Chromium GPU process
 // crashes on startup and the app doesn't open at all. The UI is simple
@@ -135,6 +136,7 @@ if (!gotSingleInstanceLock) {
       isQuitting = true
       app.quit()
     })
+    scheduleStartupCheck()
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) {

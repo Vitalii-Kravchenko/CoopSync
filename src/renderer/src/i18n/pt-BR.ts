@@ -147,7 +147,16 @@ export const ptBR: Translation = {
     about: 'Sobre',
     version: (v) => `Versão ${v}`,
     aboutDescription: 'Sincroniza saves de jogos cooperativos entre amigos via GitHub.',
-    githubRepoLink: 'Repositório do GitHub →'
+    githubRepoLink: 'Repositório do GitHub →',
+    checkForUpdates: 'Verificar atualizações',
+    checkingForUpdates: 'Verificando atualizações…',
+    updateAvailable: (v) => `Atualização disponível: v${v}`,
+    updateNotAvailable: 'Você está na versão mais recente',
+    downloadUpdate: 'Baixar atualização',
+    updateDownloading: (percent) => `Baixando atualização… ${percent}%`,
+    updateDownloaded: (v) => `Atualização v${v} baixada — reinicie para instalar`,
+    restartToInstall: 'Reiniciar e instalar',
+    updateCheckError: 'Não foi possível verificar atualizações'
   },
   support: {
     tooltip: 'Suporte',

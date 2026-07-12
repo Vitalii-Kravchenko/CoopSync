@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { colors, fonts, gradients, radii, shadows, transitions } from '../theme'
 import { useI18n } from '../i18n'
 import { LibraryIcon, FriendsIcon, HistoryIcon, SettingsIcon } from './icons'
@@ -19,6 +19,17 @@ interface Props {
 // The active item has the brand accent stripe on the left + a soft gradient background.
 function Sidebar({ active, onNavigate }: Props): React.JSX.Element {
   const { t } = useI18n()
+  // Small dot on "Settings" when an update is ready — the only hint outside
+  // the Settings screen itself, since the auto-update check runs silently in
+  // the background (no popups) shortly after launch.
+  const [updateAvailable, setUpdateAvailable] = useState(false)
+
+  useEffect(() => {
+    return window.api.updater.onStatus((status) => {
+      setUpdateAvailable(status.state === 'available' || status.state === 'downloaded')
+    })
+  }, [])
+
   return (
     <div style={styles.rail}>
       <div style={styles.top}>
@@ -47,6 +58,7 @@ function Sidebar({ active, onNavigate }: Props): React.JSX.Element {
         label={t.sidebar.settings}
         active={active === 'settings'}
         onClick={() => onNavigate('settings')}
+        dot={updateAvailable}
       />
     </div>
   )
@@ -56,12 +68,14 @@ function NavItem({
   icon,
   label,
   active,
-  onClick
+  onClick,
+  dot
 }: {
   icon: React.ReactNode
   label: string
   active: boolean
   onClick: () => void
+  dot?: boolean
 }): React.JSX.Element {
   const [hover, setHover] = useState(false)
 
@@ -78,7 +92,10 @@ function NavItem({
       }}
     >
       {active && <span style={styles.accentBar} />}
-      <span style={{ display: 'flex' }}>{icon}</span>
+      <span style={{ display: 'flex', position: 'relative' }}>
+        {icon}
+        {dot && <span style={styles.updateDot} />}
+      </span>
       {label}
     </button>
   )
@@ -123,6 +140,16 @@ const styles: Record<string, React.CSSProperties> = {
     width: 3,
     borderRadius: 2,
     background: gradients.energy,
+    boxShadow: shadows.glowCy
+  },
+  updateDot: {
+    position: 'absolute',
+    top: -2,
+    right: -3,
+    width: 7,
+    height: 7,
+    borderRadius: '50%',
+    background: colors.cy,
     boxShadow: shadows.glowCy
   }
 }

@@ -147,7 +147,16 @@ export const fr: Translation = {
     about: 'À propos',
     version: (v) => `Version ${v}`,
     aboutDescription: 'Synchronise les sauvegardes de jeux coopératifs entre amis via GitHub.',
-    githubRepoLink: 'Dépôt GitHub →'
+    githubRepoLink: 'Dépôt GitHub →',
+    checkForUpdates: 'Vérifier les mises à jour',
+    checkingForUpdates: 'Vérification des mises à jour…',
+    updateAvailable: (v) => `Mise à jour disponible : v${v}`,
+    updateNotAvailable: 'Tu as la dernière version',
+    downloadUpdate: 'Télécharger la mise à jour',
+    updateDownloading: (percent) => `Téléchargement de la mise à jour… ${percent}%`,
+    updateDownloaded: (v) => `Mise à jour v${v} téléchargée — redémarre pour installer`,
+    restartToInstall: 'Redémarrer et installer',
+    updateCheckError: "Impossible de vérifier les mises à jour"
   },
   support: {
     tooltip: 'Support',

@@ -147,7 +147,16 @@ export const tr: Translation = {
     about: 'Hakkında',
     version: (v) => `Sürüm ${v}`,
     aboutDescription: 'Arkadaşlar arasında GitHub üzerinden ortak oyun kayıtlarını senkronize eder.',
-    githubRepoLink: 'GitHub deposu →'
+    githubRepoLink: 'GitHub deposu →',
+    checkForUpdates: 'Güncellemeleri denetle',
+    checkingForUpdates: 'Güncellemeler denetleniyor…',
+    updateAvailable: (v) => `Güncelleme mevcut: v${v}`,
+    updateNotAvailable: 'En son sürümdesin',
+    downloadUpdate: 'Güncellemeyi indir',
+    updateDownloading: (percent) => `Güncelleme indiriliyor… %${percent}`,
+    updateDownloaded: (v) => `v${v} güncellemesi indirildi — yüklemek için yeniden başlat`,
+    restartToInstall: 'Yeniden başlat ve yükle',
+    updateCheckError: 'Güncellemeler denetlenemedi'
   },
   support: {
     tooltip: 'Destek',

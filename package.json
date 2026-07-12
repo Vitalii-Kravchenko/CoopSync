@@ -1,6 +1,6 @@
 {
   "name": "coopsync",
-  "version": "0.7.4",
+  "version": "0.8.0",
   "description": "Free co-op save sync for games via a private GitHub repository",
   "main": "./out/main/index.js",
   "author": "Vitalii Kravchenko",
@@ -13,9 +13,10 @@
     "typecheck:node": "tsc -p tsconfig.node.json --noEmit",
     "typecheck:web": "tsc -p tsconfig.web.json --noEmit",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
-    "dist": "electron-vite build && electron-builder"
+    "dist": "electron-vite build && electron-builder --publish never"
   },
   "dependencies": {
+    "electron-updater": "^6.8.9",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
   },

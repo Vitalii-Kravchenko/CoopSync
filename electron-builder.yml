@@ -6,6 +6,14 @@ directories:
 files:
   - out/**/*
   - package.json
+# Lets the packaged app's autoUpdater find new releases (reads latest.yml from
+# the GitHub release assets). npm run dist always passes --publish never, so
+# this alone doesn't upload anything — releases stay a manual `gh release`
+# step, we just also attach dist/latest.yml to them from now on.
+publish:
+  provider: github
+  owner: Vitalii-Kravchenko
+  repo: CoopSync
 win:
   target: nsis
 nsis:

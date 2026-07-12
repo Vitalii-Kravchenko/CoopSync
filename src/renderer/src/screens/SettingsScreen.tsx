@@ -7,7 +7,7 @@ import Avatar from '../components/Avatar'
 import Button from '../components/Button'
 import ConfirmModal from '../components/ConfirmModal'
 import Select from '../components/Select'
-import type { AuthUser, SavesRepoStatus, StartupSettings } from '../../../shared/types'
+import type { AuthUser, SavesRepoStatus, StartupSettings, UpdateStatus } from '../../../shared/types'
 
 interface Props {
   user: AuthUser
@@ -38,6 +38,7 @@ function SettingsScreen({
   const [toggleError, setToggleError] = useState<string | null>(null)
   const [showCloudWarning, setShowCloudWarning] = useState(true)
   const [appVersion, setAppVersion] = useState('')
+  const [updateStatus, setUpdateStatus] = useState<UpdateStatus>({ state: 'idle' })
   const [showDeleteRepo, setShowDeleteRepo] = useState(false)
   const [deletingRepo, setDeletingRepo] = useState(false)
   const [deleteRepoError, setDeleteRepoError] = useState<string | null>(null)
@@ -49,7 +50,13 @@ function SettingsScreen({
     window.api.settings.getStartup().then(setStartup)
     window.api.settings.getGeneral().then((s) => setShowCloudWarning(s.showCloudWarning))
     window.api.getAppVersion().then(setAppVersion)
+    return window.api.updater.onStatus(setUpdateStatus)
   }, [])
+
+  function handleCheckForUpdates(): void {
+    setUpdateStatus({ state: 'checking' })
+    void window.api.updater.check()
+  }
 
   async function handleStartup(patch: Partial<StartupSettings>): Promise<void> {
     const previous = startup
@@ -269,6 +276,50 @@ function SettingsScreen({
           >
             {t.settings.githubRepoLink}
           </button>
+          <div style={{ ...styles.divider, margin: '14px 0' }} />
+          <div style={styles.updateRow}>
+            <span style={styles.muted}>
+              {updateStatus.state === 'idle' && ' '}
+              {updateStatus.state === 'checking' && t.settings.checkingForUpdates}
+              {updateStatus.state === 'not-available' && t.settings.updateNotAvailable}
+              {updateStatus.state === 'available' && t.settings.updateAvailable(updateStatus.version)}
+              {updateStatus.state === 'downloading' &&
+                t.settings.updateDownloading(updateStatus.percent)}
+              {updateStatus.state === 'downloaded' && t.settings.updateDownloaded(updateStatus.version)}
+              {updateStatus.state === 'error' && (
+                <span style={{ color: colors.danger }}>{t.settings.updateCheckError}</span>
+              )}
+            </span>
+            {(updateStatus.state === 'idle' ||
+              updateStatus.state === 'not-available' ||
+              updateStatus.state === 'error') && (
+              <Button
+                variant="secondary"
+                style={{ height: 30, padding: '0 12px', fontSize: 12 }}
+                onClick={handleCheckForUpdates}
+              >
+                {t.settings.checkForUpdates}
+              </Button>
+            )}
+            {updateStatus.state === 'available' && (
+              <Button
+                variant="primary"
+                style={{ height: 30, padding: '0 12px', fontSize: 12 }}
+                onClick={() => window.api.updater.download()}
+              >
+                {t.settings.downloadUpdate}
+              </Button>
+            )}
+            {updateStatus.state === 'downloaded' && (
+              <Button
+                variant="primary"
+                style={{ height: 30, padding: '0 12px', fontSize: 12 }}
+                onClick={() => window.api.updater.install()}
+              >
+                {t.settings.restartToInstall}
+              </Button>
+            )}
+          </div>
           <div style={styles.smartAppWarning}>
             <div style={styles.smartAppWarningTitle}>⚠️ {t.settings.smartAppWarningTitle}</div>
             <div style={styles.smartAppWarningText}>{t.settings.smartAppWarningText}</div>
@@ -433,6 +484,13 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '8px 0'
   },
   divider: { height: 1, background: colors.borderSubtle, margin: '6px 0' },
+  updateRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    minHeight: 30
+  },
   aboutRow: { display: 'flex', alignItems: 'center', gap: 13, marginBottom: 14 },
   smartAppWarning: {
     marginTop: 14,

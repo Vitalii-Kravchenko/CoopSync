@@ -204,3 +204,13 @@ export interface SupportRequest {
   /** Games chosen from Steam search — only for the 'game-request' category, up to MAX_GAME_REQUESTS. */
   games?: SteamSearchResult[]
 }
+
+/** Auto-update state, pushed from main (electron-updater) to the renderer. */
+export type UpdateStatus =
+  | { state: 'idle' }
+  | { state: 'checking' }
+  | { state: 'available'; version: string }
+  | { state: 'not-available' }
+  | { state: 'downloading'; percent: number }
+  | { state: 'downloaded'; version: string }
+  | { state: 'error'; message: string }

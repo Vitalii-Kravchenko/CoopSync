@@ -147,7 +147,16 @@ export const ru: Translation = {
     about: 'О программе',
     version: (v) => `Версия ${v}`,
     aboutDescription: 'Синхронизация сохранений кооперативных игр между друзьями через GitHub.',
-    githubRepoLink: 'Репозиторий GitHub →'
+    githubRepoLink: 'Репозиторий GitHub →',
+    checkForUpdates: 'Проверить обновления',
+    checkingForUpdates: 'Проверяем обновления…',
+    updateAvailable: (v) => `Доступно обновление: v${v}`,
+    updateNotAvailable: 'У тебя последняя версия',
+    downloadUpdate: 'Скачать обновление',
+    updateDownloading: (percent) => `Загрузка обновления… ${percent}%`,
+    updateDownloaded: (v) => `Обновление v${v} загружено — перезапусти для установки`,
+    restartToInstall: 'Перезапустить и установить',
+    updateCheckError: 'Не удалось проверить обновления'
   },
   support: {
     tooltip: 'Поддержка',

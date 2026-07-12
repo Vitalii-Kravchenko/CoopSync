@@ -147,7 +147,16 @@ export const uk: Translation = {
     about: 'Про програму',
     version: (v) => `Версія ${v}`,
     aboutDescription: 'Синхронізація збережень кооперативних ігор між друзями через GitHub.',
-    githubRepoLink: 'GitHub репозиторій →'
+    githubRepoLink: 'GitHub репозиторій →',
+    checkForUpdates: 'Перевірити оновлення',
+    checkingForUpdates: 'Перевіряємо оновлення…',
+    updateAvailable: (v) => `Доступне оновлення: v${v}`,
+    updateNotAvailable: 'У тебе остання версія',
+    downloadUpdate: 'Завантажити оновлення',
+    updateDownloading: (percent) => `Завантаження оновлення… ${percent}%`,
+    updateDownloaded: (v) => `Оновлення v${v} завантажено — перезапусти для встановлення`,
+    restartToInstall: 'Перезапустити й встановити',
+    updateCheckError: 'Не вдалося перевірити оновлення'
   },
   support: {
     tooltip: 'Підтримка',

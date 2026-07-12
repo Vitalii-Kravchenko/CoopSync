@@ -145,7 +145,16 @@ export const en: Translation = {
     about: 'About',
     version: (v) => `Version ${v}`,
     aboutDescription: 'Synchronize co-op game saves between friends via GitHub.',
-    githubRepoLink: 'GitHub repository →'
+    githubRepoLink: 'GitHub repository →',
+    checkForUpdates: 'Check for updates',
+    checkingForUpdates: 'Checking for updates…',
+    updateAvailable: (v) => `Update available: v${v}`,
+    updateNotAvailable: "You're on the latest version",
+    downloadUpdate: 'Download update',
+    updateDownloading: (percent) => `Downloading update… ${percent}%`,
+    updateDownloaded: (v) => `Update v${v} downloaded — restart to install`,
+    restartToInstall: 'Restart & install',
+    updateCheckError: "Couldn't check for updates"
   },
   support: {
     tooltip: 'Support',

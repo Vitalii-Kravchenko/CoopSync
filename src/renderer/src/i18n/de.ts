@@ -147,7 +147,16 @@ export const de: Translation = {
     about: 'Über',
     version: (v) => `Version ${v}`,
     aboutDescription: 'Synchronisiert Spielstände von Koop-Spielen zwischen Freunden über GitHub.',
-    githubRepoLink: 'GitHub-Repository →'
+    githubRepoLink: 'GitHub-Repository →',
+    checkForUpdates: 'Nach Updates suchen',
+    checkingForUpdates: 'Suche nach Updates…',
+    updateAvailable: (v) => `Update verfügbar: v${v}`,
+    updateNotAvailable: 'Du hast die neueste Version',
+    downloadUpdate: 'Update herunterladen',
+    updateDownloading: (percent) => `Update wird heruntergeladen… ${percent}%`,
+    updateDownloaded: (v) => `Update v${v} heruntergeladen — neu starten zum Installieren`,
+    restartToInstall: 'Neu starten & installieren',
+    updateCheckError: 'Update-Suche fehlgeschlagen'
   },
   support: {
     tooltip: 'Support',

@@ -171,6 +171,15 @@ export interface Translation {
     version: (v: string) => string
     aboutDescription: string
     githubRepoLink: string
+    checkForUpdates: string
+    checkingForUpdates: string
+    updateAvailable: (v: string) => string
+    updateNotAvailable: string
+    downloadUpdate: string
+    updateDownloading: (percent: number) => string
+    updateDownloaded: (v: string) => string
+    restartToInstall: string
+    updateCheckError: string
   }
   support: {
     tooltip: string

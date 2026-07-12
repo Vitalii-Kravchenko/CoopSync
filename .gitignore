@@ -8,3 +8,4 @@ out
 .env.local
 .claude
 BACKLOG.md
+docs/design-system.html

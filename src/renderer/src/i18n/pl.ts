@@ -48,17 +48,28 @@ export const pl: Translation = {
   },
   friends: {
     title: 'Znajomi',
+    subtitle: 'Twoja grupa co-op i wspólny magazyn zapisów',
     inviteTitle: 'Zaproś znajomego',
     sending: 'Wysyłam zaproszenie…',
     acceptedBadge: 'Zaakceptowano',
     noStorage: 'Najpierw skonfiguruj wspólny magazyn w Ustawieniach',
-    emptyFriends: 'Jeszcze nie masz znajomych — zaproś kogoś powyżej',
+    emptyTitle: 'Jeszcze nie masz znajomych',
+    emptySubtitle: 'Zaproś partnera co-op po nicku GitHub w polu powyżej',
     inviteError: 'Nie udało się zaprosić',
     loadError: 'Nie udało się sprawdzić stanu magazynu',
     removeMember: 'Usuń',
     removeConfirmTitle: (login) => `Usunąć ${login} ze wspólnego magazynu?`,
     removeConfirmDesc: 'Straci dostęp do zapisów na GitHub — można zaprosić go ponownie później.',
-    removeError: 'Nie udało się usunąć'
+    removeError: 'Nie udało się usunąć',
+    ownerBadge: 'Właściciel',
+    membersShort: (count) => `Uczestnicy: ${count}`,
+    gamesShort: (count) => `Gry: ${count}`,
+    openOnGithub: 'Otwórz na GitHub',
+    lastSyncLabel: 'Ostatnia synchronizacja',
+    totalSyncsLabel: 'Łącznie synchronizacji',
+    neverSynced: '—',
+    sentLabel: 'Wysłano',
+    cancelInvite: 'Anuluj'
   },
   history: {
     title: 'Historia synchronizacji',
@@ -214,6 +225,7 @@ export const pl: Translation = {
     REPO_DELETE_FAILED: (p) => `Nie udało się usunąć magazynu (${p.status})`,
     NOT_REPO_OWNER: () => 'Może to zrobić tylko właściciel magazynu',
     REMOVE_COLLABORATOR_FAILED: (p) => `Nie udało się usunąć współpracownika (${p.status})`,
+    CANCEL_INVITE_FAILED: (p) => `Nie udało się anulować zaproszenia (${p.status})`,
     LEAVE_REPO_FAILED: (p) => `Nie udało się opuścić magazynu (${p.status})`,
     ENCRYPTION_UNAVAILABLE: () =>
       'Szyfrowanie jest niedostępne w systemie — nie można bezpiecznie zapisać tokenu',

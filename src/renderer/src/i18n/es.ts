@@ -48,17 +48,28 @@ export const es: Translation = {
   },
   friends: {
     title: 'Amigos',
+    subtitle: 'Tu grupo cooperativo y el almacenamiento compartido de partidas',
     inviteTitle: 'Invitar a un amigo',
     sending: 'Enviando invitación…',
     acceptedBadge: 'Aceptado',
     noStorage: 'Primero configura el almacenamiento compartido en Ajustes',
-    emptyFriends: 'Todavía no hay amigos — invita a alguien arriba',
+    emptyTitle: 'Todavía no hay amigos',
+    emptySubtitle: 'Invita a tu compañero cooperativo con su nombre de usuario de GitHub arriba',
     inviteError: 'No se pudo invitar',
     loadError: 'No se pudo comprobar el estado del almacenamiento',
     removeMember: 'Quitar',
     removeConfirmTitle: (login) => `¿Quitar a ${login} del almacenamiento compartido?`,
     removeConfirmDesc: 'Perderá el acceso a las partidas en GitHub — puedes invitarlo de nuevo más adelante.',
-    removeError: 'No se pudo quitar'
+    removeError: 'No se pudo quitar',
+    ownerBadge: 'Propietario',
+    membersShort: (count) => `Miembros: ${count}`,
+    gamesShort: (count) => `Juegos: ${count}`,
+    openOnGithub: 'Abrir en GitHub',
+    lastSyncLabel: 'Última sincronización',
+    totalSyncsLabel: 'Sincronizaciones totales',
+    neverSynced: '—',
+    sentLabel: 'Enviada',
+    cancelInvite: 'Cancelar'
   },
   history: {
     title: 'Historial de sincronización',
@@ -214,6 +225,7 @@ export const es: Translation = {
     REPO_DELETE_FAILED: (p) => `No se pudo eliminar el almacenamiento (${p.status})`,
     NOT_REPO_OWNER: () => 'Solo el propietario del almacenamiento puede hacer esto',
     REMOVE_COLLABORATOR_FAILED: (p) => `No se pudo quitar al colaborador (${p.status})`,
+    CANCEL_INVITE_FAILED: (p) => `No se pudo cancelar la invitación (${p.status})`,
     LEAVE_REPO_FAILED: (p) => `No se pudo abandonar el almacenamiento (${p.status})`,
     ENCRYPTION_UNAVAILABLE: () =>
       'El cifrado no está disponible en este sistema — no se puede guardar el token de forma segura',

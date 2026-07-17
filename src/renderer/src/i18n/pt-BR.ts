@@ -48,17 +48,28 @@ export const ptBR: Translation = {
   },
   friends: {
     title: 'Amigos',
+    subtitle: 'Seu grupo co-op e o armazenamento compartilhado de saves',
     inviteTitle: 'Convidar um amigo',
     sending: 'Enviando convite…',
     acceptedBadge: 'Aceito',
     noStorage: 'Primeiro configure o armazenamento compartilhado em Configurações',
-    emptyFriends: 'Ainda não há amigos — convide alguém acima',
+    emptyTitle: 'Ainda não há amigos',
+    emptySubtitle: 'Convide seu parceiro de co-op pelo nome de usuário do GitHub acima',
     inviteError: 'Não foi possível convidar',
     loadError: 'Não foi possível verificar o status do armazenamento',
     removeMember: 'Remover',
     removeConfirmTitle: (login) => `Remover ${login} do armazenamento compartilhado?`,
     removeConfirmDesc: 'Ele perderá o acesso aos saves no GitHub — você pode convidá-lo novamente depois.',
-    removeError: 'Não foi possível remover'
+    removeError: 'Não foi possível remover',
+    ownerBadge: 'Dono',
+    membersShort: (count) => `Membros: ${count}`,
+    gamesShort: (count) => `Jogos: ${count}`,
+    openOnGithub: 'Abrir no GitHub',
+    lastSyncLabel: 'Última sincronização',
+    totalSyncsLabel: 'Sincronizações no total',
+    neverSynced: '—',
+    sentLabel: 'Enviado',
+    cancelInvite: 'Cancelar'
   },
   history: {
     title: 'Histórico de sincronização',
@@ -214,6 +225,7 @@ export const ptBR: Translation = {
     REPO_DELETE_FAILED: (p) => `Não foi possível excluir o armazenamento (${p.status})`,
     NOT_REPO_OWNER: () => 'Só o dono do armazenamento pode fazer isso',
     REMOVE_COLLABORATOR_FAILED: (p) => `Não foi possível remover o colaborador (${p.status})`,
+    CANCEL_INVITE_FAILED: (p) => `Não foi possível cancelar o convite (${p.status})`,
     LEAVE_REPO_FAILED: (p) => `Não foi possível sair do armazenamento (${p.status})`,
     ENCRYPTION_UNAVAILABLE: () =>
       'A criptografia não está disponível neste sistema — não é possível salvar o token com segurança',

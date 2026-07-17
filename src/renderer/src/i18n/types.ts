@@ -75,17 +75,28 @@ export interface Translation {
   }
   friends: {
     title: string
+    subtitle: string
     inviteTitle: string
     sending: string
     acceptedBadge: string
     noStorage: string
-    emptyFriends: string
+    emptyTitle: string
+    emptySubtitle: string
     inviteError: string
     loadError: string
     removeMember: string
     removeConfirmTitle: (login: string) => string
     removeConfirmDesc: string
     removeError: string
+    ownerBadge: string
+    membersShort: (count: number) => string
+    gamesShort: (count: number) => string
+    openOnGithub: string
+    lastSyncLabel: string
+    totalSyncsLabel: string
+    neverSynced: string
+    sentLabel: string
+    cancelInvite: string
   }
   history: {
     title: string

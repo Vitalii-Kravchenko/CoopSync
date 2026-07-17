@@ -48,17 +48,28 @@ export const fr: Translation = {
   },
   friends: {
     title: 'Amis',
+    subtitle: 'Ton groupe coop et le stockage partagé des sauvegardes',
     inviteTitle: 'Inviter un ami',
     sending: "Envoi de l'invitation…",
     acceptedBadge: 'Accepté',
     noStorage: "Configure d'abord le stockage partagé dans les Paramètres",
-    emptyFriends: "Pas encore d'amis — invite quelqu'un ci-dessus",
+    emptyTitle: "Pas encore d'amis",
+    emptySubtitle: 'Invite ton partenaire de coop avec son pseudo GitHub ci-dessus',
     inviteError: "Impossible d'inviter",
     loadError: "Impossible de vérifier l'état du stockage",
     removeMember: 'Retirer',
     removeConfirmTitle: (login) => `Retirer ${login} du stockage partagé ?`,
     removeConfirmDesc: "Il perdra l'accès aux sauvegardes sur GitHub — tu pourras l'inviter à nouveau plus tard.",
-    removeError: 'Impossible de retirer'
+    removeError: 'Impossible de retirer',
+    ownerBadge: 'Propriétaire',
+    membersShort: (count) => `Membres : ${count}`,
+    gamesShort: (count) => `Jeux : ${count}`,
+    openOnGithub: 'Ouvrir sur GitHub',
+    lastSyncLabel: 'Dernière synchro',
+    totalSyncsLabel: 'Synchros au total',
+    neverSynced: '—',
+    sentLabel: 'Envoyée',
+    cancelInvite: 'Annuler'
   },
   history: {
     title: 'Historique de synchronisation',
@@ -214,6 +225,7 @@ export const fr: Translation = {
     REPO_DELETE_FAILED: (p) => `Impossible de supprimer le stockage (${p.status})`,
     NOT_REPO_OWNER: () => 'Seul le propriétaire du stockage peut faire ça',
     REMOVE_COLLABORATOR_FAILED: (p) => `Impossible de retirer le collaborateur (${p.status})`,
+    CANCEL_INVITE_FAILED: (p) => `Impossible d'annuler l'invitation (${p.status})`,
     LEAVE_REPO_FAILED: (p) => `Impossible de quitter le stockage (${p.status})`,
     ENCRYPTION_UNAVAILABLE: () =>
       "Le chiffrement n'est pas disponible sur ce système — impossible de stocker le token en sécurité",

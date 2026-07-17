@@ -12,6 +12,7 @@ import {
   createSavesRepo,
   deleteSavesRepo,
   inviteCollaborator,
+  cancelInvitation,
   listInvitations,
   listCollaborators,
   removeCollaborator,
@@ -188,6 +189,12 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('repo:invite', async (_event, username: string): Promise<void> => {
     const { token, owner } = await requireOwner()
     await inviteCollaborator(token, owner, username.trim())
+  })
+
+  // Owner cancels a not-yet-accepted invitation.
+  ipcMain.handle('repo:cancel-invitation', async (_event, invitationId: number): Promise<void> => {
+    const { token, owner } = await requireOwner()
+    await cancelInvitation(token, owner, invitationId)
   })
 
   // Owner kicks a collaborator off the shared repo.

@@ -48,17 +48,28 @@ export const de: Translation = {
   },
   friends: {
     title: 'Freunde',
+    subtitle: 'Deine Koop-Gruppe und der gemeinsame Spielstand-Speicher',
     inviteTitle: 'Freund einladen',
     sending: 'Einladung wird gesendet…',
     acceptedBadge: 'Angenommen',
     noStorage: 'Richte zuerst den gemeinsamen Speicher in den Einstellungen ein',
-    emptyFriends: 'Noch keine Freunde — lade oben jemanden ein',
+    emptyTitle: 'Noch keine Freunde',
+    emptySubtitle: 'Lade oben deinen Koop-Partner über den GitHub-Nutzernamen ein',
     inviteError: 'Einladung fehlgeschlagen',
     loadError: 'Speicherstatus konnte nicht geprüft werden',
     removeMember: 'Entfernen',
     removeConfirmTitle: (login) => `${login} aus dem gemeinsamen Speicher entfernen?`,
     removeConfirmDesc: 'Der Zugriff auf die Spielstände auf GitHub geht verloren — du kannst später erneut einladen.',
-    removeError: 'Entfernen fehlgeschlagen'
+    removeError: 'Entfernen fehlgeschlagen',
+    ownerBadge: 'Besitzer',
+    membersShort: (count) => `Mitglieder: ${count}`,
+    gamesShort: (count) => `Spiele: ${count}`,
+    openOnGithub: 'Auf GitHub öffnen',
+    lastSyncLabel: 'Letzter Sync',
+    totalSyncsLabel: 'Syncs gesamt',
+    neverSynced: '—',
+    sentLabel: 'Gesendet',
+    cancelInvite: 'Zurückziehen'
   },
   history: {
     title: 'Synchronisierungsverlauf',
@@ -214,6 +225,7 @@ export const de: Translation = {
     REPO_DELETE_FAILED: (p) => `Speicher konnte nicht gelöscht werden (${p.status})`,
     NOT_REPO_OWNER: () => 'Das kann nur der Besitzer des Speichers tun',
     REMOVE_COLLABORATOR_FAILED: (p) => `Mitwirkender konnte nicht entfernt werden (${p.status})`,
+    CANCEL_INVITE_FAILED: (p) => `Einladung konnte nicht zurückgezogen werden (${p.status})`,
     LEAVE_REPO_FAILED: (p) => `Speicher konnte nicht verlassen werden (${p.status})`,
     ENCRYPTION_UNAVAILABLE: () =>
       'Verschlüsselung ist auf diesem System nicht verfügbar — Token kann nicht sicher gespeichert werden',

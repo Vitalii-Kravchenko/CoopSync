@@ -230,8 +230,27 @@ export async function listInvitations(token: string, owner: string): Promise<Pen
     headers: authHeaders(token)
   })
   if (!res.ok) return []
-  const data = (await res.json()) as Array<{ invitee: { login: string } }>
-  return data.map((item) => ({ login: item.invitee.login }))
+  const data = (await res.json()) as Array<{
+    id: number
+    created_at: string
+    invitee: { login: string }
+  }>
+  return data.map((item) => ({ login: item.invitee.login, id: item.id, createdAt: item.created_at }))
+}
+
+/** Owner cancels a not-yet-accepted invitation. */
+export async function cancelInvitation(
+  token: string,
+  owner: string,
+  invitationId: number
+): Promise<void> {
+  const res = await githubFetch(
+    `${API}/repos/${owner}/${SAVES_REPO_NAME}/invitations/${invitationId}`,
+    { method: 'DELETE', headers: authHeaders(token) }
+  )
+  if (res.status === 204 || res.status === 404) return // 404 — already gone (accepted or cancelled)
+  checkAuthAndRateLimit(res)
+  throw makeAppError('CANCEL_INVITE_FAILED', { status: String(res.status) })
 }
 
 /** List of collaborators who already have access (excluding the owner). */

@@ -348,6 +348,32 @@ body {
   cursor: not-allowed;
 }
 
+/* Clickable summary strip of the shared storage (Friends tab) — a full-width
+   button that opens the repo on GitHub. Hover lifts the border to accent, like
+   .icon-btn, but keeps the surface calm since it's informational first. */
+.storage-strip {
+  transition:
+    border-color var(--t-hover),
+    background var(--t-hover);
+}
+.storage-strip:hover {
+  border-color: rgba(54, 226, 232, 0.45);
+  background: #1c2230;
+}
+
+/* Inline text button for a destructive-ish action (cancel a pending invite) —
+   plain danger-colored text, underline on hover. */
+.link-btn-danger {
+  transition: color var(--t-hover);
+}
+.link-btn-danger:hover:not(:disabled) {
+  text-decoration: underline;
+}
+.link-btn-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Window control buttons. */
 .win-ctrl {
   width: 46px;

@@ -49,6 +49,9 @@ const api = {
     invite: (username: string): Promise<void> => ipcRenderer.invoke('repo:invite', username),
     /** List of invitations not yet accepted. */
     listInvitations: (): Promise<PendingInvite[]> => ipcRenderer.invoke('repo:invitations'),
+    /** Owner cancels a not-yet-accepted invitation. */
+    cancelInvitation: (invitationId: number): Promise<void> =>
+      ipcRenderer.invoke('repo:cancel-invitation', invitationId),
     /** List of collaborators who have already accepted. */
     listCollaborators: (): Promise<Collaborator[]> => ipcRenderer.invoke('repo:collaborators'),
     /** Avatars of members from the shared repo (owner + collaborators), keyed by login. */

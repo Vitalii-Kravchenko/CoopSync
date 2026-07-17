@@ -44,6 +44,10 @@ export type SavesRepoStatus =
 /** An invited but not-yet-accepted collaborator. */
 export interface PendingInvite {
   login: string
+  /** GitHub invitation id — needed to cancel the invite. */
+  id: number
+  /** ISO timestamp of when the invite was sent. */
+  createdAt: string
 }
 
 /** A collaborator who has already accepted the invitation and has access. */

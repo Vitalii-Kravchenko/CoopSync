@@ -203,6 +203,8 @@ function MainScreen({
         user={user}
         avatarDataUrl={avatarDataUrl}
         onBack={() => setSelectedGame(null)}
+        onBanner={onBanner}
+        onSynced={onSynced}
       />
     )
   }

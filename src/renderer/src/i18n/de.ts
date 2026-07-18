@@ -77,8 +77,8 @@ export const de: Translation = {
     columnAction: 'Aktion',
     columnPlayer: 'Spieler',
     filterPlaceholder: 'Nach Spiel oder Spieler filtern…',
-    showMore: 'Mehr anzeigen',
-    endOfList: 'Das war’s — keine weiteren Einträge',
+    pagePrev: 'Vorherige Seite',
+    pageNext: 'Nächste Seite',
     columnVersion: 'Version',
     columnWhen: 'Wann',
     uploaded: 'Hochgeladen',
@@ -88,7 +88,14 @@ export const de: Translation = {
     justNow: 'Gerade eben',
     minutesAgo: (n) => `vor ${n} Min.`,
     hoursAgo: (n) => `vor ${n} Std.`,
-    daysAgo: (n) => `vor ${n} Tg.`
+    daysAgo: (n) => `vor ${n} Tg.`,
+    restore: 'Wiederherstellen',
+    restoreConfirmTitle: 'Ältere Version wiederherstellen?',
+    restoreConfirmDesc: (version, who) =>
+      `Der Spielstand kehrt zu ${version} zurück (zuletzt synchronisiert von ${who}). Der aktuelle Stand geht nicht verloren — er wird zu einem neuen Eintrag im Verlauf. Bei gemeinsamem Zugriff übernimmt dein Partner diese Version automatisch beim nächsten Spielstart.`,
+    restoreError: 'Version konnte nicht wiederhergestellt werden',
+    revertSuccess: (version) => `Version ${version} wiederhergestellt`,
+    restoredFromBadge: (version) => `↩ von ${version}`
   },
   cloudWarning: {
     title: 'Steam Cloud für synchronisierte Spiele deaktivieren',

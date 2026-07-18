@@ -30,17 +30,30 @@ function rowsForHeight(height: number): number {
 }
 
 /** How many table rows fit on screen, based on the window's current height —
- *  recalculated on every resize (e.g. moving the app to a different monitor). */
-export function useRowCapacity(): number {
-  const [rows, setRows] = useState(() => rowsForHeight(window.innerHeight))
+ *  recalculated on every resize (e.g. moving the app to a different monitor).
+ *  `rowsOffset` — trims this many rows off the tier result, for a screen
+ *  whose own header is taller than the ~45-100px the tiers above assume
+ *  (e.g. GameDetailScreen's poster+breadcrumbs header vs HistoryScreen's
+ *  plain title+search). Trimming rows directly (not a pixel offset fed back
+ *  into rowsForHeight) matters regardless of which tier the window height
+ *  happens to land in — a pixel offset would only bite right at a tier
+ *  boundary. */
+export function useRowCapacity(rowsOffset = 0): number {
+  function compute(): number {
+    return Math.max(MIN_ROWS, rowsForHeight(window.innerHeight) - rowsOffset)
+  }
+
+  const [rows, setRows] = useState(compute)
 
   useEffect(() => {
     function onResize(): void {
-      setRows(rowsForHeight(window.innerHeight))
+      setRows(compute())
     }
     window.addEventListener('resize', onResize)
+    onResize()
     return () => window.removeEventListener('resize', onResize)
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rowsOffset])
 
   return rows
 }

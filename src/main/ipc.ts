@@ -25,6 +25,7 @@ import {
   downloadGame,
   getSyncStatuses,
   getSyncHistory,
+  revertToVersion,
   resetLocalSaveState,
   uploadAvatar,
   getAvatars
@@ -296,6 +297,17 @@ export function registerIpcHandlers(): void {
     const { token, owner } = await syncTarget()
     return getSyncHistory(token, owner)
   })
+
+  // Revert a game's saves to an older version — pushed back as a new version,
+  // not a branch (see revertToVersion).
+  ipcMain.handle(
+    'sync:revert',
+    async (_event, appId: string, version: number): Promise<SyncResult> => {
+      const { token, owner } = await syncTarget()
+      const { owner: actorLogin } = await requireAuth()
+      return revertToVersion(token, owner, appId, actorLogin, version)
+    }
+  )
 
   // The renderer just displayed these game/version pairs (Games tab opened
   // or refreshed) — clears the "unseen" nav badge for them and stops any

@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react'
 import { colors, fonts, radii, steamPoster, transitions } from '../theme'
 import { useI18n } from '../i18n'
-import { describeError } from '../errors'
+import { describeError, describeSyncResult } from '../errors'
 import type { Translation } from '../i18n'
 import { ChevronRightIcon, HistoryIcon } from '../components/icons'
-import Button from '../components/Button'
 import Avatar from '../components/Avatar'
+import Button from '../components/Button'
+import ConfirmModal from '../components/ConfirmModal'
+import Pagination from '../components/Pagination'
+import type { BannerState } from '../components/Banner'
 import { useAvatars } from '../hooks/useAvatars'
 import { useRowCapacity } from '../hooks/useRowCapacity'
 import type { AuthUser, SyncHistoryEntry } from '../../../shared/types'
@@ -32,39 +35,48 @@ interface Props {
   /** Own avatar from local settings — same source as TitleBar/Friends. */
   avatarDataUrl: string | null
   onBack: () => void
+  /** Show a global banner (rendered in App — visible on all tabs). */
+  onBanner: (banner: BannerState) => void
+  /** Call after a real push (a revert is one) — lets History/MainScreen reread. */
+  onSynced: () => void
 }
 
 // A single game's own sync history — reached from its card on the Games tab.
-// Just a read-only list for now; rolling back to an older version is future work.
+// Every entry but the newest can be reverted to — see revertToVersion in
+// main/services/sync.ts for how that actually works (a new version carrying
+// old content forward, not a branch).
 function GameDetailScreen({
   appId,
   name,
   syncVersion,
   user,
   avatarDataUrl,
-  onBack
+  onBack,
+  onBanner,
+  onSynced
 }: Props): React.JSX.Element {
   const { t } = useI18n()
   const [entries, setEntries] = useState<SyncHistoryEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [imgError, setImgError] = useState(false)
-  const pageSize = useRowCapacity()
-  const [visibleCount, setVisibleCount] = useState(pageSize)
-  // Grow with the available space (bigger window/monitor), never shrink —
-  // same reasoning as HistoryScreen.
-  useEffect(() => {
-    setVisibleCount((c) => Math.max(c, pageSize))
-  }, [pageSize])
+  // This screen's header (breadcrumbs + poster/title row, ~140px) is taller
+  // than HistoryScreen's (plain title + search, ~100px) — useRowCapacity's
+  // tiers assume the shorter one, so without trimming a row, a full page
+  // plus the pagination bar doesn't actually fit and forces a scrollbar.
+  const pageSize = useRowCapacity(1)
+  const [page, setPage] = useState(1)
+  const [restoreTarget, setRestoreTarget] = useState<SyncHistoryEntry | null>(null)
+  const [restoring, setRestoring] = useState(false)
+  const [restoreError, setRestoreError] = useState<string | null>(null)
 
   function load(): void {
     setLoading(true)
     window.api.sync
       .history()
       .then((real) => {
-        // Same dev fallback as HistoryScreen — the dev build's clean userData
-        // has no history, and this screen is unstylable against an empty list.
-        const list = import.meta.env.DEV && real.length === 0 ? devHistoryMock(user.login) : real
+        // Same dev fallback as HistoryScreen — always the fixture in dev.
+        const list = import.meta.env.DEV ? devHistoryMock(user.login) : real
         setEntries(list.filter((e) => e.appId === appId))
         setLoadError(null)
       })
@@ -82,8 +94,33 @@ function GameDetailScreen({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [syncVersion])
 
+  async function handleRestore(): Promise<void> {
+    if (!restoreTarget) return
+    setRestoring(true)
+    setRestoreError(null)
+    try {
+      const result = await window.api.sync.revert(appId, restoreTarget.version)
+      setRestoreTarget(null)
+      onBanner({
+        text: describeSyncResult('revert-success', { version: String(result.version) }, t),
+        kind: 'success'
+      })
+      onSynced()
+      load()
+    } catch (e) {
+      setRestoreError(describeError(e, t, t.history.restoreError))
+    } finally {
+      setRestoring(false)
+    }
+  }
+
   const showTable = loading || entries.length > 0
-  const visible = entries.slice(0, visibleCount)
+  // The newest entry has nothing to revert to — it's already the current save.
+  const latestVersion = entries[0]?.version
+  // Clamped rather than reset via effect — see HistoryScreen for the same pattern.
+  const totalPages = Math.max(1, Math.ceil(entries.length / pageSize))
+  const currentPage = Math.min(page, totalPages)
+  const visible = entries.slice((currentPage - 1) * pageSize, currentPage * pageSize)
   const avatars = useAvatars(
     entries.map((e) => e.updatedBy),
     user.login,
@@ -123,6 +160,7 @@ function GameDetailScreen({
             <div style={styles.headerCell}>{t.history.columnPlayer}</div>
             <div style={styles.headerCell}>{t.history.columnVersion}</div>
             <div style={styles.headerCell}>{t.history.columnWhen}</div>
+            <div style={styles.headerCell} />
           </div>
 
           {loading
@@ -134,22 +172,14 @@ function GameDetailScreen({
                   t={t}
                   avatarSrc={avatars[e.updatedBy]}
                   last={i === visible.length - 1}
+                  canRestore={e.version !== latestVersion}
+                  onRestoreClick={() => setRestoreTarget(e)}
                 />
               ))}
         </div>
       )}
 
-      {!loading && entries.length > visibleCount && (
-        <div style={styles.showMoreWrap}>
-          <Button variant="secondary" onClick={() => setVisibleCount((c) => c + pageSize)}>
-            {t.history.showMore}
-          </Button>
-        </div>
-      )}
-
-      {!loading && entries.length > 0 && entries.length <= visibleCount && entries.length > pageSize && (
-        <div style={styles.endOfList}>{t.history.endOfList}</div>
-      )}
+      {!loading && <Pagination page={currentPage} totalPages={totalPages} onChange={setPage} />}
 
       {!loading && entries.length === 0 && (
         <div style={styles.empty}>
@@ -160,6 +190,25 @@ function GameDetailScreen({
           {!loadError && <div style={styles.emptySubtitle}>{t.history.emptySubtitle}</div>}
         </div>
       )}
+
+      {restoreTarget && (
+        <ConfirmModal
+          title={t.history.restoreConfirmTitle}
+          description={t.history.restoreConfirmDesc(
+            fmtVersion(restoreTarget.version),
+            restoreTarget.updatedBy
+          )}
+          confirmLabel={t.history.restore}
+          cancelLabel={t.settings.cancel}
+          busy={restoring}
+          error={restoreError}
+          onConfirm={handleRestore}
+          onCancel={() => {
+            setRestoreTarget(null)
+            setRestoreError(null)
+          }}
+        />
+      )}
     </div>
   )
 }
@@ -168,13 +217,18 @@ function HistoryRow({
   entry,
   t,
   avatarSrc,
-  last
+  last,
+  canRestore,
+  onRestoreClick
 }: {
   entry: SyncHistoryEntry
   t: Translation
   /** Player's avatar (data URL), if we have one — placeholder otherwise. */
   avatarSrc?: string
   last: boolean
+  /** false for the newest entry — nothing to revert to. */
+  canRestore: boolean
+  onRestoreClick: () => void
 }): React.JSX.Element {
   const [hover, setHover] = useState(false)
 
@@ -198,8 +252,20 @@ function HistoryRow({
         <Avatar src={avatarSrc} size={22} />
         <span style={styles.playerName}>{entry.updatedBy}</span>
       </div>
-      <div style={styles.mono}>{fmtVersion(entry.version)}</div>
+      <div style={styles.mono}>
+        {fmtVersion(entry.version)}
+        {entry.restoredFrom !== undefined && (
+          <span style={styles.restoredBadge}>{t.history.restoredFromBadge(fmtVersion(entry.restoredFrom))}</span>
+        )}
+      </div>
       <div style={styles.mono}>{formatRelativeTime(entry.updatedAt, t)}</div>
+      <div>
+        {canRestore && (
+          <Button variant="ghost" style={styles.restoreBtn} onClick={onRestoreClick}>
+            {t.history.restore}
+          </Button>
+        )}
+      </div>
     </div>
   )
 }
@@ -229,6 +295,7 @@ function ShimmerRow({ last }: { last: boolean }): React.JSX.Element {
       </div>
       <div style={{ ...styles.shimmer, width: 50, height: 12 }} />
       <div style={{ ...styles.shimmer, width: 60, height: 12 }} />
+      <div />
     </div>
   )
 }
@@ -271,7 +338,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   headerRow: {
     display: 'grid',
-    gridTemplateColumns: '1fr 1.3fr .8fr 1fr',
+    gridTemplateColumns: '1fr 1.3fr .8fr 1fr .9fr',
     padding: '12px 16px',
     background: colors.bgRaised,
     borderBottom: `1px solid ${colors.borderSubtle}`
@@ -285,7 +352,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   row: {
     display: 'grid',
-    gridTemplateColumns: '1fr 1.3fr .8fr 1fr',
+    gridTemplateColumns: '1fr 1.3fr .8fr 1fr .9fr',
     alignItems: 'center',
     padding: '13px 16px',
     transition: `background ${transitions.fast}`
@@ -304,6 +371,8 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: radii.pill
   },
   actionDot: { width: 6, height: 6, borderRadius: '50%', background: colors.success, flexShrink: 0 },
+  restoreBtn: { height: 30, padding: '0 12px', fontSize: 12, justifySelf: 'end' },
+  restoredBadge: { display: 'block', fontSize: 10, color: colors.cy, marginTop: 2 },
   playerCell: { display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, paddingRight: 10 },
   playerName: {
     fontSize: 12.5,
@@ -314,13 +383,6 @@ const styles: Record<string, React.CSSProperties> = {
     whiteSpace: 'nowrap'
   },
   mono: { fontFamily: fonts.mono, fontSize: 12, color: colors.text3 },
-  showMoreWrap: { display: 'flex', justifyContent: 'center', marginTop: 16 },
-  endOfList: {
-    textAlign: 'center',
-    marginTop: 16,
-    fontSize: 12,
-    color: colors.text3
-  },
   shimmer: {
     borderRadius: 6,
     background: 'linear-gradient(90deg,#161b27 25%,#222a3a 37%,#161b27 63%)',

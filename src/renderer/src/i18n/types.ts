@@ -104,8 +104,8 @@ export interface Translation {
     columnAction: string
     columnPlayer: string
     filterPlaceholder: string
-    showMore: string
-    endOfList: string
+    pagePrev: string
+    pageNext: string
     columnVersion: string
     columnWhen: string
     uploaded: string
@@ -116,6 +116,12 @@ export interface Translation {
     minutesAgo: (n: number) => string
     hoursAgo: (n: number) => string
     daysAgo: (n: number) => string
+    restore: string
+    restoreConfirmTitle: string
+    restoreConfirmDesc: (version: string, who: string) => string
+    restoreError: string
+    revertSuccess: (version: string) => string
+    restoredFromBadge: (version: string) => string
   }
   cloudWarning: {
     title: string

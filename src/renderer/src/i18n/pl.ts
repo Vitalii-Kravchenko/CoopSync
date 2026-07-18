@@ -77,8 +77,8 @@ export const pl: Translation = {
     columnAction: 'Akcja',
     columnPlayer: 'Gracz',
     filterPlaceholder: 'Filtruj po grze lub graczu…',
-    showMore: 'Pokaż więcej',
-    endOfList: 'To wszystko — nie ma więcej historii',
+    pagePrev: 'Poprzednia strona',
+    pageNext: 'Następna strona',
     columnVersion: 'Wersja',
     columnWhen: 'Kiedy',
     uploaded: 'Wysłano',
@@ -88,7 +88,14 @@ export const pl: Translation = {
     justNow: 'Przed chwilą',
     minutesAgo: (n) => `${n} min temu`,
     hoursAgo: (n) => `${n} godz. temu`,
-    daysAgo: (n) => `${n} dni temu`
+    daysAgo: (n) => `${n} dni temu`,
+    restore: 'Przywróć',
+    restoreConfirmTitle: 'Przywrócić starszą wersję?',
+    restoreConfirmDesc: (version, who) =>
+      `Zapis wróci do wersji ${version} (ostatnio synchronizował ${who}). Obecny stan nie zniknie — stanie się nowym wpisem w historii. Jeśli macie wspólny dostęp, partner podchwyci tę wersję automatycznie przy następnym uruchomieniu gry.`,
+    restoreError: 'Nie udało się przywrócić wersji',
+    revertSuccess: (version) => `Przywrócono wersję ${version}`,
+    restoredFromBadge: (version) => `↩ z ${version}`
   },
   cloudWarning: {
     title: 'Wyłącz Steam Cloud dla synchronizowanych gier',

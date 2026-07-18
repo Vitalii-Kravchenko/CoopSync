@@ -8,11 +8,15 @@ import type { SyncHistoryEntry } from '../../shared/types'
 // so none of this reaches the production bundle.
 
 // Real catalog appIds — Steam posters load for them like for real entries.
+// Subnautica 2 first and heavily weighted below — this is the fixture the
+// pagination UI gets eyeballed against, so it should look like one game
+// someone actually plays a lot, with the others as occasional variety, not
+// four games in perfect rotation.
 const GAMES = [
+  { appId: '1962700', name: 'Subnautica 2' },
   { appId: '526870', name: 'Satisfactory' },
   { appId: '413150', name: 'Stardew Valley' },
-  { appId: '105600', name: 'Terraria' },
-  { appId: '1962700', name: 'Subnautica 2' }
+  { appId: '105600', name: 'Terraria' }
 ]
 
 // Built once per app session and cached — history.js is called again every
@@ -23,16 +27,16 @@ const GAMES = [
 // pushes, so the fixture needs to behave the same way.
 let cached: SyncHistoryEntry[] | null = null
 
-// Real history is capped at this many entries (MAX_HISTORY_ENTRIES in
-// main/services/sync.ts) — the fixture uses the same cap so "Show more"/
-// "end of history" get tested against the actual worst case, not an
-// arbitrary number.
-const ENTRY_COUNT = 50
+// Real history has no cap (main/services/sync.ts keeps every push forever).
+// 240 lands around 10-12 pages at the row counts a normal desktop window
+// gets (see useRowCapacity's tiers) — enough to click through several pages
+// and hit the "…" ellipsis, without being a completely arbitrary number.
+const ENTRY_COUNT = 240
 
-/** Fake pushes spanning many days — enough to click through several
- *  "Show more" batches and reach the end, and to exercise the filter and
- *  both avatar variants (selfLogin gets the real local avatar, the fake
- *  friend gets the placeholder). */
+/** Fake pushes spanning many days — enough to click through several pages
+ *  of pagination and reach the end, and to exercise the filter and both
+ *  avatar variants (selfLogin gets the real local avatar, the fake friend
+ *  gets the placeholder). */
 export function devHistoryMock(selfLogin: string): SyncHistoryEntry[] {
   if (cached) return cached
 
@@ -42,7 +46,9 @@ export function devHistoryMock(selfLogin: string): SyncHistoryEntry[] {
   // Oldest → newest, then reversed: versions must grow with time.
   let ts = Date.now() - ENTRY_COUNT * 5 * 60 * 60 * 1000
   for (let i = 0; i < ENTRY_COUNT; i++) {
-    const game = GAMES[(i * 3) % GAMES.length]
+    // 3 out of every 4 pushes are Subnautica 2; the 4th rotates through the
+    // other three games.
+    const game = i % 4 === 3 ? GAMES[1 + (Math.floor(i / 4) % 3)] : GAMES[0]
     version[game.appId] = (version[game.appId] ?? 0) + 1
     list.push({
       appId: game.appId,

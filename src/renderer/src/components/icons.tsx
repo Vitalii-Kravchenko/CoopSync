@@ -1,6 +1,8 @@
 // Small SVG icons reused across the UI. Line style (stroke ~1.7) —
 // matches the RIFT//SYNC design system.
 
+import { useId } from 'react'
+
 export function GitHubIcon({ size = 16, color = '#cdd6f4' }: { size?: number; color?: string }): React.JSX.Element {
   return (
     <svg viewBox="0 0 16 16" width={size} height={size} fill={color}>
@@ -19,21 +21,30 @@ interface IconProps {
 // and tray icon (build/logo.svg, src/main/trayIcon.ts) — keep the intermediate
 // overlap color #5AB6F2 in sync if the gradient changes.
 export function Logo({ size = 24 }: { size?: number }): React.JSX.Element {
+  // Unique per instance — this component renders more than once at a time
+  // (titlebar + Settings "About" section, both stay mounted), and duplicate
+  // SVG ids across simultaneous instances make gradient/clipPath url(#...)
+  // refs resolve ambiguously (can flash other instances on mount).
+  // useId() ids contain colons (":r0:") — strip them so the id is a plain
+  // token, safe wherever it's substituted into a url(#...) reference.
+  const uid = useId().replace(/:/g, '')
+  const bgId = `logoBg-${uid}`
+  const clipId = `logoLeftClip-${uid}`
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <linearGradient id="logoBg" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id={bgId} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stopColor="#171B27" />
           <stop offset="1" stopColor="#06080D" />
         </linearGradient>
-        <clipPath id="logoLeftClip">
+        <clipPath id={clipId}>
           <circle cx="36" cy="50" r="23" />
         </clipPath>
       </defs>
-      <path d="M0,0 L82,0 L100,18 L100,100 L18,100 L0,82 Z" fill="url(#logoBg)" />
+      <path d="M0,0 L82,0 L100,18 L100,100 L18,100 L0,82 Z" fill={`url(#${bgId})`} />
       <circle cx="36" cy="50" r="23" fill="#36E2E8" />
       <circle cx="64" cy="50" r="23" fill="#8A6CFF" />
-      <circle cx="64" cy="50" r="23" fill="#5AB6F2" clipPath="url(#logoLeftClip)" />
+      <circle cx="64" cy="50" r="23" fill="#5AB6F2" clipPath={`url(#${clipId})`} />
     </svg>
   )
 }
@@ -117,6 +128,14 @@ export function ChevronRightIcon({ size = 16, color }: IconProps): React.JSX.Ele
   return (
     <svg {...base(size)} style={{ color }}>
       <polyline points="9 6 15 12 9 18" />
+    </svg>
+  )
+}
+
+export function ChevronLeftIcon({ size = 16, color }: IconProps): React.JSX.Element {
+  return (
+    <svg {...base(size)} style={{ color }}>
+      <polyline points="15 6 9 12 15 18" />
     </svg>
   )
 }

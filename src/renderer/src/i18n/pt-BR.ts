@@ -77,8 +77,8 @@ export const ptBR: Translation = {
     columnAction: 'Ação',
     columnPlayer: 'Jogador',
     filterPlaceholder: 'Filtrar por jogo ou jogador…',
-    showMore: 'Mostrar mais',
-    endOfList: 'É isso — não há mais histórico',
+    pagePrev: 'Página anterior',
+    pageNext: 'Próxima página',
     columnVersion: 'Versão',
     columnWhen: 'Quando',
     uploaded: 'Enviado',
@@ -88,7 +88,14 @@ export const ptBR: Translation = {
     justNow: 'Agora mesmo',
     minutesAgo: (n) => `há ${n} min`,
     hoursAgo: (n) => `há ${n} h`,
-    daysAgo: (n) => `há ${n} d`
+    daysAgo: (n) => `há ${n} d`,
+    restore: 'Restaurar',
+    restoreConfirmTitle: 'Restaurar uma versão mais antiga?',
+    restoreConfirmDesc: (version, who) =>
+      `O save voltará para a versão ${version} (sincronizado pela última vez por ${who}). O estado atual não será perdido — vira uma nova entrada no histórico. Se vocês compartilham acesso, seu parceiro vai receber essa versão automaticamente na próxima vez que abrir o jogo.`,
+    restoreError: 'Não foi possível restaurar a versão',
+    revertSuccess: (version) => `Versão ${version} restaurada`,
+    restoredFromBadge: (version) => `↩ de ${version}`
   },
   cloudWarning: {
     title: 'Desative o Steam Cloud para os jogos sincronizados',

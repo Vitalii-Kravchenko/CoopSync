@@ -27,6 +27,8 @@ export function describeSyncResult(code: string, params: Record<string, string> 
       return t.main.downloadSuccess(formatVersion(Number(params?.version ?? 0)))
     case 'restore-success':
       return t.main.restoreSuccess(String(params?.count ?? 0))
+    case 'revert-success':
+      return t.history.revertSuccess(formatVersion(Number(params?.version ?? 0)))
     case 'push-skipped':
       return t.main.pushSkipped
     case 'push-skipped-stale':

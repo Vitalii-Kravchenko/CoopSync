@@ -75,8 +75,8 @@ export const en: Translation = {
     columnAction: 'Action',
     columnPlayer: 'Player',
     filterPlaceholder: 'Filter by game or player…',
-    showMore: 'Show more',
-    endOfList: 'That’s all — no more history',
+    pagePrev: 'Previous page',
+    pageNext: 'Next page',
     columnVersion: 'Version',
     columnWhen: 'When',
     uploaded: 'Uploaded',
@@ -86,7 +86,14 @@ export const en: Translation = {
     justNow: 'Just now',
     minutesAgo: (n) => `${n} min ago`,
     hoursAgo: (n) => `${n} h ago`,
-    daysAgo: (n) => `${n} d ago`
+    daysAgo: (n) => `${n} d ago`,
+    restore: 'Restore',
+    restoreConfirmTitle: 'Restore an older version?',
+    restoreConfirmDesc: (version, who) =>
+      `The save will go back to ${version} (last synced by ${who}). The current state won't be lost — it becomes a new entry in the history. If you share access, your partner will pick up this version automatically next time they launch the game.`,
+    restoreError: "Couldn't restore this version",
+    revertSuccess: (version) => `Restored version ${version}`,
+    restoredFromBadge: (version) => `↩ from ${version}`
   },
   cloudWarning: {
     title: 'Turn off Steam Cloud for synced games',

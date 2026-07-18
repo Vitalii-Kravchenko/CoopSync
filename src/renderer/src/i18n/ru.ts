@@ -77,8 +77,8 @@ export const ru: Translation = {
     columnAction: 'Действие',
     columnPlayer: 'Игрок',
     filterPlaceholder: 'Фильтр по игре или игроку…',
-    showMore: 'Показать ещё',
-    endOfList: 'Это всё — больше записей нет',
+    pagePrev: 'Предыдущая страница',
+    pageNext: 'Следующая страница',
     columnVersion: 'Версия',
     columnWhen: 'Когда',
     uploaded: 'Выгружено',
@@ -88,7 +88,14 @@ export const ru: Translation = {
     justNow: 'Только что',
     minutesAgo: (n) => `${n} мин назад`,
     hoursAgo: (n) => `${n} ч назад`,
-    daysAgo: (n) => `${n} дн назад`
+    daysAgo: (n) => `${n} дн назад`,
+    restore: 'Восстановить',
+    restoreConfirmTitle: 'Восстановить старую версию?',
+    restoreConfirmDesc: (version, who) =>
+      `Сейв вернётся к версии ${version} (последним синхронизировал ${who}). Текущее состояние не пропадёт — станет новой записью в истории. Если у вас общий доступ, партнёр подхватит эту версию автоматически при следующем запуске игры.`,
+    restoreError: 'Не удалось восстановить версию',
+    revertSuccess: (version) => `Восстановлена версия ${version}`,
+    restoredFromBadge: (version) => `↩ из ${version}`
   },
   cloudWarning: {
     title: 'Отключи Steam Cloud для игр, которые синхронизирует CoopSync',

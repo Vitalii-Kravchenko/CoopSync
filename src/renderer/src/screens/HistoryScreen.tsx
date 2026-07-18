@@ -4,8 +4,8 @@ import { useI18n } from '../i18n'
 import { describeError } from '../errors'
 import type { Translation } from '../i18n'
 import { HistoryIcon, SearchIcon } from '../components/icons'
-import Button from '../components/Button'
 import Avatar from '../components/Avatar'
+import Pagination from '../components/Pagination'
 import { useAvatars } from '../hooks/useAvatars'
 import { useRowCapacity } from '../hooks/useRowCapacity'
 import type { AuthUser, SyncHistoryEntry } from '../../../shared/types'
@@ -48,18 +48,11 @@ function HistoryScreen({ active, syncVersion, onSeen, user, avatarDataUrl }: Pro
   const [entries, setEntries] = useState<SyncHistoryEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
-  // Client-side filter over game name / player login. The whole history is
-  // capped at MAX_HISTORY_ENTRIES on the main side anyway, so there's
-  // nothing to gain from filtering there.
+  // Client-side filter over game name / player login — the whole (uncapped)
+  // history is fetched once, filtering and paging both happen locally.
   const [query, setQuery] = useState('')
   const pageSize = useRowCapacity()
-  const [visibleCount, setVisibleCount] = useState(pageSize)
-  // Grow the visible count when more rows start fitting (bigger window/monitor),
-  // but never shrink it — resizing shouldn't undo rows the user already
-  // revealed via "Show more".
-  useEffect(() => {
-    setVisibleCount((c) => Math.max(c, pageSize))
-  }, [pageSize])
+  const [page, setPage] = useState(1)
   // What's actually rendering with the "new" animation right now.
   const [newKeys, setNewKeys] = useState<Set<string>>(new Set())
   // Mirror of entries for reading inside async callbacks without waiting
@@ -112,9 +105,10 @@ function HistoryScreen({ active, syncVersion, onSeen, user, avatarDataUrl }: Pro
     window.api.sync
       .history()
       .then((real) => {
-        // Dev build has its own clean userData — no history to look at while
-        // designing this screen, so an empty list falls back to a fixture.
-        const list = import.meta.env.DEV && real.length === 0 ? devHistoryMock(user.login) : real
+        // Always the fixture in dev — real history (whatever's actually in
+        // this machine's coopsync-saves from earlier testing) is too small
+        // and unpredictable to design/verify pagination against.
+        const list = import.meta.env.DEV ? devHistoryMock(user.login) : real
         latestListRef.current = list
         setLoadError(null)
         // Tab inactive — don't touch the visible list/animation at all,
@@ -178,7 +172,12 @@ function HistoryScreen({ active, syncVersion, onSeen, user, avatarDataUrl }: Pro
         (e) => e.gameName.toLowerCase().includes(q) || e.updatedBy.toLowerCase().includes(q)
       )
     : entries
-  const visible = filtered.slice(0, visibleCount)
+  // Clamped rather than reset via effect — filtering down to fewer pages (or
+  // a resize changing how many rows fit) just settles on the nearest valid
+  // page instead of needing a separate "reset to 1" effect for each cause.
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
+  const currentPage = Math.min(page, totalPages)
+  const visible = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize)
   const showTable = loading || filtered.length > 0
 
   return (
@@ -225,20 +224,7 @@ function HistoryScreen({ active, syncVersion, onSeen, user, avatarDataUrl }: Pro
         </div>
       )}
 
-      {!loading && filtered.length > visibleCount && (
-        <div style={styles.showMoreWrap}>
-          <Button variant="secondary" onClick={() => setVisibleCount((c) => c + pageSize)}>
-            {t.history.showMore}
-          </Button>
-        </div>
-      )}
-
-      {/* Only once pagination was actually in play (more than one page's worth
-          of results) — otherwise this would show under every short, never-paginated
-          list, which is just noise. */}
-      {!loading && filtered.length > 0 && filtered.length <= visibleCount && filtered.length > pageSize && (
-        <div style={styles.endOfList}>{t.history.endOfList}</div>
-      )}
+      {!loading && <Pagination page={currentPage} totalPages={totalPages} onChange={setPage} />}
 
       {!loading && entries.length > 0 && filtered.length === 0 && (
         <div style={styles.noMatches}>{t.main.nothingFound}</div>
@@ -311,7 +297,12 @@ function HistoryRow({
         <Avatar src={avatarSrc} size={22} />
         <span style={styles.playerName}>{entry.updatedBy}</span>
       </div>
-      <div style={styles.mono}>{fmtVersion(entry.version)}</div>
+      <div style={styles.mono}>
+        {fmtVersion(entry.version)}
+        {entry.restoredFrom !== undefined && (
+          <span style={styles.restoredBadge}>{t.history.restoredFromBadge(fmtVersion(entry.restoredFrom))}</span>
+        )}
+      </div>
       <div style={styles.mono}>{formatRelativeTime(entry.updatedAt, t)}</div>
     </div>
   )
@@ -360,13 +351,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 13.5,
     boxShadow: 'inset 0 1px 2px rgba(0,0,0,.3)',
     outline: 'none'
-  },
-  showMoreWrap: { display: 'flex', justifyContent: 'center', marginTop: 16 },
-  endOfList: {
-    textAlign: 'center',
-    marginTop: 16,
-    fontSize: 12,
-    color: colors.text3
   },
   noMatches: { textAlign: 'center', padding: '28px 16px', fontSize: 13, color: colors.text3 },
   table: {
@@ -435,6 +419,7 @@ const styles: Record<string, React.CSSProperties> = {
     whiteSpace: 'nowrap'
   },
   mono: { fontFamily: fonts.mono, fontSize: 12, color: colors.text3 },
+  restoredBadge: { display: 'block', fontSize: 10, color: colors.cy, marginTop: 2 },
   shimmer: {
     borderRadius: 6,
     background: 'linear-gradient(90deg,#161b27 25%,#222a3a 37%,#161b27 63%)',

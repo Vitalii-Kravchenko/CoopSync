@@ -77,8 +77,8 @@ export const tr: Translation = {
     columnAction: 'Eylem',
     columnPlayer: 'Oyuncu',
     filterPlaceholder: 'Oyuna veya oyuncuya göre filtrele…',
-    showMore: 'Daha fazla göster',
-    endOfList: 'Hepsi bu — başka geçmiş yok',
+    pagePrev: 'Önceki sayfa',
+    pageNext: 'Sonraki sayfa',
     columnVersion: 'Sürüm',
     columnWhen: 'Ne zaman',
     uploaded: 'Yüklendi',
@@ -88,7 +88,14 @@ export const tr: Translation = {
     justNow: 'Az önce',
     minutesAgo: (n) => `${n} dk önce`,
     hoursAgo: (n) => `${n} sa önce`,
-    daysAgo: (n) => `${n} gün önce`
+    daysAgo: (n) => `${n} gün önce`,
+    restore: 'Geri yükle',
+    restoreConfirmTitle: 'Eski bir sürüm geri yüklensin mi?',
+    restoreConfirmDesc: (version, who) =>
+      `Kayıt ${version} sürümüne dönecek (son senkronize eden: ${who}). Mevcut durum kaybolmaz — geçmişte yeni bir kayıt olarak görünür. Erişimi paylaşıyorsanız, oyuncu arkadaşın bir sonraki oyun açılışında bu sürümü otomatik olarak alır.`,
+    restoreError: 'Sürüm geri yüklenemedi',
+    revertSuccess: (version) => `${version} sürümü geri yüklendi`,
+    restoredFromBadge: (version) => `↩ ${version} sürümünden`
   },
   cloudWarning: {
     title: "Senkronize edilen oyunlar için Steam Cloud'u kapat",

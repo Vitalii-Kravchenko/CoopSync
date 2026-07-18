@@ -77,8 +77,8 @@ export const uk: Translation = {
     columnAction: 'Дія',
     columnPlayer: 'Гравець',
     filterPlaceholder: 'Фільтр за грою або гравцем…',
-    showMore: 'Показати більше',
-    endOfList: 'Це все — більше записів немає',
+    pagePrev: 'Попередня сторінка',
+    pageNext: 'Наступна сторінка',
     columnVersion: 'Версія',
     columnWhen: 'Коли',
     uploaded: 'Вивантажено',
@@ -88,7 +88,14 @@ export const uk: Translation = {
     justNow: 'Щойно',
     minutesAgo: (n) => `${n} хв тому`,
     hoursAgo: (n) => `${n} год тому`,
-    daysAgo: (n) => `${n} дн тому`
+    daysAgo: (n) => `${n} дн тому`,
+    restore: 'Відновити',
+    restoreConfirmTitle: 'Відновити стару версію?',
+    restoreConfirmDesc: (version, who) =>
+      `Сейв повернеться до версії ${version} (востаннє синкав ${who}). Поточний стан не зникне — стане новим записом в історії. Якщо в тебе є спільний доступ, партнер підхопить цю версію автоматично, коли наступного разу зайде в гру.`,
+    restoreError: 'Не вдалося відновити версію',
+    revertSuccess: (version) => `Відновлено версію ${version}`,
+    restoredFromBadge: (version) => `↩ з ${version}`
   },
   cloudWarning: {
     title: 'Вимкни Steam Cloud для ігор, які синкає CoopSync',

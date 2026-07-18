@@ -75,8 +75,8 @@ export const zhCN: Translation = {
     columnAction: '操作',
     columnPlayer: '玩家',
     filterPlaceholder: '按游戏或玩家筛选…',
-    showMore: '显示更多',
-    endOfList: '就这些了 — 没有更多记录',
+    pagePrev: '上一页',
+    pageNext: '下一页',
     columnVersion: '版本',
     columnWhen: '时间',
     uploaded: '已上传',
@@ -86,7 +86,14 @@ export const zhCN: Translation = {
     justNow: '刚刚',
     minutesAgo: (n) => `${n} 分钟前`,
     hoursAgo: (n) => `${n} 小时前`,
-    daysAgo: (n) => `${n} 天前`
+    daysAgo: (n) => `${n} 天前`,
+    restore: '恢复',
+    restoreConfirmTitle: '恢复到旧版本？',
+    restoreConfirmDesc: (version, who) =>
+      `存档将恢复到 ${version}（最后由 ${who} 同步）。当前状态不会丢失——会成为历史记录中的新条目。如果你们共享访问权限，搭档下次启动游戏时会自动获取这个版本。`,
+    restoreError: '无法恢复该版本',
+    revertSuccess: (version) => `已恢复到 ${version}`,
+    restoredFromBadge: (version) => `↩ 来自 ${version}`
   },
   cloudWarning: {
     title: '为已同步的游戏关闭 Steam 云存储',

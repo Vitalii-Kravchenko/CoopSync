@@ -218,9 +218,8 @@ async function writeRemoteMeta(name: string, version: number, owner: string): Pr
 // A log of push events shared between host and join (lives in the repo
 // itself, so it syncs along with the saves). Push only — download is local
 // and doesn't change anything in the cloud, so logging it in the shared
-// history wouldn't make sense.
-
-const MAX_HISTORY_ENTRIES = 50
+// history wouldn't make sense. Kept in full (no cap) — the History screen
+// paginates over it instead of truncating the underlying log.
 
 function historyPath(): string {
   return join(repoDir(), '.meta', 'history.json')
@@ -239,7 +238,7 @@ async function readHistory(): Promise<SyncHistoryEntry[]> {
 
 async function appendHistory(entry: SyncHistoryEntry): Promise<void> {
   const current = await readHistory()
-  const next = [entry, ...current].slice(0, MAX_HISTORY_ENTRIES)
+  const next = [entry, ...current]
   await mkdir(join(repoDir(), '.meta'), { recursive: true })
   await writeFile(historyPath(), JSON.stringify(next, null, 2))
 }
@@ -274,12 +273,15 @@ async function setLocalVersion(appId: string, version: number): Promise<void> {
 /** Upload the game's saves to GitHub (push). Bumps the version.
  * `owner` — whose repo (the sync target, for join this is the host); `actor`
  * — who's actually pressing the button right now (for join this is NOT
- * owner) — it's actor that goes into the history/commit. */
+ * owner) — it's actor that goes into the history/commit. `restoredFrom` —
+ * set only by revertToVersion below, when this push's content came from an
+ * older version rather than the live save folder. */
 export async function uploadGame(
   token: string,
   owner: string,
   appId: string,
-  actor: string
+  actor: string,
+  restoredFrom?: number
 ): Promise<SyncResult> {
   await ensureRepo(token, owner)
   const game = findGame(appId)
@@ -314,19 +316,74 @@ export async function uploadGame(
     gameName: game.name,
     version: newVersion,
     updatedBy: actor,
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
+    ...(restoredFrom !== undefined ? { restoredFrom } : {})
   })
 
   await git(['add', '-A'])
+  const restoreNote = restoredFrom !== undefined ? ` [restored from ${formatVersion(restoredFrom)}]` : ''
   await git([
     ...identityFlags(actor),
     'commit',
     '-m',
-    `sync: ${game.name} ${formatVersion(newVersion)} (${actor})`
+    `sync: ${game.name} ${formatVersion(newVersion)} (${actor})${restoreNote}`
   ])
   await git(['push', 'origin', 'main'])
   await setLocalVersion(appId, newVersion)
   return { version: newVersion, pushed: true }
+}
+
+// Finds the commit that produced a given historical version of a game — by
+// walking the commits that touched its meta file and reading the version
+// recorded in each, rather than storing a commit sha up front (which would
+// need its own separate commit, since the sha isn't known until after the
+// very commit history.json is written into).
+async function findCommitForVersion(gameName: string, targetVersion: number): Promise<string> {
+  const log = await git(['log', '--format=%H', '--', `.meta/${gameName}.json`])
+  const shas = log
+    .split('\n')
+    .map((s) => s.trim())
+    .filter(Boolean)
+  for (const sha of shas) {
+    try {
+      const raw = await git(['show', `${sha}:.meta/${gameName}.json`])
+      const meta = JSON.parse(raw.replace(/^﻿/, '')) as RemoteMeta
+      if (meta.version === targetVersion) return sha
+    } catch {
+      // Meta file didn't exist yet at this commit, or isn't parseable — skip it.
+    }
+  }
+  throw makeAppError('GIT_GENERIC', { detail: `No commit found for version ${targetVersion}` })
+}
+
+/** Revert a game's saves to an older version. Not a branch — the old
+ *  snapshot is pushed back as a brand new version at the top of history, so
+ *  the existing sync flow (auto-pull on a newer remote version) picks it up
+ *  for anyone else with access exactly like any other push, no separate
+ *  "switch branches" step needed on their end. */
+export async function revertToVersion(
+  token: string,
+  owner: string,
+  appId: string,
+  actor: string,
+  targetVersion: number
+): Promise<SyncResult> {
+  await ensureRepo(token, owner)
+  const game = findGame(appId)
+  const sha = await findCommitForVersion(game.name, targetVersion)
+
+  // Pull that historical snapshot into the clone's working tree, copy it to
+  // the local save folder (this is what actually "restores" the save — it
+  // overwrites whatever's there now), then put the clone back to a clean
+  // HEAD. The clone is a scratch working copy, not a source of truth (see
+  // ensureRepo) — uploadGame below re-derives its content from the local
+  // save folder fresh anyway.
+  await git(['checkout', sha, '--', game.name])
+  await rm(game.savePath, { recursive: true, force: true })
+  await copyFiltered(join(repoDir(), game.name), game.savePath, game.saveFilePattern)
+  await git(['checkout', 'HEAD', '--', game.name])
+
+  return uploadGame(token, owner, appId, actor, targetVersion)
 }
 
 // --- Member avatars ---

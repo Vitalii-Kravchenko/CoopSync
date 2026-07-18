@@ -153,7 +153,9 @@ export interface SyncResult {
  * 'push-skipped-nochange' — we played, but the save content didn't change
  * (hash matched the cloud) — a push wouldn't have made sense, so we don't
  * show this as "uploaded".
- * 'restore-success' — files missing locally were downloaded (without a full pull). */
+ * 'restore-success' — files missing locally were downloaded (without a full pull).
+ * 'revert-success' — an older save version was pushed back as a new version
+ * (not to be confused with 'restore-success', a different feature). */
 export type SyncResultCode =
   | 'upload-success'
   | 'download-success'
@@ -161,6 +163,7 @@ export type SyncResultCode =
   | 'push-skipped-stale'
   | 'push-skipped-nochange'
   | 'restore-success'
+  | 'revert-success'
 
 /** Auto-sync event (game launch → pull, exit → push).
  * 'watcher-error' — not tied to a specific game (e.g. failed to check the
@@ -205,6 +208,9 @@ export interface SyncHistoryEntry {
   updatedBy: string
   /** ISO timestamp of the push moment. */
   updatedAt: string
+  /** Set when this push was a revert — the version its content was restored
+   *  from, not a branch, just a new version carrying old content forward. */
+  restoredFrom?: number
 }
 
 /** User's role in the co-op. */

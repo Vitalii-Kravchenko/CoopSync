@@ -85,6 +85,9 @@ const api = {
     statuses: (): Promise<GameSyncStatus[]> => ipcRenderer.invoke('sync:statuses'),
     /** Push event history (newest first). */
     history: (): Promise<SyncHistoryEntry[]> => ipcRenderer.invoke('sync:history'),
+    /** Revert the game's saves to an older version (pushed back as a new version). */
+    revert: (appId: string, version: number): Promise<SyncResult> =>
+      ipcRenderer.invoke('sync:revert', appId, version),
     /** Mark game/version pairs as seen (clears the Games nav badge for them). */
     markSeen: (entries: Array<{ appId: string; version: number }>): Promise<void> =>
       ipcRenderer.invoke('sync:mark-seen', entries)

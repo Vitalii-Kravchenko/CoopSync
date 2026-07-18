@@ -123,6 +123,9 @@ function NotificationBell(): React.JSX.Element {
       <button
         type="button"
         className="icon-btn"
+        // Own size, not the shared 41x40 — matches the rest of the titlebar
+        // (Support button/user pill are 34px tall too), requested explicitly.
+        style={{ width: 35, height: 34 }}
         onClick={() => setOpen((o) => !o)}
         title={t.notifications.bellTooltip}
         aria-label={t.notifications.bellTooltip}

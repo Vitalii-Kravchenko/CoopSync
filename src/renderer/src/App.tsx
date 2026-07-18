@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { colors, fonts } from './theme'
 import { useI18n } from './i18n'
 import { describeError, describeSyncResult } from './errors'
@@ -192,6 +192,24 @@ function App(): React.JSX.Element {
       // already open, this shows the new version right away and (via the
       // 'active' gate in MainScreen) marks it seen immediately too.
       bumpSyncVersion()
+    })
+  }, [phase, t])
+
+  // A new app version is available — toast via the OS notification center
+  // too, not just the in-app banner (see MainScreen) — CoopSync starts
+  // minimized to the tray by default, so the banner alone would never be
+  // seen until the user happens to open the window. lastToastedVersionRef
+  // avoids re-toasting the same version on every periodic re-check
+  // (scheduleStartupCheck in updater.ts re-checks every 6h).
+  const lastToastedVersionRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (phase !== 'app') return
+    return window.api.updater.onStatus((status) => {
+      if (status.state !== 'available') return
+      if (lastToastedVersionRef.current === status.version) return
+      lastToastedVersionRef.current = status.version
+      const n = new Notification(t.updateBanner.title, { body: t.updateBanner.message(status.version) })
+      n.onclick = () => void window.api.window.maximize()
     })
   }, [phase, t])
 

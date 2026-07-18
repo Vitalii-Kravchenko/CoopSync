@@ -293,7 +293,9 @@ function FriendsScreen({ user, avatarDataUrl, active }: Props): React.JSX.Elemen
                   <div style={{ minWidth: 0 }}>
                     <div style={styles.memberName}>{ownerLogin}</div>
                     <span style={styles.ownerBadge}>
-                      <CrownIcon size={11} color={colors.cy} />
+                      <span style={{ display: 'flex', transform: 'translateY(-1px)' }}>
+                        <CrownIcon size={11} color={colors.cy} />
+                      </span>
                       {t.friends.ownerBadge}
                     </span>
                   </div>

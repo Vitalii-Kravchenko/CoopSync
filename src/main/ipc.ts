@@ -30,6 +30,9 @@ import {
   getAvatars
 } from './services/sync'
 import { startWatcher, stopWatcher } from './services/watcher'
+import { markSeen } from './services/notifyState'
+import { forgetPending } from './services/backgroundState'
+import { getNotifications, markRead, markAllRead, clearAll } from './services/notificationStore'
 import { READY_GAMES } from './games/catalog'
 import { saveToken, loadToken, clearToken } from './services/tokenStore'
 import { sendSupportMessage } from './services/support'
@@ -49,7 +52,9 @@ import type {
   InstalledGame,
   GeneralSettings,
   SupportRequest,
-  SteamSearchResult
+  SteamSearchResult,
+  FriendSaveUpdate,
+  AppNotification
 } from '../shared/types'
 
 // Max avatar file size — to keep settings.json from bloating.
@@ -192,10 +197,17 @@ export function registerIpcHandlers(): void {
   })
 
   // Owner cancels a not-yet-accepted invitation.
-  ipcMain.handle('repo:cancel-invitation', async (_event, invitationId: number): Promise<void> => {
-    const { token, owner } = await requireOwner()
-    await cancelInvitation(token, owner, invitationId)
-  })
+  ipcMain.handle(
+    'repo:cancel-invitation',
+    async (_event, invitationId: number, login: string): Promise<void> => {
+      const { token, owner } = await requireOwner()
+      await cancelInvitation(token, owner, invitationId)
+      // Tell the background "did a friend decline?" check about our own
+      // cancel right away — otherwise the next cycle would see this login
+      // vanish from pending and wrongly report it as them declining.
+      forgetPending(login)
+    }
+  )
 
   // Owner kicks a collaborator off the shared repo.
   ipcMain.handle('repo:remove-collaborator', async (_event, username: string): Promise<void> => {
@@ -285,13 +297,30 @@ export function registerIpcHandlers(): void {
     return getSyncHistory(token, owner)
   })
 
+  // The renderer just displayed these game/version pairs (Games tab opened
+  // or refreshed) — clears the "unseen" nav badge for them and stops any
+  // pending toast about a version the user already looked at.
+  ipcMain.handle(
+    'sync:mark-seen',
+    (_event, entries: Array<{ appId: string; version: number }>): void => {
+      for (const e of entries) markSeen(e.appId, e.version)
+    }
+  )
+
   // --- Auto-sync (process watcher) ---
 
-  // Start it: watch games, send renderer 'sync:auto' events.
+  // Start it: watch games, send renderer 'sync:auto' events + 'sync:friend-update'
+  // (a friend's save pushed while this device wasn't looking).
   ipcMain.handle('watcher:start', async (event): Promise<void> => {
     const { token, owner } = await syncTarget()
     const { owner: actorLogin } = await requireAuth()
-    startWatcher(token, owner, actorLogin, (e) => event.sender.send('sync:auto', e))
+    startWatcher(
+      token,
+      owner,
+      actorLogin,
+      (e) => event.sender.send('sync:auto', e),
+      (updates: FriendSaveUpdate[]) => event.sender.send('sync:friend-update', updates)
+    )
   })
 
   ipcMain.handle('watcher:stop', (): void => {
@@ -470,4 +499,11 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('updater:check', (): void => checkForUpdates())
   ipcMain.handle('updater:download', (): void => downloadUpdate())
   ipcMain.handle('updater:install', (): void => quitAndInstall())
+
+  // --- Notification bell ---
+
+  ipcMain.handle('notifications:list', (): AppNotification[] => getNotifications())
+  ipcMain.handle('notifications:mark-read', (_event, ids: string[]): void => markRead(ids))
+  ipcMain.handle('notifications:mark-all-read', (): void => markAllRead())
+  ipcMain.handle('notifications:clear-all', (): void => clearAll())
 }

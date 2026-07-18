@@ -105,6 +105,24 @@ export const de: Translation = {
     readyTitle: 'Update bereit zur Installation',
     readyMessage: 'Starte CoopSync neu, um die Installation des Updates abzuschließen.'
   },
+  notifications: {
+    friendUploadedTitle: 'Neuer Spielstand von einem Freund',
+    friendUploadedBody: (login, game) => `${login} hat einen neuen Spielstand für ${game} hochgeladen.`,
+    bellTooltip: 'Benachrichtigungen',
+    panelTitle: 'Benachrichtigungen',
+    empty: 'Noch keine Benachrichtigungen',
+    markAllRead: 'Alle als gelesen markieren',
+    clearAll: 'Alle löschen',
+    newGamesTitle: 'Neue Spiele unterstützt',
+    newGamesBody: (names) => `CoopSync synchronisiert jetzt: ${names}.`,
+    friendAcceptedTitle: 'Einladung angenommen',
+    friendAcceptedBody: (login) => `${login} hat deine Einladung angenommen und hat jetzt Zugriff.`,
+    friendDeclinedTitle: 'Einladung nicht angenommen',
+    friendDeclinedBody: (login) => `${login} hat die Einladung nicht angenommen.`,
+    syncConflictTitle: 'Synchronisierung übersprungen',
+    accessRevokedTitle: 'Zugriff entzogen',
+    accessRevokedBody: (host) => `Du hast keinen Zugriff mehr auf den gemeinsamen Speicher von ${host}.`
+  },
   onboarding: {
     welcomeTitle: 'Willkommen bei CoopSync!',
     welcomeSubtitle: 'Richten wir die Synchronisierung in wenigen Schritten ein',

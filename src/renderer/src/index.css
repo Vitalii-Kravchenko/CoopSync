@@ -291,7 +291,7 @@ body {
    class rather than inline styles, because an inline background always overrides
    CSS :hover (the same pitfall we already hit with the Sidebar items). */
 .icon-btn {
-  width: 40px;
+  width: 41px;
   height: 40px;
   display: flex;
   align-items: center;

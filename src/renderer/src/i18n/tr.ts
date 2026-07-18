@@ -105,6 +105,24 @@ export const tr: Translation = {
     readyTitle: 'Güncelleme yüklenmeye hazır',
     readyMessage: 'Güncellemenin yüklenmesini tamamlamak için CoopSync\'i yeniden başlat.'
   },
+  notifications: {
+    friendUploadedTitle: 'Arkadaşından yeni kayıt',
+    friendUploadedBody: (login, game) => `${login}, ${game} için yeni bir kayıt yükledi.`,
+    bellTooltip: 'Bildirimler',
+    panelTitle: 'Bildirimler',
+    empty: 'Henüz bildirim yok',
+    markAllRead: 'Tümünü okundu işaretle',
+    clearAll: 'Tümünü temizle',
+    newGamesTitle: 'Yeni oyun desteği eklendi',
+    newGamesBody: (names) => `CoopSync artık şunları senkronize edebilir: ${names}.`,
+    friendAcceptedTitle: 'Davet kabul edildi',
+    friendAcceptedBody: (login) => `${login} davetini kabul etti ve artık erişimi var.`,
+    friendDeclinedTitle: 'Davet kabul edilmedi',
+    friendDeclinedBody: (login) => `${login} daveti kabul etmedi.`,
+    syncConflictTitle: 'Senkronizasyon atlandı',
+    accessRevokedTitle: 'Erişim iptal edildi',
+    accessRevokedBody: (host) => `Artık ${host} kullanıcısının paylaşılan deposuna erişimin yok.`
+  },
   onboarding: {
     welcomeTitle: "CoopSync'e hoş geldin!",
     welcomeSubtitle: 'Senkronizasyonu birkaç adımda ayarlayalım',

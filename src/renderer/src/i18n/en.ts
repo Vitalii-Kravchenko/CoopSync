@@ -103,6 +103,24 @@ export const en: Translation = {
     readyTitle: 'Update ready to install',
     readyMessage: 'Restart CoopSync to finish installing the update.'
   },
+  notifications: {
+    friendUploadedTitle: 'New save from a friend',
+    friendUploadedBody: (login, game) => `${login} uploaded a new save for ${game}.`,
+    bellTooltip: 'Notifications',
+    panelTitle: 'Notifications',
+    empty: 'No notifications yet',
+    markAllRead: 'Mark all as read',
+    clearAll: 'Clear all',
+    newGamesTitle: 'New games supported',
+    newGamesBody: (names) => `CoopSync can now sync: ${names}.`,
+    friendAcceptedTitle: 'Invitation accepted',
+    friendAcceptedBody: (login) => `${login} accepted your invitation and now has access.`,
+    friendDeclinedTitle: 'Invitation not accepted',
+    friendDeclinedBody: (login) => `${login} didn't accept the invitation.`,
+    syncConflictTitle: 'Sync skipped',
+    accessRevokedTitle: 'Access revoked',
+    accessRevokedBody: (host) => `You no longer have access to ${host}'s shared storage.`
+  },
   onboarding: {
     welcomeTitle: 'Welcome to CoopSync!',
     welcomeSubtitle: "Let's set up sync in a few steps",

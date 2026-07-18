@@ -1,6 +1,7 @@
 import { app, BrowserWindow } from 'electron'
 import { autoUpdater } from 'electron-updater'
 import { readSettings } from './settingsStore'
+import { addNotification } from './notificationStore'
 import type { UpdateStatus } from '../../shared/types'
 
 // autoDownload/autoInstallOnAppQuit are both off — the user decides via the
@@ -31,10 +32,19 @@ function clearCheckTimeout(): void {
   }
 }
 
+// The bell entry should appear once per version, not on every 6h re-check
+// while the same release is still the latest (autoDownload is off, so a user
+// who hasn't downloaded yet would otherwise get spammed every cycle).
+let lastNotifiedVersion: string | null = null
+
 autoUpdater.on('checking-for-update', () => send({ state: 'checking' }))
 autoUpdater.on('update-available', (info) => {
   clearCheckTimeout()
   send({ state: 'available', version: info.version })
+  if (lastNotifiedVersion !== info.version) {
+    lastNotifiedVersion = info.version
+    addNotification('update-available', { version: info.version })
+  }
 })
 autoUpdater.on('update-not-available', () => {
   clearCheckTimeout()

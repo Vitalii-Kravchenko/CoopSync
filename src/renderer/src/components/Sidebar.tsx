@@ -13,11 +13,16 @@ const ACTIVE_BG = 'linear-gradient(90deg, rgba(54,226,232,.14), transparent)'
 interface Props {
   active: Screen
   onNavigate: (screen: Screen) => void
+  /** Games with a cloud save pushed by a friend that this device hasn't
+   *  looked at yet — shown as a number badge on the "History" nav item.
+   *  No equivalent on "Games" (deliberately removed — redundant with this
+   *  plus the tray toast, and auto-sync already pulls the save regardless). */
+  historyBadge?: number
 }
 
 // Left panel: sections at the top, "Settings" at the bottom.
 // The active item has the brand accent stripe on the left + a soft gradient background.
-function Sidebar({ active, onNavigate }: Props): React.JSX.Element {
+function Sidebar({ active, onNavigate, historyBadge }: Props): React.JSX.Element {
   const { t } = useI18n()
   // Small dot on "Settings" when an update is ready — the only hint outside
   // the Settings screen itself, since the auto-update check runs silently in
@@ -50,6 +55,7 @@ function Sidebar({ active, onNavigate }: Props): React.JSX.Element {
           label={t.sidebar.history}
           active={active === 'history'}
           onClick={() => onNavigate('history')}
+          badge={historyBadge}
         />
       </div>
 
@@ -69,13 +75,15 @@ function NavItem({
   label,
   active,
   onClick,
-  dot
+  dot,
+  badge
 }: {
   icon: React.ReactNode
   label: string
   active: boolean
   onClick: () => void
   dot?: boolean
+  badge?: number
 }): React.JSX.Element {
   const [hover, setHover] = useState(false)
 
@@ -97,6 +105,13 @@ function NavItem({
         {dot && <span style={styles.updateDot} />}
       </span>
       {label}
+      {/* Outer span is the pill; the number lives in its own inner span so it
+          can be centered/nudged independently — same pattern as the bell's badge. */}
+      {!!badge && (
+        <span style={styles.countBadge}>
+          <span style={styles.countBadgeText}>{badge > 9 ? '9+' : badge}</span>
+        </span>
+      )}
     </button>
   )
 }
@@ -151,7 +166,24 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '50%',
     background: colors.cy,
     boxShadow: shadows.glowCy
-  }
+  },
+  countBadge: {
+    marginLeft: 'auto',
+    minWidth: 19,
+    height: 17,
+    padding: '0 5px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radii.pill,
+    background: colors.cy,
+    color: colors.textOnAccent,
+    fontFamily: fonts.display,
+    fontSize: 10.5,
+    fontWeight: 700,
+    lineHeight: 1
+  },
+  countBadgeText: { display: 'flex', transform: 'translateY(1px)' }
 }
 
 export default Sidebar

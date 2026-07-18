@@ -105,6 +105,24 @@ export const uk: Translation = {
     readyTitle: 'Оновлення готове до встановлення',
     readyMessage: 'Перезапусти CoopSync, щоб завершити встановлення оновлення.'
   },
+  notifications: {
+    friendUploadedTitle: 'Новий сейв від друга',
+    friendUploadedBody: (login, game) => `У грі «${game}» зʼявився новий сейв від ${login}.`,
+    bellTooltip: 'Сповіщення',
+    panelTitle: 'Сповіщення',
+    empty: 'Сповіщень поки немає',
+    markAllRead: 'Позначити все прочитаним',
+    clearAll: 'Очистити все',
+    newGamesTitle: 'Додано підтримку нових ігор',
+    newGamesBody: (names) => `CoopSync тепер синхронізує: ${names}.`,
+    friendAcceptedTitle: 'Запрошення прийнято',
+    friendAcceptedBody: (login) => `Запрошення для ${login} прийнято — тепер є доступ.`,
+    friendDeclinedTitle: 'Запрошення не прийнято',
+    friendDeclinedBody: (login) => `Запрошення для ${login} не прийнято.`,
+    syncConflictTitle: 'Синк пропущено',
+    accessRevokedTitle: 'Доступ відкликано',
+    accessRevokedBody: (host) => `У тебе більше немає доступу до сховища ${host}.`
+  },
   onboarding: {
     welcomeTitle: 'Ласкаво просимо до CoopSync!',
     welcomeSubtitle: 'Налаштуймо синхронізацію за кілька кроків',

@@ -142,7 +142,7 @@ function FriendsScreen({ user, avatarDataUrl, active }: Props): React.JSX.Elemen
     setCancelingId(invite.id)
     setCancelError(null)
     try {
-      await window.api.repo.cancelInvitation(invite.id)
+      await window.api.repo.cancelInvitation(invite.id, invite.login)
       await load()
     } catch (e) {
       setCancelError(describeError(e, t, t.friends.inviteError))

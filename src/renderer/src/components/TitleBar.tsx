@@ -5,6 +5,7 @@ import { Logo, SupportIcon } from './icons'
 import Avatar from './Avatar'
 import WindowControls from './WindowControls'
 import SupportModal from './SupportModal'
+import NotificationBell from './NotificationBell'
 import type { AuthUser } from '../../../shared/types'
 
 interface Props {
@@ -28,6 +29,7 @@ function TitleBar({ user, avatarDataUrl }: Props): React.JSX.Element {
         </div>
 
         <div style={styles.right}>
+          {user && <NotificationBell />}
           {user && (
             <button
               className="icon-btn no-drag"

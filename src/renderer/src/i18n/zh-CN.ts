@@ -101,6 +101,24 @@ export const zhCN: Translation = {
     readyTitle: '更新已准备好安装',
     readyMessage: '重启 CoopSync 以完成更新安装。'
   },
+  notifications: {
+    friendUploadedTitle: '好友上传了新存档',
+    friendUploadedBody: (login, game) => `${login} 为《${game}》上传了新存档。`,
+    bellTooltip: '通知',
+    panelTitle: '通知',
+    empty: '暂无通知',
+    markAllRead: '全部标为已读',
+    clearAll: '清除全部',
+    newGamesTitle: '新增支持的游戏',
+    newGamesBody: (names) => `CoopSync 现在支持同步：${names}。`,
+    friendAcceptedTitle: '邀请已接受',
+    friendAcceptedBody: (login) => `${login} 已接受邀请，现在拥有访问权限。`,
+    friendDeclinedTitle: '邀请未被接受',
+    friendDeclinedBody: (login) => `${login} 未接受邀请。`,
+    syncConflictTitle: '同步已跳过',
+    accessRevokedTitle: '访问权限已被取消',
+    accessRevokedBody: (host) => `你已不再拥有 ${host} 共享存储的访问权限。`
+  },
   onboarding: {
     welcomeTitle: '欢迎使用 CoopSync！',
     welcomeSubtitle: '让我们用几个步骤设置同步',

@@ -2,8 +2,18 @@ import { execFile } from 'child_process'
 import { promisify } from 'util'
 import { READY_GAMES, type SupportedGame } from '../games/catalog'
 import { uploadGame, downloadGame, getSyncStatuses, restoreMissingFiles } from './sync'
+import { getNotified, markNotified } from './notifyState'
+import { getSavesRepo, listInvitations, listCollaborators } from './github'
+import {
+  getKnownPending,
+  getKnownCollaborators,
+  setKnownFriendState,
+  getHadAccess,
+  setHadAccess
+} from './backgroundState'
+import { addNotification } from './notificationStore'
 import { parseAppError } from '../../shared/errors'
-import type { AutoSyncEvent } from '../../shared/types'
+import type { AutoSyncEvent, FriendSaveUpdate } from '../../shared/types'
 
 const exec = promisify(execFile)
 
@@ -17,6 +27,12 @@ let busy = false
 let processCheckFailing = false
 
 const POLL_MS = 5000
+// How often (in ticks) we check for a friend's save pushed while we weren't
+// looking — much rarer than the 5s process poll since it costs a real git
+// pull. ~2 minutes is frequent enough for a "your friend just played" toast
+// without hammering GitHub while the app just sits in the tray.
+const FRIEND_CHECK_EVERY_TICKS = 24
+let friendCheckTicks = 0
 
 // Set of running processes (image names, lowercased).
 async function getRunningProcesses(): Promise<Set<string>> {
@@ -41,16 +57,109 @@ function errorCode(e: unknown): { code: string; params?: Record<string, string> 
   return parseAppError(raw) ?? { code: 'GIT_GENERIC', params: { detail: raw } }
 }
 
+// Detects a friend's save pushed while this device wasn't looking (the
+// process-launch/exit sync above only ever notices OUR OWN games starting or
+// closing — a friend playing on their own PC never touches that). Diffs
+// each ready game's remote version against what we've already toasted about
+// (notifyState), so a still-unseen push doesn't re-fire every cycle.
+async function checkFriendUpdates(
+  token: string,
+  owner: string,
+  actor: string,
+  onFriendUpdate: (updates: FriendSaveUpdate[]) => void
+): Promise<void> {
+  try {
+    const statuses = await getSyncStatuses(token, owner)
+    const updates: FriendSaveUpdate[] = []
+    for (const s of statuses) {
+      if (!s.remoteUpdatedBy || s.remoteVersion <= 0 || s.remoteUpdatedBy === actor) continue
+      if (s.remoteVersion <= getNotified(s.appId)) continue
+      const game = READY_GAMES.find((g) => g.appId === s.appId)
+      updates.push({
+        appId: s.appId,
+        name: game?.name ?? s.appId,
+        version: s.remoteVersion,
+        updatedBy: s.remoteUpdatedBy
+      })
+      markNotified(s.appId, s.remoteVersion)
+    }
+    if (updates.length > 0) onFriendUpdate(updates)
+  } catch {
+    // Best-effort background check (network/git can fail) — not user-initiated,
+    // so we stay quiet and just try again on the next cycle.
+  }
+}
+
+// Host-only: notices a friend accepting or declining the invite while this
+// device wasn't looking at the Friends tab. Diffs the current
+// pending/collaborator logins against the last known baseline — the first
+// run ever just seeds the baseline (no notification for people who were
+// already there before CoopSync started watching).
+async function checkHostFriendStatus(token: string, owner: string): Promise<void> {
+  try {
+    const [invites, collabs] = await Promise.all([listInvitations(token, owner), listCollaborators(token, owner)])
+    const pending = invites.map((i) => i.login)
+    const collaborators = collabs.map((c) => c.login)
+
+    const knownPending = getKnownPending()
+    const knownCollaborators = getKnownCollaborators()
+    if (knownPending && knownCollaborators) {
+      const collabSet = new Set(collaborators)
+      for (const login of knownPending) {
+        if (pending.includes(login)) continue // still pending, nothing changed
+        if (collabSet.has(login)) {
+          addNotification('friend-accepted', { login })
+        } else {
+          addNotification('friend-declined', { login })
+        }
+      }
+    }
+    setKnownFriendState(pending, collaborators)
+  } catch {
+    // Best-effort — try again next cycle.
+  }
+}
+
+// 'join'-only: notices losing access to the host's shared storage (kicked,
+// or the host deleted the repo) while this device wasn't actively syncing —
+// otherwise the first sign would be a cryptic sync error next time a game runs.
+async function checkAccessStillValid(token: string, hostOwner: string): Promise<void> {
+  try {
+    const repo = await getSavesRepo(token, hostOwner)
+    const had = getHadAccess()
+    if (had === true && !repo) {
+      addNotification('access-revoked', { host: hostOwner })
+    }
+    setHadAccess(repo !== null)
+  } catch {
+    // Best-effort — try again next cycle.
+  }
+}
+
 async function tick(
   token: string,
   owner: string,
   actor: string,
   onEvent: (e: AutoSyncEvent) => void,
+  onFriendUpdate: (updates: FriendSaveUpdate[]) => void,
   initial: boolean
 ): Promise<void> {
   if (busy) return // don't let ticks overlap
   busy = true
   try {
+    if (!initial) {
+      friendCheckTicks++
+      if (friendCheckTicks % FRIEND_CHECK_EVERY_TICKS === 1) {
+        void checkFriendUpdates(token, owner, actor, onFriendUpdate)
+        // owner === actor only for the host (for 'join' it's the host friend's
+        // login) — cheap way to tell the two roles apart without a settings read.
+        if (owner === actor) {
+          void checkHostFriendStatus(token, owner)
+        } else {
+          void checkAccessStillValid(token, owner)
+        }
+      }
+    }
     let procs: Set<string>
     try {
       procs = await getRunningProcesses()
@@ -133,6 +242,10 @@ async function tick(
               ok: true,
               code: 'push-skipped'
             })
+            // A real conflict (not the more benign "local was just stale")
+            // — this session's progress genuinely wasn't uploaded, worth a
+            // persisted bell entry, not just a toast that vanishes in 5s.
+            addNotification('sync-conflict-skipped', { game: game.name })
           } else if (st?.status === 'local-stale') {
             onEvent({
               appId: game.appId,
@@ -179,13 +292,15 @@ export function startWatcher(
   token: string,
   owner: string,
   actor: string,
-  onEvent: (e: AutoSyncEvent) => void
+  onEvent: (e: AutoSyncEvent) => void,
+  onFriendUpdate: (updates: FriendSaveUpdate[]) => void
 ): void {
   stopWatcher()
   running = {}
+  friendCheckTicks = 0
   // Initialize state without taking action (in case a game is already running at startup).
-  void tick(token, owner, actor, onEvent, true)
-  timer = setInterval(() => void tick(token, owner, actor, onEvent, false), POLL_MS)
+  void tick(token, owner, actor, onEvent, onFriendUpdate, true)
+  timer = setInterval(() => void tick(token, owner, actor, onEvent, onFriendUpdate, false), POLL_MS)
 }
 
 export function stopWatcher(): void {

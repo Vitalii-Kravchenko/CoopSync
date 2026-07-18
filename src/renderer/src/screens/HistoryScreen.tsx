@@ -31,6 +31,9 @@ interface Props {
    *  a signal to reread the history (HistoryScreen stays mounted in the
    *  background and doesn't find out about such events on its own). */
   syncVersion: number
+  /** Called whenever this tab becomes active — clears the "History" nav
+   *  badge (a friend's save this device hasn't looked at yet on this tab). */
+  onSeen: () => void
   user: AuthUser
   /** Own avatar from local settings — same source as TitleBar/Friends. */
   avatarDataUrl: string | null
@@ -40,7 +43,7 @@ function historyKey(e: SyncHistoryEntry): string {
   return `${e.appId}-${e.updatedAt}`
 }
 
-function HistoryScreen({ active, syncVersion, user, avatarDataUrl }: Props): React.JSX.Element {
+function HistoryScreen({ active, syncVersion, onSeen, user, avatarDataUrl }: Props): React.JSX.Element {
   const { t } = useI18n()
   const [entries, setEntries] = useState<SyncHistoryEntry[]>([])
   const [loading, setLoading] = useState(true)
@@ -72,6 +75,14 @@ function HistoryScreen({ active, syncVersion, user, avatarDataUrl }: Props): Rea
   const activeRef = useRef(active)
   useEffect(() => {
     activeRef.current = active
+  }, [active])
+
+  // Clears the nav badge whenever this tab becomes (or starts) active —
+  // deliberately keyed on `active` alone, not `onSeen` (a fresh function
+  // reference every App render), so this only fires on real transitions.
+  useEffect(() => {
+    if (active) onSeen()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active])
 
   // Show the list and "new" in ONE atomic action — otherwise, if the content

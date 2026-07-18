@@ -32,6 +32,9 @@ interface Props {
   onSynced: () => void
   /** Show a global banner (rendered in App — visible on all tabs). */
   onBanner: (banner: BannerState) => void
+  /** Called with the game/version pairs just displayed — ONLY while this tab
+   *  is actually active (see loadStatuses) — clears their Games nav badge. */
+  onGamesSeen: (entries: Array<{ appId: string; version: number }>) => void
   /** Passed through to GameDetailScreen — its history shows player avatars. */
   user: AuthUser
   avatarDataUrl: string | null
@@ -43,6 +46,7 @@ function MainScreen({
   resetSignal,
   onSynced,
   onBanner,
+  onGamesSeen,
   user,
   avatarDataUrl
 }: Props): React.JSX.Element {
@@ -122,6 +126,11 @@ function MainScreen({
       for (const s of list) map[s.appId] = s
       setSyncStatuses(map)
       setStatusesError(null)
+      // Only mark seen while the tab is genuinely visible — this same
+      // function also runs in the background (syncVersion bumps regardless
+      // of which tab is open), and a badge the user never actually looked
+      // at shouldn't clear itself.
+      if (active) onGamesSeen(list.map((s) => ({ appId: s.appId, version: s.remoteVersion })))
     } catch (e) {
       // Don't leave stale statuses (e.g. from a deleted repo) alongside the
       // error — cards should fall back to "Checking...", not lie with old data.

@@ -590,6 +590,7 @@ export async function getSyncStatuses(token: string, owner: string): Promise<Gam
       localVersion: localVer,
       remoteVersion: remoteVer,
       lastSyncAt: remoteMeta?.updatedAt,
+      remoteUpdatedBy: remoteMeta?.updatedBy,
       sizeBytes
     })
   }

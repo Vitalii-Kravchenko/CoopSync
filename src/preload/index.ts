@@ -11,13 +11,15 @@ import type {
   SyncHistoryEntry,
   SyncResult,
   AutoSyncEvent,
+  FriendSaveUpdate,
   StartupSettings,
   RoleConfig,
   InstalledGame,
   GeneralSettings,
   SupportRequest,
   SteamSearchResult,
-  UpdateStatus
+  UpdateStatus,
+  AppNotification
 } from '../shared/types'
 
 // API exposed to the renderer as window.api.
@@ -50,8 +52,8 @@ const api = {
     /** List of invitations not yet accepted. */
     listInvitations: (): Promise<PendingInvite[]> => ipcRenderer.invoke('repo:invitations'),
     /** Owner cancels a not-yet-accepted invitation. */
-    cancelInvitation: (invitationId: number): Promise<void> =>
-      ipcRenderer.invoke('repo:cancel-invitation', invitationId),
+    cancelInvitation: (invitationId: number, login: string): Promise<void> =>
+      ipcRenderer.invoke('repo:cancel-invitation', invitationId, login),
     /** List of collaborators who have already accepted. */
     listCollaborators: (): Promise<Collaborator[]> => ipcRenderer.invoke('repo:collaborators'),
     /** Avatars of members from the shared repo (owner + collaborators), keyed by login. */
@@ -82,7 +84,10 @@ const api = {
     /** Sync status for all games. */
     statuses: (): Promise<GameSyncStatus[]> => ipcRenderer.invoke('sync:statuses'),
     /** Push event history (newest first). */
-    history: (): Promise<SyncHistoryEntry[]> => ipcRenderer.invoke('sync:history')
+    history: (): Promise<SyncHistoryEntry[]> => ipcRenderer.invoke('sync:history'),
+    /** Mark game/version pairs as seen (clears the Games nav badge for them). */
+    markSeen: (entries: Array<{ appId: string; version: number }>): Promise<void> =>
+      ipcRenderer.invoke('sync:mark-seen', entries)
   },
   watcher: {
     /** Start auto-sync (watching game processes). */
@@ -94,6 +99,12 @@ const api = {
       const listener = (_e: unknown, event: AutoSyncEvent): void => callback(event)
       ipcRenderer.on('sync:auto', listener)
       return () => ipcRenderer.removeListener('sync:auto', listener)
+    },
+    /** Subscribe to friend save updates (pushed while this device wasn't looking). */
+    onFriendUpdate: (callback: (updates: FriendSaveUpdate[]) => void): (() => void) => {
+      const listener = (_e: unknown, updates: FriendSaveUpdate[]): void => callback(updates)
+      ipcRenderer.on('sync:friend-update', listener)
+      return () => ipcRenderer.removeListener('sync:friend-update', listener)
     }
   },
   window: {
@@ -160,6 +171,22 @@ const api = {
       const listener = (_event: unknown, status: UpdateStatus): void => callback(status)
       ipcRenderer.on('updater:status', listener)
       return () => ipcRenderer.removeListener('updater:status', listener)
+    }
+  },
+  notifications: {
+    /** Full persisted notification history (newest first). */
+    list: (): Promise<AppNotification[]> => ipcRenderer.invoke('notifications:list'),
+    /** Mark specific notifications as read. */
+    markRead: (ids: string[]): Promise<void> => ipcRenderer.invoke('notifications:mark-read', ids),
+    /** Mark everything as read (e.g. opening the bell panel). */
+    markAllRead: (): Promise<void> => ipcRenderer.invoke('notifications:mark-all-read'),
+    /** Clear the whole history. */
+    clearAll: (): Promise<void> => ipcRenderer.invoke('notifications:clear-all'),
+    /** Subscribe to the list changing (a new entry, or read/cleared elsewhere). */
+    onChanged: (callback: (list: AppNotification[]) => void): (() => void) => {
+      const listener = (_e: unknown, list: AppNotification[]): void => callback(list)
+      ipcRenderer.on('notifications:changed', listener)
+      return () => ipcRenderer.removeListener('notifications:changed', listener)
     }
   },
   /** Open a URL in the system browser. */

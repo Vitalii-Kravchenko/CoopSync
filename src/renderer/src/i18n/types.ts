@@ -130,6 +130,30 @@ export interface Translation {
     readyTitle: string
     readyMessage: string
   }
+  notifications: {
+    /** OS tray toast title when a friend pushes a save while this device wasn't looking. */
+    friendUploadedTitle: string
+    /** OS tray toast body — who, which game. */
+    friendUploadedBody: (login: string, game: string) => string
+    /** Bell icon tooltip. */
+    bellTooltip: string
+    /** Bell panel header. */
+    panelTitle: string
+    /** Bell panel empty state. */
+    empty: string
+    markAllRead: string
+    clearAll: string
+    newGamesTitle: string
+    newGamesBody: (names: string) => string
+    friendAcceptedTitle: string
+    friendAcceptedBody: (login: string) => string
+    friendDeclinedTitle: string
+    friendDeclinedBody: (login: string) => string
+    /** Body reuses main.pushSkipped (prefixed with the game name in code). */
+    syncConflictTitle: string
+    accessRevokedTitle: string
+    accessRevokedBody: (host: string) => string
+  }
   onboarding: {
     welcomeTitle: string
     welcomeSubtitle: string

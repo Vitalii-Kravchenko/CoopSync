@@ -4,6 +4,9 @@ import { registerIpcHandlers } from './ipc'
 import { createTray } from './trayIcon'
 import { consumeInstallerLanguage, readSettings, writeSettings } from './services/settingsStore'
 import { scheduleStartupCheck } from './services/updater'
+import { READY_GAMES } from './games/catalog'
+import { getKnownGameIds, setKnownGameIds } from './services/backgroundState'
+import { addNotification } from './services/notificationStore'
 
 // On some older GPUs (especially AMD) the Electron/Chromium GPU process
 // crashes on startup and the app doesn't open at all. The UI is simple
@@ -28,6 +31,23 @@ app.commandLine.appendSwitch('in-process-gpu')
 // race condition. requestSingleInstanceLock() returns false in the second
 // process — it exits immediately, and the first process (via
 // 'second-instance') brings its window up.
+// Notices games added to the catalog by an app update since we last checked
+// — compares against the appIds we saw last time (persisted). The very
+// first run ever has nothing to compare against, so it just seeds the
+// baseline instead of "announcing" the entire initial catalog as new.
+function checkNewGames(): void {
+  const currentIds = READY_GAMES.map((g) => g.appId)
+  const known = getKnownGameIds()
+  if (known) {
+    const knownSet = new Set(known)
+    const added = READY_GAMES.filter((g) => !knownSet.has(g.appId))
+    if (added.length > 0) {
+      addNotification('new-games', { names: added.map((g) => g.name).join(', ') })
+    }
+  }
+  setKnownGameIds(currentIds)
+}
+
 const gotSingleInstanceLock = app.requestSingleInstanceLock()
 
 if (!gotSingleInstanceLock) {
@@ -131,6 +151,7 @@ if (!gotSingleInstanceLock) {
     }
 
     registerIpcHandlers()
+    checkNewGames()
     createWindow()
     createTray(readSettings().language, showWindow, () => {
       isQuitting = true

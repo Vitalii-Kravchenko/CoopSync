@@ -98,8 +98,40 @@ export interface GameSyncStatus {
   remoteVersion: number
   /** ISO timestamp of the last push to the cloud (shared by both players), if ever synced. */
   lastSyncAt?: string
+  /** Login of whoever pushed the current cloud version, if ever synced. */
+  remoteUpdatedBy?: string
   /** Saves size in bytes — of the cloud copy if it exists, otherwise the local one. */
   sizeBytes?: number
+}
+
+/** A cloud save version the local user hasn't seen yet (someone else pushed
+ * it while this device wasn't looking) — used both for the OS tray
+ * notification and the "Games" nav badge. */
+export interface FriendSaveUpdate {
+  appId: string
+  name: string
+  version: number
+  updatedBy: string
+}
+
+/** Kinds of events shown in the notification bell (persisted, unlike the
+ * transient sync toast/banner) — each maps to a title+body template in i18n. */
+export type AppNotificationKind =
+  | 'update-available' // params: { version }
+  | 'new-games' // params: { names } (comma-joined)
+  | 'friend-accepted' // params: { login }
+  | 'friend-declined' // params: { login }
+  | 'sync-conflict-skipped' // params: { game }
+  | 'access-revoked' // params: { host }
+
+/** A single bell entry. main only knows kind+params (like AutoSyncEvent) —
+ * the renderer localizes title/body from them. */
+export interface AppNotification {
+  id: string
+  kind: AppNotificationKind
+  createdAt: string
+  read: boolean
+  params: Record<string, string>
 }
 
 /** Upload/download result — a version rather than ready-made text, so the

@@ -39,6 +39,22 @@ function App(): React.JSX.Element {
   // Global sync toast — rendered outside the tabs (styles.appBody),
   // so it stays visible regardless of which tab is currently open.
   const [banner, setBanner] = useState<BannerState | null>(null)
+  // appIds with a cloud save pushed by a friend that this device hasn't
+  // looked at yet — drives the number badge on the Sidebar's "History" item.
+  // No "Games" badge anymore (deliberately removed — auto-sync already pulls
+  // the save silently on next launch regardless, and it's redundant with
+  // History's badge + the tray toast, both covering the same signal).
+  const [unseenHistory, setUnseenHistory] = useState<Set<string>>(new Set())
+  const markHistorySeen = (): void => setUnseenHistory(new Set())
+
+  // Tells main which game/version pairs were just shown on the Games screen —
+  // main-side bookkeeping only now (suppresses a re-toast for a version the
+  // user already looked at), no local badge to clear anymore.
+  function markGamesSeen(entries: Array<{ appId: string; version: number }>): void {
+    const withVersion = entries.filter((e) => e.version > 0)
+    if (withVersion.length === 0) return
+    void window.api.sync.markSeen(withVersion)
+  }
 
   // On startup, determine whether everything is already configured (repeat launch)
   // or whether we need to show the setup wizard.
@@ -154,6 +170,31 @@ function App(): React.JSX.Element {
     })
   }, [phase, t])
 
+  // A friend pushed a save while this device wasn't running/looking —
+  // background-detected by the watcher (see watcher.ts checkFriendUpdates),
+  // independent of any game launch/exit on THIS pc. Toast via the OS
+  // notification center + light up the History nav badge.
+  useEffect(() => {
+    if (phase !== 'app') return
+    return window.api.watcher.onFriendUpdate((updates) => {
+      setUnseenHistory((prev) => {
+        const next = new Set(prev)
+        for (const u of updates) next.add(u.appId)
+        return next
+      })
+      for (const u of updates) {
+        const n = new Notification(t.notifications.friendUploadedTitle, {
+          body: t.notifications.friendUploadedBody(u.updatedBy, u.name)
+        })
+        n.onclick = () => void window.api.window.maximize()
+      }
+      // Refresh statuses/history in the background — if the Games tab is
+      // already open, this shows the new version right away and (via the
+      // 'active' gate in MainScreen) marks it seen immediately too.
+      bumpSyncVersion()
+    })
+  }, [phase, t])
+
   // The banner dismisses itself after 5 seconds.
   useEffect(() => {
     if (!banner) return
@@ -201,6 +242,7 @@ function App(): React.JSX.Element {
               resetSignal={mainResetSignal}
               onSynced={bumpSyncVersion}
               onBanner={setBanner}
+              onGamesSeen={markGamesSeen}
               user={user}
               avatarDataUrl={avatarDataUrl}
             />
@@ -216,6 +258,7 @@ function App(): React.JSX.Element {
             <HistoryScreen
               active={screen === 'history'}
               syncVersion={syncVersion}
+              onSeen={markHistorySeen}
               user={user}
               avatarDataUrl={avatarDataUrl}
             />
@@ -233,7 +276,7 @@ function App(): React.JSX.Element {
             />
           </div>
 
-          <Sidebar active={screen} onNavigate={handleNavigate} />
+          <Sidebar active={screen} onNavigate={handleNavigate} historyBadge={unseenHistory.size} />
           <Banner banner={banner} onDismiss={() => setBanner(null)} />
         </div>
       )}

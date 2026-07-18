@@ -55,7 +55,11 @@ function ConfirmModal({
         mouseDownOnBackdrop.current = e.target === e.currentTarget
       }}
       onClick={(e) => {
-        if (mouseDownOnBackdrop.current && e.target === e.currentTarget) onCancel()
+        // Same reason the buttons disable on busy — a backdrop click was
+        // still closing the modal (and freeing the user to reopen it and
+        // fire a second, overlapping request) while the first one was
+        // still in flight.
+        if (!busy && mouseDownOnBackdrop.current && e.target === e.currentTarget) onCancel()
       }}
     >
       <div ref={cardRef} style={styles.card} onClick={(e) => e.stopPropagation()}>

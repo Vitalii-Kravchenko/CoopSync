@@ -434,9 +434,10 @@ export function registerIpcHandlers(): void {
     writeSettings({ autoCheckUpdates })
   })
 
-  // Open a file picker dialog, read the image, and save it as a data URL.
-  // Returns null if the user cancelled the selection.
-  ipcMain.handle('settings:pick-avatar', async (event): Promise<string | null> => {
+  // Open a file picker dialog and read the raw image as a data URL — no save
+  // yet, the renderer runs it through the crop modal first. Returns null if
+  // the user cancelled the selection.
+  ipcMain.handle('settings:pick-avatar-file', async (event): Promise<string | null> => {
     const win = BrowserWindow.fromWebContents(event.sender)
     const options: Electron.OpenDialogOptions = {
       title: 'Обери зображення профілю',
@@ -453,7 +454,12 @@ export function registerIpcHandlers(): void {
       throw makeAppError('IMAGE_TOO_LARGE')
     }
 
-    const dataUrl = `data:${mime};base64,${readFileSync(filePath).toString('base64')}`
+    return `data:${mime};base64,${readFileSync(filePath).toString('base64')}`
+  })
+
+  // Save the already-cropped (square, small) avatar the renderer produced
+  // via <canvas> in the crop modal.
+  ipcMain.handle('settings:save-avatar', async (_event, dataUrl: string): Promise<void> => {
     writeSettings({ avatarDataUrl: dataUrl })
     // Best-effort: push to the shared repo right away so the friend sees the
     // new avatar. If there's no login/repo/internet yet — not critical, just
@@ -465,7 +471,6 @@ export function registerIpcHandlers(): void {
     } catch {
       // silently ignore — see comment above
     }
-    return dataUrl
   })
 
   // --- Role (host / join) ---

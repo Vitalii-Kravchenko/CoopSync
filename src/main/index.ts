@@ -6,7 +6,7 @@ import { consumeInstallerLanguage, readSettings, writeSettings } from './service
 import { scheduleStartupCheck } from './services/updater'
 import { READY_GAMES } from './games/catalog'
 import { getKnownGameIds, setKnownGameIds } from './services/backgroundState'
-import { addNotification } from './services/notificationStore'
+import { addNotification, markObsoleteUpdateNotificationsRead } from './services/notificationStore'
 
 // On some older GPUs (especially AMD) the Electron/Chromium GPU process
 // crashes on startup and the app doesn't open at all. The UI is simple
@@ -151,6 +151,7 @@ if (!gotSingleInstanceLock) {
     }
 
     registerIpcHandlers()
+    markObsoleteUpdateNotificationsRead(app.getVersion())
     checkNewGames()
     createWindow()
     createTray(readSettings().language, showWindow, () => {

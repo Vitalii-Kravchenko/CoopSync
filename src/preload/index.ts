@@ -141,8 +141,10 @@ const api = {
     /** Change the UI language. */
     setLanguage: (language: string): Promise<void> =>
       ipcRenderer.invoke('settings:set-language', language),
-    /** Open the avatar file picker dialog. null = cancelled. */
-    pickAvatar: (): Promise<string | null> => ipcRenderer.invoke('settings:pick-avatar'),
+    /** Open the avatar file picker dialog and read the raw image. null = cancelled. */
+    pickAvatarFile: (): Promise<string | null> => ipcRenderer.invoke('settings:pick-avatar-file'),
+    /** Save the already-cropped avatar produced by the crop modal. */
+    saveAvatar: (dataUrl: string): Promise<void> => ipcRenderer.invoke('settings:save-avatar', dataUrl),
     /** Enable/disable the Steam Cloud warning on launch. */
     setCloudWarning: (show: boolean): Promise<void> =>
       ipcRenderer.invoke('settings:set-cloud-warning', show),

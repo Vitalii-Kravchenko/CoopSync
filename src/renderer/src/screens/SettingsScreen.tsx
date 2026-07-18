@@ -4,6 +4,7 @@ import { LANGUAGES, useI18n } from '../i18n'
 import { describeError } from '../errors'
 import { GitHubIcon, Logo } from '../components/icons'
 import Avatar from '../components/Avatar'
+import AvatarCropModal from '../components/AvatarCropModal'
 import Button from '../components/Button'
 import ConfirmModal from '../components/ConfirmModal'
 import Select from '../components/Select'
@@ -38,6 +39,8 @@ function SettingsScreen({
     startMinimized: false
   })
   const [avatarError, setAvatarError] = useState<string | null>(null)
+  // Raw picked image, waiting to go through the crop modal — null = closed.
+  const [cropSrc, setCropSrc] = useState<string | null>(null)
   const [repoError, setRepoError] = useState<string | null>(null)
   const [toggleError, setToggleError] = useState<string | null>(null)
   const [showCloudWarning, setShowCloudWarning] = useState(true)
@@ -107,8 +110,18 @@ function SettingsScreen({
   async function handlePickAvatar(): Promise<void> {
     setAvatarError(null)
     try {
-      const dataUrl = await window.api.settings.pickAvatar()
-      if (dataUrl) onAvatarChange(dataUrl)
+      const rawDataUrl = await window.api.settings.pickAvatarFile()
+      if (rawDataUrl) setCropSrc(rawDataUrl)
+    } catch (e) {
+      setAvatarError(describeError(e, t, t.settings.avatarError))
+    }
+  }
+
+  async function handleAvatarCropped(dataUrl: string): Promise<void> {
+    setCropSrc(null)
+    try {
+      await window.api.settings.saveAvatar(dataUrl)
+      onAvatarChange(dataUrl)
     } catch (e) {
       setAvatarError(describeError(e, t, t.settings.avatarError))
     }
@@ -416,6 +429,10 @@ function SettingsScreen({
             setLeaveRepoError(null)
           }}
         />
+      )}
+
+      {cropSrc && (
+        <AvatarCropModal src={cropSrc} onCancel={() => setCropSrc(null)} onConfirm={handleAvatarCropped} />
       )}
     </div>
   )

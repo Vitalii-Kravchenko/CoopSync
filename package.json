@@ -1,6 +1,6 @@
 {
   "name": "coopsync",
-  "version": "0.9.9",
+  "version": "0.9.10",
   "description": "Free co-op save sync for games via a private GitHub repository",
   "main": "./out/main/index.js",
   "author": "Vitalii Kravchenko",

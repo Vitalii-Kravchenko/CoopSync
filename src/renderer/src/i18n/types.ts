@@ -200,6 +200,9 @@ export interface Translation {
     title: string
     changeAvatar: string
     avatarError: string
+    cropTitle: string
+    cropHint: string
+    cropConfirm: string
     saveError: string
     githubUser: string
     logout: string

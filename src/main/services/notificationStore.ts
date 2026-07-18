@@ -72,6 +72,40 @@ export function markRead(ids: string[]): void {
   }
 }
 
+// Plain numeric compare (not string compare — "0.9.10" < "0.9.9" as strings,
+// which is backwards). Missing components (e.g. comparing "1.2" to "1.2.0")
+// count as 0.
+function isVersionAtLeast(current: string, target: string): boolean {
+  const c = current.split('.').map(Number)
+  const t = target.split('.').map(Number)
+  for (let i = 0; i < Math.max(c.length, t.length); i++) {
+    const cv = c[i] ?? 0
+    const tv = t[i] ?? 0
+    if (cv !== tv) return cv > tv
+  }
+  return true
+}
+
+// Called on every startup — if the app has since been updated to (or past)
+// the version an unread "update available" notification was about, that
+// notification is stale: the user doesn't need to be told about an update
+// they've already installed. Marking it read automatically (instead of
+// requiring them to open the bell and scroll past it) is the whole point.
+export function markObsoleteUpdateNotificationsRead(currentVersion: string): void {
+  const list = load()
+  let changed = false
+  for (const n of list) {
+    if (n.kind === 'update-available' && !n.read && isVersionAtLeast(currentVersion, n.params.version)) {
+      n.read = true
+      changed = true
+    }
+  }
+  if (changed) {
+    persist()
+    broadcast()
+  }
+}
+
 export function markAllRead(): void {
   const list = load()
   let changed = false

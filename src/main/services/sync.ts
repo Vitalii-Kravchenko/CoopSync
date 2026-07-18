@@ -178,6 +178,25 @@ async function copyFiltered(src: string, dest: string, pattern?: RegExp): Promis
   })
 }
 
+// Removes only files matching the game's pattern (folders are always
+// recursed into, same as copyFiltered) — anything else in the folder (e.g.
+// account/platform files, or engine settings that happen to live alongside
+// the saves) is left untouched. Without a pattern, the whole folder is fair
+// game (matches copyFiltered's "no pattern = sync everything" behavior).
+async function clearFiltered(dir: string, pattern?: RegExp): Promise<void> {
+  if (!existsSync(dir)) return
+  if (!pattern) {
+    await rm(dir, { recursive: true, force: true })
+    return
+  }
+  const entries = await readdir(dir, { withFileTypes: true })
+  for (const e of entries) {
+    const full = join(dir, e.name)
+    if (e.isDirectory()) await clearFiltered(full, pattern)
+    else if (pattern.test(e.name)) await rm(full, { force: true })
+  }
+}
+
 // --- Save versions ---
 // The cloud version lives in the repo at .meta/<game>.json; the local one — in userData.
 
@@ -378,8 +397,14 @@ export async function revertToVersion(
   // HEAD. The clone is a scratch working copy, not a source of truth (see
   // ensureRepo) — uploadGame below re-derives its content from the local
   // save folder fresh anyway.
+  // clearFiltered, not a blind rm — the local save folder can hold files
+  // that were never part of the sync in the first place (e.g. Subnautica
+  // 2's account/platform cache sitting right next to the actual world
+  // saves). A plain rm(savePath) wiped those too, forcing a full game
+  // re-setup after every revert — clearFiltered only removes what
+  // saveFilePattern actually syncs, same scope copyFiltered uses right after.
   await git(['checkout', sha, '--', game.name])
-  await rm(game.savePath, { recursive: true, force: true })
+  await clearFiltered(game.savePath, game.saveFilePattern)
   await copyFiltered(join(repoDir(), game.name), game.savePath, game.saveFilePattern)
   await git(['checkout', 'HEAD', '--', game.name])
 

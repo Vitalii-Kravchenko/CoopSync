@@ -201,6 +201,8 @@ function App(): React.JSX.Element {
               resetSignal={mainResetSignal}
               onSynced={bumpSyncVersion}
               onBanner={setBanner}
+              user={user}
+              avatarDataUrl={avatarDataUrl}
             />
           </div>
           <div
@@ -211,7 +213,12 @@ function App(): React.JSX.Element {
           <div
             style={{ gridArea: 'content', display: screen === 'history' ? 'flex' : 'none', minHeight: 0 }}
           >
-            <HistoryScreen active={screen === 'history'} syncVersion={syncVersion} />
+            <HistoryScreen
+              active={screen === 'history'}
+              syncVersion={syncVersion}
+              user={user}
+              avatarDataUrl={avatarDataUrl}
+            />
           </div>
           <div
             style={{ gridArea: 'content', display: screen === 'settings' ? 'flex' : 'none', minHeight: 0 }}

@@ -102,6 +102,10 @@ export interface Translation {
     title: string
     columnGame: string
     columnAction: string
+    columnPlayer: string
+    filterPlaceholder: string
+    showMore: string
+    endOfList: string
     columnVersion: string
     columnWhen: string
     uploaded: string

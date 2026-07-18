@@ -8,7 +8,13 @@ import UpdateAvailableBanner from '../components/UpdateAvailableBanner'
 import type { BannerState } from '../components/Banner'
 import { SearchIcon } from '../components/icons'
 import GameDetailScreen from './GameDetailScreen'
-import type { InstalledGame, CatalogGame, GameSyncStatus, UpdateStatus } from '../../../shared/types'
+import type {
+  AuthUser,
+  InstalledGame,
+  CatalogGame,
+  GameSyncStatus,
+  UpdateStatus
+} from '../../../shared/types'
 
 interface Props {
   /** Whether this tab is currently active (MainScreen stays mounted in the
@@ -26,9 +32,20 @@ interface Props {
   onSynced: () => void
   /** Show a global banner (rendered in App — visible on all tabs). */
   onBanner: (banner: BannerState) => void
+  /** Passed through to GameDetailScreen — its history shows player avatars. */
+  user: AuthUser
+  avatarDataUrl: string | null
 }
 
-function MainScreen({ active, syncVersion, resetSignal, onSynced, onBanner }: Props): React.JSX.Element {
+function MainScreen({
+  active,
+  syncVersion,
+  resetSignal,
+  onSynced,
+  onBanner,
+  user,
+  avatarDataUrl
+}: Props): React.JSX.Element {
   const { t } = useI18n()
   const [installed, setInstalled] = useState<InstalledGame[]>([])
   const [catalog, setCatalog] = useState<CatalogGame[]>([])
@@ -174,6 +191,8 @@ function MainScreen({ active, syncVersion, resetSignal, onSynced, onBanner }: Pr
         appId={selectedGame.appId}
         name={selectedGame.name}
         syncVersion={syncVersion}
+        user={user}
+        avatarDataUrl={avatarDataUrl}
         onBack={() => setSelectedGame(null)}
       />
     )

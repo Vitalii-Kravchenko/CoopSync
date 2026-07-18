@@ -3,9 +3,14 @@ import { colors, fonts, radii, steamPoster, transitions } from '../theme'
 import { useI18n } from '../i18n'
 import { describeError } from '../errors'
 import type { Translation } from '../i18n'
-import { HistoryIcon } from '../components/icons'
-import type { SyncHistoryEntry } from '../../../shared/types'
+import { HistoryIcon, SearchIcon } from '../components/icons'
+import Button from '../components/Button'
+import Avatar from '../components/Avatar'
+import { useAvatars } from '../hooks/useAvatars'
+import { useRowCapacity } from '../hooks/useRowCapacity'
+import type { AuthUser, SyncHistoryEntry } from '../../../shared/types'
 import { formatVersion as fmtVersion } from '../../../shared/format'
+import { devHistoryMock } from '../devHistoryMock'
 
 // ISO timestamp -> "2 min ago" / "1 hr ago" / "3 days ago" (localized).
 function formatRelativeTime(iso: string, t: Translation): string {
@@ -26,17 +31,32 @@ interface Props {
    *  a signal to reread the history (HistoryScreen stays mounted in the
    *  background and doesn't find out about such events on its own). */
   syncVersion: number
+  user: AuthUser
+  /** Own avatar from local settings — same source as TitleBar/Friends. */
+  avatarDataUrl: string | null
 }
 
 function historyKey(e: SyncHistoryEntry): string {
   return `${e.appId}-${e.updatedAt}`
 }
 
-function HistoryScreen({ active, syncVersion }: Props): React.JSX.Element {
+function HistoryScreen({ active, syncVersion, user, avatarDataUrl }: Props): React.JSX.Element {
   const { t } = useI18n()
   const [entries, setEntries] = useState<SyncHistoryEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
+  // Client-side filter over game name / player login. The whole history is
+  // capped at MAX_HISTORY_ENTRIES on the main side anyway, so there's
+  // nothing to gain from filtering there.
+  const [query, setQuery] = useState('')
+  const pageSize = useRowCapacity()
+  const [visibleCount, setVisibleCount] = useState(pageSize)
+  // Grow the visible count when more rows start fitting (bigger window/monitor),
+  // but never shrink it — resizing shouldn't undo rows the user already
+  // revealed via "Show more".
+  useEffect(() => {
+    setVisibleCount((c) => Math.max(c, pageSize))
+  }, [pageSize])
   // What's actually rendering with the "new" animation right now.
   const [newKeys, setNewKeys] = useState<Set<string>>(new Set())
   // Mirror of entries for reading inside async callbacks without waiting
@@ -80,7 +100,10 @@ function HistoryScreen({ active, syncVersion }: Props): React.JSX.Element {
     if (entriesRef.current.length === 0) setLoading(true)
     window.api.sync
       .history()
-      .then((list) => {
+      .then((real) => {
+        // Dev build has its own clean userData — no history to look at while
+        // designing this screen, so an empty list falls back to a fixture.
+        const list = import.meta.env.DEV && real.length === 0 ? devHistoryMock(user.login) : real
         latestListRef.current = list
         setLoadError(null)
         // Tab inactive — don't touch the visible list/animation at all,
@@ -132,33 +155,82 @@ function HistoryScreen({ active, syncVersion }: Props): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active])
 
-  const showTable = loading || entries.length > 0
+  const avatars = useAvatars(
+    entries.map((e) => e.updatedBy),
+    user.login,
+    avatarDataUrl
+  )
+
+  const q = query.trim().toLowerCase()
+  const filtered = q
+    ? entries.filter(
+        (e) => e.gameName.toLowerCase().includes(q) || e.updatedBy.toLowerCase().includes(q)
+      )
+    : entries
+  const visible = filtered.slice(0, visibleCount)
+  const showTable = loading || filtered.length > 0
 
   return (
     <div style={styles.screen}>
       <div style={styles.h1}>{t.history.title}</div>
+
+      {entries.length > 0 && (
+        <div style={styles.searchWrap}>
+          <span style={styles.searchIcon}>
+            <SearchIcon size={15} color={colors.text3} />
+          </span>
+          <input
+            className="input-field"
+            style={styles.search}
+            placeholder={t.history.filterPlaceholder}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </div>
+      )}
 
       {showTable && (
         <div style={styles.table}>
           <div style={styles.headerRow}>
             <div style={styles.headerCell}>{t.history.columnGame}</div>
             <div style={styles.headerCell}>{t.history.columnAction}</div>
+            <div style={styles.headerCell}>{t.history.columnPlayer}</div>
             <div style={styles.headerCell}>{t.history.columnVersion}</div>
             <div style={styles.headerCell}>{t.history.columnWhen}</div>
           </div>
 
           {loading
             ? [0, 1, 2].map((i) => <ShimmerRow key={i} last={i === 2} />)
-            : entries.map((e, i) => (
+            : visible.map((e, i) => (
                 <HistoryRow
                   key={historyKey(e)}
                   entry={e}
                   t={t}
-                  last={i === entries.length - 1}
+                  avatarSrc={avatars[e.updatedBy]}
+                  last={i === visible.length - 1}
                   isNew={newKeys.has(historyKey(e))}
                 />
               ))}
         </div>
+      )}
+
+      {!loading && filtered.length > visibleCount && (
+        <div style={styles.showMoreWrap}>
+          <Button variant="secondary" onClick={() => setVisibleCount((c) => c + pageSize)}>
+            {t.history.showMore}
+          </Button>
+        </div>
+      )}
+
+      {/* Only once pagination was actually in play (more than one page's worth
+          of results) — otherwise this would show under every short, never-paginated
+          list, which is just noise. */}
+      {!loading && filtered.length > 0 && filtered.length <= visibleCount && filtered.length > pageSize && (
+        <div style={styles.endOfList}>{t.history.endOfList}</div>
+      )}
+
+      {!loading && entries.length > 0 && filtered.length === 0 && (
+        <div style={styles.noMatches}>{t.main.nothingFound}</div>
       )}
 
       {!loading && entries.length === 0 && (
@@ -177,11 +249,14 @@ function HistoryScreen({ active, syncVersion }: Props): React.JSX.Element {
 function HistoryRow({
   entry,
   t,
+  avatarSrc,
   last,
   isNew
 }: {
   entry: SyncHistoryEntry
   t: Translation
+  /** Player's avatar (data URL), if we have one — placeholder otherwise. */
+  avatarSrc?: string
   last: boolean
   /** true — just appeared in this fetch, play the entrance animation.
    *  false — already seen before; no animation, even if the DOM just became visible
@@ -218,8 +293,12 @@ function HistoryRow({
       <div>
         <span style={styles.actionPill}>
           <span style={styles.actionDot} />
-          {t.history.uploaded} · {entry.updatedBy}
+          {t.history.uploaded}
         </span>
+      </div>
+      <div style={styles.playerCell}>
+        <Avatar src={avatarSrc} size={22} />
+        <span style={styles.playerName}>{entry.updatedBy}</span>
       </div>
       <div style={styles.mono}>{fmtVersion(entry.version)}</div>
       <div style={styles.mono}>{formatRelativeTime(entry.updatedAt, t)}</div>
@@ -235,6 +314,10 @@ function ShimmerRow({ last }: { last: boolean }): React.JSX.Element {
         <div style={{ ...styles.shimmer, width: 120, height: 12 }} />
       </div>
       <div style={{ ...styles.shimmer, width: 90, height: 12 }} />
+      <div style={styles.playerCell}>
+        <div style={{ ...styles.shimmer, width: 22, height: 22, borderRadius: '50%' }} />
+        <div style={{ ...styles.shimmer, width: 70, height: 12 }} />
+      </div>
       <div style={{ ...styles.shimmer, width: 50, height: 12 }} />
       <div style={{ ...styles.shimmer, width: 60, height: 12 }} />
     </div>
@@ -244,6 +327,37 @@ function ShimmerRow({ last }: { last: boolean }): React.JSX.Element {
 const styles: Record<string, React.CSSProperties> = {
   screen: { flex: 1, overflowY: 'auto', padding: '28px 36px 40px' },
   h1: { fontFamily: fonts.display, fontSize: 22, fontWeight: 700, color: colors.text1, marginBottom: 18 },
+  // Same look as the MainScreen search, just more compact — a filter over an
+  // already-loaded table, not the screen's main action.
+  searchWrap: { position: 'relative', marginBottom: 14 },
+  searchIcon: {
+    position: 'absolute',
+    left: 14,
+    top: '50%',
+    transform: 'translateY(-50%)',
+    display: 'flex'
+  },
+  search: {
+    width: '100%',
+    height: 40,
+    padding: '0 14px 0 40px',
+    border: `1px solid ${colors.borderDefault}`,
+    borderRadius: radii.md,
+    background: colors.bgInset,
+    color: colors.text1,
+    fontFamily: fonts.body,
+    fontSize: 13.5,
+    boxShadow: 'inset 0 1px 2px rgba(0,0,0,.3)',
+    outline: 'none'
+  },
+  showMoreWrap: { display: 'flex', justifyContent: 'center', marginTop: 16 },
+  endOfList: {
+    textAlign: 'center',
+    marginTop: 16,
+    fontSize: 12,
+    color: colors.text3
+  },
+  noMatches: { textAlign: 'center', padding: '28px 16px', fontSize: 13, color: colors.text3 },
   table: {
     border: `1px solid ${colors.borderSubtle}`,
     borderRadius: radii.lg,
@@ -251,7 +365,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   headerRow: {
     display: 'grid',
-    gridTemplateColumns: '2.2fr 1.2fr 1fr 1fr',
+    gridTemplateColumns: '1.9fr 1fr 1.2fr .7fr .9fr',
     padding: '12px 16px',
     background: colors.bgRaised,
     borderBottom: `1px solid ${colors.borderSubtle}`
@@ -265,7 +379,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   row: {
     display: 'grid',
-    gridTemplateColumns: '2.2fr 1.2fr 1fr 1fr',
+    gridTemplateColumns: '1.9fr 1fr 1.2fr .7fr .9fr',
     alignItems: 'center',
     padding: '13px 16px',
     transition: `background ${transitions.fast}`
@@ -300,6 +414,15 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: radii.pill
   },
   actionDot: { width: 6, height: 6, borderRadius: '50%', background: colors.success, flexShrink: 0 },
+  playerCell: { display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, paddingRight: 10 },
+  playerName: {
+    fontSize: 12.5,
+    fontWeight: 600,
+    color: colors.text2,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap'
+  },
   mono: { fontFamily: fonts.mono, fontSize: 12, color: colors.text3 },
   shimmer: {
     borderRadius: 6,

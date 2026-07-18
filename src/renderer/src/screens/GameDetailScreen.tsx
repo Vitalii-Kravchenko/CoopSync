@@ -4,8 +4,13 @@ import { useI18n } from '../i18n'
 import { describeError } from '../errors'
 import type { Translation } from '../i18n'
 import { ChevronRightIcon, HistoryIcon } from '../components/icons'
-import type { SyncHistoryEntry } from '../../../shared/types'
+import Button from '../components/Button'
+import Avatar from '../components/Avatar'
+import { useAvatars } from '../hooks/useAvatars'
+import { useRowCapacity } from '../hooks/useRowCapacity'
+import type { AuthUser, SyncHistoryEntry } from '../../../shared/types'
 import { formatVersion as fmtVersion } from '../../../shared/format'
+import { devHistoryMock } from '../devHistoryMock'
 
 // ISO timestamp -> "2 min ago" / "1 hr ago" / "3 days ago" (localized).
 function formatRelativeTime(iso: string, t: Translation): string {
@@ -23,23 +28,43 @@ interface Props {
   name: string
   /** Changes after every real push — a signal to reread this game's history. */
   syncVersion: number
+  user: AuthUser
+  /** Own avatar from local settings — same source as TitleBar/Friends. */
+  avatarDataUrl: string | null
   onBack: () => void
 }
 
 // A single game's own sync history — reached from its card on the Games tab.
 // Just a read-only list for now; rolling back to an older version is future work.
-function GameDetailScreen({ appId, name, syncVersion, onBack }: Props): React.JSX.Element {
+function GameDetailScreen({
+  appId,
+  name,
+  syncVersion,
+  user,
+  avatarDataUrl,
+  onBack
+}: Props): React.JSX.Element {
   const { t } = useI18n()
   const [entries, setEntries] = useState<SyncHistoryEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [imgError, setImgError] = useState(false)
+  const pageSize = useRowCapacity()
+  const [visibleCount, setVisibleCount] = useState(pageSize)
+  // Grow with the available space (bigger window/monitor), never shrink —
+  // same reasoning as HistoryScreen.
+  useEffect(() => {
+    setVisibleCount((c) => Math.max(c, pageSize))
+  }, [pageSize])
 
   function load(): void {
     setLoading(true)
     window.api.sync
       .history()
-      .then((list) => {
+      .then((real) => {
+        // Same dev fallback as HistoryScreen — the dev build's clean userData
+        // has no history, and this screen is unstylable against an empty list.
+        const list = import.meta.env.DEV && real.length === 0 ? devHistoryMock(user.login) : real
         setEntries(list.filter((e) => e.appId === appId))
         setLoadError(null)
       })
@@ -58,6 +83,12 @@ function GameDetailScreen({ appId, name, syncVersion, onBack }: Props): React.JS
   }, [syncVersion])
 
   const showTable = loading || entries.length > 0
+  const visible = entries.slice(0, visibleCount)
+  const avatars = useAvatars(
+    entries.map((e) => e.updatedBy),
+    user.login,
+    avatarDataUrl
+  )
 
   return (
     <div style={styles.screen}>
@@ -89,21 +120,35 @@ function GameDetailScreen({ appId, name, syncVersion, onBack }: Props): React.JS
         <div style={styles.table}>
           <div style={styles.headerRow}>
             <div style={styles.headerCell}>{t.history.columnAction}</div>
+            <div style={styles.headerCell}>{t.history.columnPlayer}</div>
             <div style={styles.headerCell}>{t.history.columnVersion}</div>
             <div style={styles.headerCell}>{t.history.columnWhen}</div>
           </div>
 
           {loading
             ? [0, 1, 2].map((i) => <ShimmerRow key={i} last={i === 2} />)
-            : entries.map((e, i) => (
+            : visible.map((e, i) => (
                 <HistoryRow
                   key={`${e.appId}-${e.updatedAt}`}
                   entry={e}
                   t={t}
-                  last={i === entries.length - 1}
+                  avatarSrc={avatars[e.updatedBy]}
+                  last={i === visible.length - 1}
                 />
               ))}
         </div>
+      )}
+
+      {!loading && entries.length > visibleCount && (
+        <div style={styles.showMoreWrap}>
+          <Button variant="secondary" onClick={() => setVisibleCount((c) => c + pageSize)}>
+            {t.history.showMore}
+          </Button>
+        </div>
+      )}
+
+      {!loading && entries.length > 0 && entries.length <= visibleCount && entries.length > pageSize && (
+        <div style={styles.endOfList}>{t.history.endOfList}</div>
       )}
 
       {!loading && entries.length === 0 && (
@@ -122,10 +167,13 @@ function GameDetailScreen({ appId, name, syncVersion, onBack }: Props): React.JS
 function HistoryRow({
   entry,
   t,
+  avatarSrc,
   last
 }: {
   entry: SyncHistoryEntry
   t: Translation
+  /** Player's avatar (data URL), if we have one — placeholder otherwise. */
+  avatarSrc?: string
   last: boolean
 }): React.JSX.Element {
   const [hover, setHover] = useState(false)
@@ -143,8 +191,12 @@ function HistoryRow({
       <div>
         <span style={styles.actionPill}>
           <span style={styles.actionDot} />
-          {t.history.uploaded} · {entry.updatedBy}
+          {t.history.uploaded}
         </span>
+      </div>
+      <div style={styles.playerCell}>
+        <Avatar src={avatarSrc} size={22} />
+        <span style={styles.playerName}>{entry.updatedBy}</span>
       </div>
       <div style={styles.mono}>{fmtVersion(entry.version)}</div>
       <div style={styles.mono}>{formatRelativeTime(entry.updatedAt, t)}</div>
@@ -170,7 +222,11 @@ function BreadcrumbLink({ label, onClick }: { label: string; onClick: () => void
 function ShimmerRow({ last }: { last: boolean }): React.JSX.Element {
   return (
     <div style={{ ...styles.row, borderBottom: last ? 'none' : `1px solid ${colors.borderSubtle}` }}>
-      <div style={{ ...styles.shimmer, width: 140, height: 12 }} />
+      <div style={{ ...styles.shimmer, width: 90, height: 12 }} />
+      <div style={styles.playerCell}>
+        <div style={{ ...styles.shimmer, width: 22, height: 22, borderRadius: '50%' }} />
+        <div style={{ ...styles.shimmer, width: 70, height: 12 }} />
+      </div>
       <div style={{ ...styles.shimmer, width: 50, height: 12 }} />
       <div style={{ ...styles.shimmer, width: 60, height: 12 }} />
     </div>
@@ -215,7 +271,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   headerRow: {
     display: 'grid',
-    gridTemplateColumns: '1.4fr 1fr 1fr',
+    gridTemplateColumns: '1fr 1.3fr .8fr 1fr',
     padding: '12px 16px',
     background: colors.bgRaised,
     borderBottom: `1px solid ${colors.borderSubtle}`
@@ -229,7 +285,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   row: {
     display: 'grid',
-    gridTemplateColumns: '1.4fr 1fr 1fr',
+    gridTemplateColumns: '1fr 1.3fr .8fr 1fr',
     alignItems: 'center',
     padding: '13px 16px',
     transition: `background ${transitions.fast}`
@@ -248,7 +304,23 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: radii.pill
   },
   actionDot: { width: 6, height: 6, borderRadius: '50%', background: colors.success, flexShrink: 0 },
+  playerCell: { display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, paddingRight: 10 },
+  playerName: {
+    fontSize: 12.5,
+    fontWeight: 600,
+    color: colors.text2,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap'
+  },
   mono: { fontFamily: fonts.mono, fontSize: 12, color: colors.text3 },
+  showMoreWrap: { display: 'flex', justifyContent: 'center', marginTop: 16 },
+  endOfList: {
+    textAlign: 'center',
+    marginTop: 16,
+    fontSize: 12,
+    color: colors.text3
+  },
   shimmer: {
     borderRadius: 6,
     background: 'linear-gradient(90deg,#161b27 25%,#222a3a 37%,#161b27 63%)',

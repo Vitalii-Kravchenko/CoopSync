@@ -27,6 +27,7 @@ import {
   getSyncHistory,
   revertToVersion,
   resetLocalSaveState,
+  adoptLocalHistoryAsOwnRepo,
   uploadAvatar,
   getAvatars
 } from './services/sync'
@@ -226,6 +227,21 @@ export function registerIpcHandlers(): void {
     writeSettings({ role: undefined, hostOwner: undefined })
     stopWatcher()
     await resetLocalSaveState()
+  })
+
+  // Alternative to a plain repo:leave — turns the local clone (already a
+  // full mirror of the host's shared history) into a brand-new repo owned
+  // by us, instead of discarding it. Same end state as choosing "host" in
+  // onboarding (role/hostOwner-wise), just seeded with existing history
+  // rather than starting empty.
+  ipcMain.handle('repo:adopt-as-own', async (): Promise<RoleConfig> => {
+    const settings = readSettings()
+    if (settings.role !== 'join' || !settings.hostOwner) throw makeAppError('REPO_NOT_FOUND')
+    const { token, owner: selfLogin } = await requireAuth()
+    stopWatcher()
+    await adoptLocalHistoryAsOwnRepo(token, selfLogin, settings.hostOwner, selfLogin)
+    writeSettings({ role: 'host', hostOwner: selfLogin })
+    return { role: 'host', hostOwner: selfLogin }
   })
 
   // List invitations that haven't been accepted yet (host's repo).

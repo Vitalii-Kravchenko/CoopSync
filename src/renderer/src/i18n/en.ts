@@ -193,6 +193,11 @@ export const en: Translation = {
     leaveRepoConfirmTitle: 'Leave the shared storage?',
     leaveRepoConfirmDesc:
       "You'll lose access to the saves on GitHub. Your local game files aren't touched — you can create your own storage or join another friend's afterward.",
+    adoptRepoTitle: 'Keep your own copy?',
+    adoptRepoDesc:
+      "Your PC already has the full version history of this storage. You can turn it into your own, separate storage under your account — with every version, not just the current save. Friends would need to be re-invited there.",
+    adoptRepoConfirm: 'Yes, make it my own storage',
+    adoptRepoDecline: 'No, just leave',
     cancel: 'Cancel',
     general: 'General',
     language: 'Language',
@@ -249,6 +254,7 @@ export const en: Translation = {
     USER_FETCH_FAILED: (p) => `Couldn't fetch user data (${p.status})`,
     REPO_CHECK_FAILED: (p) => `Couldn't check storage (${p.status})`,
     REPO_CREATE_FAILED: (p) => `Couldn't create storage (${p.status})`,
+    HOST_REPO_ALREADY_EXISTS: () => "You already have your own storage — sort that out in Settings first",
     GITHUB_USER_NOT_FOUND: (p) => `User "${p.username}" not found on GitHub`,
     REPO_NOT_FOUND: () => 'Storage not found — create it first',
     INVITE_FAILED: (p) => `Couldn't send the invite (${p.status})`,

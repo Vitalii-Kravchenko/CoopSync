@@ -63,7 +63,9 @@ const api = {
     removeCollaborator: (username: string): Promise<void> =>
       ipcRenderer.invoke('repo:remove-collaborator', username),
     /** A 'join' member leaves the host's shared repo. */
-    leave: (): Promise<void> => ipcRenderer.invoke('repo:leave')
+    leave: (): Promise<void> => ipcRenderer.invoke('repo:leave'),
+    /** Alternative to leave() — turns the local clone (full history) into a new, self-owned repo. */
+    adoptAsOwn: (): Promise<RoleConfig> => ipcRenderer.invoke('repo:adopt-as-own')
   },
   games: {
     /** List of installed supported games. */

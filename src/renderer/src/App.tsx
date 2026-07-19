@@ -142,6 +142,16 @@ function App(): React.JSX.Element {
     setPhase('onboarding')
   }
 
+  // After turning the local clone into our own repo (repo:adopt-as-own
+  // already set role/hostOwner to us on the main side) — we're already a
+  // host with a ready repo, so no onboarding: just refresh statuses/history
+  // under the new role and restart the watcher (watcher:start reads
+  // role/hostOwner fresh, so it picks the new host role up on its own).
+  function handleAdoptedOwnStorage(): void {
+    bumpSyncVersion()
+    void window.api.watcher.start()
+  }
+
   // Reaction to auto-sync (game launch/exit in the background) — handled at the App
   // level, not MainScreen, so the push/pull banner is visible on any tab.
   useEffect(() => {
@@ -300,6 +310,7 @@ function App(): React.JSX.Element {
               onAvatarChange={setAvatarDataUrl}
               onRepoChanged={bumpSyncVersion}
               onLeftRepo={handleLeftSharedRepo}
+              onAdoptedOwnStorage={handleAdoptedOwnStorage}
               onBanner={setBanner}
             />
           </div>

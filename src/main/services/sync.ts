@@ -8,6 +8,7 @@ import { cp, rm, mkdir, readdir, readFile, writeFile } from 'fs/promises'
 import { SUPPORTED_GAMES, READY_GAMES } from '../games/catalog'
 import { SAVES_REPO_NAME } from '../config'
 import { isGameCurrentlyRunning } from './processCheck'
+import { createFreshSavesRepo, leaveSharedRepo } from './github'
 import { makeAppError, parseAppError } from '../../shared/errors'
 import { formatVersion } from '../../shared/format'
 import type { SyncStatus, GameSyncStatus, SyncHistoryEntry, SyncResult } from '../../shared/types'
@@ -265,7 +266,16 @@ async function appendHistory(entry: SyncHistoryEntry): Promise<void> {
 
 /** Push event history, newest first. */
 export async function getSyncHistory(token: string, owner: string): Promise<SyncHistoryEntry[]> {
-  await ensureRepo(token, owner)
+  try {
+    await ensureRepo(token, owner)
+  } catch (e) {
+    // The live repo might be unreachable (access revoked, repo deleted,
+    // offline) — if we already have local history sitting in the clone
+    // from before, show that instead of erroring the whole screen. Restore
+    // still needs to push, so it'll surface its own clear error if
+    // actually attempted while access is gone.
+    if (!existsSync(historyPath())) throw e
+  }
   return readHistory()
 }
 
@@ -536,6 +546,37 @@ export async function downloadGame(token: string, owner: string, appId: string):
 export async function resetLocalSaveState(): Promise<void> {
   await rm(repoDir(), { recursive: true, force: true })
   await rm(localVersionsPath(), { force: true })
+}
+
+/** Turn the local clone of a shared repo you're about to leave (or already
+ *  got kicked from) into your own, self-owned repo — WITH its full version
+ *  history, not just the current save files as a fresh v1. Unlike a normal
+ *  leave (resetLocalSaveState), this deliberately keeps the local clone
+ *  intact: it's the only copy of that history left once access to the old
+ *  repo is gone, so it becomes the new repo's content instead of being
+ *  thrown away. */
+export async function adoptLocalHistoryAsOwnRepo(
+  token: string,
+  newOwner: string,
+  oldHostOwner: string,
+  selfLogin: string
+): Promise<void> {
+  if (!existsSync(join(repoDir(), '.git'))) throw makeAppError('SAVE_FOLDER_NOT_FOUND')
+
+  await createFreshSavesRepo(token, newOwner) // throws HOST_REPO_ALREADY_EXISTS if newOwner already has one
+
+  await git(['remote', 'set-url', 'origin', remoteUrl(token, newOwner)])
+  // Force, not a plain push — the new repo has its own auto-init README
+  // commit (unrelated history), which this history is meant to replace,
+  // not merge with.
+  await git(['push', '--force', 'origin', 'main'])
+
+  try {
+    await leaveSharedRepo(token, oldHostOwner, selfLogin)
+  } catch {
+    // Best-effort — if we were already removed (e.g. kicked), there's
+    // nothing left to leave; not worth failing the whole adoption over.
+  }
 }
 
 // --- Sync status detection ---

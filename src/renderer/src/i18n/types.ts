@@ -223,6 +223,10 @@ export interface Translation {
     leaveRepoButton: string
     leaveRepoConfirmTitle: string
     leaveRepoConfirmDesc: string
+    adoptRepoTitle: string
+    adoptRepoDesc: string
+    adoptRepoConfirm: string
+    adoptRepoDecline: string
     cancel: string
     general: string
     language: string

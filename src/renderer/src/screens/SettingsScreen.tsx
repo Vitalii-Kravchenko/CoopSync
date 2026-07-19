@@ -7,6 +7,7 @@ import Avatar from '../components/Avatar'
 import AvatarCropModal from '../components/AvatarCropModal'
 import Button from '../components/Button'
 import ConfirmModal from '../components/ConfirmModal'
+import AdoptStorageModal from '../components/AdoptStorageModal'
 import Select from '../components/Select'
 import type { BannerState } from '../components/Banner'
 import type { AuthUser, SavesRepoStatus, StartupSettings, UpdateStatus } from '../../../shared/types'
@@ -23,6 +24,9 @@ interface Props {
   /** Called after successfully leaving a shared repo — our role is reset,
    *  so App sends us back to onboarding's "choose a role" step. */
   onLeftRepo: () => void
+  /** Called after turning the local clone into our own repo instead of just
+   *  leaving — we're already a host with a ready repo, so no onboarding. */
+  onAdoptedOwnStorage: () => void
   /** The global sync-style toast, rendered at the App level (see Banner). */
   onBanner: (banner: BannerState) => void
 }
@@ -34,6 +38,7 @@ function SettingsScreen({
   onAvatarChange,
   onRepoChanged,
   onLeftRepo,
+  onAdoptedOwnStorage,
   onBanner
 }: Props): React.JSX.Element {
   const { t, language, setLanguage } = useI18n()
@@ -60,6 +65,12 @@ function SettingsScreen({
   const [showLeaveRepo, setShowLeaveRepo] = useState(false)
   const [leavingRepo, setLeavingRepo] = useState(false)
   const [leaveRepoError, setLeaveRepoError] = useState<string | null>(null)
+  // Second step after confirming "Leave" — offer to keep the local history
+  // (full version history, not just the current saves) as a new, self-owned
+  // repo instead of just discarding it.
+  const [showAdoptChoice, setShowAdoptChoice] = useState(false)
+  const [adoptingRepo, setAdoptingRepo] = useState(false)
+  const [adoptRepoError, setAdoptRepoError] = useState<string | null>(null)
 
   useEffect(() => {
     void loadRepo()
@@ -191,12 +202,26 @@ function SettingsScreen({
     setLeaveRepoError(null)
     try {
       await window.api.repo.leave()
-      setShowLeaveRepo(false)
+      setShowAdoptChoice(false)
       onLeftRepo()
     } catch (e) {
       setLeaveRepoError(describeError(e, t, t.settings.leaveRepoConfirmTitle))
     } finally {
       setLeavingRepo(false)
+    }
+  }
+
+  async function handleAdoptAsOwn(): Promise<void> {
+    setAdoptingRepo(true)
+    setAdoptRepoError(null)
+    try {
+      await window.api.repo.adoptAsOwn()
+      setShowAdoptChoice(false)
+      onAdoptedOwnStorage()
+    } catch (e) {
+      setAdoptRepoError(describeError(e, t, t.settings.adoptRepoTitle))
+    } finally {
+      setAdoptingRepo(false)
     }
   }
 
@@ -430,11 +455,28 @@ function SettingsScreen({
           description={t.settings.leaveRepoConfirmDesc}
           confirmLabel={t.settings.leaveRepoButton}
           cancelLabel={t.settings.cancel}
-          busy={leavingRepo}
-          error={leaveRepoError}
-          onConfirm={handleLeaveRepo}
-          onCancel={() => {
+          onConfirm={() => {
             setShowLeaveRepo(false)
+            setShowAdoptChoice(true)
+          }}
+          onCancel={() => setShowLeaveRepo(false)}
+        />
+      )}
+
+      {showAdoptChoice && (
+        <AdoptStorageModal
+          title={t.settings.adoptRepoTitle}
+          description={t.settings.adoptRepoDesc}
+          adoptLabel={t.settings.adoptRepoConfirm}
+          leaveAnywayLabel={t.settings.adoptRepoDecline}
+          cancelLabel={t.settings.cancel}
+          busy={adoptingRepo ? 'adopt' : leavingRepo ? 'leave' : null}
+          error={adoptRepoError ?? leaveRepoError}
+          onAdopt={handleAdoptAsOwn}
+          onLeaveAnyway={handleLeaveRepo}
+          onCancel={() => {
+            setShowAdoptChoice(false)
+            setAdoptRepoError(null)
             setLeaveRepoError(null)
           }}
         />

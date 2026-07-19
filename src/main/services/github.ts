@@ -177,11 +177,7 @@ export async function getSavesRepo(token: string, owner: string): Promise<SavesR
   return { fullName: data.full_name, url: data.html_url }
 }
 
-/** Create a private saves repo. If it already exists — return the existing one. */
-export async function createSavesRepo(token: string, owner: string): Promise<SavesRepo> {
-  const existing = await getSavesRepo(token, owner)
-  if (existing) return existing
-
+async function createRepoOnGitHub(token: string): Promise<SavesRepo> {
   const res = await githubFetch(`${API}/user/repos`, {
     method: 'POST',
     headers: authHeaders(token),
@@ -196,6 +192,23 @@ export async function createSavesRepo(token: string, owner: string): Promise<Sav
   if (!res.ok) throw makeAppError('REPO_CREATE_FAILED', { status: String(res.status) })
   const data = (await res.json()) as RepoResponse
   return { fullName: data.full_name, url: data.html_url }
+}
+
+/** Create a private saves repo. If it already exists — return the existing one. */
+export async function createSavesRepo(token: string, owner: string): Promise<SavesRepo> {
+  const existing = await getSavesRepo(token, owner)
+  if (existing) return existing
+  return createRepoOnGitHub(token)
+}
+
+// Used only by adoptLocalHistoryAsOwnRepo (sync.ts) — unlike createSavesRepo,
+// this must NOT silently reuse an existing repo: that flow force-pushes a
+// whole other history onto whatever it creates, which would destroy an
+// existing repo's real content if one already existed under this owner.
+export async function createFreshSavesRepo(token: string, owner: string): Promise<SavesRepo> {
+  const existing = await getSavesRepo(token, owner)
+  if (existing) throw makeAppError('HOST_REPO_ALREADY_EXISTS')
+  return createRepoOnGitHub(token)
 }
 
 /** Invite a friend as a collaborator on the saves repo (push permission). */

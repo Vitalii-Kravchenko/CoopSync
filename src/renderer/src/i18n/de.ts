@@ -195,6 +195,11 @@ export const de: Translation = {
     leaveRepoConfirmTitle: 'Gemeinsamen Speicher verlassen?',
     leaveRepoConfirmDesc:
       'Du verlierst den Zugriff auf die Spielstände auf GitHub. Deine lokalen Spieldateien bleiben unberührt — danach kannst du einen eigenen Speicher erstellen oder einem anderen Freund beitreten.',
+    adoptRepoTitle: 'Eigene Kopie behalten?',
+    adoptRepoDesc:
+      'Auf deinem PC liegt bereits die vollständige Versionshistorie dieses Speichers. Du kannst sie in einen eigenen, separaten Speicher unter deinem Konto umwandeln — mit jeder Version, nicht nur dem aktuellen Spielstand. Freunde müssten dort neu eingeladen werden.',
+    adoptRepoConfirm: 'Ja, zu meinem eigenen Speicher machen',
+    adoptRepoDecline: 'Nein, einfach verlassen',
     cancel: 'Abbrechen',
     general: 'Allgemein',
     language: 'Sprache',
@@ -251,6 +256,7 @@ export const de: Translation = {
     USER_FETCH_FAILED: (p) => `Benutzerdaten konnten nicht abgerufen werden (${p.status})`,
     REPO_CHECK_FAILED: (p) => `Speicher konnte nicht geprüft werden (${p.status})`,
     REPO_CREATE_FAILED: (p) => `Speicher konnte nicht erstellt werden (${p.status})`,
+    HOST_REPO_ALREADY_EXISTS: () => 'Du hast bereits einen eigenen Speicher — kümmere dich zuerst darum in den Einstellungen',
     GITHUB_USER_NOT_FOUND: (p) => `Benutzer "${p.username}" auf GitHub nicht gefunden`,
     REPO_NOT_FOUND: () => 'Speicher nicht gefunden — erstelle ihn zuerst',
     INVITE_FAILED: (p) => `Einladung konnte nicht gesendet werden (${p.status})`,

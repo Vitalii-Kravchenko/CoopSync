@@ -195,6 +195,11 @@ export const ptBR: Translation = {
     leaveRepoConfirmTitle: 'Sair do armazenamento compartilhado?',
     leaveRepoConfirmDesc:
       'Você perderá o acesso aos saves no GitHub. Seus arquivos de jogo locais não são afetados — depois você pode criar seu próprio armazenamento ou entrar no de outro amigo.',
+    adoptRepoTitle: 'Manter sua própria cópia?',
+    adoptRepoDesc:
+      'Seu PC já tem o histórico completo de versões desse armazenamento. Você pode transformá-lo no seu próprio armazenamento separado, na sua conta — com todas as versões, não só o save atual. Os amigos precisariam ser convidados de novo lá.',
+    adoptRepoConfirm: 'Sim, tornar meu próprio armazenamento',
+    adoptRepoDecline: 'Não, só sair',
     cancel: 'Cancelar',
     general: 'Geral',
     language: 'Idioma',
@@ -251,6 +256,7 @@ export const ptBR: Translation = {
     USER_FETCH_FAILED: (p) => `Não foi possível obter os dados do usuário (${p.status})`,
     REPO_CHECK_FAILED: (p) => `Não foi possível verificar o armazenamento (${p.status})`,
     REPO_CREATE_FAILED: (p) => `Não foi possível criar o armazenamento (${p.status})`,
+    HOST_REPO_ALREADY_EXISTS: () => 'Você já tem seu próprio armazenamento — resolva isso primeiro nas Configurações',
     GITHUB_USER_NOT_FOUND: (p) => `Usuário "${p.username}" não encontrado no GitHub`,
     REPO_NOT_FOUND: () => 'Armazenamento não encontrado — crie-o primeiro',
     INVITE_FAILED: (p) => `Não foi possível enviar o convite (${p.status})`,

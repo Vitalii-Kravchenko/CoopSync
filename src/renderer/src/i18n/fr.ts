@@ -90,6 +90,7 @@ export const fr: Translation = {
     hoursAgo: (n) => `il y a ${n} h`,
     daysAgo: (n) => `il y a ${n} j`,
     restore: 'Restaurer',
+    restorePendingHint: 'Patiente — la synchronisation en arrière-plan de ce jeu est encore en cours',
     restoreConfirmTitle: 'Restaurer une version plus ancienne ?',
     restoreConfirmDesc: (version, who) =>
       `La sauvegarde reviendra à la version ${version} (dernière synchro par ${who}). L'état actuel ne sera pas perdu — il deviendra une nouvelle entrée dans l'historique. Si l'accès est partagé, votre partenaire récupérera automatiquement cette version au prochain lancement du jeu.`,
@@ -170,6 +171,7 @@ export const fr: Translation = {
     title: 'Paramètres',
     changeAvatar: "Changer l'image",
     avatarError: "Impossible de charger l'image",
+    avatarUpdated: 'Avatar mis à jour',
     cropTitle: "Recadrer l'image",
     cropHint: 'Faites glisser pour repositionner, le curseur pour zoomer',
     cropConfirm: 'Appliquer',

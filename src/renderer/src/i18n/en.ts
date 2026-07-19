@@ -88,6 +88,7 @@ export const en: Translation = {
     hoursAgo: (n) => `${n} h ago`,
     daysAgo: (n) => `${n} d ago`,
     restore: 'Restore',
+    restorePendingHint: "Hang on — this game's background sync is still running",
     restoreConfirmTitle: 'Restore an older version?',
     restoreConfirmDesc: (version, who) =>
       `The save will go back to ${version} (last synced by ${who}). The current state won't be lost — it becomes a new entry in the history. If you share access, your partner will pick up this version automatically next time they launch the game.`,
@@ -168,6 +169,7 @@ export const en: Translation = {
     title: 'Settings',
     changeAvatar: 'Change picture',
     avatarError: "Couldn't load the image",
+    avatarUpdated: 'Avatar updated',
     cropTitle: 'Crop image',
     cropHint: 'Drag to reposition, use the slider to zoom',
     cropConfirm: 'Apply',

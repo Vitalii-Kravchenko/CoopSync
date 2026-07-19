@@ -39,6 +39,9 @@ interface Props {
   onBanner: (banner: BannerState) => void
   /** Call after a real push (a revert is one) — lets History/MainScreen reread. */
   onSynced: () => void
+  /** True while this game's background autopush (post game-exit) is still in
+   *  flight — blocks "Restore" so it can't race the same git clone. */
+  autoPushPending: boolean
 }
 
 // A single game's own sync history — reached from its card on the Games tab.
@@ -53,7 +56,8 @@ function GameDetailScreen({
   avatarDataUrl,
   onBack,
   onBanner,
-  onSynced
+  onSynced,
+  autoPushPending
 }: Props): React.JSX.Element {
   const { t } = useI18n()
   const [entries, setEntries] = useState<SyncHistoryEntry[]>([])
@@ -173,6 +177,7 @@ function GameDetailScreen({
                   avatarSrc={avatars[e.updatedBy]}
                   last={i === visible.length - 1}
                   canRestore={e.version !== latestVersion}
+                  restoreDisabled={autoPushPending}
                   onRestoreClick={() => setRestoreTarget(e)}
                 />
               ))}
@@ -200,7 +205,7 @@ function GameDetailScreen({
           )}
           confirmLabel={t.history.restore}
           cancelLabel={t.settings.cancel}
-          busy={restoring}
+          busy={restoring || autoPushPending}
           error={restoreError}
           onConfirm={handleRestore}
           onCancel={() => {
@@ -219,6 +224,7 @@ function HistoryRow({
   avatarSrc,
   last,
   canRestore,
+  restoreDisabled,
   onRestoreClick
 }: {
   entry: SyncHistoryEntry
@@ -228,6 +234,9 @@ function HistoryRow({
   last: boolean
   /** false for the newest entry — nothing to revert to. */
   canRestore: boolean
+  /** True while this game's background autopush is in flight — greys the
+   *  button out instead of hiding it, since it's back to usable in a moment. */
+  restoreDisabled: boolean
   onRestoreClick: () => void
 }): React.JSX.Element {
   const [hover, setHover] = useState(false)
@@ -261,7 +270,13 @@ function HistoryRow({
       <div style={styles.mono}>{formatRelativeTime(entry.updatedAt, t)}</div>
       <div>
         {canRestore && (
-          <Button variant="ghost" style={styles.restoreBtn} onClick={onRestoreClick}>
+          <Button
+            variant="ghost"
+            style={styles.restoreBtn}
+            onClick={onRestoreClick}
+            disabled={restoreDisabled}
+            title={restoreDisabled ? t.history.restorePendingHint : undefined}
+          >
             {t.history.restore}
           </Button>
         )}

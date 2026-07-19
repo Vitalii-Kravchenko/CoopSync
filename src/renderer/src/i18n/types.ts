@@ -117,6 +117,7 @@ export interface Translation {
     hoursAgo: (n: number) => string
     daysAgo: (n: number) => string
     restore: string
+    restorePendingHint: string
     restoreConfirmTitle: string
     restoreConfirmDesc: (version: string, who: string) => string
     restoreError: string
@@ -200,6 +201,7 @@ export interface Translation {
     title: string
     changeAvatar: string
     avatarError: string
+    avatarUpdated: string
     cropTitle: string
     cropHint: string
     cropConfirm: string

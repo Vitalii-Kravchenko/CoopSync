@@ -90,6 +90,7 @@ export const ptBR: Translation = {
     hoursAgo: (n) => `há ${n} h`,
     daysAgo: (n) => `há ${n} d`,
     restore: 'Restaurar',
+    restorePendingHint: 'Aguarde — a sincronização em segundo plano deste jogo ainda está em andamento',
     restoreConfirmTitle: 'Restaurar uma versão mais antiga?',
     restoreConfirmDesc: (version, who) =>
       `O save voltará para a versão ${version} (sincronizado pela última vez por ${who}). O estado atual não será perdido — vira uma nova entrada no histórico. Se vocês compartilham acesso, seu parceiro vai receber essa versão automaticamente na próxima vez que abrir o jogo.`,
@@ -170,6 +171,7 @@ export const ptBR: Translation = {
     title: 'Configurações',
     changeAvatar: 'Alterar imagem',
     avatarError: 'Não foi possível carregar a imagem',
+    avatarUpdated: 'Avatar atualizado',
     cropTitle: 'Cortar imagem',
     cropHint: 'Arraste para reposicionar, use o controle para dar zoom',
     cropConfirm: 'Aplicar',

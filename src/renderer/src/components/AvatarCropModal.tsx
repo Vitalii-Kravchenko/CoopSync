@@ -10,6 +10,9 @@ interface Props {
   onCancel: () => void
   /** Cropped, square JPEG data URL. */
   onConfirm: (dataUrl: string) => void
+  /** True while the parent is saving the cropped result — locks both buttons
+   *  and shows a spinner on Apply, same pattern as ConfirmModal's busy. */
+  busy?: boolean
 }
 
 // The square area the image is pannable/zoomable within — wider than the
@@ -22,7 +25,7 @@ const OUTPUT = 320
 const MIN_ZOOM = 1
 const MAX_ZOOM = 3
 
-function AvatarCropModal({ src, onCancel, onConfirm }: Props): React.JSX.Element {
+function AvatarCropModal({ src, onCancel, onConfirm, busy }: Props): React.JSX.Element {
   const { t } = useI18n()
   const cardRef = useRef<HTMLDivElement>(null)
   useFocusTrap(cardRef)
@@ -155,15 +158,16 @@ function AvatarCropModal({ src, onCancel, onConfirm }: Props): React.JSX.Element
           </div>
 
           <div style={styles.actions}>
-            <Button variant="ghost" style={styles.actionBtn} onClick={onCancel}>
+            <Button variant="ghost" style={styles.actionBtn} onClick={onCancel} disabled={busy}>
               {t.settings.cancel}
             </Button>
             <Button
               variant="primary"
               style={styles.actionBtn}
               onClick={handleConfirm}
-              disabled={!natural}
+              disabled={!natural || busy}
             >
+              {busy && <span className="spinner" />}
               {t.settings.cropConfirm}
             </Button>
           </div>

@@ -90,6 +90,7 @@ export const tr: Translation = {
     hoursAgo: (n) => `${n} sa önce`,
     daysAgo: (n) => `${n} gün önce`,
     restore: 'Geri yükle',
+    restorePendingHint: 'Bir dakika — bu oyunun arka plan senkronizasyonu hâlâ sürüyor',
     restoreConfirmTitle: 'Eski bir sürüm geri yüklensin mi?',
     restoreConfirmDesc: (version, who) =>
       `Kayıt ${version} sürümüne dönecek (son senkronize eden: ${who}). Mevcut durum kaybolmaz — geçmişte yeni bir kayıt olarak görünür. Erişimi paylaşıyorsanız, oyuncu arkadaşın bir sonraki oyun açılışında bu sürümü otomatik olarak alır.`,
@@ -170,6 +171,7 @@ export const tr: Translation = {
     title: 'Ayarlar',
     changeAvatar: 'Resmi değiştir',
     avatarError: 'Resim yüklenemedi',
+    avatarUpdated: 'Avatar güncellendi',
     cropTitle: 'Resmi kırp',
     cropHint: 'Konumlandırmak için sürükle, yakınlaştırmak için kaydırıcıyı kullan',
     cropConfirm: 'Uygula',

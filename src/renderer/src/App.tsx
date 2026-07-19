@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { colors, fonts } from './theme'
 import { useI18n } from './i18n'
 import { describeError, describeSyncResult } from './errors'
@@ -39,6 +39,10 @@ function App(): React.JSX.Element {
   // Global sync toast — rendered outside the tabs (styles.appBody),
   // so it stays visible regardless of which tab is currently open.
   const [banner, setBanner] = useState<BannerState | null>(null)
+  // appIds whose background autopush (post game-exit) is currently in
+  // flight — GameDetailScreen uses this to block "Restore" for that game
+  // until the push actually lands, so it can't race the same git clone.
+  const [autoPushPending, setAutoPushPending] = useState<Set<string>>(new Set())
   // appIds with a cloud save pushed by a friend that this device hasn't
   // looked at yet — drives the number badge on the Sidebar's "History" item.
   // No "Games" badge anymore (deliberately removed — auto-sync already pulls
@@ -143,6 +147,22 @@ function App(): React.JSX.Element {
   useEffect(() => {
     if (phase !== 'app') return
     return window.api.watcher.onAutoSync((e) => {
+      // Pure marker for "a background push for this game just started" —
+      // no result to show, just flips the game into "pending" so
+      // GameDetailScreen can block Restore until the matching push/
+      // push-skipped below clears it again.
+      if (e.action === 'push-start') {
+        setAutoPushPending((prev) => new Set(prev).add(e.appId))
+        return
+      }
+      if (e.action === 'push' || e.action === 'push-skipped') {
+        setAutoPushPending((prev) => {
+          if (!prev.has(e.appId)) return prev
+          const next = new Set(prev)
+          next.delete(e.appId)
+          return next
+        })
+      }
       // watcher-error isn't tied to a specific game (e.g. failed to
       // check the list of running processes) — no game name prefix.
       const text =
@@ -195,23 +215,11 @@ function App(): React.JSX.Element {
     })
   }, [phase, t])
 
-  // A new app version is available — toast via the OS notification center
-  // too, not just the in-app banner (see MainScreen) — CoopSync starts
-  // minimized to the tray by default, so the banner alone would never be
-  // seen until the user happens to open the window. lastToastedVersionRef
-  // avoids re-toasting the same version on every periodic re-check
-  // (scheduleStartupCheck in updater.ts re-checks every 6h).
-  const lastToastedVersionRef = useRef<string | null>(null)
-  useEffect(() => {
-    if (phase !== 'app') return
-    return window.api.updater.onStatus((status) => {
-      if (status.state !== 'available') return
-      if (lastToastedVersionRef.current === status.version) return
-      lastToastedVersionRef.current = status.version
-      const n = new Notification(t.updateBanner.title, { body: t.updateBanner.message(status.version) })
-      n.onclick = () => void window.api.window.maximize()
-    })
-  }, [phase, t])
+  // The OS toast for "update available" is fired from the main process now
+  // (see updater.ts showUpdateToast) — that toast's click brings the window
+  // up directly via a main-process callback, not through this renderer,
+  // which may be sitting hidden/backgrounded for a long stretch (tray) and
+  // isn't a reliable place to depend on for handling the click.
 
   // The banner dismisses itself after 5 seconds.
   useEffect(() => {
@@ -263,6 +271,7 @@ function App(): React.JSX.Element {
               onGamesSeen={markGamesSeen}
               user={user}
               avatarDataUrl={avatarDataUrl}
+              autoPushPending={autoPushPending}
             />
           </div>
           <div
@@ -291,11 +300,12 @@ function App(): React.JSX.Element {
               onAvatarChange={setAvatarDataUrl}
               onRepoChanged={bumpSyncVersion}
               onLeftRepo={handleLeftSharedRepo}
+              onBanner={setBanner}
             />
           </div>
 
           <Sidebar active={screen} onNavigate={handleNavigate} historyBadge={unseenHistory.size} />
-          <Banner banner={banner} onDismiss={() => setBanner(null)} />
+          <Banner banner={banner} />
         </div>
       )}
 

@@ -88,6 +88,7 @@ export const zhCN: Translation = {
     hoursAgo: (n) => `${n} 小时前`,
     daysAgo: (n) => `${n} 天前`,
     restore: '恢复',
+    restorePendingHint: '请稍等 — 这个游戏的后台同步还在进行中',
     restoreConfirmTitle: '恢复到旧版本？',
     restoreConfirmDesc: (version, who) =>
       `存档将恢复到 ${version}（最后由 ${who} 同步）。当前状态不会丢失——会成为历史记录中的新条目。如果你们共享访问权限，搭档下次启动游戏时会自动获取这个版本。`,
@@ -166,6 +167,7 @@ export const zhCN: Translation = {
     title: '设置',
     changeAvatar: '更换头像',
     avatarError: '无法加载图片',
+    avatarUpdated: '头像已更新',
     cropTitle: '裁剪图片',
     cropHint: '拖动调整位置，用滑块缩放',
     cropConfirm: '应用',

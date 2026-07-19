@@ -1,8 +1,46 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, Notification } from 'electron'
 import { autoUpdater } from 'electron-updater'
 import { readSettings } from './settingsStore'
 import { addNotification } from './notificationStore'
+import { getLastNotifiedUpdateVersion, setLastNotifiedUpdateVersion } from './backgroundState'
 import type { UpdateStatus } from '../../shared/types'
+
+// Minimal separate i18n for the native OS toast — mirrors trayIcon.ts's
+// approach (doesn't pull in the renderer's full i18n bundle for two strings).
+type ToastLang = 'en' | 'uk' | 'de' | 'fr' | 'pl' | 'ru' | 'es' | 'pt-BR' | 'tr' | 'zh-CN'
+const UPDATE_TOAST: Record<ToastLang, { title: string; message: (v: string) => string }> = {
+  en: { title: 'Update available', message: (v) => `CoopSync v${v} is ready to download.` },
+  uk: { title: 'Доступне оновлення', message: (v) => `CoopSync v${v} готовий до завантаження.` },
+  de: { title: 'Update verfügbar', message: (v) => `CoopSync v${v} ist bereit zum Herunterladen.` },
+  fr: { title: 'Mise à jour disponible', message: (v) => `CoopSync v${v} est prêt à être téléchargé.` },
+  pl: { title: 'Dostępna aktualizacja', message: (v) => `CoopSync v${v} jest gotowy do pobrania.` },
+  ru: { title: 'Доступно обновление', message: (v) => `CoopSync v${v} готов к загрузке.` },
+  es: { title: 'Actualización disponible', message: (v) => `CoopSync v${v} está listo para descargar.` },
+  'pt-BR': { title: 'Atualização disponível', message: (v) => `O CoopSync v${v} está pronto para baixar.` },
+  tr: { title: 'Güncelleme mevcut', message: (v) => `CoopSync v${v} indirilmeye hazır.` },
+  'zh-CN': { title: '有可用更新', message: (v) => `CoopSync v${v} 已准备好下载。` }
+}
+
+// Set once from index.ts (same pattern as trayIcon.ts's onOpen callback) —
+// lets the toast's click bring the window up without going through a
+// renderer IPC round-trip, which depends on that renderer's page still being
+// alive/unfrozen. The window can be hidden for a long stretch (tray) before
+// the first update check ever fires, and a backgrounded renderer that never
+// got shown is exactly the case where relying on its JS to run is fragile.
+let onShowWindow: (() => void) | null = null
+
+export function setShowWindowCallback(fn: () => void): void {
+  onShowWindow = fn
+}
+
+function showUpdateToast(version: string): void {
+  if (!Notification.isSupported()) return
+  const lang = (readSettings().language as ToastLang) ?? 'en'
+  const strings = UPDATE_TOAST[lang] ?? UPDATE_TOAST.en
+  const notification = new Notification({ title: strings.title, body: strings.message(version) })
+  notification.on('click', () => onShowWindow?.())
+  notification.show()
+}
 
 // autoDownload/autoInstallOnAppQuit are both off — the user decides via the
 // Settings screen (About card) when to download and when to restart, so an
@@ -32,18 +70,20 @@ function clearCheckTimeout(): void {
   }
 }
 
-// The bell entry should appear once per version, not on every 6h re-check
-// while the same release is still the latest (autoDownload is off, so a user
-// who hasn't downloaded yet would otherwise get spammed every cycle).
-let lastNotifiedVersion: string | null = null
-
+// The bell entry (and the OS toast) should appear once per version, not on
+// every 6h re-check while the same release is still latest (autoDownload is
+// off, so a user who hasn't downloaded yet would otherwise get spammed every
+// cycle) — and not once per process either: this is persisted (not just an
+// in-memory var) so quitting via the tray and relaunching while the same
+// version is still available doesn't add a duplicate bell entry each time.
 autoUpdater.on('checking-for-update', () => send({ state: 'checking' }))
 autoUpdater.on('update-available', (info) => {
   clearCheckTimeout()
   send({ state: 'available', version: info.version })
-  if (lastNotifiedVersion !== info.version) {
-    lastNotifiedVersion = info.version
+  if (getLastNotifiedUpdateVersion() !== info.version) {
+    setLastNotifiedUpdateVersion(info.version)
     addNotification('update-available', { version: info.version })
+    showUpdateToast(info.version)
   }
 })
 autoUpdater.on('update-not-available', () => {

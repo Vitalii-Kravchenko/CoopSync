@@ -18,6 +18,11 @@ interface State {
   knownCollaborators?: string[]
   /** Whether a 'join' member could reach the host's repo last time we checked. */
   hadAccess?: boolean
+  /** Version we last added an "update available" bell entry for — persisted
+   *  (not just an in-memory var in updater.ts) so quitting via the tray and
+   *  relaunching while the same release is still latest doesn't add a
+   *  duplicate entry every time. */
+  lastNotifiedUpdateVersion?: string
 }
 
 function statePath(): string {
@@ -86,5 +91,14 @@ export function getHadAccess(): boolean | undefined {
 
 export function setHadAccess(value: boolean): void {
   load().hadAccess = value
+  persist()
+}
+
+export function getLastNotifiedUpdateVersion(): string | undefined {
+  return load().lastNotifiedUpdateVersion
+}
+
+export function setLastNotifiedUpdateVersion(version: string): void {
+  load().lastNotifiedUpdateVersion = version
   persist()
 }

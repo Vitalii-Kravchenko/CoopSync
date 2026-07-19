@@ -90,6 +90,7 @@ export const es: Translation = {
     hoursAgo: (n) => `hace ${n} h`,
     daysAgo: (n) => `hace ${n} d`,
     restore: 'Restaurar',
+    restorePendingHint: 'Espera — la sincronización en segundo plano de este juego sigue en curso',
     restoreConfirmTitle: '¿Restaurar una versión anterior?',
     restoreConfirmDesc: (version, who) =>
       `La partida volverá a la versión ${version} (sincronizada por última vez por ${who}). El estado actual no se perderá — pasará a ser una nueva entrada del historial. Si compartís el acceso, tu compañero recibirá esta versión automáticamente la próxima vez que inicie el juego.`,
@@ -170,6 +171,7 @@ export const es: Translation = {
     title: 'Ajustes',
     changeAvatar: 'Cambiar imagen',
     avatarError: 'No se pudo cargar la imagen',
+    avatarUpdated: 'Avatar actualizado',
     cropTitle: 'Recortar imagen',
     cropHint: 'Arrastra para reposicionar, usa el control para hacer zoom',
     cropConfirm: 'Aplicar',

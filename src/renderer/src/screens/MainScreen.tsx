@@ -38,6 +38,10 @@ interface Props {
   /** Passed through to GameDetailScreen — its history shows player avatars. */
   user: AuthUser
   avatarDataUrl: string | null
+  /** appIds with a background autopush currently in flight — passed through
+   *  to GameDetailScreen to block "Restore" for the selected game while it's
+   *  in this set (see App.tsx's onAutoSync handler). */
+  autoPushPending: Set<string>
 }
 
 function MainScreen({
@@ -48,7 +52,8 @@ function MainScreen({
   onBanner,
   onGamesSeen,
   user,
-  avatarDataUrl
+  avatarDataUrl,
+  autoPushPending
 }: Props): React.JSX.Element {
   const { t } = useI18n()
   const [installed, setInstalled] = useState<InstalledGame[]>([])
@@ -205,6 +210,7 @@ function MainScreen({
         onBack={() => setSelectedGame(null)}
         onBanner={onBanner}
         onSynced={onSynced}
+        autoPushPending={autoPushPending.has(selectedGame.appId)}
       />
     )
   }

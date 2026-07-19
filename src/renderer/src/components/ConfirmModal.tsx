@@ -76,6 +76,7 @@ function ConfirmModal({
               {cancelLabel}
             </Button>
             <Button variant="danger" style={styles.actionBtn} onClick={onConfirm} disabled={locked || busy}>
+              {busy && <span className="spinner" />}
               {locked ? `${confirmLabel} (${remaining})` : confirmLabel}
             </Button>
           </div>

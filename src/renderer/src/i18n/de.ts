@@ -90,6 +90,7 @@ export const de: Translation = {
     hoursAgo: (n) => `vor ${n} Std.`,
     daysAgo: (n) => `vor ${n} Tg.`,
     restore: 'Wiederherstellen',
+    restorePendingHint: 'Warte kurz — die Hintergrundsynchronisierung für dieses Spiel läuft noch',
     restoreConfirmTitle: 'Ältere Version wiederherstellen?',
     restoreConfirmDesc: (version, who) =>
       `Der Spielstand kehrt zu ${version} zurück (zuletzt synchronisiert von ${who}). Der aktuelle Stand geht nicht verloren — er wird zu einem neuen Eintrag im Verlauf. Bei gemeinsamem Zugriff übernimmt dein Partner diese Version automatisch beim nächsten Spielstart.`,
@@ -170,6 +171,7 @@ export const de: Translation = {
     title: 'Einstellungen',
     changeAvatar: 'Bild ändern',
     avatarError: 'Bild konnte nicht geladen werden',
+    avatarUpdated: 'Avatar aktualisiert',
     cropTitle: 'Bild zuschneiden',
     cropHint: 'Ziehen zum Verschieben, Regler zum Zoomen',
     cropConfirm: 'Übernehmen',

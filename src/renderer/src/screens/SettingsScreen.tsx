@@ -8,6 +8,7 @@ import AvatarCropModal from '../components/AvatarCropModal'
 import Button from '../components/Button'
 import ConfirmModal from '../components/ConfirmModal'
 import Select from '../components/Select'
+import type { BannerState } from '../components/Banner'
 import type { AuthUser, SavesRepoStatus, StartupSettings, UpdateStatus } from '../../../shared/types'
 
 interface Props {
@@ -22,6 +23,8 @@ interface Props {
   /** Called after successfully leaving a shared repo — our role is reset,
    *  so App sends us back to onboarding's "choose a role" step. */
   onLeftRepo: () => void
+  /** The global sync-style toast, rendered at the App level (see Banner). */
+  onBanner: (banner: BannerState) => void
 }
 
 function SettingsScreen({
@@ -30,7 +33,8 @@ function SettingsScreen({
   avatarDataUrl,
   onAvatarChange,
   onRepoChanged,
-  onLeftRepo
+  onLeftRepo,
+  onBanner
 }: Props): React.JSX.Element {
   const { t, language, setLanguage } = useI18n()
   const [repo, setRepo] = useState<SavesRepoStatus | null>(null)
@@ -41,6 +45,7 @@ function SettingsScreen({
   const [avatarError, setAvatarError] = useState<string | null>(null)
   // Raw picked image, waiting to go through the crop modal — null = closed.
   const [cropSrc, setCropSrc] = useState<string | null>(null)
+  const [savingAvatar, setSavingAvatar] = useState(false)
   const [repoError, setRepoError] = useState<string | null>(null)
   const [toggleError, setToggleError] = useState<string | null>(null)
   const [showCloudWarning, setShowCloudWarning] = useState(true)
@@ -118,12 +123,16 @@ function SettingsScreen({
   }
 
   async function handleAvatarCropped(dataUrl: string): Promise<void> {
-    setCropSrc(null)
+    setSavingAvatar(true)
     try {
       await window.api.settings.saveAvatar(dataUrl)
       onAvatarChange(dataUrl)
+      onBanner({ text: t.settings.avatarUpdated, kind: 'success' })
     } catch (e) {
       setAvatarError(describeError(e, t, t.settings.avatarError))
+    } finally {
+      setSavingAvatar(false)
+      setCropSrc(null)
     }
   }
 
@@ -432,7 +441,12 @@ function SettingsScreen({
       )}
 
       {cropSrc && (
-        <AvatarCropModal src={cropSrc} onCancel={() => setCropSrc(null)} onConfirm={handleAvatarCropped} />
+        <AvatarCropModal
+          src={cropSrc}
+          onCancel={() => setCropSrc(null)}
+          onConfirm={handleAvatarCropped}
+          busy={savingAvatar}
+        />
       )}
     </div>
   )

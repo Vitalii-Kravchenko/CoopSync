@@ -167,11 +167,15 @@ export type SyncResultCode =
 
 /** Auto-sync event (game launch → pull, exit → push).
  * 'watcher-error' — not tied to a specific game (e.g. failed to check the
- * list of running processes) — appId/name are empty. */
+ * list of running processes) — appId/name are empty.
+ * 'push-start' — fired the instant an exit is detected, before the
+ * pull/upload work even begins — purely a marker so the renderer can block
+ * "Restore" for that game until the matching terminal event ('push' /
+ * 'push-skipped') arrives; it carries no result of its own (ok is always true). */
 export interface AutoSyncEvent {
   appId: string
   name: string
-  action: 'pull' | 'push' | 'push-skipped' | 'watcher-error'
+  action: 'pull' | 'push' | 'push-skipped' | 'push-start' | 'watcher-error'
   ok: boolean
   /** Success — a SyncResultCode (via describeSyncResult); failure — an
    * ErrorCode from shared/errors.ts, encoded the same way as app-error (via describeError). */

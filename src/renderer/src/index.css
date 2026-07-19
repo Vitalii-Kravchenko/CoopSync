@@ -152,6 +152,17 @@ body {
   box-shadow: none !important;
   transform: none !important;
 }
+/* Loading state (design system 4.1, "loading" swatch) — currentColor-based
+   so it fits whichever button variant/text color it's dropped into. */
+.spinner {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  border: 2px solid color-mix(in srgb, currentColor 35%, transparent);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
 /* Keyboard focus (Tab) — the same cyan outline throughout the system,
    instead of the odd native one (usually a blue rectangle in Chromium that
    doesn't fit the dark theme). :focus-visible — keyboard only, not mouse. */

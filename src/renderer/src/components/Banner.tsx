@@ -1,6 +1,5 @@
 import { colors, fonts, radii, shadows } from '../theme'
-import { useI18n } from '../i18n'
-import { UploadIcon, DownloadIcon, CheckIcon, CloseIcon } from './icons'
+import { UploadIcon, DownloadIcon, CheckIcon } from './icons'
 
 export interface BannerState {
   text: string
@@ -11,8 +10,6 @@ export interface BannerState {
 
 interface Props {
   banner: BannerState | null
-  /** If set, shows a manual close button (design system 4.10 Toast). */
-  onDismiss?: () => void
 }
 
 const TONE: Record<BannerState['kind'], { color: string; bg: string; bd: string }> = {
@@ -24,8 +21,7 @@ const TONE: Record<BannerState['kind'], { color: string; bg: string; bd: string 
 
 // Global sync toast — rendered at the App level, outside the tabs,
 // so it stays visible regardless of which tab is currently open.
-function Banner({ banner, onDismiss }: Props): React.JSX.Element | null {
-  const { t } = useI18n()
+function Banner({ banner }: Props): React.JSX.Element | null {
   if (!banner) return null
 
   const tone = TONE[banner.kind]
@@ -44,17 +40,6 @@ function Banner({ banner, onDismiss }: Props): React.JSX.Element | null {
         )}
       </span>
       <span style={styles.text}>{banner.text}</span>
-      {onDismiss && (
-        <button
-          className="icon-btn-plain"
-          style={styles.closeBtn}
-          onClick={onDismiss}
-          aria-label={t.windowControls.close}
-          title={t.windowControls.close}
-        >
-          <CloseIcon size={13} />
-        </button>
-      )}
     </div>
   )
 }
@@ -86,8 +71,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexShrink: 0
   },
   text: { fontFamily: fonts.body, fontWeight: 600, fontSize: 13.5 },
-  bannerDot: { width: 6, height: 6, borderRadius: '50%' },
-  closeBtn: { flexShrink: 0 }
+  bannerDot: { width: 6, height: 6, borderRadius: '50%' }
 }
 
 export default Banner

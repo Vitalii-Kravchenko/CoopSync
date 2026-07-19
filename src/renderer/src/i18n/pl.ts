@@ -90,6 +90,7 @@ export const pl: Translation = {
     hoursAgo: (n) => `${n} godz. temu`,
     daysAgo: (n) => `${n} dni temu`,
     restore: 'Przywróć',
+    restorePendingHint: 'Chwila — synchronizacja tej gry w tle wciąż trwa',
     restoreConfirmTitle: 'Przywrócić starszą wersję?',
     restoreConfirmDesc: (version, who) =>
       `Zapis wróci do wersji ${version} (ostatnio synchronizował ${who}). Obecny stan nie zniknie — stanie się nowym wpisem w historii. Jeśli macie wspólny dostęp, partner podchwyci tę wersję automatycznie przy następnym uruchomieniu gry.`,
@@ -170,6 +171,7 @@ export const pl: Translation = {
     title: 'Ustawienia',
     changeAvatar: 'Zmień zdjęcie',
     avatarError: 'Nie udało się wczytać obrazu',
+    avatarUpdated: 'Zaktualizowano awatar',
     cropTitle: 'Przytnij zdjęcie',
     cropHint: 'Przeciągnij, aby zmienić kadr, suwakiem — powiększenie',
     cropConfirm: 'Zastosuj',

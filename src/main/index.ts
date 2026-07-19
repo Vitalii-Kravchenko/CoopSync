@@ -3,7 +3,7 @@ import { join } from 'path'
 import { registerIpcHandlers } from './ipc'
 import { createTray } from './trayIcon'
 import { consumeInstallerLanguage, readSettings, writeSettings } from './services/settingsStore'
-import { scheduleStartupCheck } from './services/updater'
+import { scheduleStartupCheck, setShowWindowCallback } from './services/updater'
 import { READY_GAMES } from './games/catalog'
 import { getKnownGameIds, setKnownGameIds } from './services/backgroundState'
 import { addNotification, markObsoleteUpdateNotificationsRead } from './services/notificationStore'
@@ -158,6 +158,7 @@ if (!gotSingleInstanceLock) {
       isQuitting = true
       app.quit()
     })
+    setShowWindowCallback(showWindow)
     scheduleStartupCheck()
 
     app.on('activate', () => {

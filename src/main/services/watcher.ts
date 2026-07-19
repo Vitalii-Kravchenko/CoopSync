@@ -227,6 +227,11 @@ async function tick(
         //   actually played (no file changed since the last sync, e.g. saves
         //   were swapped for an old backup) — otherwise stale data would
         //   silently overwrite current cloud progress.
+        // Fire the "starting" marker before any of that work — GameDetailScreen
+        // uses it to block "Restore" for this game until the matching
+        // terminal event below, so a manual revert can't race the same
+        // underlying git clone against this background push.
+        onEvent({ appId: game.appId, name: game.name, action: 'push-start', ok: true, code: 'push-start' })
         try {
           const statuses = await getSyncStatuses(token, owner)
           const st = statuses.find((s) => s.appId === game.appId)

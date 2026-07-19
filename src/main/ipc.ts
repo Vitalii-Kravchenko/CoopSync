@@ -177,10 +177,20 @@ export function registerIpcHandlers(): void {
     return repo ? { state: 'ready', repo } : { state: 'none' }
   })
 
-  // Create (or connect to the existing) repo.
+  // Create (or connect to the existing) repo. Always ends with us owning
+  // our own storage, so role/hostOwner must say so too — onboarding's host
+  // path already sets this via role:set-host before ever calling here, so
+  // it's a harmless no-op there, but Settings' "Create storage" (offered
+  // whenever there's no working repo, e.g. after being removed as a
+  // collaborator) calls this directly with no separate role step. Without
+  // this, that path left role/hostOwner stuck on the old, now-inaccessible
+  // host — the new repo existed on GitHub, but the app kept trying to
+  // manage the OLD one (requireOwner() still saw role:'join' and rejected
+  // inviting anyone to it).
   ipcMain.handle('repo:create', async (): Promise<SavesRepoStatus> => {
     const { token, owner } = await requireAuth()
     const repo = await createSavesRepo(token, owner)
+    writeSettings({ role: 'host', hostOwner: owner })
     return { state: 'ready', repo }
   })
 

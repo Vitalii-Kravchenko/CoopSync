@@ -113,8 +113,18 @@ function FriendsScreen({ user, avatarDataUrl, active, onRepoChanged }: Props): R
       setRepo(r)
       setLoadError(null)
       if (r.state === 'ready') {
-        setInvites(await window.api.repo.listInvitations())
-        const collabs = await window.api.repo.listCollaborators()
+        // Two independent GitHub calls, not one atomic snapshot — right after
+        // someone accepts, they can briefly disagree (invitations not yet
+        // reflecting the accept while collaborators already does), which
+        // rendered the same friend as both a pending invite AND a member at
+        // once. Collaborators is the more authoritative of the two, so drop
+        // anyone from invites who's already there.
+        const [rawInvites, collabs] = await Promise.all([
+          window.api.repo.listInvitations(),
+          window.api.repo.listCollaborators()
+        ])
+        const collabLogins = new Set(collabs.map((c) => c.login))
+        setInvites(rawInvites.filter((i) => !collabLogins.has(i.login)))
         setCollaborators(collabs)
         // Push history feeds the per-member stats; sync statuses feed the
         // games counter. Not critical — on failure the cards just show no numbers.

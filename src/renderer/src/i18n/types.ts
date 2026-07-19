@@ -182,7 +182,6 @@ export interface Translation {
     connect: string
     chooseOtherRole: string
     step3Title: string
-    creating: string
     createRepo: string
     step4Title: string
     friendPlaceholder: string

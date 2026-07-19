@@ -152,7 +152,6 @@ export const pl: Translation = {
     connect: 'Połącz',
     chooseOtherRole: '← wybierz inną rolę',
     step3Title: 'Utwórz wspólny magazyn',
-    creating: 'Tworzę…',
     createRepo: 'Utwórz repozytorium',
     step4Title: 'Zaproś znajomego',
     friendPlaceholder: 'Nazwa użytkownika GitHub znajomego',

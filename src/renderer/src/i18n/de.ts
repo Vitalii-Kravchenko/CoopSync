@@ -152,7 +152,6 @@ export const de: Translation = {
     connect: 'Verbinden',
     chooseOtherRole: '← andere Rolle wählen',
     step3Title: 'Gemeinsamen Speicher erstellen',
-    creating: 'Wird erstellt…',
     createRepo: 'Repository erstellen',
     step4Title: 'Freund einladen',
     friendPlaceholder: 'GitHub-Benutzername des Freundes',

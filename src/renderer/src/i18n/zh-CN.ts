@@ -148,7 +148,6 @@ export const zhCN: Translation = {
     connect: '连接',
     chooseOtherRole: '← 选择其他角色',
     step3Title: '创建共享存储',
-    creating: '正在创建…',
     createRepo: '创建仓库',
     step4Title: '邀请朋友',
     friendPlaceholder: '朋友的 GitHub 用户名',

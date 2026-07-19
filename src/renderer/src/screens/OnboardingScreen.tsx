@@ -243,7 +243,8 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
           <Step n={3} done={repoReady} title={t.onboarding.step3Title}>
             {!repoReady ? (
               <Button variant="primary" style={{ alignSelf: 'flex-start' }} onClick={handleCreateRepo} disabled={busy}>
-                {busy ? t.onboarding.creating : t.onboarding.createRepo}
+                {busy && <span className="spinner" />}
+                {t.onboarding.createRepo}
               </Button>
             ) : (
               <div style={styles.okRow}>

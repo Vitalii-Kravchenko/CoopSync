@@ -152,7 +152,6 @@ export const tr: Translation = {
     connect: 'Bağlan',
     chooseOtherRole: '← başka bir rol seç',
     step3Title: 'Ortak depo oluştur',
-    creating: 'Oluşturuluyor…',
     createRepo: 'Depo oluştur',
     step4Title: 'Arkadaş davet et',
     friendPlaceholder: 'Arkadaşın GitHub kullanıcı adı',

@@ -370,7 +370,8 @@ function SettingsScreen({
               onClick={handleCreateRepo}
               disabled={creatingRepo}
             >
-              {creatingRepo ? t.onboarding.creating : t.onboarding.createRepo}
+              {creatingRepo && <span className="spinner" />}
+              {t.onboarding.createRepo}
             </Button>
             {createRepoError && <div style={styles.createRepoError}>{createRepoError}</div>}
           </>

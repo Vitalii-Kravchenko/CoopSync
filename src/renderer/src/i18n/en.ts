@@ -150,7 +150,6 @@ export const en: Translation = {
     connect: 'Connect',
     chooseOtherRole: '← choose a different role',
     step3Title: 'Create shared storage',
-    creating: 'Creating…',
     createRepo: 'Create repository',
     step4Title: 'Invite a friend',
     friendPlaceholder: "Friend's GitHub username",

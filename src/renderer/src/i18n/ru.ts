@@ -152,7 +152,6 @@ export const ru: Translation = {
     connect: 'Подключиться',
     chooseOtherRole: '← выбрать другую роль',
     step3Title: 'Создать общее хранилище',
-    creating: 'Создаю…',
     createRepo: 'Создать репозиторий',
     step4Title: 'Пригласить друга',
     friendPlaceholder: 'Ник друга на GitHub',

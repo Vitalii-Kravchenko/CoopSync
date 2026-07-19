@@ -152,7 +152,6 @@ export const uk: Translation = {
     connect: 'Підключитися',
     chooseOtherRole: '← обрати іншу роль',
     step3Title: 'Створити спільне сховище',
-    creating: 'Створюю…',
     createRepo: 'Створити репозиторій',
     step4Title: 'Запросити друга',
     friendPlaceholder: 'Нік друга на GitHub',

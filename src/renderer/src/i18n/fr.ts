@@ -152,7 +152,6 @@ export const fr: Translation = {
     connect: 'Se connecter',
     chooseOtherRole: '← choisir un autre rôle',
     step3Title: 'Créer le stockage partagé',
-    creating: 'Création…',
     createRepo: 'Créer le dépôt',
     step4Title: 'Inviter un ami',
     friendPlaceholder: "Nom d'utilisateur GitHub de l'ami",

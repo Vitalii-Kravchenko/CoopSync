@@ -152,7 +152,6 @@ export const ptBR: Translation = {
     connect: 'Conectar',
     chooseOtherRole: '← escolher outro papel',
     step3Title: 'Criar armazenamento compartilhado',
-    creating: 'Criando…',
     createRepo: 'Criar repositório',
     step4Title: 'Convidar um amigo',
     friendPlaceholder: 'Usuário do GitHub do amigo',

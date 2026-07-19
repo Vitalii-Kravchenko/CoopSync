@@ -179,6 +179,8 @@ export const en: Translation = {
     storage: 'Storage',
     privateRepo: 'Private repository',
     storageNotSet: 'Storage not set up',
+    joinAccessLost: (host) =>
+      `No more access to ${host}'s storage — they may have removed you, or deleted it. Leave the connection to sort it out.`,
     friendPlaceholder: "Friend's GitHub username",
     invite: 'Invite',
     members: (count) => `Members (${count})`,

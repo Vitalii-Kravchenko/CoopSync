@@ -306,6 +306,7 @@ function App(): React.JSX.Element {
             <SettingsScreen
               user={user}
               onLoggedOut={handleLoggedOut}
+              active={screen === 'settings'}
               avatarDataUrl={avatarDataUrl}
               onAvatarChange={setAvatarDataUrl}
               onRepoChanged={bumpSyncVersion}

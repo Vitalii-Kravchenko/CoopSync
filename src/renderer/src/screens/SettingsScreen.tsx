@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { colors, fonts, gradients, radii, shadows, transitions } from '../theme'
 import { LANGUAGES, useI18n } from '../i18n'
 import { describeError } from '../errors'
@@ -15,6 +15,11 @@ import type { AuthUser, SavesRepoStatus, StartupSettings, UpdateStatus } from '.
 interface Props {
   user: AuthUser
   onLoggedOut: () => void
+  /** Whether the tab is currently active — App.tsx keeps screens mounted and
+   *  only toggles display, so the repo/host status needs to be reread every
+   *  time the tab regains focus, not just on mount (e.g. a host removed us
+   *  as a collaborator while we were looking at a different tab). */
+  active: boolean
   /** Custom avatar (data URL) — shared with titlebar and onboarding. */
   avatarDataUrl: string | null
   onAvatarChange: (dataUrl: string) => void
@@ -34,6 +39,7 @@ interface Props {
 function SettingsScreen({
   user,
   onLoggedOut,
+  active,
   avatarDataUrl,
   onAvatarChange,
   onRepoChanged,
@@ -43,6 +49,13 @@ function SettingsScreen({
 }: Props): React.JSX.Element {
   const { t, language, setLanguage } = useI18n()
   const [repo, setRepo] = useState<SavesRepoStatus | null>(null)
+  // We were a 'join' member but repo:get-status now comes back 'none' — the
+  // host removed us (or deleted the repo). Tracked separately from
+  // repoError/the generic "no storage yet" empty state: that state's
+  // "Create storage" button would create a brand new repo under OUR OWN
+  // account while role/hostOwner still point at the old host — orphaned and
+  // never referenced again. Point at the existing leave/adopt flow instead.
+  const [joinAccessLost, setJoinAccessLost] = useState<string | null>(null)
   const [startup, setStartup] = useState<StartupSettings>({
     openAtLogin: false,
     startMinimized: false
@@ -82,6 +95,31 @@ function SettingsScreen({
     window.api.getAppVersion().then(setAppVersion)
     return window.api.updater.onStatus(setUpdateStatus)
   }, [])
+
+  // On returning to the "Settings" tab, reread the repo/host status — a
+  // host could've removed us as a collaborator while we were looking at a
+  // different tab. Skip the first render (active is already true on mount)
+  // — that's covered by the mount effect above (same pattern as FriendsScreen).
+  const skipFirstActive = useRef(true)
+  useEffect(() => {
+    if (skipFirstActive.current) {
+      skipFirstActive.current = false
+      return
+    }
+    if (active) void loadRepo()
+  }, [active])
+
+  // There's no server pushing us updates — if a host removes us while we're
+  // already sitting on this tab (not switching away and back), the only
+  // sign is the background watcher's access-revoked bell notification. Treat
+  // any new notification as a cue to recheck, rather than leaving "connected
+  // to X's storage" showing indefinitely until something else happens to
+  // trigger a reload.
+  useEffect(() => {
+    return window.api.notifications.onChanged(() => {
+      if (active) void loadRepo()
+    })
+  }, [active])
 
   function handleCheckForUpdates(): void {
     setUpdateStatus({ state: 'checking' })
@@ -149,8 +187,19 @@ function SettingsScreen({
 
   async function loadRepo(): Promise<void> {
     try {
-      setRepo(await window.api.repo.getStatus())
+      const status = await window.api.repo.getStatus()
+      if (status.state === 'none') {
+        const role = await window.api.role.get()
+        if (role?.role === 'join') {
+          setRepo(null)
+          setRepoError(null)
+          setJoinAccessLost(role.hostOwner)
+          return
+        }
+      }
+      setRepo(status)
       setRepoError(null)
+      setJoinAccessLost(null)
     } catch (e) {
       // Previously a failure here (e.g. no internet) silently showed "repo not
       // set up" along with a "Create" button — even if the repo actually
@@ -299,6 +348,17 @@ function SettingsScreen({
               onClick={() => void loadRepo()}
             >
               {t.main.retry}
+            </Button>
+          </>
+        ) : joinAccessLost ? (
+          <>
+            <div style={styles.createRepoError}>{t.settings.joinAccessLost(joinAccessLost)}</div>
+            <Button
+              variant="secondary"
+              style={{ alignSelf: 'flex-start', marginTop: 10 }}
+              onClick={() => setShowLeaveRepo(true)}
+            >
+              {t.settings.leaveRepoButton}
             </Button>
           </>
         ) : (

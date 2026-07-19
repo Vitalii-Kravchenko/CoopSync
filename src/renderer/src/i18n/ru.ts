@@ -181,6 +181,8 @@ export const ru: Translation = {
     storage: 'Хранилище',
     privateRepo: 'Приватный репозиторий',
     storageNotSet: 'Хранилище не настроено',
+    joinAccessLost: (host) =>
+      `Больше нет доступа к хранилищу ${host} — возможно, тебя убрали, или хранилище удалено. Покинь подключение, чтобы разобраться с этим.`,
     friendPlaceholder: 'Ник друга на GitHub',
     invite: 'Пригласить',
     members: (count) => `Участники (${count})`,

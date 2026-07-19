@@ -181,6 +181,8 @@ export const uk: Translation = {
     storage: 'Сховище',
     privateRepo: 'Приватний репозиторій',
     storageNotSet: 'Сховище не налаштоване',
+    joinAccessLost: (host) =>
+      `Немає більше доступу до сховища ${host} — можливо, тебе прибрали, або сховище видалено. Покинь підключення, щоб розібратися з цим.`,
     friendPlaceholder: 'Нік друга на GitHub',
     invite: 'Запросити',
     members: (count) => `Учасники (${count})`,

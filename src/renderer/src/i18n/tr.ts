@@ -181,6 +181,8 @@ export const tr: Translation = {
     storage: 'Depo',
     privateRepo: 'Özel depo',
     storageNotSet: 'Depo ayarlanmadı',
+    joinAccessLost: (host) =>
+      `Artık ${host} kişisinin deposuna erişimin yok — seni çıkarmış ya da depoyu silmiş olabilir. Sorunu çözmek için bağlantıdan ayrıl.`,
     friendPlaceholder: 'Arkadaşın GitHub kullanıcı adı',
     invite: 'Davet et',
     members: (count) => `Üyeler (${count})`,

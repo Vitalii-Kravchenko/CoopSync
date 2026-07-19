@@ -33,13 +33,18 @@ export function setShowWindowCallback(fn: () => void): void {
   onShowWindow = fn
 }
 
+// Kept at module scope (not just a local in showUpdateToast) so it can't be
+// garbage-collected while the toast is still sitting in the Windows Action
+// Center waiting to be clicked.
+let currentToast: Notification | null = null
+
 function showUpdateToast(version: string): void {
   if (!Notification.isSupported()) return
   const lang = (readSettings().language as ToastLang) ?? 'en'
   const strings = UPDATE_TOAST[lang] ?? UPDATE_TOAST.en
-  const notification = new Notification({ title: strings.title, body: strings.message(version) })
-  notification.on('click', () => onShowWindow?.())
-  notification.show()
+  currentToast = new Notification({ title: strings.title, body: strings.message(version) })
+  currentToast.on('click', () => onShowWindow?.())
+  currentToast.show()
 }
 
 // autoDownload/autoInstallOnAppQuit are both off — the user decides via the
@@ -70,12 +75,21 @@ function clearCheckTimeout(): void {
   }
 }
 
-// The bell entry (and the OS toast) should appear once per version, not on
-// every 6h re-check while the same release is still latest (autoDownload is
-// off, so a user who hasn't downloaded yet would otherwise get spammed every
-// cycle) — and not once per process either: this is persisted (not just an
-// in-memory var) so quitting via the tray and relaunching while the same
-// version is still available doesn't add a duplicate bell entry each time.
+// The bell entry should appear once per version, not on every 6h re-check
+// while the same release is still latest (autoDownload is off, so a user who
+// hasn't downloaded yet would otherwise get spammed every cycle) — and not
+// once per process either: this is persisted (not just an in-memory var) so
+// quitting via the tray and relaunching while the same version is still
+// available doesn't add a duplicate bell entry each time.
+//
+// The OS toast is deliberately NOT deduped the same way — it re-fires on
+// every check (startup, the 6h periodic recheck, and manual "Check for
+// updates" clicks) for as long as the update is still there. The bell is a
+// permanent record you can always go back and read, so once is enough; the
+// toast is the only thing that reaches you if CoopSync is sitting quietly in
+// the tray, so if you missed it (or dismissed it, or cleared the whole
+// Action Center) it should simply show up again next time, not go silent
+// for good.
 autoUpdater.on('checking-for-update', () => send({ state: 'checking' }))
 autoUpdater.on('update-available', (info) => {
   clearCheckTimeout()
@@ -83,8 +97,8 @@ autoUpdater.on('update-available', (info) => {
   if (getLastNotifiedUpdateVersion() !== info.version) {
     setLastNotifiedUpdateVersion(info.version)
     addNotification('update-available', { version: info.version })
-    showUpdateToast(info.version)
   }
+  showUpdateToast(info.version)
 })
 autoUpdater.on('update-not-available', () => {
   clearCheckTimeout()

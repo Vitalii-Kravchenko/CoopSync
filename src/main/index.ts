@@ -24,6 +24,18 @@ app.disableHardwareAcceleration()
 // left to crash.
 app.commandLine.appendSwitch('in-process-gpu')
 
+// Ties Windows notifications to this exact app identity (must match
+// electron-builder.yml's appId). Without this, clicking the update toast
+// while it's still the live popup happens to work (Windows correlates it
+// straight back to the process that just showed it), but clicking the SAME
+// notification later from the Action Center does nothing — that path
+// activates the app via its App User Model ID, and without one explicitly
+// set, Windows has no reliable way to route the click back to this
+// already-running instance.
+if (process.platform === 'win32') {
+  app.setAppUserModelId('com.coopsync.app')
+}
+
 // Single app instance: without this, manually launching the .exe a second
 // time (or launching it by hand while autostart already brought the app up
 // in the tray) would open a SECOND separate process — two watchers pulling

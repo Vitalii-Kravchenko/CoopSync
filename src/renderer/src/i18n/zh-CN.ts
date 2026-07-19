@@ -177,6 +177,7 @@ export const zhCN: Translation = {
     storage: '存储',
     privateRepo: '私有仓库',
     storageNotSet: '存储未设置',
+    connectToFriendLabel: '或者连接到好友的存储',
     joinAccessLost: (host) => `已无法访问 ${host} 的存储——可能是被移除了，或者存储被删除了。退出这个连接来处理这个问题。`,
     friendPlaceholder: '朋友的 GitHub 用户名',
     invite: '邀请',

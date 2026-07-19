@@ -181,6 +181,7 @@ export const de: Translation = {
     storage: 'Speicher',
     privateRepo: 'Privates Repository',
     storageNotSet: 'Speicher nicht eingerichtet',
+    connectToFriendLabel: 'Oder mit dem Speicher eines Freundes verbinden',
     joinAccessLost: (host) =>
       `Kein Zugriff mehr auf den Speicher von ${host} — du wurdest eventuell entfernt, oder der Speicher wurde gelöscht. Verlasse die Verbindung, um das zu klären.`,
     friendPlaceholder: 'GitHub-Benutzername des Freundes',

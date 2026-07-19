@@ -181,6 +181,7 @@ export const ptBR: Translation = {
     storage: 'Armazenamento',
     privateRepo: 'Repositório privado',
     storageNotSet: 'Armazenamento não configurado',
+    connectToFriendLabel: 'Ou conecte-se ao armazenamento de um amigo',
     joinAccessLost: (host) =>
       `Sem mais acesso ao armazenamento de ${host} — ele pode ter te removido, ou apagado o armazenamento. Saia da conexão para resolver isso.`,
     friendPlaceholder: 'Usuário do GitHub do amigo',

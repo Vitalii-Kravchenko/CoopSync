@@ -181,6 +181,7 @@ export const fr: Translation = {
     storage: 'Stockage',
     privateRepo: 'Dépôt privé',
     storageNotSet: 'Stockage non configuré',
+    connectToFriendLabel: "Ou connecte-toi au stockage d'un ami",
     joinAccessLost: (host) =>
       `Plus d'accès au stockage de ${host} — il t'a peut-être retiré, ou l'a supprimé. Quitte la connexion pour régler ça.`,
     friendPlaceholder: "Nom d'utilisateur GitHub de l'ami",

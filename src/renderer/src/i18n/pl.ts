@@ -181,6 +181,7 @@ export const pl: Translation = {
     storage: 'Magazyn',
     privateRepo: 'Prywatne repozytorium',
     storageNotSet: 'Magazyn nieskonfigurowany',
+    connectToFriendLabel: 'Albo połącz się z magazynem znajomego',
     joinAccessLost: (host) =>
       `Nie masz już dostępu do magazynu ${host} — mógł cię usunąć albo skasować magazyn. Opuść połączenie, żeby to uporządkować.`,
     friendPlaceholder: 'Nazwa użytkownika GitHub znajomego',

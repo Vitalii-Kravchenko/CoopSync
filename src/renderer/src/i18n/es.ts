@@ -181,6 +181,7 @@ export const es: Translation = {
     storage: 'Almacenamiento',
     privateRepo: 'Repositorio privado',
     storageNotSet: 'Almacenamiento no configurado',
+    connectToFriendLabel: 'O conéctate al almacenamiento de un amigo',
     joinAccessLost: (host) =>
       `Ya no tienes acceso al almacenamiento de ${host} — puede que te haya eliminado, o que lo haya borrado. Abandona la conexión para resolverlo.`,
     friendPlaceholder: 'Usuario de GitHub del amigo',

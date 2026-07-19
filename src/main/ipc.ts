@@ -16,7 +16,8 @@ import {
   listInvitations,
   listCollaborators,
   removeCollaborator,
-  leaveSharedRepo
+  leaveSharedRepo,
+  acceptPendingInvite
 } from './services/github'
 import { detectGames, detectAllInstalled } from './services/steam'
 import { searchSteamStore } from './services/steamSearch'
@@ -512,7 +513,15 @@ export function registerIpcHandlers(): void {
     const host = hostLogin.trim()
     if (!host) throw makeAppError('HOST_LOGIN_REQUIRED')
 
-    const repo = await getSavesRepo(token, host)
+    let repo = await getSavesRepo(token, host)
+    if (!repo) {
+      // No access yet doesn't necessarily mean "not invited" — a GitHub
+      // collaborator invite has to be explicitly accepted before access
+      // actually kicks in, and there's no reason to make the user go do
+      // that by hand when we can just accept it for them right here.
+      const accepted = await acceptPendingInvite(token, host)
+      if (accepted) repo = await getSavesRepo(token, host)
+    }
     if (!repo) {
       throw makeAppError('NO_ACCESS_TO_HOST_REPO', { host })
     }

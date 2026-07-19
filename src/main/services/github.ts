@@ -201,6 +201,29 @@ export async function createSavesRepo(token: string, owner: string): Promise<Sav
   return createRepoOnGitHub(token)
 }
 
+// A GitHub collaborator invite has to be explicitly accepted (normally via
+// the email link or the GitHub website) before the invitee actually gets
+// read/push access — getSavesRepo simply returns null until that happens,
+// which "role:join" used to surface as "no access, ask your friend to
+// invite you" even when they already had, moments earlier. Auto-accepting
+// removes that manual step: if there's a pending invitation to hostOwner's
+// saves repo, accept it right here instead of making the user go find and
+// click it themselves.
+export async function acceptPendingInvite(token: string, hostOwner: string): Promise<boolean> {
+  const res = await githubFetch(`${API}/user/repository_invitations`, {
+    headers: authHeaders(token)
+  })
+  if (!res.ok) return false
+  const invites = (await res.json()) as Array<{ id: number; repository: { full_name: string } }>
+  const match = invites.find((i) => i.repository.full_name === `${hostOwner}/${SAVES_REPO_NAME}`)
+  if (!match) return false
+  const acceptRes = await githubFetch(`${API}/user/repository_invitations/${match.id}`, {
+    method: 'PATCH',
+    headers: authHeaders(token)
+  })
+  return acceptRes.ok
+}
+
 /** Invite a friend as a collaborator on the saves repo (push permission). */
 export async function inviteCollaborator(
   token: string,

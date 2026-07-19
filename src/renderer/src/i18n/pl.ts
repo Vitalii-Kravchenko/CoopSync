@@ -197,7 +197,7 @@ export const pl: Translation = {
       'Stracisz dostęp do zapisów na GitHub. Lokalne pliki gry na Twoim komputerze nie zostaną naruszone — potem możesz utworzyć własny magazyn albo dołączyć do innego znajomego.',
     adoptRepoTitle: 'Zachować własną kopię?',
     adoptRepoDesc:
-      'Na Twoim komputerze jest już pełna historia wersji tego magazynu. Możesz zmienić go we własny, oddzielny magazyn na swoim koncie — ze wszystkimi wersjami, nie tylko bieżącym zapisem. Znajomych trzeba będzie zaprosić tam od nowa.',
+      'Na Twoim komputerze jest już pełna historia wersji tego magazynu. Możesz zmienić go we własny, oddzielny magazyn na swoim koncie — ze wszystkimi wersjami, nie tylko bieżącym zapisem. Jeśli masz już własny magazyn, jego zawartość zostanie tym zastąpiona. Znajomych trzeba będzie zaprosić tam od nowa.',
     adoptRepoConfirm: 'Tak, zrób z tego mój magazyn',
     adoptRepoDecline: 'Nie, po prostu wyjdź',
     cancel: 'Anuluj',
@@ -256,7 +256,6 @@ export const pl: Translation = {
     USER_FETCH_FAILED: (p) => `Nie udało się pobrać danych użytkownika (${p.status})`,
     REPO_CHECK_FAILED: (p) => `Nie udało się sprawdzić magazynu (${p.status})`,
     REPO_CREATE_FAILED: (p) => `Nie udało się utworzyć magazynu (${p.status})`,
-    HOST_REPO_ALREADY_EXISTS: () => 'Masz już własny magazyn — najpierw zajmij się nim w Ustawieniach',
     GITHUB_USER_NOT_FOUND: (p) => `Nie znaleziono użytkownika "${p.username}" na GitHub`,
     REPO_NOT_FOUND: () => 'Magazyn nie znaleziony — najpierw go utwórz',
     INVITE_FAILED: (p) => `Nie udało się wysłać zaproszenia (${p.status})`,

@@ -197,7 +197,7 @@ export const tr: Translation = {
       "GitHub'daki kayıtlara erişimini kaybedeceksin. Yerel oyun dosyaların etkilenmez — sonra kendi deponu oluşturabilir ya da başka bir arkadaşınınkine katılabilirsin.",
     adoptRepoTitle: 'Kendi kopyanı korumak ister misin?',
     adoptRepoDesc:
-      "Bilgisayarında bu deponun tüm sürüm geçmişi zaten duruyor. Bunu, sadece mevcut kaydı değil her sürümü içeren, kendi hesabında ayrı bir depoya dönüştürebilirsin. Arkadaşların oraya yeniden davet edilmeli.",
+      "Bilgisayarında bu deponun tüm sürüm geçmişi zaten duruyor. Bunu, sadece mevcut kaydı değil her sürümü içeren, kendi hesabında ayrı bir depoya dönüştürebilirsin. Zaten kendi deponuz varsa, içeriği bununla değiştirilir. Arkadaşların oraya yeniden davet edilmeli.",
     adoptRepoConfirm: 'Evet, kendi deposu yap',
     adoptRepoDecline: 'Hayır, sadece çık',
     cancel: 'İptal',
@@ -256,7 +256,6 @@ export const tr: Translation = {
     USER_FETCH_FAILED: (p) => `Kullanıcı verileri alınamadı (${p.status})`,
     REPO_CHECK_FAILED: (p) => `Depo kontrol edilemedi (${p.status})`,
     REPO_CREATE_FAILED: (p) => `Depo oluşturulamadı (${p.status})`,
-    HOST_REPO_ALREADY_EXISTS: () => "Zaten kendi deponuz var — önce Ayarlar'dan onu halledin",
     GITHUB_USER_NOT_FOUND: (p) => `"${p.username}" kullanıcısı GitHub'da bulunamadı`,
     REPO_NOT_FOUND: () => 'Depo bulunamadı — önce oluştur',
     INVITE_FAILED: (p) => `Davet gönderilemedi (${p.status})`,

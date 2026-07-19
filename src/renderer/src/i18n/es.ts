@@ -197,7 +197,7 @@ export const es: Translation = {
       'Perderás el acceso a las partidas guardadas en GitHub. Tus archivos de juego locales no se ven afectados — después puedes crear tu propio almacenamiento o unirte al de otro amigo.',
     adoptRepoTitle: '¿Conservar tu propia copia?',
     adoptRepoDesc:
-      'Tu PC ya tiene el historial completo de versiones de este almacenamiento. Puedes convertirlo en tu propio almacenamiento independiente, en tu cuenta — con todas las versiones, no solo la partida actual. Habría que volver a invitar a tus amigos allí.',
+      'Tu PC ya tiene el historial completo de versiones de este almacenamiento. Puedes convertirlo en tu propio almacenamiento independiente, en tu cuenta — con todas las versiones, no solo la partida actual. Si ya tienes tu propio almacenamiento, su contenido será reemplazado por este. Habría que volver a invitar a tus amigos allí.',
     adoptRepoConfirm: 'Sí, convertirlo en mi propio almacenamiento',
     adoptRepoDecline: 'No, solo salir',
     cancel: 'Cancelar',
@@ -256,7 +256,6 @@ export const es: Translation = {
     USER_FETCH_FAILED: (p) => `No se pudieron obtener los datos del usuario (${p.status})`,
     REPO_CHECK_FAILED: (p) => `No se pudo comprobar el almacenamiento (${p.status})`,
     REPO_CREATE_FAILED: (p) => `No se pudo crear el almacenamiento (${p.status})`,
-    HOST_REPO_ALREADY_EXISTS: () => 'Ya tienes tu propio almacenamiento — resuélvelo primero en Ajustes',
     GITHUB_USER_NOT_FOUND: (p) => `No se encontró el usuario "${p.username}" en GitHub`,
     REPO_NOT_FOUND: () => 'Almacenamiento no encontrado — créalo primero',
     INVITE_FAILED: (p) => `No se pudo enviar la invitación (${p.status})`,

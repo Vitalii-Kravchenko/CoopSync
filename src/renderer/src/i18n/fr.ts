@@ -197,7 +197,7 @@ export const fr: Translation = {
       "Tu perdras l'accès aux sauvegardes sur GitHub. Tes fichiers de jeu locaux ne sont pas touchés — tu pourras ensuite créer ton propre stockage ou rejoindre un autre ami.",
     adoptRepoTitle: 'Garder ta propre copie ?',
     adoptRepoDesc:
-      "Ton PC a déjà l'historique complet des versions de ce stockage. Tu peux le transformer en ton propre stockage séparé, sous ton compte — avec chaque version, pas seulement la sauvegarde actuelle. Tes amis devraient y être réinvités.",
+      "Ton PC a déjà l'historique complet des versions de ce stockage. Tu peux le transformer en ton propre stockage séparé, sous ton compte — avec chaque version, pas seulement la sauvegarde actuelle. Si tu as déjà ton propre stockage, son contenu sera remplacé par celui-ci. Tes amis devraient y être réinvités.",
     adoptRepoConfirm: 'Oui, en faire mon propre stockage',
     adoptRepoDecline: 'Non, juste quitter',
     cancel: 'Annuler',
@@ -256,7 +256,6 @@ export const fr: Translation = {
     USER_FETCH_FAILED: (p) => `Impossible de récupérer les données utilisateur (${p.status})`,
     REPO_CHECK_FAILED: (p) => `Impossible de vérifier le stockage (${p.status})`,
     REPO_CREATE_FAILED: (p) => `Impossible de créer le stockage (${p.status})`,
-    HOST_REPO_ALREADY_EXISTS: () => "Vous avez déjà votre propre stockage — réglez d'abord ça dans les Paramètres",
     GITHUB_USER_NOT_FOUND: (p) => `Utilisateur "${p.username}" introuvable sur GitHub`,
     REPO_NOT_FOUND: () => "Stockage introuvable — crée-le d'abord",
     INVITE_FAILED: (p) => `Impossible d'envoyer l'invitation (${p.status})`,

@@ -8,7 +8,7 @@ import { cp, rm, mkdir, readdir, readFile, writeFile } from 'fs/promises'
 import { SUPPORTED_GAMES, READY_GAMES } from '../games/catalog'
 import { SAVES_REPO_NAME } from '../config'
 import { isGameCurrentlyRunning } from './processCheck'
-import { createFreshSavesRepo, leaveSharedRepo } from './github'
+import { createSavesRepo, leaveSharedRepo } from './github'
 import { makeAppError, parseAppError } from '../../shared/errors'
 import { formatVersion } from '../../shared/format'
 import type { SyncStatus, GameSyncStatus, SyncHistoryEntry, SyncResult } from '../../shared/types'
@@ -554,7 +554,10 @@ export async function resetLocalSaveState(): Promise<void> {
  *  leave (resetLocalSaveState), this deliberately keeps the local clone
  *  intact: it's the only copy of that history left once access to the old
  *  repo is gone, so it becomes the new repo's content instead of being
- *  thrown away. */
+ *  thrown away. If newOwner already has their own saves repo (e.g. from an
+ *  earlier host stint), this overwrites it with the local history rather
+ *  than blocking — it's their own repo, and updating it in place is what
+ *  they'd want instead of being stuck. */
 export async function adoptLocalHistoryAsOwnRepo(
   token: string,
   newOwner: string,
@@ -563,12 +566,13 @@ export async function adoptLocalHistoryAsOwnRepo(
 ): Promise<void> {
   if (!existsSync(join(repoDir(), '.git'))) throw makeAppError('SAVE_FOLDER_NOT_FOUND')
 
-  await createFreshSavesRepo(token, newOwner) // throws HOST_REPO_ALREADY_EXISTS if newOwner already has one
+  await createSavesRepo(token, newOwner) // creates it, or returns the existing one — either way we push into it below
 
   await git(['remote', 'set-url', 'origin', remoteUrl(token, newOwner)])
-  // Force, not a plain push — the new repo has its own auto-init README
-  // commit (unrelated history), which this history is meant to replace,
-  // not merge with.
+  // Force, not a plain push — the target repo has unrelated history (its
+  // own auto-init README commit, or whatever was there before if it
+  // already existed), which this history is meant to replace, not merge
+  // with.
   await git(['push', '--force', 'origin', 'main'])
 
   try {

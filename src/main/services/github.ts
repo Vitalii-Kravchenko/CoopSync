@@ -201,16 +201,6 @@ export async function createSavesRepo(token: string, owner: string): Promise<Sav
   return createRepoOnGitHub(token)
 }
 
-// Used only by adoptLocalHistoryAsOwnRepo (sync.ts) — unlike createSavesRepo,
-// this must NOT silently reuse an existing repo: that flow force-pushes a
-// whole other history onto whatever it creates, which would destroy an
-// existing repo's real content if one already existed under this owner.
-export async function createFreshSavesRepo(token: string, owner: string): Promise<SavesRepo> {
-  const existing = await getSavesRepo(token, owner)
-  if (existing) throw makeAppError('HOST_REPO_ALREADY_EXISTS')
-  return createRepoOnGitHub(token)
-}
-
 /** Invite a friend as a collaborator on the saves repo (push permission). */
 export async function inviteCollaborator(
   token: string,

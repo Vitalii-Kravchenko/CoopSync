@@ -217,6 +217,7 @@ function SettingsScreen({
     try {
       await window.api.repo.adoptAsOwn()
       setShowAdoptChoice(false)
+      await loadRepo() // otherwise this screen keeps showing the old host/repo until something else happens to trigger a reload
       onAdoptedOwnStorage()
     } catch (e) {
       setAdoptRepoError(describeError(e, t, t.settings.adoptRepoTitle))

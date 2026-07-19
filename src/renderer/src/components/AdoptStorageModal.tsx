@@ -86,7 +86,8 @@ const styles: Record<string, React.CSSProperties> = {
     zIndex: 200
   },
   card: {
-    width: 460,
+    width: 640,
+    maxWidth: 'calc(100vw - 48px)',
     border: `1px solid ${colors.borderStrong}`,
     borderRadius: radii.lg,
     background: colors.bgOverlay,

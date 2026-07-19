@@ -191,7 +191,7 @@ export const zhCN: Translation = {
     leaveRepoConfirmDesc: '你将失去对 GitHub 上存档的访问权限。你本地的游戏文件不受影响——之后可以创建自己的存储，或加入另一位好友的存储。',
     adoptRepoTitle: '保留自己的副本吗？',
     adoptRepoDesc:
-      '你的电脑上已经保存了这个存储的完整版本历史。你可以把它变成你自己账号下的独立存储——保留每一个版本，而不只是当前存档。好友需要重新受邀加入这个新存储。',
+      '你的电脑上已经保存了这个存储的完整版本历史。你可以把它变成你自己账号下的独立存储——保留每一个版本，而不只是当前存档。如果你已经有自己的存储，它的内容会被这次的历史覆盖。好友需要重新受邀加入这个新存储。',
     adoptRepoConfirm: '是的，把它变成我自己的存储',
     adoptRepoDecline: '不用，直接退出',
     cancel: '取消',
@@ -249,7 +249,6 @@ export const zhCN: Translation = {
     USER_FETCH_FAILED: (p) => `无法获取用户数据 (${p.status})`,
     REPO_CHECK_FAILED: (p) => `无法检查存储 (${p.status})`,
     REPO_CREATE_FAILED: (p) => `无法创建存储 (${p.status})`,
-    HOST_REPO_ALREADY_EXISTS: () => '你已经有自己的存储了——请先到设置里处理它',
     GITHUB_USER_NOT_FOUND: (p) => `在 GitHub 上找不到用户 "${p.username}"`,
     REPO_NOT_FOUND: () => '未找到存储 — 请先创建',
     INVITE_FAILED: (p) => `无法发送邀请 (${p.status})`,

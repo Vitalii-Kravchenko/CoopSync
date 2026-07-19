@@ -175,6 +175,7 @@ export interface Translation {
     hostDesc: string
     joinTitle: string
     joinDesc: string
+    pendingInviteFrom: (host: string) => string
     youAreHost: string
     change: string
     hostLoginPlaceholder: string

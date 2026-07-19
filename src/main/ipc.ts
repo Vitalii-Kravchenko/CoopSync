@@ -17,7 +17,8 @@ import {
   listCollaborators,
   removeCollaborator,
   leaveSharedRepo,
-  acceptPendingInvite
+  acceptPendingInvite,
+  listMyPendingInvites
 } from './services/github'
 import { detectGames, detectAllInstalled } from './services/steam'
 import { searchSteamStore } from './services/steamSearch'
@@ -537,6 +538,17 @@ export function registerIpcHandlers(): void {
     }
     writeSettings({ role: 'join', hostOwner: host })
     return { role: 'join', hostOwner: host }
+  })
+
+  // Every saves-repo invite waiting on this account, regardless of host —
+  // lets onboarding proactively say "X invited you" instead of leaving the
+  // invitee with no way to find out short of already knowing to type that
+  // exact username into "connect to a friend" (e.g. after leaving/being
+  // removed, they have no reason to guess who might be re-inviting them).
+  ipcMain.handle('role:pending-invites', async (): Promise<string[]> => {
+    const token = loadToken()
+    if (!token) return []
+    return listMyPendingInvites(token)
   })
 
   // --- Support ---

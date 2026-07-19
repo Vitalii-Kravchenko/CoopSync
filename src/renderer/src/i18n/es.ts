@@ -145,6 +145,7 @@ export const es: Translation = {
     hostDesc: 'Crearé el almacenamiento compartido, mi amigo se conectará conmigo',
     joinTitle: 'Conectarme a un amigo',
     joinDesc: 'Mi amigo ya creó el almacenamiento y me invitó',
+    pendingInviteFrom: (host) => `${host} te invitó a su almacenamiento`,
     youAreHost: 'Eres el anfitrión',
     change: 'cambiar',
     hostLoginPlaceholder: 'Usuario de GitHub del amigo anfitrión',

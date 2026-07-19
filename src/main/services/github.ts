@@ -224,6 +224,24 @@ export async function acceptPendingInvite(token: string, hostOwner: string): Pro
   return acceptRes.ok
 }
 
+// acceptPendingInvite above only checks ONE specific host — fine once
+// you've already typed their username into "connect to a friend," but
+// gives an invitee nothing to go on if they don't know to do that (e.g.
+// they left/were removed and have no reason to guess who might be
+// re-inviting them). Lists every saves-repo invite waiting on this
+// account, regardless of host, so onboarding can surface "X invited you"
+// proactively instead of requiring the invitee to already know what to type.
+export async function listMyPendingInvites(token: string): Promise<string[]> {
+  const res = await githubFetch(`${API}/user/repository_invitations`, {
+    headers: authHeaders(token)
+  })
+  if (!res.ok) return []
+  const invites = (await res.json()) as Array<{ repository: { full_name: string } }>
+  return invites
+    .filter((i) => i.repository.full_name.endsWith(`/${SAVES_REPO_NAME}`))
+    .map((i) => i.repository.full_name.split('/')[0])
+}
+
 /** Invite a friend as a collaborator on the saves repo (push permission). */
 export async function inviteCollaborator(
   token: string,

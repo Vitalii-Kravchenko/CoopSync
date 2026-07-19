@@ -145,6 +145,7 @@ export const fr: Translation = {
     hostDesc: "Je crée le stockage partagé, mon ami s'y connecte",
     joinTitle: 'Se connecter à un ami',
     joinDesc: "Mon ami a déjà créé le stockage et m'a invité",
+    pendingInviteFrom: (host) => `${host} t'a invité dans son stockage`,
     youAreHost: "Tu es l'hôte",
     change: 'modifier',
     hostLoginPlaceholder: "Nom d'utilisateur GitHub de l'ami hôte",

@@ -145,6 +145,7 @@ export const ru: Translation = {
     hostDesc: 'Создам общее хранилище, друг подключится ко мне',
     joinTitle: 'Подключиться к другу',
     joinDesc: 'Друг уже создал хранилище и пригласил меня',
+    pendingInviteFrom: (host) => `${host} пригласил тебя в своё хранилище`,
     youAreHost: 'Ты главный',
     change: 'изменить',
     hostLoginPlaceholder: 'Ник друга-хоста на GitHub',

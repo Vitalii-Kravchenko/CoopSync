@@ -145,6 +145,7 @@ export const de: Translation = {
     hostDesc: 'Ich erstelle den gemeinsamen Speicher, mein Freund verbindet sich mit mir',
     joinTitle: 'Mit einem Freund verbinden',
     joinDesc: 'Mein Freund hat den Speicher bereits erstellt und mich eingeladen',
+    pendingInviteFrom: (host) => `${host} hat dich zu seinem Speicher eingeladen`,
     youAreHost: 'Du bist der Host',
     change: 'ändern',
     hostLoginPlaceholder: 'GitHub-Benutzername des Host-Freundes',

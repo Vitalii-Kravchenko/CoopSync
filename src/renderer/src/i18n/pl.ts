@@ -145,6 +145,7 @@ export const pl: Translation = {
     hostDesc: 'Utworzę wspólny magazyn, znajomy się do mnie podłączy',
     joinTitle: 'Dołącz do znajomego',
     joinDesc: 'Znajomy już utworzył magazyn i mnie zaprosił',
+    pendingInviteFrom: (host) => `${host} zaprosił cię do swojego magazynu`,
     youAreHost: 'Jesteś hostem',
     change: 'zmień',
     hostLoginPlaceholder: 'Nazwa użytkownika GitHub znajomego-hosta',

@@ -145,6 +145,7 @@ export const uk: Translation = {
     hostDesc: 'Створю спільне сховище, друг підключиться до мене',
     joinTitle: 'Підключитися до друга',
     joinDesc: 'Друг уже створив сховище і запросив мене',
+    pendingInviteFrom: (host) => `${host} запросив тебе до свого сховища`,
     youAreHost: 'Ти головний',
     change: 'змінити',
     hostLoginPlaceholder: 'Нік друга-хоста на GitHub',

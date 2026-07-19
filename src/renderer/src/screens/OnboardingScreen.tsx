@@ -29,6 +29,10 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
   const [deviceCode, setDeviceCode] = useState<DeviceCodeInfo | null>(null)
   const [invites, setInvites] = useState<PendingInvite[]>([])
   const [collaborators, setCollaborators] = useState<Collaborator[]>([])
+  // Saves-repo invites waiting on us, regardless of who sent them — surfaced
+  // proactively so someone who left/was removed doesn't need to already know
+  // their friend's exact GitHub username to reconnect.
+  const [pendingInvites, setPendingInvites] = useState<string[]>([])
   const [friend, setFriend] = useState('')
   const [hostLogin, setHostLogin] = useState('')
   const [busy, setBusy] = useState(false)
@@ -45,6 +49,8 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
           if (cfg) {
             setRole(cfg.role)
             if (cfg.role === 'host') await loadRepo()
+          } else {
+            window.api.role.pendingInvites().then(setPendingInvites).catch(() => {})
           }
         }
       })
@@ -94,18 +100,22 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
     }
   }
 
-  async function handleJoin(): Promise<void> {
-    if (!hostLogin.trim()) return
+  async function handleJoinFrom(host: string): Promise<void> {
     setBusy(true)
     setError(null)
     try {
-      await window.api.role.join(hostLogin)
+      await window.api.role.join(host)
       onComplete()
     } catch (e) {
       setError(describeError(e, t, t.onboarding.joinError))
     } finally {
       setBusy(false)
     }
+  }
+
+  async function handleJoin(): Promise<void> {
+    if (!hostLogin.trim()) return
+    await handleJoinFrom(hostLogin.trim())
   }
 
   async function handleCreateRepo(): Promise<void> {
@@ -184,6 +194,21 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
 
       {/* STEP 2 — role selection */}
       <Step n={2} done={role !== null} title={t.onboarding.step2Title} disabled={!loggedIn} last={role === 'join'}>
+        {role === null && pendingInvites.length > 0 && (
+          <div style={styles.inviteBanner}>
+            <UsersIcon size={16} color={colors.success} />
+            <span style={styles.inviteBannerText}>{t.onboarding.pendingInviteFrom(pendingInvites[0])}</span>
+            <Button
+              variant="primary"
+              style={styles.smallGhost}
+              onClick={() => void handleJoinFrom(pendingInvites[0])}
+              disabled={busy}
+            >
+              {busy && <span className="spinner" />}
+              {t.onboarding.connect}
+            </Button>
+          </div>
+        )}
         {role === null && (
           <div style={styles.roleRow}>
             <RoleCard
@@ -416,6 +441,17 @@ const styles: Record<string, React.CSSProperties> = {
   stepTitle: { fontFamily: fonts.display, fontSize: 14.5, fontWeight: 600, color: colors.text1 },
   row: { display: 'flex', gap: 10 },
   roleRow: { display: 'flex', gap: 12 },
+  inviteBanner: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    padding: '12px 16px',
+    borderRadius: radii.md,
+    background: colors.successBg,
+    border: `1px solid ${colors.successBd}`,
+    marginBottom: 14
+  },
+  inviteBannerText: { flex: 1, fontSize: 13.5, color: colors.text1 },
   roleCard: {
     flex: 1,
     textAlign: 'left',

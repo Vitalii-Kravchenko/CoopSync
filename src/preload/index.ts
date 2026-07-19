@@ -160,7 +160,9 @@ const api = {
     /** Become host (sync our own repo). */
     setHost: (): Promise<RoleConfig> => ipcRenderer.invoke('role:set-host'),
     /** Connect to a host friend's repo. */
-    join: (hostLogin: string): Promise<RoleConfig> => ipcRenderer.invoke('role:join', hostLogin)
+    join: (hostLogin: string): Promise<RoleConfig> => ipcRenderer.invoke('role:join', hostLogin),
+    /** Logins of everyone who's invited us to their saves repo but we haven't joined yet. */
+    pendingInvites: (): Promise<string[]> => ipcRenderer.invoke('role:pending-invites')
   },
   support: {
     /** Send a message (bug / game request / other) to my email. */

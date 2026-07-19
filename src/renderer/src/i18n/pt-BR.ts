@@ -145,6 +145,7 @@ export const ptBR: Translation = {
     hostDesc: 'Vou criar o armazenamento compartilhado, meu amigo se conecta a mim',
     joinTitle: 'Conectar a um amigo',
     joinDesc: 'Meu amigo já criou o armazenamento e me convidou',
+    pendingInviteFrom: (host) => `${host} te convidou para o armazenamento dele`,
     youAreHost: 'Você é o anfitrião',
     change: 'alterar',
     hostLoginPlaceholder: 'Usuário do GitHub do amigo anfitrião',

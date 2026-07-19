@@ -141,6 +141,7 @@ export const zhCN: Translation = {
     hostDesc: '我将创建共享存储，朋友连接到我',
     joinTitle: '连接到朋友',
     joinDesc: '朋友已经创建了存储并邀请了我',
+    pendingInviteFrom: (host) => `${host} 邀请你加入TA的存储`,
     youAreHost: '你是主机',
     change: '更改',
     hostLoginPlaceholder: '主机朋友的 GitHub 用户名',

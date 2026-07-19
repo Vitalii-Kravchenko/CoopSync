@@ -145,6 +145,7 @@ export const tr: Translation = {
     hostDesc: 'Ortak depoyu oluşturacağım, arkadaşım bana bağlanacak',
     joinTitle: 'Bir arkadaşa bağlan',
     joinDesc: 'Arkadaşım depoyu zaten oluşturdu ve beni davet etti',
+    pendingInviteFrom: (host) => `${host} seni kendi deposuna davet etti`,
     youAreHost: 'Sen ana bilgisayarsın',
     change: 'değiştir',
     hostLoginPlaceholder: 'Ana bilgisayar arkadaşının GitHub kullanıcı adı',

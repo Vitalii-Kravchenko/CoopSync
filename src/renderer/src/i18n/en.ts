@@ -143,6 +143,7 @@ export const en: Translation = {
     hostDesc: "I'll create the shared storage, my friend connects to me",
     joinTitle: 'Connect to a friend',
     joinDesc: 'My friend already created the storage and invited me',
+    pendingInviteFrom: (host) => `${host} invited you to their storage`,
     youAreHost: "You're the host",
     change: 'change',
     hostLoginPlaceholder: "Host friend's GitHub username",

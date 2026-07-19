@@ -261,6 +261,7 @@ export const en: Translation = {
     LEAVE_REPO_FAILED: (p) => `Couldn't leave the storage (${p.status})`,
     ENCRYPTION_UNAVAILABLE: () => "Encryption isn't available on this system — can't store the token safely",
     GAME_NOT_SUPPORTED: () => 'Game not supported',
+    GAME_RUNNING: () => 'The game is still running — close it first, then try restoring the version again',
     SAVE_FOLDER_NOT_FOUND: () => 'Save folder not found',
     NO_CLOUD_SAVES: () => 'There are no saves for this game in storage yet',
     NO_INTERNET: () => "No internet connection — check your network and try again",

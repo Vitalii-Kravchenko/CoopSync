@@ -7,6 +7,7 @@ import { existsSync, statSync } from 'fs'
 import { cp, rm, mkdir, readdir, readFile, writeFile } from 'fs/promises'
 import { SUPPORTED_GAMES, READY_GAMES } from '../games/catalog'
 import { SAVES_REPO_NAME } from '../config'
+import { isGameCurrentlyRunning } from './processCheck'
 import { makeAppError, parseAppError } from '../../shared/errors'
 import { formatVersion } from '../../shared/format'
 import type { SyncStatus, GameSyncStatus, SyncHistoryEntry, SyncResult } from '../../shared/types'
@@ -387,6 +388,15 @@ export async function revertToVersion(
   actor: string,
   targetVersion: number
 ): Promise<SyncResult> {
+  // Restoring overwrites the local save folder unconditionally (see below) —
+  // if the game is still running (even just lingering on exit, saves already
+  // made), this would clobber that session's real saves with the old
+  // version, AND immediately push that old version over them, so the
+  // exit-triggered autopush later finds local == cloud and skips, silently
+  // discarding what was actually played. A live check, not watcher.ts's
+  // polled state, which can be a few seconds stale.
+  if (await isGameCurrentlyRunning(appId)) throw makeAppError('GAME_RUNNING')
+
   await ensureRepo(token, owner)
   const game = findGame(appId)
   const sha = await findCommitForVersion(game.name, targetVersion)

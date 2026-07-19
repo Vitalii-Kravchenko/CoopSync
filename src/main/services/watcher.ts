@@ -1,7 +1,6 @@
-import { execFile } from 'child_process'
-import { promisify } from 'util'
-import { READY_GAMES, type SupportedGame } from '../games/catalog'
+import { READY_GAMES } from '../games/catalog'
 import { uploadGame, downloadGame, getSyncStatuses, restoreMissingFiles } from './sync'
+import { getRunningProcesses, isGameRunning } from './processCheck'
 import { getNotified, markNotified } from './notifyState'
 import { getSavesRepo, listInvitations, listCollaborators } from './github'
 import {
@@ -14,8 +13,6 @@ import {
 import { addNotification } from './notificationStore'
 import { parseAppError } from '../../shared/errors'
 import type { AutoSyncEvent, FriendSaveUpdate } from '../../shared/types'
-
-const exec = promisify(execFile)
 
 // Watches game processes: launch → pull fresh saves, exit → push.
 
@@ -33,21 +30,6 @@ const POLL_MS = 5000
 // without hammering GitHub while the app just sits in the tray.
 const FRIEND_CHECK_EVERY_TICKS = 24
 let friendCheckTicks = 0
-
-// Set of running processes (image names, lowercased).
-async function getRunningProcesses(): Promise<Set<string>> {
-  const { stdout } = await exec('tasklist', ['/fo', 'csv', '/nh'], { maxBuffer: 16 * 1024 * 1024 })
-  const set = new Set<string>()
-  for (const line of stdout.split('\n')) {
-    const m = line.match(/^"([^"]+)"/)
-    if (m) set.add(m[1].toLowerCase())
-  }
-  return set
-}
-
-function isGameRunning(game: SupportedGame, procs: Set<string>): boolean {
-  return game.processNames.some((p) => procs.has(p.toLowerCase()))
-}
 
 // Decodes an AppError (the main process doesn't know the language — the
 // renderer localizes it later via describeError/describeSyncResult).

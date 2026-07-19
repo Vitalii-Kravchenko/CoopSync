@@ -263,6 +263,7 @@ export const tr: Translation = {
     LEAVE_REPO_FAILED: (p) => `Depodan ayrılınamadı (${p.status})`,
     ENCRYPTION_UNAVAILABLE: () => 'Bu sistemde şifreleme kullanılamıyor — token güvenli şekilde saklanamıyor',
     GAME_NOT_SUPPORTED: () => 'Oyun desteklenmiyor',
+    GAME_RUNNING: () => 'Oyun hâlâ çalışıyor — önce onu kapat, sonra sürümü geri yüklemeyi tekrar dene',
     SAVE_FOLDER_NOT_FOUND: () => 'Kayıt klasörü bulunamadı',
     NO_CLOUD_SAVES: () => 'Depoda bu oyuna ait kayıt henüz yok',
     NO_INTERNET: () => 'İnternet bağlantısı yok — ağını kontrol edip tekrar dene',

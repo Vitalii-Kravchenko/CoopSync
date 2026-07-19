@@ -264,6 +264,7 @@ export const pl: Translation = {
     ENCRYPTION_UNAVAILABLE: () =>
       'Szyfrowanie jest niedostępne w systemie — nie można bezpiecznie zapisać tokenu',
     GAME_NOT_SUPPORTED: () => 'Gra nieobsługiwana',
+    GAME_RUNNING: () => 'Gra wciąż działa — zamknij ją najpierw, a potem spróbuj ponownie przywrócić wersję',
     SAVE_FOLDER_NOT_FOUND: () => 'Nie znaleziono folderu zapisów',
     NO_CLOUD_SAVES: () => 'W magazynie nie ma jeszcze zapisów tej gry',
     NO_INTERNET: () => 'Brak połączenia z internetem — sprawdź sieć i spróbuj ponownie',

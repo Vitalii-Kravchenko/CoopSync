@@ -255,6 +255,7 @@ export const zhCN: Translation = {
     LEAVE_REPO_FAILED: (p) => `无法退出存储 (${p.status})`,
     ENCRYPTION_UNAVAILABLE: () => '此系统上加密不可用 — 无法安全保存令牌',
     GAME_NOT_SUPPORTED: () => '该游戏不受支持',
+    GAME_RUNNING: () => '游戏仍在运行——请先关闭游戏，再重新尝试恢复该版本',
     SAVE_FOLDER_NOT_FOUND: () => '未找到存档文件夹',
     NO_CLOUD_SAVES: () => '存储中还没有这个游戏的存档',
     NO_INTERNET: () => '没有网络连接 — 请检查网络后重试',

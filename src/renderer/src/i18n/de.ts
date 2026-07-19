@@ -264,6 +264,7 @@ export const de: Translation = {
     ENCRYPTION_UNAVAILABLE: () =>
       'Verschlüsselung ist auf diesem System nicht verfügbar — Token kann nicht sicher gespeichert werden',
     GAME_NOT_SUPPORTED: () => 'Spiel nicht unterstützt',
+    GAME_RUNNING: () => 'Das Spiel läuft noch — schließe es zuerst und versuche dann erneut, die Version wiederherzustellen',
     SAVE_FOLDER_NOT_FOUND: () => 'Spielstand-Ordner nicht gefunden',
     NO_CLOUD_SAVES: () => 'Für dieses Spiel gibt es noch keine Spielstände im Speicher',
     NO_INTERNET: () => 'Keine Internetverbindung — prüfe dein Netzwerk und versuche es erneut',

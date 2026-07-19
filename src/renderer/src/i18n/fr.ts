@@ -264,6 +264,7 @@ export const fr: Translation = {
     ENCRYPTION_UNAVAILABLE: () =>
       "Le chiffrement n'est pas disponible sur ce système — impossible de stocker le token en sécurité",
     GAME_NOT_SUPPORTED: () => 'Jeu non pris en charge',
+    GAME_RUNNING: () => "Le jeu est encore en cours d'exécution — ferme-le d'abord, puis réessaie de restaurer la version",
     SAVE_FOLDER_NOT_FOUND: () => 'Dossier de sauvegarde introuvable',
     NO_CLOUD_SAVES: () => "Aucune sauvegarde de ce jeu dans le stockage pour l'instant",
     NO_INTERNET: () => 'Pas de connexion internet — vérifie ton réseau et réessaie',

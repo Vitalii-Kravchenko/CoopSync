@@ -264,6 +264,7 @@ export const es: Translation = {
     ENCRYPTION_UNAVAILABLE: () =>
       'El cifrado no está disponible en este sistema — no se puede guardar el token de forma segura',
     GAME_NOT_SUPPORTED: () => 'Juego no compatible',
+    GAME_RUNNING: () => 'El juego todavía está en ejecución — ciérralo primero y vuelve a intentar restaurar la versión',
     SAVE_FOLDER_NOT_FOUND: () => 'Carpeta de partidas guardadas no encontrada',
     NO_CLOUD_SAVES: () => 'Todavía no hay partidas guardadas de este juego en el almacenamiento',
     NO_INTERNET: () => 'Sin conexión a internet — comprueba tu red e inténtalo de nuevo',

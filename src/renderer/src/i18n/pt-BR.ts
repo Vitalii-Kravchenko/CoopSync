@@ -264,6 +264,7 @@ export const ptBR: Translation = {
     ENCRYPTION_UNAVAILABLE: () =>
       'A criptografia não está disponível neste sistema — não é possível salvar o token com segurança',
     GAME_NOT_SUPPORTED: () => 'Jogo não suportado',
+    GAME_RUNNING: () => 'O jogo ainda está em execução — feche-o primeiro e tente restaurar a versão novamente',
     SAVE_FOLDER_NOT_FOUND: () => 'Pasta de saves não encontrada',
     NO_CLOUD_SAVES: () => 'Ainda não há saves deste jogo no armazenamento',
     NO_INTERNET: () => 'Sem conexão com a internet — verifique sua rede e tente novamente',

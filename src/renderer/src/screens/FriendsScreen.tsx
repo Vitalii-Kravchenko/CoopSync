@@ -84,6 +84,17 @@ function FriendsScreen({ user, avatarDataUrl, active }: Props): React.JSX.Elemen
     if (active) void load()
   }, [active])
 
+  // There's no server pushing us updates — the only way to know a friend
+  // accepted an invite is to ask GitHub again. While there's a pending
+  // invite and we're actually looking at this tab, poll every 5s so
+  // "waiting for X to accept" clears on its own instead of requiring a
+  // manual tab-away-and-back to notice.
+  useEffect(() => {
+    if (!active || invites.length === 0) return
+    const timer = setInterval(() => void load(), 5000)
+    return () => clearInterval(timer)
+  }, [active, invites.length])
+
   async function load(): Promise<void> {
     try {
       const r = await window.api.repo.getStatus()

@@ -84,13 +84,6 @@ function SettingsScreen({
   const [showAdoptChoice, setShowAdoptChoice] = useState(false)
   const [adoptingRepo, setAdoptingRepo] = useState(false)
   const [adoptRepoError, setAdoptRepoError] = useState<string | null>(null)
-  // Whenever we have no working repo (joinAccessLost or the plain "nothing
-  // set up yet" case) — lets us connect to a NEW friend right here, without
-  // forcing a detour through Leave -> onboarding just to type a username.
-  const [pendingInvites, setPendingInvites] = useState<string[]>([])
-  const [joinHostInput, setJoinHostInput] = useState('')
-  const [joiningHost, setJoiningHost] = useState(false)
-  const [joinHostError, setJoinHostError] = useState<string | null>(null)
 
   useEffect(() => {
     void loadRepo()
@@ -193,7 +186,6 @@ function SettingsScreen({
   }
 
   async function loadRepo(): Promise<void> {
-    window.api.role.pendingInvites().then(setPendingInvites).catch(() => {})
     try {
       const status = await window.api.repo.getStatus()
       if (status.state === 'none') {
@@ -237,30 +229,6 @@ function SettingsScreen({
     } finally {
       setCreatingRepo(false)
     }
-  }
-
-  async function handleJoinHost(host: string): Promise<void> {
-    setJoiningHost(true)
-    setJoinHostError(null)
-    try {
-      await window.api.role.join(host)
-      setJoinHostInput('')
-      await loadRepo()
-      onRepoChanged()
-      // Same reasoning as handleCreateRepo above — the watcher was started
-      // (or never stopped) under the OLD role and needs to pick up the new one.
-      void window.api.watcher.stop()
-      void window.api.watcher.start()
-    } catch (e) {
-      setJoinHostError(describeError(e, t, t.onboarding.joinError))
-    } finally {
-      setJoiningHost(false)
-    }
-  }
-
-  async function handleJoinHostSubmit(): Promise<void> {
-    if (!joinHostInput.trim()) return
-    await handleJoinHost(joinHostInput.trim())
   }
 
   async function handleDeleteRepo(): Promise<void> {
@@ -406,50 +374,6 @@ function SettingsScreen({
               {t.onboarding.createRepo}
             </Button>
             {createRepoError && <div style={styles.createRepoError}>{createRepoError}</div>}
-          </>
-        )}
-        {/* No working repo of our own, and it's not a network error — offer
-         * to connect to a friend right here too, not just "create your own",
-         * so switching to (or accepting a NEW invite from) someone else
-         * doesn't require Leave -> onboarding just to type a username. */}
-        {repo?.state !== 'ready' && !repoError && (
-          <>
-            <div style={{ ...styles.divider, marginTop: 18, marginBottom: 14 }} />
-            <div style={{ ...styles.muted, marginBottom: 10 }}>{t.settings.connectToFriendLabel}</div>
-            {pendingInvites.length > 0 && (
-              <div style={styles.inviteBanner}>
-                <span style={styles.inviteBannerText}>{t.onboarding.pendingInviteFrom(pendingInvites[0])}</span>
-                <Button
-                  variant="primary"
-                  style={styles.smallBtn}
-                  onClick={() => void handleJoinHost(pendingInvites[0])}
-                  disabled={joiningHost}
-                >
-                  {joiningHost && <span className="spinner" />}
-                  {t.onboarding.connect}
-                </Button>
-              </div>
-            )}
-            <div style={styles.joinRow}>
-              <input
-                className="input-field"
-                style={styles.joinInput}
-                placeholder={t.onboarding.hostLoginPlaceholder}
-                value={joinHostInput}
-                onChange={(e) => setJoinHostInput(e.target.value)}
-                disabled={joiningHost}
-                onKeyDown={(e) => e.key === 'Enter' && void handleJoinHostSubmit()}
-              />
-              <Button
-                variant="secondary"
-                onClick={handleJoinHostSubmit}
-                disabled={joiningHost || !joinHostInput.trim()}
-              >
-                {joiningHost && <span className="spinner" />}
-                {t.onboarding.connect}
-              </Button>
-            </div>
-            {joinHostError && <div style={styles.createRepoError}>{joinHostError}</div>}
           </>
         )}
       </div>
@@ -728,30 +652,6 @@ const styles: Record<string, React.CSSProperties> = {
   profileLeft: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 },
   avatarError: { fontSize: 11, color: colors.danger, maxWidth: 100, textAlign: 'center' },
   createRepoError: { fontSize: 12.5, color: colors.danger, marginTop: 10 },
-  inviteBanner: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 10,
-    padding: '10px 14px',
-    borderRadius: radii.md,
-    background: colors.successBg,
-    border: `1px solid ${colors.successBd}`,
-    marginBottom: 12
-  },
-  inviteBannerText: { flex: 1, fontSize: 13, color: colors.text1 },
-  smallBtn: { height: 30, padding: '0 14px', fontSize: 12 },
-  joinRow: { display: 'flex', gap: 10 },
-  joinInput: {
-    flex: 1,
-    height: 40,
-    padding: '0 14px',
-    border: `1px solid ${colors.borderDefault}`,
-    borderRadius: radii.md,
-    background: colors.bgInset,
-    boxShadow: 'inset 0 1px 2px rgba(0,0,0,.3)',
-    color: colors.text1,
-    fontSize: 13.5
-  },
   userName: { fontFamily: fonts.display, fontSize: 20, fontWeight: 700, color: colors.text1 },
   muted: { fontSize: 13, color: colors.text3 },
   repoRow: { display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 },

@@ -52,7 +52,7 @@ export const de: Translation = {
     inviteTitle: 'Freund einladen',
     sending: 'Einladung wird gesendet…',
     acceptedBadge: 'Angenommen',
-    noStorage: 'Richte zuerst den gemeinsamen Speicher in den Einstellungen ein',
+    noStorage: 'Du hast noch keinen Speicher. Verbinde dich unten mit dem eines Freundes oder erstelle deinen eigenen in den Einstellungen.',
     emptyTitle: 'Noch keine Freunde',
     emptySubtitle: 'Lade oben deinen Koop-Partner über den GitHub-Nutzernamen ein',
     inviteError: 'Einladung fehlgeschlagen',
@@ -181,7 +181,6 @@ export const de: Translation = {
     storage: 'Speicher',
     privateRepo: 'Privates Repository',
     storageNotSet: 'Speicher nicht eingerichtet',
-    connectToFriendLabel: 'Oder mit dem Speicher eines Freundes verbinden',
     joinAccessLost: (host) =>
       `Kein Zugriff mehr auf den Speicher von ${host} — du wurdest eventuell entfernt, oder der Speicher wurde gelöscht. Verlasse die Verbindung, um das zu klären.`,
     friendPlaceholder: 'GitHub-Benutzername des Freundes',

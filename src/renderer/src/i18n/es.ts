@@ -52,7 +52,7 @@ export const es: Translation = {
     inviteTitle: 'Invitar a un amigo',
     sending: 'Enviando invitación…',
     acceptedBadge: 'Aceptado',
-    noStorage: 'Primero configura el almacenamiento compartido en Ajustes',
+    noStorage: 'Todavía no tienes almacenamiento. Conéctate al de un amigo abajo, o crea el tuyo en Ajustes.',
     emptyTitle: 'Todavía no hay amigos',
     emptySubtitle: 'Invita a tu compañero cooperativo con su nombre de usuario de GitHub arriba',
     inviteError: 'No se pudo invitar',
@@ -181,7 +181,6 @@ export const es: Translation = {
     storage: 'Almacenamiento',
     privateRepo: 'Repositorio privado',
     storageNotSet: 'Almacenamiento no configurado',
-    connectToFriendLabel: 'O conéctate al almacenamiento de un amigo',
     joinAccessLost: (host) =>
       `Ya no tienes acceso al almacenamiento de ${host} — puede que te haya eliminado, o que lo haya borrado. Abandona la conexión para resolverlo.`,
     friendPlaceholder: 'Usuario de GitHub del amigo',

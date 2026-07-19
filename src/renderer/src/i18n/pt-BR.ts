@@ -52,7 +52,7 @@ export const ptBR: Translation = {
     inviteTitle: 'Convidar um amigo',
     sending: 'Enviando convite…',
     acceptedBadge: 'Aceito',
-    noStorage: 'Primeiro configure o armazenamento compartilhado em Configurações',
+    noStorage: 'Você ainda não tem armazenamento. Conecte-se ao de um amigo abaixo, ou crie o seu em Configurações.',
     emptyTitle: 'Ainda não há amigos',
     emptySubtitle: 'Convide seu parceiro de co-op pelo nome de usuário do GitHub acima',
     inviteError: 'Não foi possível convidar',
@@ -181,7 +181,6 @@ export const ptBR: Translation = {
     storage: 'Armazenamento',
     privateRepo: 'Repositório privado',
     storageNotSet: 'Armazenamento não configurado',
-    connectToFriendLabel: 'Ou conecte-se ao armazenamento de um amigo',
     joinAccessLost: (host) =>
       `Sem mais acesso ao armazenamento de ${host} — ele pode ter te removido, ou apagado o armazenamento. Saia da conexão para resolver isso.`,
     friendPlaceholder: 'Usuário do GitHub do amigo',

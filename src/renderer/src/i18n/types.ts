@@ -211,7 +211,6 @@ export interface Translation {
     storage: string
     privateRepo: string
     storageNotSet: string
-    connectToFriendLabel: string
     joinAccessLost: (host: string) => string
     friendPlaceholder: string
     invite: string

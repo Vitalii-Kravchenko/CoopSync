@@ -287,7 +287,12 @@ function App(): React.JSX.Element {
           <div
             style={{ gridArea: 'content', display: screen === 'friends' ? 'flex' : 'none', minHeight: 0 }}
           >
-            <FriendsScreen user={user} avatarDataUrl={avatarDataUrl} active={screen === 'friends'} />
+            <FriendsScreen
+              user={user}
+              avatarDataUrl={avatarDataUrl}
+              active={screen === 'friends'}
+              onRepoChanged={bumpSyncVersion}
+            />
           </div>
           <div
             style={{ gridArea: 'content', display: screen === 'history' ? 'flex' : 'none', minHeight: 0 }}

@@ -52,7 +52,7 @@ export const ru: Translation = {
     inviteTitle: 'Пригласить друга',
     sending: 'Отправляю приглашение…',
     acceptedBadge: 'Принято',
-    noStorage: 'Сначала создай общее хранилище в Настройках',
+    noStorage: 'У тебя ещё нет хранилища. Подключись к хранилищу друга ниже, или создай своё в Настройках.',
     emptyTitle: 'Пока нет друзей',
     emptySubtitle: 'Пригласи кооп-напарника по нику GitHub в поле выше',
     inviteError: 'Не удалось пригласить',
@@ -181,7 +181,6 @@ export const ru: Translation = {
     storage: 'Хранилище',
     privateRepo: 'Приватный репозиторий',
     storageNotSet: 'Хранилище не настроено',
-    connectToFriendLabel: 'Или подключись к хранилищу друга',
     joinAccessLost: (host) =>
       `Больше нет доступа к хранилищу ${host} — возможно, тебя убрали, или хранилище удалено. Покинь подключение, чтобы разобраться с этим.`,
     friendPlaceholder: 'Ник друга на GitHub',

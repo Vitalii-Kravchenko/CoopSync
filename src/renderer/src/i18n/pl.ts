@@ -52,7 +52,7 @@ export const pl: Translation = {
     inviteTitle: 'Zaproś znajomego',
     sending: 'Wysyłam zaproszenie…',
     acceptedBadge: 'Zaakceptowano',
-    noStorage: 'Najpierw skonfiguruj wspólny magazyn w Ustawieniach',
+    noStorage: 'Nie masz jeszcze magazynu. Połącz się z magazynem znajomego poniżej albo utwórz własny w Ustawieniach.',
     emptyTitle: 'Jeszcze nie masz znajomych',
     emptySubtitle: 'Zaproś partnera co-op po nicku GitHub w polu powyżej',
     inviteError: 'Nie udało się zaprosić',
@@ -181,7 +181,6 @@ export const pl: Translation = {
     storage: 'Magazyn',
     privateRepo: 'Prywatne repozytorium',
     storageNotSet: 'Magazyn nieskonfigurowany',
-    connectToFriendLabel: 'Albo połącz się z magazynem znajomego',
     joinAccessLost: (host) =>
       `Nie masz już dostępu do magazynu ${host} — mógł cię usunąć albo skasować magazyn. Opuść połączenie, żeby to uporządkować.`,
     friendPlaceholder: 'Nazwa użytkownika GitHub znajomego',

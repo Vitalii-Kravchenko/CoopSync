@@ -52,7 +52,7 @@ export const uk: Translation = {
     inviteTitle: 'Запросити друга',
     sending: 'Надсилаю запрошення…',
     acceptedBadge: 'Прийнято',
-    noStorage: 'Спершу створи спільне сховище в Налаштуваннях',
+    noStorage: 'У тебе ще немає сховища. Підключися до сховища друга нижче, або створи власне в Налаштуваннях.',
     emptyTitle: 'Ще немає друзів',
     emptySubtitle: 'Запроси кооп-напарника за ніком GitHub у полі вище',
     inviteError: 'Не вдалось запросити',
@@ -181,7 +181,6 @@ export const uk: Translation = {
     storage: 'Сховище',
     privateRepo: 'Приватний репозиторій',
     storageNotSet: 'Сховище не налаштоване',
-    connectToFriendLabel: 'Або підключися до сховища друга',
     joinAccessLost: (host) =>
       `Немає більше доступу до сховища ${host} — можливо, тебе прибрали, або сховище видалено. Покинь підключення, щоб розібратися з цим.`,
     friendPlaceholder: 'Нік друга на GitHub',

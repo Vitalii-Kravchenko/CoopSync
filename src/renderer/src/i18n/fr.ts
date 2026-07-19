@@ -52,7 +52,7 @@ export const fr: Translation = {
     inviteTitle: 'Inviter un ami',
     sending: "Envoi de l'invitation…",
     acceptedBadge: 'Accepté',
-    noStorage: "Configure d'abord le stockage partagé dans les Paramètres",
+    noStorage: "Tu n'as pas encore de stockage. Connecte-toi à celui d'un ami ci-dessous, ou crée le tien dans les Paramètres.",
     emptyTitle: "Pas encore d'amis",
     emptySubtitle: 'Invite ton partenaire de coop avec son pseudo GitHub ci-dessus',
     inviteError: "Impossible d'inviter",
@@ -181,7 +181,6 @@ export const fr: Translation = {
     storage: 'Stockage',
     privateRepo: 'Dépôt privé',
     storageNotSet: 'Stockage non configuré',
-    connectToFriendLabel: "Ou connecte-toi au stockage d'un ami",
     joinAccessLost: (host) =>
       `Plus d'accès au stockage de ${host} — il t'a peut-être retiré, ou l'a supprimé. Quitte la connexion pour régler ça.`,
     friendPlaceholder: "Nom d'utilisateur GitHub de l'ami",

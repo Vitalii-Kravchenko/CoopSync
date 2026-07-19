@@ -22,6 +22,9 @@ interface Props {
    * only toggles display, so data (friend avatars, etc.) needs to be reread
    * every time the tab regains focus, not just on mount. */
   active: boolean
+  /** MainScreen stays mounted in the background — we notify it to recompute
+   *  sync statuses after connecting to a friend's storage from here. */
+  onRepoChanged: () => void
 }
 
 /** Per-member activity computed from the push history. */
@@ -46,7 +49,7 @@ function formatRelativeTime(iso: string, t: Translation): string {
 // Friends — a separate tab (used to live inside Settings): invite,
 // see the group with per-member sync activity, cancel pending invites,
 // and a summary strip of the shared storage itself.
-function FriendsScreen({ user, avatarDataUrl, active }: Props): React.JSX.Element {
+function FriendsScreen({ user, avatarDataUrl, active, onRepoChanged }: Props): React.JSX.Element {
   const { t } = useI18n()
   const [repo, setRepo] = useState<SavesRepoStatus | null>(null)
   const [invites, setInvites] = useState<PendingInvite[]>([])
@@ -67,6 +70,14 @@ function FriendsScreen({ user, avatarDataUrl, active }: Props): React.JSX.Elemen
   const [removeError, setRemoveError] = useState<string | null>(null)
   const [cancelingId, setCancelingId] = useState<number | null>(null)
   const [cancelError, setCancelError] = useState<string | null>(null)
+  // Saves-repo invites waiting on us (regardless of who sent them) — shown
+  // when we have no working storage of our own, so connecting to (or
+  // switching to) a friend doesn't require a detour through Settings ->
+  // Leave -> onboarding just to type a username.
+  const [myPendingInvites, setMyPendingInvites] = useState<string[]>([])
+  const [joinHostInput, setJoinHostInput] = useState('')
+  const [joiningHost, setJoiningHost] = useState(false)
+  const [joinHostError, setJoinHostError] = useState<string | null>(null)
 
   useEffect(() => {
     void load()
@@ -96,6 +107,7 @@ function FriendsScreen({ user, avatarDataUrl, active }: Props): React.JSX.Elemen
   }, [active, invites.length])
 
   async function load(): Promise<void> {
+    window.api.role.pendingInvites().then(setMyPendingInvites).catch(() => {})
     try {
       const r = await window.api.repo.getStatus()
       setRepo(r)
@@ -160,6 +172,30 @@ function FriendsScreen({ user, avatarDataUrl, active }: Props): React.JSX.Elemen
     } finally {
       setCancelingId(null)
     }
+  }
+
+  async function handleJoinHost(host: string): Promise<void> {
+    setJoiningHost(true)
+    setJoinHostError(null)
+    try {
+      await window.api.role.join(host)
+      setJoinHostInput('')
+      await load()
+      onRepoChanged()
+      // The watcher was started (or never stopped) under the OLD role — needs
+      // to pick up the new one, same as the other role-changing actions.
+      void window.api.watcher.stop()
+      void window.api.watcher.start()
+    } catch (e) {
+      setJoinHostError(describeError(e, t, t.onboarding.joinError))
+    } finally {
+      setJoiningHost(false)
+    }
+  }
+
+  async function handleJoinHostSubmit(): Promise<void> {
+    if (!joinHostInput.trim()) return
+    await handleJoinHost(joinHostInput.trim())
   }
 
   const noFriendsYet = collaborators.length === 0 && invites.length === 0
@@ -231,7 +267,43 @@ function FriendsScreen({ user, avatarDataUrl, active }: Props): React.JSX.Elemen
         </div>
       ) : repo?.state !== 'ready' ? (
         <div style={styles.card}>
-          <div style={styles.muted}>{t.friends.noStorage}</div>
+          <div style={{ ...styles.muted, marginBottom: 14 }}>{t.friends.noStorage}</div>
+          {myPendingInvites.length > 0 && (
+            <div style={styles.inviteBanner}>
+              <span style={styles.inviteBannerText}>
+                {t.onboarding.pendingInviteFrom(myPendingInvites[0])}
+              </span>
+              <Button
+                variant="primary"
+                style={styles.smallBtn}
+                onClick={() => void handleJoinHost(myPendingInvites[0])}
+                disabled={joiningHost}
+              >
+                {joiningHost && <span className="spinner" />}
+                {t.onboarding.connect}
+              </Button>
+            </div>
+          )}
+          <div style={styles.row}>
+            <input
+              className="input-field"
+              style={styles.input}
+              placeholder={t.onboarding.hostLoginPlaceholder}
+              value={joinHostInput}
+              onChange={(e) => setJoinHostInput(e.target.value)}
+              disabled={joiningHost}
+              onKeyDown={(e) => e.key === 'Enter' && void handleJoinHostSubmit()}
+            />
+            <Button
+              variant="primary"
+              onClick={handleJoinHostSubmit}
+              disabled={joiningHost || !joinHostInput.trim()}
+            >
+              {joiningHost && <span className="spinner" />}
+              {t.onboarding.connect}
+            </Button>
+          </div>
+          {joinHostError && <div style={styles.error}>{joinHostError}</div>}
         </div>
       ) : (
         <div style={styles.column}>
@@ -488,6 +560,18 @@ const styles: Record<string, React.CSSProperties> = {
   },
   sending: { fontSize: 12, color: colors.text3, marginTop: 10 },
   error: { fontSize: 12.5, color: colors.danger, marginTop: 10 },
+  inviteBanner: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    padding: '10px 14px',
+    borderRadius: radii.md,
+    background: colors.successBg,
+    border: `1px solid ${colors.successBd}`,
+    marginBottom: 12
+  },
+  inviteBannerText: { flex: 1, fontSize: 13, color: colors.text1 },
+  smallBtn: { height: 30, padding: '0 14px', fontSize: 12 },
   memberGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',

@@ -52,7 +52,7 @@ export const tr: Translation = {
     inviteTitle: 'Arkadaş davet et',
     sending: 'Davet gönderiliyor…',
     acceptedBadge: 'Kabul edildi',
-    noStorage: "Önce Ayarlar'da ortak depoyu oluştur",
+    noStorage: "Henüz bir deponuz yok. Aşağıdan bir arkadaşınızın deposuna bağlanın ya da Ayarlar'dan kendi deponuzu oluşturun.",
     emptyTitle: 'Henüz arkadaş yok',
     emptySubtitle: 'Yukarıdan co-op ortağını GitHub kullanıcı adıyla davet et',
     inviteError: 'Davet edilemedi',
@@ -181,7 +181,6 @@ export const tr: Translation = {
     storage: 'Depo',
     privateRepo: 'Özel depo',
     storageNotSet: 'Depo ayarlanmadı',
-    connectToFriendLabel: 'Ya da bir arkadaşının deposuna bağlan',
     joinAccessLost: (host) =>
       `Artık ${host} kişisinin deposuna erişimin yok — seni çıkarmış ya da depoyu silmiş olabilir. Sorunu çözmek için bağlantıdan ayrıl.`,
     friendPlaceholder: 'Arkadaşın GitHub kullanıcı adı',

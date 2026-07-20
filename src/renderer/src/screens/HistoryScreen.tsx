@@ -57,6 +57,12 @@ function HistoryScreen({ active, syncVersion, onSeen, user, avatarDataUrl }: Pro
   const [newKeys, setNewKeys] = useState<Set<string>>(new Set())
   // Mirror of entries for reading inside async callbacks without waiting
   // a render cycle (setEntries is async — we update the ref synchronously right away).
+  // Custom games' cover art, keyed by appId — catalog games have none here
+  // and fall back to steamPoster in HistoryRow. Fetched alongside history so
+  // a custom game's cover (own pick, or one just adopted from a co-op
+  // partner) actually shows up in this cross-game table, not just on its own
+  // detail screen.
+  const [customCovers, setCustomCovers] = useState<Record<string, string>>({})
   const entriesRef = useRef<SyncHistoryEntry[]>([])
   // The freshest list from the last fetch — even if the tab is inactive
   // and entries/newKeys haven't been updated yet (waiting for the moment it becomes visible).
@@ -97,6 +103,20 @@ function HistoryScreen({ active, syncVersion, onSeen, user, avatarDataUrl }: Pro
     }
   }
 
+  function loadCustomCovers(): void {
+    window.api.games
+      .allInstalled()
+      .then((list) => {
+        const map: Record<string, string> = {}
+        for (const g of list) if (g.coverDataUrl) map[g.appId] = g.coverDataUrl
+        setCustomCovers(map)
+      })
+      .catch(() => {
+        // Not critical — rows just fall back to steamPoster (which itself
+        // falls back to the placeholder on a real custom appId's 404).
+      })
+  }
+
   function loadHistory(): void {
     if (fetchInFlightRef.current) return
     fetchInFlightRef.current = true
@@ -129,6 +149,7 @@ function HistoryScreen({ active, syncVersion, onSeen, user, avatarDataUrl }: Pro
 
   useEffect(() => {
     loadHistory()
+    loadCustomCovers()
     return () => {
       if (clearNewTimerRef.current) clearTimeout(clearNewTimerRef.current)
     }
@@ -138,7 +159,10 @@ function HistoryScreen({ active, syncVersion, onSeen, user, avatarDataUrl }: Pro
   // syncVersion > 0 — not a mount (the effect above already covers that), but a
   // signal that "something actually synced" — reread.
   useEffect(() => {
-    if (syncVersion > 0) loadHistory()
+    if (syncVersion > 0) {
+      loadHistory()
+      loadCustomCovers()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [syncVersion])
 
@@ -156,6 +180,7 @@ function HistoryScreen({ active, syncVersion, onSeen, user, avatarDataUrl }: Pro
     if (active) {
       if (latestListRef.current.length > 0) reveal(latestListRef.current)
       loadHistory()
+      loadCustomCovers()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active])
@@ -217,6 +242,7 @@ function HistoryScreen({ active, syncVersion, onSeen, user, avatarDataUrl }: Pro
                   entry={e}
                   t={t}
                   avatarSrc={avatars[e.updatedBy]}
+                  coverSrc={customCovers[e.appId]}
                   last={i === visible.length - 1}
                   isNew={newKeys.has(historyKey(e))}
                 />
@@ -247,6 +273,7 @@ function HistoryRow({
   entry,
   t,
   avatarSrc,
+  coverSrc,
   last,
   isNew
 }: {
@@ -254,6 +281,10 @@ function HistoryRow({
   t: Translation
   /** Player's avatar (data URL), if we have one — placeholder otherwise. */
   avatarSrc?: string
+  /** Custom game's own cover art, if it has one — steamPoster otherwise
+   *  (which is meaningless for a synthetic custom:<uuid> appId and just
+   *  falls through to the placeholder). */
+  coverSrc?: string
   last: boolean
   /** true — just appeared in this fetch, play the entrance animation.
    *  false — already seen before; no animation, even if the DOM just became visible
@@ -277,7 +308,7 @@ function HistoryRow({
       <div style={styles.gameCell}>
         {!imgError ? (
           <img
-            src={steamPoster(entry.appId)}
+            src={coverSrc ?? steamPoster(entry.appId)}
             alt=""
             style={styles.thumb}
             onError={() => setImgError(true)}

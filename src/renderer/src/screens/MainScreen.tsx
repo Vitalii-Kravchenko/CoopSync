@@ -135,13 +135,13 @@ function MainScreen({
       for (const s of list) map[s.appId] = s
       setSyncStatuses(map)
       setStatusesError(null)
-      // A co-op partner's custom game may have just been materialized
-      // locally (as 'needs-setup') inside this exact statuses call — refresh
-      // the games list so it actually shows up on the grid, instead of only
-      // appearing after some unrelated future reload.
-      if (list.some((s) => !installed.some((g) => g.appId === s.appId))) {
-        window.api.games.allInstalled().then(setInstalled).catch(() => {})
-      }
+      // This same status check may have just materialized a co-op partner's
+      // new custom game locally, or adopted their newly-pushed cover for a
+      // game we already know about (see sync.ts's getSyncStatuses) — always
+      // refresh the games list so either shows up right away, instead of
+      // silently sitting correct in local settings until some unrelated
+      // future reload (a real push/pull, a tab switch, an app restart).
+      window.api.games.allInstalled().then(setInstalled).catch(() => {})
       // Only mark seen while the tab is genuinely visible — this same
       // function also runs in the background (syncVersion bumps regardless
       // of which tab is open), and a badge the user never actually looked

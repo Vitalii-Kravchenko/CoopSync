@@ -48,10 +48,19 @@ async function checkFriendUpdates(
   token: string,
   owner: string,
   actor: string,
-  onFriendUpdate: (updates: FriendSaveUpdate[]) => void
+  onFriendUpdate: (updates: FriendSaveUpdate[]) => void,
+  onBackgroundCheck: () => void
 ): Promise<void> {
   try {
     const statuses = await getSyncStatuses(token, owner)
+    // getSyncStatuses also materializes a co-op partner's newly-added custom
+    // game and adopts their newly-pushed cover for one we already know about
+    // (see sync.ts) — both write straight to local settings with no signal
+    // of their own. Firing this on every successful check (not just when
+    // there's a friend-save toast to show) is what lets the renderer notice
+    // either change without the user having to switch tabs away and back or
+    // relaunch the app first.
+    onBackgroundCheck()
     const updates: FriendSaveUpdate[] = []
     for (const s of statuses) {
       if (!s.remoteUpdatedBy || s.remoteVersion <= 0 || s.remoteUpdatedBy === actor) continue
@@ -124,6 +133,7 @@ async function tick(
   actor: string,
   onEvent: (e: AutoSyncEvent) => void,
   onFriendUpdate: (updates: FriendSaveUpdate[]) => void,
+  onBackgroundCheck: () => void,
   initial: boolean
 ): Promise<void> {
   if (busy) return // don't let ticks overlap
@@ -132,7 +142,7 @@ async function tick(
     if (!initial) {
       friendCheckTicks++
       if (friendCheckTicks % FRIEND_CHECK_EVERY_TICKS === 1) {
-        void checkFriendUpdates(token, owner, actor, onFriendUpdate)
+        void checkFriendUpdates(token, owner, actor, onFriendUpdate, onBackgroundCheck)
         // owner === actor only for the host (for 'join' it's the host friend's
         // login) — cheap way to tell the two roles apart without a settings read.
         if (owner === actor) {
@@ -280,14 +290,18 @@ export function startWatcher(
   owner: string,
   actor: string,
   onEvent: (e: AutoSyncEvent) => void,
-  onFriendUpdate: (updates: FriendSaveUpdate[]) => void
+  onFriendUpdate: (updates: FriendSaveUpdate[]) => void,
+  onBackgroundCheck: () => void
 ): void {
   stopWatcher()
   running = {}
   friendCheckTicks = 0
   // Initialize state without taking action (in case a game is already running at startup).
-  void tick(token, owner, actor, onEvent, onFriendUpdate, true)
-  timer = setInterval(() => void tick(token, owner, actor, onEvent, onFriendUpdate, false), POLL_MS)
+  void tick(token, owner, actor, onEvent, onFriendUpdate, onBackgroundCheck, true)
+  timer = setInterval(
+    () => void tick(token, owner, actor, onEvent, onFriendUpdate, onBackgroundCheck, false),
+    POLL_MS
+  )
 }
 
 export function stopWatcher(): void {

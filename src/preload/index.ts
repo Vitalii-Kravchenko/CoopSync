@@ -162,6 +162,15 @@ const api = {
       const listener = (_e: unknown, updates: FriendSaveUpdate[]): void => callback(updates)
       ipcRenderer.on('sync:friend-update', listener)
       return () => ipcRenderer.removeListener('sync:friend-update', listener)
+    },
+    /** Fires after every ~2min background status check, whether or not it
+     *  found a friend save update — that same check may have also
+     *  materialized a partner's new custom game or adopted their cover
+     *  locally, with no signal of its own otherwise. */
+    onBackgroundCheck: (callback: () => void): (() => void) => {
+      const listener = (): void => callback()
+      ipcRenderer.on('sync:background-check', listener)
+      return () => ipcRenderer.removeListener('sync:background-check', listener)
     }
   },
   window: {

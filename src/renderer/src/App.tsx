@@ -250,6 +250,19 @@ function App(): React.JSX.Element {
     })
   }, [phase, t])
 
+  // Every ~2min background status check (watcher.ts's checkFriendUpdates)
+  // may silently materialize a co-op partner's new custom game or adopt
+  // their newly-pushed cover for one we already know about, purely as a
+  // side effect of the same getSyncStatuses call — with no signal of its
+  // own when there's no friend save update to also report (the effect
+  // above only bumps syncVersion in that other case). Bumping it here too
+  // is what lets a cover/new-game show up without the user having to switch
+  // tabs away and back or relaunch the app first.
+  useEffect(() => {
+    if (phase !== 'app') return
+    return window.api.watcher.onBackgroundCheck(() => bumpSyncVersion())
+  }, [phase])
+
   // The OS toast for "update available" is fired from the main process now
   // (see updater.ts showUpdateToast) — that toast's click brings the window
   // up directly via a main-process callback, not through this renderer,

@@ -627,7 +627,12 @@ export function registerIpcHandlers(): void {
   // --- Auto-sync (process watcher) ---
 
   // Start it: watch games, send renderer 'sync:auto' events + 'sync:friend-update'
-  // (a friend's save pushed while this device wasn't looking).
+  // (a friend's save pushed while this device wasn't looking) + a plain
+  // 'sync:background-check' ping after every ~2min background status check,
+  // whether or not it found a friend save update — that same check is also
+  // what silently materializes a partner's new custom game or adopts their
+  // cover locally (see sync.ts's getSyncStatuses), and the renderer has no
+  // other way to find out either happened without this.
   ipcMain.handle('watcher:start', async (event): Promise<void> => {
     const { token, owner } = await syncTarget()
     const { owner: actorLogin } = await requireAuth()
@@ -636,7 +641,8 @@ export function registerIpcHandlers(): void {
       owner,
       actorLogin,
       (e) => event.sender.send('sync:auto', e),
-      (updates: FriendSaveUpdate[]) => event.sender.send('sync:friend-update', updates)
+      (updates: FriendSaveUpdate[]) => event.sender.send('sync:friend-update', updates),
+      () => event.sender.send('sync:background-check')
     )
   })
 

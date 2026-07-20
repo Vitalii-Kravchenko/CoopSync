@@ -188,7 +188,8 @@ function HistoryScreen({ active, syncVersion, onSeen, user, avatarDataUrl }: Pro
   const avatars = useAvatars(
     entries.map((e) => e.updatedBy),
     user.login,
-    avatarDataUrl
+    avatarDataUrl,
+    syncVersion
   )
 
   const q = query.trim().toLowerCase()

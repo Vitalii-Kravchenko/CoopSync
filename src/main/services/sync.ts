@@ -533,45 +533,70 @@ async function readCustomGamesRegistry(): Promise<RemoteCustomGameEntry[]> {
   }
 }
 
+// pushCustomGameToRegistry / removeCustomGameFromRegistry / pushCustomGameCover
+// are each called both directly (ipc.ts, right after a local add/remove/cover
+// change) AND from inside getSyncStatuses's own registry-sync/cover-adopt
+// passes (self-healing a previous failure, or reacting to a partner's
+// change) -- two of those landing close together, from a direct call and a
+// concurrent background check, would otherwise run fully independent
+// read-modify-commit-push sequences against the very same local clone and
+// can genuinely corrupt each other's commit, not just redundantly repeat
+// work. Serializing all three against each other here is what makes every
+// caller's use of them safe without each one needing its own locking.
+let customGameRepoLock: Promise<unknown> = Promise.resolve()
+
+function withCustomGameRepoLock<T>(fn: () => Promise<T>): Promise<T> {
+  const run = customGameRepoLock.then(fn, fn)
+  customGameRepoLock = run.then(
+    () => undefined,
+    () => undefined
+  )
+  return run
+}
+
 /** Add a just-added custom game to the shared registry, so a co-op partner's
  *  app can see it exists (best-effort — called right after the local add
  *  succeeds, see ipc.ts's games:add-custom). */
-export async function pushCustomGameToRegistry(
+export function pushCustomGameToRegistry(
   token: string,
   owner: string,
   actor: string,
   appId: string,
   name: string
 ): Promise<void> {
-  await ensureRepo(token, owner)
-  const current = await readCustomGamesRegistry()
-  if (current.some((e) => e.appId === appId)) return
-  await mkdir(join(repoDir(), '.meta'), { recursive: true })
-  await writeFile(customGamesRegistryPath(), JSON.stringify([...current, { appId, name }], null, 2))
-  await git(['add', '-A'])
-  await git([...identityFlags(actor), 'commit', '-m', `custom-game: add ${name}`])
-  await git(['push', 'origin', 'main'])
+  return withCustomGameRepoLock(async () => {
+    await ensureRepo(token, owner)
+    const current = await readCustomGamesRegistry()
+    if (current.some((e) => e.appId === appId)) return
+    await mkdir(join(repoDir(), '.meta'), { recursive: true })
+    await writeFile(customGamesRegistryPath(), JSON.stringify([...current, { appId, name }], null, 2))
+    await git(['add', '-A'])
+    await git([...identityFlags(actor), 'commit', '-m', `custom-game: add ${name}`])
+    await git(['push', 'origin', 'main'])
+  })
 }
 
 /** Remove a custom game from the shared registry (best-effort — see ipc.ts's
  *  games:remove-custom). Never touches anyone's already-materialized local
  *  entry — a partner who already set up their save folder keeps working. */
-export async function removeCustomGameFromRegistry(
+export function removeCustomGameFromRegistry(
   token: string,
   owner: string,
   actor: string,
   appId: string
 ): Promise<void> {
-  await ensureRepo(token, owner)
-  const current = await readCustomGamesRegistry()
-  const next = current.filter((e) => e.appId !== appId)
-  if (next.length === current.length) return
-  await mkdir(join(repoDir(), '.meta'), { recursive: true })
-  await writeFile(customGamesRegistryPath(), JSON.stringify(next, null, 2))
-  await git(['add', '-A'])
-  const name = current.find((e) => e.appId === appId)?.name ?? appId
-  await git([...identityFlags(actor), 'commit', '-m', `custom-game: remove ${name}`])
-  await git(['push', 'origin', 'main'])
+  return withCustomGameRepoLock(async () => {
+    await ensureRepo(token, owner)
+    const current = await readCustomGamesRegistry()
+    const next = current.filter((e) => e.appId !== appId)
+    if (next.length === current.length) return
+    await mkdir(join(repoDir(), '.meta'), { recursive: true })
+    await writeFile(customGamesRegistryPath(), JSON.stringify(next, null, 2))
+    await git(['add', '-A'])
+    const name = current.find((e) => e.appId === appId)?.name ?? appId
+    await git([...identityFlags(actor), 'commit', '-m', `custom-game: remove ${name}`])
+    await git(['push', 'origin', 'main'])
+  })
 }
 
 // --- Custom game covers ---
@@ -595,27 +620,29 @@ function coverPath(appId: string): string {
 /** Push a custom game's already-cropped cover (or clear it, dataUrl=null) to
  *  the shared repo — best-effort, called right after the local save
  *  succeeds (see ipc.ts's games:save-cover / games:add-custom). */
-export async function pushCustomGameCover(
+export function pushCustomGameCover(
   token: string,
   owner: string,
   actor: string,
   appId: string,
   dataUrl: string | null
 ): Promise<void> {
-  await ensureRepo(token, owner)
-  await mkdir(join(repoDir(), '.meta', 'covers'), { recursive: true })
-  const p = coverPath(appId)
-  if (dataUrl) {
-    await writeFile(p, dataUrl)
-  } else {
-    if (!existsSync(p)) return
-    await rm(p, { force: true })
-  }
-  await git(['add', '-A'])
-  const status = await git(['status', '--porcelain'])
-  if (!status.trim()) return
-  await git([...identityFlags(actor), 'commit', '-m', `custom-game-cover: ${appId}`])
-  await git(['push', 'origin', 'main'])
+  return withCustomGameRepoLock(async () => {
+    await ensureRepo(token, owner)
+    await mkdir(join(repoDir(), '.meta', 'covers'), { recursive: true })
+    const p = coverPath(appId)
+    if (dataUrl) {
+      await writeFile(p, dataUrl)
+    } else {
+      if (!existsSync(p)) return
+      await rm(p, { force: true })
+    }
+    await git(['add', '-A'])
+    const status = await git(['status', '--porcelain'])
+    if (!status.trim()) return
+    await git([...identityFlags(actor), 'commit', '-m', `custom-game-cover: ${appId}`])
+    await git(['push', 'origin', 'main'])
+  })
 }
 
 async function readRemoteCover(appId: string): Promise<string | null> {
@@ -786,12 +813,31 @@ async function folderSize(dir: string, pattern?: RegExp): Promise<number> {
   return total
 }
 
+// Called from several independent places close together (an on-demand
+// renderer refresh, the ~2min background check, a game launch/exit) — each
+// one, past the shared ensureRepo() pull above, goes on to do its OWN
+// separate registry read + materialize + self-heal/removal pushes + cover
+// adopt, all against the same local clone. Two of those running at once can
+// genuinely race each other's git commits, not just redundantly repeat work
+// — serialize the whole thing the same way ensureRepo already serializes
+// the pull it opens with.
+let getSyncStatusesInFlight: Promise<GameSyncStatus[]> | null = null
+
 /** Sync status for all supported games (a single pull covers all of them). */
 export async function getSyncStatuses(
   token: string,
   owner: string,
   actor: string
 ): Promise<GameSyncStatus[]> {
+  if (!getSyncStatusesInFlight) {
+    getSyncStatusesInFlight = doGetSyncStatuses(token, owner, actor).finally(() => {
+      getSyncStatusesInFlight = null
+    })
+  }
+  return getSyncStatusesInFlight
+}
+
+async function doGetSyncStatuses(token: string, owner: string, actor: string): Promise<GameSyncStatus[]> {
   try {
     await ensureRepo(token, owner)
   } catch (e) {
@@ -829,7 +875,15 @@ export async function getSyncStatuses(
   try {
     const registry = await readCustomGamesRegistry()
     const registered = new Set(registry.map((e) => e.appId))
+    // A removal we're still actively pushing (see the pending-removals retry
+    // below) means the registry can be stale — it may still list an appId we
+    // already dropped locally on purpose. Without this, materializing it
+    // right back the moment it's seen would resurrect a game the user just
+    // deleted, on every single check, for as long as the removal push keeps
+    // failing to land.
+    const pendingRemovals = new Set(getPendingCustomGameRemovals())
     for (const entry of registry) {
+      if (pendingRemovals.has(entry.appId)) continue
       materializeRemoteCustomGame(entry.appId, entry.name)
     }
     for (const g of listCustomGames()) {
@@ -865,14 +919,20 @@ export async function getSyncStatuses(
     }
   }
 
-  // Adopt a co-op partner's cover for a custom game we don't already have
-  // one for — never overwrites a cover already set locally (own choice, or
-  // one already adopted), so this can't clobber an intentional local pick.
+  // Keep a custom game's cover mirroring the shared one — per this file's
+  // own "shared, not per-machine, like its name" comment above coverPath(),
+  // there's no such thing as an intentional LOCAL cover choice to protect
+  // once someone else changes it; the shared file is the single source of
+  // truth either way. Used to only ever adopt once (skipped entirely the
+  // moment g.coverDataUrl was set at all) — meaning the very first cover a
+  // partner ever saw synced fine, but any later change to it never did,
+  // forever, since that guard was already permanently tripped. Comparing
+  // content instead converges on every check, and is a no-op once already
+  // in sync (including right after our OWN push, once it lands here too).
   try {
     for (const g of listCustomGames()) {
-      if (g.coverDataUrl) continue
       const remoteCover = await readRemoteCover(g.appId)
-      if (remoteCover) setCustomGameCover(g.appId, remoteCover)
+      if (remoteCover && remoteCover !== g.coverDataUrl) setCustomGameCover(g.appId, remoteCover)
     }
   } catch {
     // Best-effort, same reasoning as the registry pass above.

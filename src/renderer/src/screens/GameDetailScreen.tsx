@@ -299,7 +299,8 @@ function GameDetailScreen({
   const avatars = useAvatars(
     entries.map((e) => e.updatedBy),
     user.login,
-    avatarDataUrl
+    avatarDataUrl,
+    syncVersion
   )
 
   return (

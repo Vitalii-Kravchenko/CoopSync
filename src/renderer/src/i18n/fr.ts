@@ -149,7 +149,7 @@ export const fr: Translation = {
     coverSyncRetrySuccess: 'Jaquette synchronisée.',
     excludeFilesTitle: 'Exclure des fichiers de la synchronisation',
     excludeFilesHint:
-      "Coche ici les fichiers qui ne doivent pas être synchronisés — paramètres locaux, données de compte, tout ce qui n'est pas vraiment une sauvegarde. Seuls les fichiers directement dans le dossier de sauvegarde sont listés (pas les sous-dossiers).",
+      "Coche ici les fichiers qui ne doivent pas être synchronisés — paramètres locaux, données de compte, tout ce qui n'est pas vraiment une sauvegarde. Seuls les fichiers directement dans le dossier de sauvegarde sont listés (pas les sous-dossiers). Ce choix ne s'applique qu'à ce PC — il n'est pas partagé avec ton coéquipier, car les noms de fichiers exacts peuvent différer d'une installation à l'autre. Ton ami doit exclure ses fichiers séparément, selon ce qu'il voit dans son propre dossier.",
     excludeFilesEmpty: "Il n'y a pas encore de fichiers dans le dossier de sauvegarde."
   },
   cloudWarning: {

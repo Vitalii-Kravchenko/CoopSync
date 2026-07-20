@@ -148,7 +148,7 @@ export const ptBR: Translation = {
     coverSyncRetrySuccess: 'Capa sincronizada.',
     excludeFilesTitle: 'Excluir arquivos da sincronização',
     excludeFilesHint:
-      'Marque aqui os arquivos que não devem ser sincronizados — configurações locais, dados de conta, qualquer coisa que não seja realmente um save. Só os arquivos diretamente na pasta de save são listados (sem subpastas).',
+      'Marque aqui os arquivos que não devem ser sincronizados — configurações locais, dados de conta, qualquer coisa que não seja realmente um save. Só os arquivos diretamente na pasta de save são listados (sem subpastas). Essa escolha vale só neste PC — não é compartilhada com seu parceiro, já que os nomes exatos dos arquivos podem variar entre instalações. Seu amigo deve excluir arquivos separadamente, com base no que ele vê na própria pasta.',
     excludeFilesEmpty: 'Ainda não há arquivos na pasta de save.'
   },
   cloudWarning: {

@@ -141,7 +141,8 @@ export const zhCN: Translation = {
     coverSyncFailedBanner: '封面未同步到云端——队友暂时还看不到。',
     coverSyncRetrySuccess: '封面已同步。',
     excludeFilesTitle: '从同步中排除文件',
-    excludeFilesHint: '在这里勾选不应该同步的文件——本地设置、账号数据，任何实际上不是存档的内容。这里只列出存档文件夹中直接包含的文件（不包括子文件夹）。',
+    excludeFilesHint:
+      '在这里勾选不应该同步的文件——本地设置、账号数据，任何实际上不是存档的内容。这里只列出存档文件夹中直接包含的文件（不包括子文件夹）。这个选择只对这台电脑生效——不会分享给队友，因为不同安装的具体文件名可能不一样。队友应该根据自己文件夹里看到的内容，单独排除文件。',
     excludeFilesEmpty: '存档文件夹中还没有文件。'
   },
   cloudWarning: {

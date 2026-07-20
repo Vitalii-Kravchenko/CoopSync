@@ -149,7 +149,7 @@ export const de: Translation = {
     coverSyncRetrySuccess: 'Cover synchronisiert.',
     excludeFilesTitle: 'Dateien von der Synchronisierung ausschließen',
     excludeFilesHint:
-      'Markiere hier Dateien, die nicht synchronisiert werden sollen — lokale Einstellungen, Kontodaten, alles, was eigentlich kein Spielstand ist. Aufgelistet werden nur Dateien direkt im Speicherordner (keine Unterordner).',
+      'Markiere hier Dateien, die nicht synchronisiert werden sollen — lokale Einstellungen, Kontodaten, alles, was eigentlich kein Spielstand ist. Aufgelistet werden nur Dateien direkt im Speicherordner (keine Unterordner). Diese Auswahl gilt nur auf diesem PC — sie wird nicht mit deinem Mitspieler geteilt, da sich die genauen Dateinamen zwischen Installationen unterscheiden können. Dein Freund sollte Dateien separat ausschließen, basierend darauf, was in seinem eigenen Ordner liegt.',
     excludeFilesEmpty: 'Im Speicherordner sind noch keine Dateien vorhanden.'
   },
   cloudWarning: {

@@ -580,8 +580,16 @@ export async function removeCustomGameFromRegistry(
 // reason for a co-op partner's copy to look different. Stored the same way
 // avatars are (.meta/covers/<appId>.txt, a raw data URL).
 
+// A custom game's appId is "custom:<uuid>" — a literal ':' in a Windows path
+// segment isn't rejected, it's silently reinterpreted as an NTFS Alternate
+// Data Stream separator ("custom" + a hidden stream named the rest). Every
+// fs call (existsSync/writeFile/readFile) keeps "succeeding" against that
+// hidden stream with no error anywhere, but git only ever sees the empty
+// base file "custom" — the actual cover data never gets committed at all.
+// This is why a cover push could report success and still never reach a
+// partner. Replacing ':' keeps the path a normal, git-trackable file.
 function coverPath(appId: string): string {
-  return join(repoDir(), '.meta', 'covers', `${appId}.txt`)
+  return join(repoDir(), '.meta', 'covers', `${appId.replace(/:/g, '_')}.txt`)
 }
 
 /** Push a custom game's already-cropped cover (or clear it, dataUrl=null) to

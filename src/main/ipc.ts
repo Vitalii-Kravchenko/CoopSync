@@ -594,7 +594,8 @@ export function registerIpcHandlers(): void {
   // Sync status for all games (comparing local against the host's repo).
   ipcMain.handle('sync:statuses', async (): Promise<GameSyncStatus[]> => {
     const { token, owner } = await syncTarget()
-    return getSyncStatuses(token, owner)
+    const { owner: actor } = await requireAuth()
+    return getSyncStatuses(token, owner, actor)
   })
 
   // Push event history (newest first).

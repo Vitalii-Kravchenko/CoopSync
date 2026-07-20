@@ -375,6 +375,11 @@ function MainScreen({
           onAdded={() => {
             setShowAddGame(false)
             void loadGames()
+            // loadGames() alone puts the new game in the grid but never
+            // fetches its sync status -- nothing else triggers that until
+            // the next unrelated refresh (tab switch, background check),
+            // leaving it stuck on "Checking..." until then.
+            void loadStatuses()
           }}
           onBanner={onBanner}
         />

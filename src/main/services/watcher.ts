@@ -52,7 +52,7 @@ async function checkFriendUpdates(
   onBackgroundCheck: () => void
 ): Promise<void> {
   try {
-    const statuses = await getSyncStatuses(token, owner)
+    const statuses = await getSyncStatuses(token, owner, actor)
     // getSyncStatuses also materializes a co-op partner's newly-added custom
     // game and adopts their newly-pushed cover for one we already know about
     // (see sync.ts) — both write straight to local settings with no signal
@@ -181,7 +181,7 @@ async function tick(
         // BUT only if the cloud is newer. Otherwise we'd overwrite newer local progress.
         try {
           const restored = await restoreMissingFiles(token, owner, game.appId)
-          const statuses = await getSyncStatuses(token, owner)
+          const statuses = await getSyncStatuses(token, owner, actor)
           const st = statuses.find((s) => s.appId === game.appId)
           if (
             st &&
@@ -225,7 +225,7 @@ async function tick(
         // underlying git clone against this background push.
         onEvent({ appId: game.appId, name: game.name, action: 'push-start', ok: true, code: 'push-start' })
         try {
-          const statuses = await getSyncStatuses(token, owner)
+          const statuses = await getSyncStatuses(token, owner, actor)
           const st = statuses.find((s) => s.appId === game.appId)
           // TODO(temporary): diagnostics for "saved in-game, exited — nothing got pushed".
           console.log(

@@ -776,7 +776,11 @@ async function folderSize(dir: string, pattern?: RegExp): Promise<number> {
 }
 
 /** Sync status for all supported games (a single pull covers all of them). */
-export async function getSyncStatuses(token: string, owner: string): Promise<GameSyncStatus[]> {
+export async function getSyncStatuses(
+  token: string,
+  owner: string,
+  actor: string
+): Promise<GameSyncStatus[]> {
   try {
     await ensureRepo(token, owner)
   } catch (e) {
@@ -799,9 +803,30 @@ export async function getSyncStatuses(token: string, owner: string): Promise<Gam
   // Pick up any custom game a co-op partner added since we last checked
   // (best-effort — an unreachable/corrupt registry file just means nothing
   // new gets picked up this cycle, not a hard failure of the whole check).
+  // Also self-heal our OWN custom game(s) whose initial registry push failed
+  // silently (games:add-custom swallows that error so using a freshly-added
+  // game locally is never blocked by it) — a partner can never discover a
+  // game that never made it into the registry no matter how many times they
+  // check, so retrying here on every check (on-demand and the ~2min
+  // background one) is the only way it ever heals without the user knowing
+  // anything failed in the first place.
   try {
-    for (const entry of await readCustomGamesRegistry()) {
+    const registry = await readCustomGamesRegistry()
+    const registered = new Set(registry.map((e) => e.appId))
+    for (const entry of registry) {
       materializeRemoteCustomGame(entry.appId, entry.name)
+    }
+    for (const g of listCustomGames()) {
+      // A real save path means we added this game ourselves — a partner's
+      // entry always materializes with savePath: '' (see
+      // materializeRemoteCustomGame above), so only games we actually own
+      // should ever get (re)registered here.
+      if (!g.savePath || registered.has(g.appId)) continue
+      try {
+        await pushCustomGameToRegistry(token, owner, actor, g.appId, g.name)
+      } catch {
+        // Try again next check — same reasoning as the outer catch below.
+      }
     }
   } catch {
     // See above — try again next time getSyncStatuses runs.

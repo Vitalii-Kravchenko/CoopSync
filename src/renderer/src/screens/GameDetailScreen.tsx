@@ -7,6 +7,7 @@ import { ChevronRightIcon, HistoryIcon, FolderIcon, EditIcon, TrashIcon, AlertTr
 import Avatar from '../components/Avatar'
 import Button from '../components/Button'
 import ConfirmModal from '../components/ConfirmModal'
+import CoverCropModal from '../components/CoverCropModal'
 import Pagination from '../components/Pagination'
 import type { BannerState } from '../components/Banner'
 import { useAvatars } from '../hooks/useAvatars'
@@ -32,6 +33,11 @@ interface Props {
   /** Added manually, not from CoopSync's built-in catalog — shows a
    *  disclaimer and a "Remove game" action. */
   isCustom?: boolean
+  /** Custom game's own cover art, if set (isCustom only). */
+  coverDataUrl?: string
+  /** A custom game's cover was just changed — lets MainScreen's game list
+   *  pick up the new art (only relevant when isCustom is true). */
+  onCoverChanged: (appId: string, dataUrl: string | null) => void
   /** Changes after every real push — a signal to reread this game's history. */
   syncVersion: number
   user: AuthUser
@@ -58,6 +64,8 @@ function GameDetailScreen({
   appId,
   name,
   isCustom,
+  coverDataUrl,
+  onCoverChanged,
   syncVersion,
   user,
   avatarDataUrl,
@@ -72,6 +80,35 @@ function GameDetailScreen({
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [imgError, setImgError] = useState(false)
+  const [cover, setCover] = useState(coverDataUrl)
+  const [coverSrc, setCoverSrc] = useState<string | null>(null)
+  const [savingCover, setSavingCover] = useState(false)
+  const [coverError, setCoverError] = useState<string | null>(null)
+
+  async function handlePickCover(): Promise<void> {
+    setCoverError(null)
+    try {
+      const raw = await window.api.games.pickCoverFile()
+      if (raw) setCoverSrc(raw)
+    } catch (e) {
+      setCoverError(describeError(e, t, t.history.coverError))
+    }
+  }
+
+  async function handleCoverCropped(dataUrl: string): Promise<void> {
+    setSavingCover(true)
+    try {
+      await window.api.games.saveCover(appId, dataUrl)
+      setCover(dataUrl)
+      setImgError(false)
+      onCoverChanged(appId, dataUrl)
+    } catch (e) {
+      setCoverError(describeError(e, t, t.history.coverError))
+    } finally {
+      setSavingCover(false)
+      setCoverSrc(null)
+    }
+  }
   // This screen's header (breadcrumbs + poster/title row, ~140px) is taller
   // than HistoryScreen's (plain title + search, ~100px) — useRowCapacity's
   // tiers assume the shorter one, so without trimming a row, a full page
@@ -224,18 +261,38 @@ function GameDetailScreen({
       </div>
 
       <div style={styles.header}>
-        {!imgError ? (
+        {cover || !imgError ? (
           <img
-            src={steamPoster(appId)}
+            src={cover ?? steamPoster(appId)}
             alt=""
             style={styles.poster}
-            onError={() => setImgError(true)}
+            onError={() => {
+              if (!cover) setImgError(true)
+            }}
           />
         ) : (
           <div style={styles.posterFallback} />
         )}
-        <div style={styles.h1}>{name}</div>
+        <div>
+          <div style={styles.h1}>{name}</div>
+          {isCustom && (
+            <Button variant="ghost" style={styles.changeCoverBtn} onClick={handlePickCover}>
+              <EditIcon size={12} color={colors.text2} />
+              {t.history.changeCover}
+            </Button>
+          )}
+          {coverError && <div style={styles.savePathErrorText}>{coverError}</div>}
+        </div>
       </div>
+
+      {coverSrc && (
+        <CoverCropModal
+          src={coverSrc}
+          busy={savingCover}
+          onCancel={() => setCoverSrc(null)}
+          onConfirm={handleCoverCropped}
+        />
+      )}
 
       {isCustom && (
         <div style={styles.customWarning}>
@@ -533,6 +590,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexShrink: 0
   },
   h1: { fontFamily: fonts.display, fontSize: 22, fontWeight: 700, color: colors.text1 },
+  changeCoverBtn: { height: 28, padding: '0 10px', fontSize: 11.5, marginTop: 8 },
   customWarning: {
     display: 'flex',
     alignItems: 'center',

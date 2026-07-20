@@ -4,6 +4,8 @@ import { useFocusTrap } from '../hooks/useFocusTrap'
 import { useI18n } from '../i18n'
 import { describeError } from '../errors'
 import Button from './Button'
+import CoverCropModal from './CoverCropModal'
+import { CloseIcon } from './icons'
 
 interface Props {
   onAdded: () => void
@@ -23,6 +25,8 @@ function AddCustomGameModal({ onAdded, onCancel }: Props): React.JSX.Element {
   const [hasScanned, setHasScanned] = useState(false)
   const [exeCandidates, setExeCandidates] = useState<string[]>([])
   const [selectedExes, setSelectedExes] = useState<string[]>([])
+  const [coverSrc, setCoverSrc] = useState<string | null>(null)
+  const [cover, setCover] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const mouseDownOnBackdrop = useRef(false)
@@ -67,12 +71,22 @@ function AddCustomGameModal({ onAdded, onCancel }: Props): React.JSX.Element {
     setSelectedExes((prev) => (prev.includes(exe) ? prev.filter((e) => e !== exe) : [...prev, exe]))
   }
 
+  async function handlePickCover(): Promise<void> {
+    const raw = await window.api.games.pickCoverFile()
+    if (raw) setCoverSrc(raw)
+  }
+
+  function handleCoverCropped(dataUrl: string): void {
+    setCover(dataUrl)
+    setCoverSrc(null)
+  }
+
   async function handleSubmit(): Promise<void> {
     if (!name.trim() || !path.trim()) return
     setBusy(true)
     setError(null)
     try {
-      await window.api.games.addCustom(name.trim(), path.trim(), selectedExes)
+      await window.api.games.addCustom(name.trim(), path.trim(), selectedExes, cover)
       onAdded()
     } catch (e) {
       setError(describeError(e, t, t.errors.CUSTOM_GAME_INVALID({})))
@@ -170,9 +184,30 @@ function AddCustomGameModal({ onAdded, onCancel }: Props): React.JSX.Element {
             </div>
           )}
 
-          <Button variant="ghost" style={styles.manualExeBtn} onClick={handlePickExeManually}>
-            {t.addGame.addExeManually}
-          </Button>
+          <div style={styles.actionRow}>
+            <Button variant="ghost" style={styles.manualExeBtn} onClick={handlePickExeManually}>
+              {t.addGame.addExeManually}
+            </Button>
+            <Button variant="ghost" style={styles.manualExeBtn} onClick={handlePickCover}>
+              {cover ? t.history.changeCover : t.addGame.addCover}
+            </Button>
+            {cover && (
+              <div style={styles.coverPreviewWrap}>
+                <img src={cover} alt="" style={styles.coverPreview} />
+                <button
+                  className="reset-btn"
+                  style={styles.coverRemoveBtn}
+                  onClick={() => setCover(null)}
+                >
+                  <CloseIcon size={10} color={colors.text1} />
+                </button>
+              </div>
+            )}
+          </div>
+
+          {coverSrc && (
+            <CoverCropModal src={coverSrc} onCancel={() => setCoverSrc(null)} onConfirm={handleCoverCropped} />
+          )}
 
           {error && <div style={styles.error}>{error}</div>}
 
@@ -259,13 +294,36 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer'
   },
   exeName: { fontFamily: fonts.mono, fontSize: 12.5, color: colors.text1 },
+  actionRow: { display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, flexWrap: 'wrap' },
   manualExeBtn: {
     height: 32,
     padding: '0 14px',
     fontSize: 12.5,
-    marginTop: 10,
     whiteSpace: 'nowrap',
     flexShrink: 0
+  },
+  coverPreviewWrap: { position: 'relative', flexShrink: 0 },
+  coverPreview: {
+    width: 32,
+    height: 48,
+    borderRadius: radii.sm,
+    objectFit: 'cover',
+    border: `1px solid ${colors.borderDefault}`,
+    display: 'block'
+  },
+  coverRemoveBtn: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    width: 18,
+    height: 18,
+    borderRadius: '50%',
+    background: colors.bgOverlay,
+    border: `1px solid ${colors.borderStrong}`,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer'
   },
   error: {
     fontSize: 12.5,

@@ -66,7 +66,8 @@ export const tr: Translation = {
     exeFoundLabel: 'Bulunan çalıştırılabilir dosyalar — oyunu başlatanı seç:',
     exeNoneFound:
       'Otomatik olarak .exe bulunamadı — otomatik senkronizasyon kullanılamayacak, ancak manuel Upload/Download çalışmaya devam edecek.',
-    addExeManually: '.exe dosyasını elle ekle…'
+    addExeManually: '.exe dosyasını elle ekle…',
+    addCover: 'Kapak ekle'
   },
   friends: {
     title: 'Arkadaşlar',
@@ -135,7 +136,9 @@ export const tr: Translation = {
     removeCustomGameConfirmTitle: 'Bu oyun kaldırılsın mı?',
     removeCustomGameConfirmDesc: (name) =>
       `${name} artık senkronize edilmeyecek. Yerel kayıtlar ve paylaşılan depoya zaten gönderilmiş olan her şey dokunulmadan kalır.`,
-    removeCustomGameError: 'Oyun kaldırılamadı'
+    removeCustomGameError: 'Oyun kaldırılamadı',
+    changeCover: 'Kapağı değiştir',
+    coverError: 'Kapak yüklenemedi'
   },
   cloudWarning: {
     title: "Senkronize edilen oyunlar için Steam Cloud'u kapat",

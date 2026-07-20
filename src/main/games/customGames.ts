@@ -24,12 +24,18 @@ export function isCustomGameId(appId: string): boolean {
   return appId.startsWith(CUSTOM_ID_PREFIX)
 }
 
-export function addCustomGame(name: string, savePath: string, processNames: string[]): CustomGame {
+export function addCustomGame(
+  name: string,
+  savePath: string,
+  processNames: string[],
+  coverDataUrl?: string
+): CustomGame {
   const game: CustomGame = {
     appId: `${CUSTOM_ID_PREFIX}${randomUUID()}`,
     name,
     savePath,
-    processNames
+    processNames,
+    ...(coverDataUrl ? { coverDataUrl } : {})
   }
   writeSettings({ customGames: [...listCustomGames(), game] })
   return game
@@ -46,6 +52,18 @@ export function materializeRemoteCustomGame(appId: string, name: string): void {
   if (listCustomGames().some((g) => g.appId === appId)) return
   const game: CustomGame = { appId, name, savePath: '', processNames: [] }
   writeSettings({ customGames: [...listCustomGames(), game] })
+}
+
+/** Set (dataUrl) or clear (null) a custom game's cover art. No-op if appId
+ *  isn't a locally-known custom game (the UI only offers this once it is). */
+export function setCustomGameCover(appId: string, dataUrl: string | null): void {
+  const list = listCustomGames()
+  const next = list.map((g) => {
+    if (g.appId !== appId) return g
+    const { coverDataUrl: _drop, ...rest } = g
+    return dataUrl ? { ...rest, coverDataUrl: dataUrl } : rest
+  })
+  writeSettings({ customGames: next })
 }
 
 export function removeCustomGame(appId: string): void {

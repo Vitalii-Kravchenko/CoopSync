@@ -66,7 +66,8 @@ export const de: Translation = {
     exeFoundLabel: 'Gefundene ausführbare Dateien — wähle die aus, die das Spiel startet:',
     exeNoneFound:
       'Es wurde keine .exe automatisch gefunden — die automatische Synchronisierung ist nicht verfügbar, aber manuelles Upload/Download funktioniert weiterhin.',
-    addExeManually: '.exe manuell hinzufügen…'
+    addExeManually: '.exe manuell hinzufügen…',
+    addCover: 'Cover hinzufügen'
   },
   friends: {
     title: 'Freunde',
@@ -135,7 +136,9 @@ export const de: Translation = {
     removeCustomGameConfirmTitle: 'Dieses Spiel entfernen?',
     removeCustomGameConfirmDesc: (name) =>
       `${name} wird nicht mehr synchronisiert. Lokale Spielstände und bereits ins gemeinsame Repository hochgeladene Daten bleiben unangetastet.`,
-    removeCustomGameError: 'Spiel konnte nicht entfernt werden'
+    removeCustomGameError: 'Spiel konnte nicht entfernt werden',
+    changeCover: 'Cover ändern',
+    coverError: 'Cover konnte nicht geladen werden'
   },
   cloudWarning: {
     title: 'Steam Cloud für synchronisierte Spiele deaktivieren',

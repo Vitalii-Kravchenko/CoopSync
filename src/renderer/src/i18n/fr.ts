@@ -66,7 +66,8 @@ export const fr: Translation = {
     exeFoundLabel: 'Exécutables détectés — choisissez celui qui lance le jeu :',
     exeNoneFound:
       "Aucun .exe trouvé automatiquement — la synchronisation automatique ne sera pas disponible, mais l'Upload/Download manuel fonctionnera toujours.",
-    addExeManually: 'Ajouter un .exe manuellement…'
+    addExeManually: 'Ajouter un .exe manuellement…',
+    addCover: 'Ajouter une jaquette'
   },
   friends: {
     title: 'Amis',
@@ -135,7 +136,9 @@ export const fr: Translation = {
     removeCustomGameConfirmTitle: 'Supprimer ce jeu ?',
     removeCustomGameConfirmDesc: (name) =>
       `${name} ne sera plus synchronisé. Les sauvegardes locales et tout ce qui a déjà été envoyé vers le dépôt partagé resteront intacts.`,
-    removeCustomGameError: "Impossible de supprimer ce jeu"
+    removeCustomGameError: "Impossible de supprimer ce jeu",
+    changeCover: 'Changer la jaquette',
+    coverError: "Impossible de charger la jaquette"
   },
   cloudWarning: {
     title: 'Désactive Steam Cloud pour les jeux synchronisés',

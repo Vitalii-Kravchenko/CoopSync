@@ -61,9 +61,9 @@ function MainScreen({
   const [catalog, setCatalog] = useState<CatalogGame[]>([])
   const [query, setQuery] = useState('')
   // Selected game -> show GameDetailScreen (its own sync history) instead of the grid.
-  const [selectedGame, setSelectedGame] = useState<{ appId: string; name: string; isCustom?: boolean } | null>(
-    null
-  )
+  const [selectedGame, setSelectedGame] = useState<
+    { appId: string; name: string; isCustom?: boolean; coverDataUrl?: string } | null
+  >(null)
   const [showAddGame, setShowAddGame] = useState(false)
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState<string | null>(null)
@@ -216,6 +216,11 @@ function MainScreen({
         appId={selectedGame.appId}
         name={selectedGame.name}
         isCustom={selectedGame.isCustom}
+        coverDataUrl={selectedGame.coverDataUrl}
+        onCoverChanged={(_appId, dataUrl) => {
+          setSelectedGame((g) => (g ? { ...g, coverDataUrl: dataUrl ?? undefined } : g))
+          void loadGames()
+        }}
         syncVersion={syncVersion}
         user={user}
         avatarDataUrl={avatarDataUrl}
@@ -306,6 +311,7 @@ function MainScreen({
                 installed
                 supported={g.supported}
                 isCustom={g.isCustom}
+                coverDataUrl={g.coverDataUrl}
                 syncStatus={syncStatuses[g.appId]?.status}
                 localVersion={syncStatuses[g.appId]?.localVersion}
                 remoteVersion={syncStatuses[g.appId]?.remoteVersion}
@@ -314,7 +320,9 @@ function MainScreen({
                 busy={syncing === g.appId}
                 onUpload={() => handleSync(g.appId, 'upload')}
                 onDownload={() => handleSync(g.appId, 'download')}
-                onOpenDetails={() => setSelectedGame({ appId: g.appId, name: g.name, isCustom: g.isCustom })}
+                onOpenDetails={() =>
+                  setSelectedGame({ appId: g.appId, name: g.name, isCustom: g.isCustom, coverDataUrl: g.coverDataUrl })
+                }
               />
             ))}
           </div>

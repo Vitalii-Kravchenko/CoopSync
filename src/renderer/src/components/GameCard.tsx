@@ -16,6 +16,9 @@ interface Props {
   /** Added manually, not from CoopSync's built-in catalog — shown with a
    *  small tag since sync doesn't filter its save files. */
   isCustom?: boolean
+  /** Custom game's own cover art, if set — used instead of the Steam poster
+   *  (there isn't one for a game outside the catalog). */
+  coverDataUrl?: string
   /** Sync status (installed games only). undefined = still checking. */
   syncStatus?: SyncStatus
   /** Local saves version. */
@@ -126,6 +129,7 @@ function GameCard({
   installed,
   supported = true,
   isCustom,
+  coverDataUrl,
   syncStatus,
   localVersion,
   remoteVersion,
@@ -162,12 +166,14 @@ function GameCard({
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
       >
-        {!imgError ? (
+        {coverDataUrl || !imgError ? (
           <img
-            src={steamPoster(appId)}
+            src={coverDataUrl ?? steamPoster(appId)}
             alt={name}
             style={styles.img}
-            onError={() => setImgError(true)}
+            onError={() => {
+              if (!coverDataUrl) setImgError(true)
+            }}
           />
         ) : (
           <div style={styles.fallback}>{name}</div>

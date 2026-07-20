@@ -90,6 +90,9 @@ export interface InstalledGame {
    *  catalog) — shown with a disclaimer since its save folder isn't
    *  filtered the way SupportedGame.saveFilePattern filters a catalog game. */
   isCustom?: boolean
+  /** Custom game's own cover art, if set — GameCard/GameDetailScreen use
+   *  this instead of the Steam poster (there isn't one). */
+  coverDataUrl?: string
 }
 
 /** A user-added game not in CoopSync's built-in catalog — appId is a
@@ -105,6 +108,9 @@ export interface CustomGame {
    *  adding the game — drives the same launch/exit auto-sync watcher as
    *  catalog games. Empty = manual Upload/Download only, no auto-sync. */
   processNames: string[]
+  /** User-picked, cropped cover art (2:3, a JPEG data URL) — there's no
+   *  Steam poster for a game outside the catalog. */
+  coverDataUrl?: string
 }
 
 /** Sync status of a game's saves (comparing local against GitHub). */

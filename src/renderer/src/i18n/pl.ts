@@ -65,7 +65,8 @@ export const pl: Translation = {
     exeFoundLabel: 'Wykryte pliki wykonywalne — wybierz ten, który uruchamia grę:',
     exeNoneFound:
       'Nie udało się automatycznie znaleźć .exe — autosynchronizacja nie będzie dostępna, ale ręczny Upload/Download nadal zadziała.',
-    addExeManually: 'Dodaj .exe ręcznie…'
+    addExeManually: 'Dodaj .exe ręcznie…',
+    addCover: 'Dodaj okładkę'
   },
   friends: {
     title: 'Znajomi',
@@ -134,7 +135,9 @@ export const pl: Translation = {
     removeCustomGameConfirmTitle: 'Usunąć tę grę?',
     removeCustomGameConfirmDesc: (name) =>
       `${name} przestanie się synchronizować. Lokalne zapisy i wszystko, co już trafiło do wspólnego repozytorium, pozostaną nietknięte.`,
-    removeCustomGameError: 'Nie udało się usunąć gry'
+    removeCustomGameError: 'Nie udało się usunąć gry',
+    changeCover: 'Zmień okładkę',
+    coverError: 'Nie udało się wczytać okładki'
   },
   cloudWarning: {
     title: 'Wyłącz Steam Cloud dla synchronizowanych gier',

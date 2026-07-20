@@ -41,7 +41,7 @@ import { forgetPending } from './services/backgroundState'
 import { getNotifications, markRead, markAllRead, clearAll } from './services/notificationStore'
 import { READY_GAMES } from './games/catalog'
 import { resolveSavePath, isCustomSavePath, setSavePathOverride } from './games/savePath'
-import { getSyncableGames, addCustomGame, removeCustomGame } from './games/customGames'
+import { getSyncableGames, addCustomGame, removeCustomGame, setCustomGameCover } from './games/customGames'
 import { scanForExecutables } from './games/exeScan'
 import { saveToken, loadToken, clearToken } from './services/tokenStore'
 import { sendSupportMessage } from './services/support'
@@ -67,9 +67,10 @@ import type {
   GameSavePathInfo
 } from '../shared/types'
 
-// Max avatar file size — to keep settings.json from bloating.
-const MAX_AVATAR_BYTES = 2 * 1024 * 1024
-const AVATAR_MIME: Record<string, string> = {
+// Max picked image file size (avatar or game cover) — to keep settings.json
+// from bloating (the crop modal downsizes it further before it's ever saved).
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024
+const IMAGE_MIME: Record<string, string> = {
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg',
@@ -112,6 +113,33 @@ async function requireOwner(): Promise<{ token: string; owner: string }> {
   const settings = readSettings()
   if (settings.role === 'join') throw makeAppError('NOT_REPO_OWNER')
   return requireAuth()
+}
+
+// Shared by settings:pick-avatar-file and games:pick-cover-file — opens an
+// image file picker and returns the raw file as a data URL. No crop yet;
+// the renderer's crop modal (square for avatars, 2:3 for game covers)
+// handles that right after, using this as its source image.
+async function pickImageFile(
+  event: Electron.IpcMainInvokeEvent,
+  dialogTitle: string
+): Promise<string | null> {
+  const win = BrowserWindow.fromWebContents(event.sender)
+  const options: Electron.OpenDialogOptions = {
+    title: dialogTitle,
+    filters: [{ name: 'Зображення', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'] }],
+    properties: ['openFile']
+  }
+  const result = await (win ? dialog.showOpenDialog(win, options) : dialog.showOpenDialog(options))
+  if (result.canceled || result.filePaths.length === 0) return null
+
+  const filePath = result.filePaths[0]
+  const mime = IMAGE_MIME[extname(filePath).toLowerCase()]
+  if (!mime) throw makeAppError('IMAGE_FORMAT_UNSUPPORTED')
+  if (statSync(filePath).size > MAX_IMAGE_BYTES) {
+    throw makeAppError('IMAGE_TOO_LARGE')
+  }
+
+  return `data:${mime};base64,${readFileSync(filePath).toString('base64')}`
 }
 
 // Registers all IPC channels (calls from renderer into main).
@@ -339,10 +367,16 @@ export function registerIpcHandlers(): void {
   // catalog game — empty means manual upload/download only.
   ipcMain.handle(
     'games:add-custom',
-    async (_event, name: string, savePath: string, processNames: string[]): Promise<InstalledGame> => {
+    async (
+      _event,
+      name: string,
+      savePath: string,
+      processNames: string[],
+      coverDataUrl: string | null
+    ): Promise<InstalledGame> => {
       const trimmedName = name.trim()
       if (!trimmedName || !savePath.trim()) throw makeAppError('CUSTOM_GAME_INVALID')
-      const game = addCustomGame(trimmedName, savePath.trim(), processNames)
+      const game = addCustomGame(trimmedName, savePath.trim(), processNames, coverDataUrl ?? undefined)
       // Best-effort: let a co-op partner's app see this game exists too (see
       // pushCustomGameToRegistry). The local add above already succeeded —
       // no login/repo/internet yet shouldn't block using the game on THIS
@@ -355,7 +389,7 @@ export function registerIpcHandlers(): void {
       } catch {
         // silently ignore — see comment above
       }
-      return { appId: game.appId, name: game.name, supported: true, isCustom: true }
+      return { appId: game.appId, name: game.name, supported: true, isCustom: true, coverDataUrl: game.coverDataUrl }
     }
   )
 
@@ -396,6 +430,17 @@ export function registerIpcHandlers(): void {
     } catch {
       // silently ignore — see comment above
     }
+  })
+
+  // Open a file picker for a custom game's cover art (2:3 poster — no Steam
+  // artwork exists for it). The renderer crops it before saving.
+  ipcMain.handle('games:pick-cover-file', async (event): Promise<string | null> =>
+    pickImageFile(event, 'Обери обкладинку гри')
+  )
+
+  // Save (dataUrl) or clear (null) a custom game's already-cropped cover.
+  ipcMain.handle('games:save-cover', (_event, appId: string, dataUrl: string | null): void => {
+    setCustomGameCover(appId, dataUrl)
   })
 
   // --- Save sync ---
@@ -567,25 +612,9 @@ export function registerIpcHandlers(): void {
   // Open a file picker dialog and read the raw image as a data URL — no save
   // yet, the renderer runs it through the crop modal first. Returns null if
   // the user cancelled the selection.
-  ipcMain.handle('settings:pick-avatar-file', async (event): Promise<string | null> => {
-    const win = BrowserWindow.fromWebContents(event.sender)
-    const options: Electron.OpenDialogOptions = {
-      title: 'Обери зображення профілю',
-      filters: [{ name: 'Зображення', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'] }],
-      properties: ['openFile']
-    }
-    const result = await (win ? dialog.showOpenDialog(win, options) : dialog.showOpenDialog(options))
-    if (result.canceled || result.filePaths.length === 0) return null
-
-    const filePath = result.filePaths[0]
-    const mime = AVATAR_MIME[extname(filePath).toLowerCase()]
-    if (!mime) throw makeAppError('IMAGE_FORMAT_UNSUPPORTED')
-    if (statSync(filePath).size > MAX_AVATAR_BYTES) {
-      throw makeAppError('IMAGE_TOO_LARGE')
-    }
-
-    return `data:${mime};base64,${readFileSync(filePath).toString('base64')}`
-  })
+  ipcMain.handle('settings:pick-avatar-file', async (event): Promise<string | null> =>
+    pickImageFile(event, 'Обери зображення профілю')
+  )
 
   // Save the already-cropped (square, small) avatar the renderer produced
   // via <canvas> in the crop modal.

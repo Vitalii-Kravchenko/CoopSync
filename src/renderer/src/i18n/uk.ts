@@ -65,7 +65,8 @@ export const uk: Translation = {
     exeFoundLabel: 'Знайдені виконувані файли — вибери той, що запускає гру:',
     exeNoneFound:
       'Не вдалося знайти .exe автоматично — автосинк буде недоступний, але ручний Upload/Download працюватиме.',
-    addExeManually: 'Додати .exe вручну…'
+    addExeManually: 'Додати .exe вручну…',
+    addCover: 'Додати обкладинку'
   },
   friends: {
     title: 'Друзі',
@@ -134,7 +135,9 @@ export const uk: Translation = {
     removeCustomGameConfirmTitle: 'Видалити цю гру?',
     removeCustomGameConfirmDesc: (name) =>
       `${name} перестане синхронізуватись. Локальні сейви та все, що вже завантажено у спільний репозиторій, залишаться недоторканими.`,
-    removeCustomGameError: 'Не вдалося видалити гру'
+    removeCustomGameError: 'Не вдалося видалити гру',
+    changeCover: 'Змінити обкладинку',
+    coverError: 'Не вдалося завантажити обкладинку'
   },
   cloudWarning: {
     title: 'Вимкни Steam Cloud для ігор, які синкає CoopSync',

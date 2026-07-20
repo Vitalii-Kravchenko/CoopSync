@@ -65,7 +65,8 @@ export const ru: Translation = {
     exeFoundLabel: 'Найденные исполняемые файлы — выбери тот, что запускает игру:',
     exeNoneFound:
       'Не удалось найти .exe автоматически — автосинхронизация будет недоступна, но ручной Upload/Download будет работать.',
-    addExeManually: 'Добавить .exe вручную…'
+    addExeManually: 'Добавить .exe вручную…',
+    addCover: 'Добавить обложку'
   },
   friends: {
     title: 'Друзья',
@@ -134,7 +135,9 @@ export const ru: Translation = {
     removeCustomGameConfirmTitle: 'Удалить эту игру?',
     removeCustomGameConfirmDesc: (name) =>
       `${name} перестанет синхронизироваться. Локальные сохранения и всё, что уже загружено в общий репозиторий, останутся нетронутыми.`,
-    removeCustomGameError: 'Не удалось удалить игру'
+    removeCustomGameError: 'Не удалось удалить игру',
+    changeCover: 'Изменить обложку',
+    coverError: 'Не удалось загрузить обложку'
   },
   cloudWarning: {
     title: 'Отключи Steam Cloud для игр, которые синхронизирует CoopSync',

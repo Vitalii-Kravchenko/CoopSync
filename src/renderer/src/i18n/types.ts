@@ -91,6 +91,7 @@ export interface Translation {
     exeFoundLabel: string
     exeNoneFound: string
     addExeManually: string
+    addCover: string
   }
   friends: {
     title: string
@@ -157,6 +158,8 @@ export interface Translation {
     removeCustomGameConfirmTitle: string
     removeCustomGameConfirmDesc: (name: string) => string
     removeCustomGameError: string
+    changeCover: string
+    coverError: string
   }
   cloudWarning: {
     title: string

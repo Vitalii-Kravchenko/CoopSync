@@ -87,15 +87,26 @@ const api = {
     setSavePath: (appId: string, path: string | null): Promise<GameSavePathInfo> =>
       ipcRenderer.invoke('games:set-save-path', appId, path),
     /** Add a game that isn't in the built-in catalog. processNames (from
-     *  scanExes, possibly empty) enables launch/exit auto-sync for it. */
-    addCustom: (name: string, savePath: string, processNames: string[]): Promise<InstalledGame> =>
-      ipcRenderer.invoke('games:add-custom', name, savePath, processNames),
+     *  scanExes, possibly empty) enables launch/exit auto-sync for it.
+     *  coverDataUrl — an already-cropped cover picked in the same modal. */
+    addCustom: (
+      name: string,
+      savePath: string,
+      processNames: string[],
+      coverDataUrl: string | null
+    ): Promise<InstalledGame> =>
+      ipcRenderer.invoke('games:add-custom', name, savePath, processNames, coverDataUrl),
     /** Remove a manually-added game. */
     removeCustom: (appId: string): Promise<void> => ipcRenderer.invoke('games:remove-custom', appId),
     /** Scan a folder for candidate game executables (install-folder picker). */
     scanExes: (folderPath: string): Promise<string[]> => ipcRenderer.invoke('games:scan-exes', folderPath),
     /** Manual fallback — pick a single .exe file directly. Returns its basename. */
-    pickExeFile: (): Promise<string | null> => ipcRenderer.invoke('games:pick-exe-file')
+    pickExeFile: (): Promise<string | null> => ipcRenderer.invoke('games:pick-exe-file'),
+    /** Open the file picker dialog and read the raw cover image. null = cancelled. */
+    pickCoverFile: (): Promise<string | null> => ipcRenderer.invoke('games:pick-cover-file'),
+    /** Save (or clear, with dataUrl=null) a custom game's already-cropped cover. */
+    saveCover: (appId: string, dataUrl: string | null): Promise<void> =>
+      ipcRenderer.invoke('games:save-cover', appId, dataUrl)
   },
   sync: {
     /** Upload the game's saves to GitHub. */

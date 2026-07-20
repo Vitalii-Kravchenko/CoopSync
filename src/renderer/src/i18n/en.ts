@@ -63,7 +63,8 @@ export const en: Translation = {
     exeFoundLabel: 'Detected executable(s) — pick the one that launches the game:',
     exeNoneFound:
       "No .exe found automatically — auto-sync won't be available, but manual Upload/Download will still work.",
-    addExeManually: 'Add .exe manually…'
+    addExeManually: 'Add .exe manually…',
+    addCover: 'Add cover'
   },
   friends: {
     title: 'Friends',
@@ -132,7 +133,9 @@ export const en: Translation = {
     removeCustomGameConfirmTitle: 'Remove this game?',
     removeCustomGameConfirmDesc: (name) =>
       `${name} will stop syncing. Its local save files and anything already pushed to the shared repo stay untouched.`,
-    removeCustomGameError: "Couldn't remove this game"
+    removeCustomGameError: "Couldn't remove this game",
+    changeCover: 'Change cover',
+    coverError: "Couldn't load the cover"
   },
   cloudWarning: {
     title: 'Turn off Steam Cloud for synced games',

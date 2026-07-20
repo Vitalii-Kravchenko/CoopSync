@@ -7,7 +7,7 @@
 <p align="center">🇺🇸 English · <a href="README.uk.md">🇺🇦 Українська</a></p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.9.31-8A6CFF?style=flat-square&labelColor=10131C" alt="Version">
+  <img src="https://img.shields.io/badge/version-0.9.32-8A6CFF?style=flat-square&labelColor=10131C" alt="Version">
   <img src="https://img.shields.io/badge/platform-Windows-36E2E8?style=flat-square&labelColor=10131C" alt="Platform">
   <img src="https://img.shields.io/badge/stack-Electron%20%2B%20TS-5AA9FF?style=flat-square&labelColor=10131C" alt="Stack">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Noncommercial-79839A?style=flat-square&labelColor=10131C" alt="License"></a>

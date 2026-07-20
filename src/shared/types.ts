@@ -124,13 +124,19 @@ export interface CustomGame {
    *  actually save data. Local to this machine, not pushed to a co-op
    *  partner (unlike the name/save-path registry entry). */
   excludedFiles?: string[]
-  /** True once this entry was materialized locally from a co-op partner's
-   *  registry push (materializeRemoteCustomGame) rather than added on this
-   *  PC — stays true even after the save path/exe get configured here.
-   *  Distinguishes "we own this, keep re-registering it if it ever drops
-   *  out of the shared registry" from "a partner owns this, remove it here
-   *  too once they do" (see sync.ts's getSyncStatuses). */
-  receivedFromPartner?: boolean
+  /** True once this appId has actually been observed present in the shared
+   *  registry at least once (see sync.ts's getSyncStatuses). Whoever adds a
+   *  game locally starts with this unset — the very first push to the
+   *  registry might still be in flight or have failed, so a missing entry
+   *  just means "keep retrying". Once it's true, though, a later
+   *  disappearance means someone (owner or not — anyone can remove any
+   *  custom game) removed it on purpose, and the right response is to drop
+   *  the local copy, not fight the removal by pushing it straight back.
+   *  Without this, whoever originally added a game would have their client
+   *  silently "resurrect" it in the registry forever, since from their
+   *  side a missing registry entry looked identical to their own initial
+   *  push having failed. */
+  registryConfirmed?: boolean
 }
 
 /** Sync status of a game's saves (comparing local against GitHub). */

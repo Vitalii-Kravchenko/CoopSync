@@ -52,8 +52,23 @@ export function addCustomGame(
 // is already known locally, whether still unconfigured or already set up.
 export function materializeRemoteCustomGame(appId: string, name: string): void {
   if (listCustomGames().some((g) => g.appId === appId)) return
-  const game: CustomGame = { appId, name, savePath: '', processNames: [], receivedFromPartner: true }
+  // Materializing it FROM the registry means it's registered by definition —
+  // see registryConfirmed's own doc comment for why this matters once it's
+  // later removed by whoever actually owns it.
+  const game: CustomGame = { appId, name, savePath: '', processNames: [], registryConfirmed: true }
   writeSettings({ customGames: [...listCustomGames(), game] })
+}
+
+/** Marks that this appId has now actually been observed in the shared
+ *  registry (see registryConfirmed's doc comment on CustomGame / sync.ts's
+ *  getSyncStatuses). No-op if appId isn't a locally-known custom game, or
+ *  already marked. */
+export function markCustomGameRegistryConfirmed(appId: string): void {
+  writeSettings({
+    customGames: listCustomGames().map((g) =>
+      g.appId === appId && !g.registryConfirmed ? { ...g, registryConfirmed: true } : g
+    )
+  })
 }
 
 export function getCustomGameProcessNames(appId: string): string[] {

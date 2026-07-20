@@ -14,7 +14,8 @@ import {
   setCustomGameCover,
   removeCustomGame,
   getPendingCustomGameRemovals,
-  clearPendingCustomGameRemoval
+  clearPendingCustomGameRemoval,
+  markCustomGameRegistryConfirmed
 } from '../games/customGames'
 import { SAVES_REPO_NAME } from '../config'
 import { isGameCurrentlyRunning } from './processCheck'
@@ -862,16 +863,22 @@ async function doGetSyncStatuses(token: string, owner: string, actor: string): P
   // new gets picked up this cycle, not a hard failure of the whole check).
   // Also self-heal our OWN custom game(s) whose initial registry push failed
   // silently (games:add-custom swallows that error so using a freshly-added
-  // game locally is never blocked by it) — a partner can never discover a
-  // game that never made it into the registry no matter how many times they
-  // check, so retrying here on every check (on-demand and the ~2min
-  // background one) is the only way it ever heals without the user knowing
-  // anything failed in the first place. And mirror a partner removing a
-  // game they own — games:remove-custom only ever drops the registry entry,
-  // never touches an already-materialized local copy elsewhere (so a
-  // partner mid-game never loses their local setup out from under them just
-  // because a check happened to run) — so removal has to be noticed here
-  // instead, the same way an add is.
+  // game locally is never blocked by it), and mirror ANYONE removing a game
+  // — games:remove-custom only ever drops the registry entry, never touches
+  // an already-materialized local copy elsewhere, so removal has to be
+  // noticed here instead, the same way an add is.
+  //
+  // Getting "missing from the registry" right needs more than "do I own
+  // this" (a first version of this used receivedFromPartner for that, but
+  // ANYONE can remove ANY custom game, not just its original adder) — from
+  // the ORIGINAL adder's own client, their game being deleted by someone
+  // else and their own initial push having simply failed look identical:
+  // "an appId I have locally that the registry doesn't". Telling those
+  // apart needs to know whether this appId was EVER actually seen
+  // registered before. registryConfirmed tracks exactly that (see its own
+  // doc comment) — only an appId that's never been confirmed gets pushed
+  // again; one that has, and is now gone, means somebody removed it on
+  // purpose, and every client (owner or not) should just drop it locally.
   try {
     const registry = await readCustomGamesRegistry()
     const registered = new Set(registry.map((e) => e.appId))
@@ -887,15 +894,18 @@ async function doGetSyncStatuses(token: string, owner: string, actor: string): P
       materializeRemoteCustomGame(entry.appId, entry.name)
     }
     for (const g of listCustomGames()) {
-      if (registered.has(g.appId)) continue
-      if (g.receivedFromPartner) {
-        // The owner removed it on their end — stop tracking it here too.
+      if (registered.has(g.appId)) {
+        if (!g.registryConfirmed) markCustomGameRegistryConfirmed(g.appId)
+        continue
+      }
+      if (g.registryConfirmed) {
+        // Was registered before, isn't now -- somebody removed it on
+        // purpose (whether or not it was "ours"). Converge, don't fight it.
         removeCustomGame(g.appId)
         continue
       }
-      // Not in the registry and not something we received -- we own it (added
-      // it ourselves on this PC), so it's missing because the original push
-      // failed, not because anyone removed it. Push it again.
+      // Never confirmed registered yet -- this is a fresh local add whose
+      // initial push may have failed. Push it again.
       try {
         await pushCustomGameToRegistry(token, owner, actor, g.appId, g.name)
       } catch {

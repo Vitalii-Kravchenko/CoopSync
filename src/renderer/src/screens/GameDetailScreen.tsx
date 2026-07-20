@@ -337,6 +337,12 @@ function GameDetailScreen({
           )}
           {coverError && <div style={styles.savePathErrorText}>{coverError}</div>}
         </div>
+        {isCustom && (
+          <Button variant="danger" style={styles.removeBtn} onClick={() => setShowRemoveConfirm(true)}>
+            <TrashIcon size={14} color={colors.danger} />
+            {t.history.removeCustomGame}
+          </Button>
+        )}
       </div>
 
       {coverSrc && (
@@ -488,15 +494,6 @@ function GameDetailScreen({
           </div>
           <div style={styles.emptyTitle}>{loadError ?? t.history.emptyTitle}</div>
           {!loadError && <div style={styles.emptySubtitle}>{t.history.emptySubtitle}</div>}
-        </div>
-      )}
-
-      {isCustom && (
-        <div style={styles.removeRow}>
-          <Button variant="danger" style={styles.removeBtn} onClick={() => setShowRemoveConfirm(true)}>
-            <TrashIcon size={14} color={colors.danger} />
-            {t.history.removeCustomGame}
-          </Button>
         </div>
       )}
 
@@ -682,8 +679,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   retryCoverText: { flex: 1, minWidth: 0 },
   retryCoverBtn: { height: 28, padding: '0 12px', fontSize: 12, whiteSpace: 'nowrap', flexShrink: 0 },
-  removeRow: { marginTop: 24, display: 'flex', justifyContent: 'flex-end' },
-  removeBtn: { height: 34, padding: '0 14px', fontSize: 12.5 },
+  removeBtn: { height: 34, padding: '0 14px', fontSize: 12.5, marginLeft: 'auto', flexShrink: 0 },
   savePathCard: {
     border: `1px solid ${colors.borderSubtle}`,
     borderRadius: radii.lg,

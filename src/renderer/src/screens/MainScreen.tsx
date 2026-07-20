@@ -89,11 +89,33 @@ function MainScreen({
     return window.api.updater.onStatus(setUpdateStatus)
   }, [])
 
+  // This screen fires off several independent, unawaited installed-games
+  // refreshes from different triggers (mount, a syncVersion bump, returning
+  // to this tab, a manual sync, removing a custom game...) that can easily
+  // overlap. Without this guard, an OLDER call that happens to resolve LAST
+  // (plain IPC round-trip timing, no ordering guarantee) would silently
+  // overwrite a newer, correct state with stale data — e.g. a just-deleted
+  // custom game "reappearing" because a request started before the deletion
+  // resolved after it. Every setInstalled call below goes through this so
+  // only the most recently STARTED request is ever allowed to win.
+  const installedRequestIdRef = useRef(0)
+
+  async function refreshInstalled(): Promise<void> {
+    const id = ++installedRequestIdRef.current
+    try {
+      const list = await window.api.games.allInstalled()
+      if (id === installedRequestIdRef.current) setInstalled(list)
+    } catch {
+      // Best-effort — loadGames()'s own error banner covers a genuine failure to load.
+    }
+  }
+
   async function loadGames(): Promise<void> {
+    const id = ++installedRequestIdRef.current
     setLoading(true)
     try {
       const [list, cat] = await Promise.all([window.api.games.allInstalled(), window.api.games.catalog()])
-      setInstalled(list)
+      if (id === installedRequestIdRef.current) setInstalled(list)
       setCatalog(cat)
       setGamesError(null)
     } catch (e) {
@@ -112,7 +134,7 @@ function MainScreen({
   useEffect(() => {
     if (syncVersion > 0) {
       void loadStatuses()
-      window.api.games.allInstalled().then(setInstalled).catch(() => {})
+      void refreshInstalled()
     }
   }, [syncVersion])
 
@@ -128,9 +150,14 @@ function MainScreen({
     if (active) void loadStatuses()
   }, [active])
 
+  // Same reasoning/guard as installedRequestIdRef above, for syncStatuses.
+  const statusesRequestIdRef = useRef(0)
+
   async function loadStatuses(): Promise<void> {
+    const id = ++statusesRequestIdRef.current
     try {
       const list = await window.api.sync.statuses()
+      if (id !== statusesRequestIdRef.current) return
       const map: Record<string, GameSyncStatus> = {}
       for (const s of list) map[s.appId] = s
       setSyncStatuses(map)
@@ -141,13 +168,14 @@ function MainScreen({
       // refresh the games list so either shows up right away, instead of
       // silently sitting correct in local settings until some unrelated
       // future reload (a real push/pull, a tab switch, an app restart).
-      window.api.games.allInstalled().then(setInstalled).catch(() => {})
+      void refreshInstalled()
       // Only mark seen while the tab is genuinely visible — this same
       // function also runs in the background (syncVersion bumps regardless
       // of which tab is open), and a badge the user never actually looked
       // at shouldn't clear itself.
       if (active) onGamesSeen(list.map((s) => ({ appId: s.appId, version: s.remoteVersion })))
     } catch (e) {
+      if (id !== statusesRequestIdRef.current) return
       // Don't leave stale statuses (e.g. from a deleted repo) alongside the
       // error — cards should fall back to "Checking...", not lie with old data.
       setSyncStatuses({})
@@ -201,7 +229,7 @@ function MainScreen({
         onSynced()
       }
       // Saves may have changed — refresh games and statuses.
-      setInstalled(await window.api.games.allInstalled())
+      await refreshInstalled()
       await loadStatuses()
     } catch (e) {
       onBanner({ text: describeError(e, t, t.main.syncErrorFallback), kind: 'error' })

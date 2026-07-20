@@ -23,7 +23,8 @@ export const tr: Translation = {
       "Yerel kayıt eski görünüyor (son bulut senkronizasyonundan beri değişmemiş) — bulutun üzerine yazmamak için otomatik yükleme atlandı. Gerekirse bulut sürümünü elle indir.",
     pushSkippedNoChange: 'Değişiklik yok — yüklenecek bir şey yoktu',
     statusesError: 'Senkronizasyon durumu kontrol edilemedi',
-    retry: 'Tekrar dene'
+    retry: 'Tekrar dene',
+    addGameCard: 'Oyun ekle'
   },
   gameCard: {
     statusSynced: 'Senkronize edildi',
@@ -34,6 +35,7 @@ export const tr: Translation = {
     statusCloudOnly: 'Yalnızca bulutta',
     statusNoSaves: 'Kayıt yok',
     statusNoRepo: 'Depo bağlı değil',
+    statusNeedsSetup: 'Kurulum gerekiyor',
     statusChecking: 'Kontrol ediliyor…',
     unsupported: 'Desteklenmiyor',
     syncing: 'Senkronize ediliyor…',
@@ -44,7 +46,27 @@ export const tr: Translation = {
     notInstalled: 'yüklü değil',
     lastSyncLabel: 'Son senkronizasyon:',
     savesSizeLabel: 'Kayıt boyutu:',
-    details: 'Ayrıntılar'
+    details: 'Ayrıntılar',
+    customTag: 'Elle eklendi',
+    setUp: 'Kur'
+  },
+  addGame: {
+    title: 'Oyun ekle',
+    description:
+      "Bu oyun CoopSync'in dahili kataloğunda yok, bu yüzden tüm kayıt klasörü olduğu gibi kopyalanır — hangi dosyaların gerçekten kayıt olduğunu bilmiyoruz. Oyunun .exe dosyasını aşağıda belirt, böylece başlatma/çıkışta otomatik senkronizasyon katalogdaki bir oyun gibi çalışır; bu adımı atlarsan senkronizasyon yalnızca Upload/Download düğmeleriyle manuel olur. Aynı klasörde yerel ayarlar veya hesap dosyaları varsa, onlar da senkronize edilir.",
+    nameLabel: 'Oyun adı',
+    namePlaceholder: 'örn. Oyunum',
+    pathLabel: 'Kayıt klasörü',
+    submit: 'Oyun ekle',
+    installPathLabel: 'Kurulum klasörü (isteğe bağlı)',
+    installPathHint:
+      "CoopSync'in oyunun .exe dosyasını bulup başlatma/çıkışta otomatik senkronizasyonu etkinleştirebilmesi için.",
+    scanButton: 'Tara',
+    scanning: 'Taranıyor…',
+    exeFoundLabel: 'Bulunan çalıştırılabilir dosyalar — oyunu başlatanı seç:',
+    exeNoneFound:
+      'Otomatik olarak .exe bulunamadı — otomatik senkronizasyon kullanılamayacak, ancak manuel Upload/Download çalışmaya devam edecek.',
+    addExeManually: '.exe dosyasını elle ekle…'
   },
   friends: {
     title: 'Arkadaşlar',
@@ -96,7 +118,24 @@ export const tr: Translation = {
       `Kayıt ${version} sürümüne dönecek (son senkronize eden: ${who}). Mevcut durum kaybolmaz — geçmişte yeni bir kayıt olarak görünür. Erişimi paylaşıyorsanız, oyuncu arkadaşın bir sonraki oyun açılışında bu sürümü otomatik olarak alır.`,
     restoreError: 'Sürüm geri yüklenemedi',
     revertSuccess: (version) => `${version} sürümü geri yüklendi`,
-    restoredFromBadge: (version) => `↩ ${version} sürümünden`
+    restoredFromBadge: (version) => `↩ ${version} sürümünden`,
+    savePathTitle: 'Kayıt konumu',
+    savePathCustomBadge: 'Özel',
+    savePathNotFound: 'Klasör bulunamadı',
+    savePathEdit: 'Düzenle',
+    savePathBrowse: 'Gözat…',
+    savePathPlaceholder: 'Kayıt klasörünün tam yolu',
+    savePathSave: 'Kaydet',
+    savePathCancel: 'İptal',
+    savePathReset: 'Varsayılana sıfırla',
+    savePathSaveError: 'Bu konum kaydedilemedi',
+    customGameWarning:
+      'Bu oyun elle eklendi — tüm kayıt klasörü olduğu gibi senkronize edilir (dosya filtrelemesi olmadan), bu yüzden aynı klasördeki yerel ayarlar veya hesap dosyaları da senkronize edilir.',
+    removeCustomGame: 'Oyunu kaldır',
+    removeCustomGameConfirmTitle: 'Bu oyun kaldırılsın mı?',
+    removeCustomGameConfirmDesc: (name) =>
+      `${name} artık senkronize edilmeyecek. Yerel kayıtlar ve paylaşılan depoya zaten gönderilmiş olan her şey dokunulmadan kalır.`,
+    removeCustomGameError: 'Oyun kaldırılamadı'
   },
   cloudWarning: {
     title: "Senkronize edilen oyunlar için Steam Cloud'u kapat",
@@ -270,6 +309,7 @@ export const tr: Translation = {
     LEAVE_REPO_FAILED: (p) => `Depodan ayrılınamadı (${p.status})`,
     ENCRYPTION_UNAVAILABLE: () => 'Bu sistemde şifreleme kullanılamıyor — token güvenli şekilde saklanamıyor',
     GAME_NOT_SUPPORTED: () => 'Oyun desteklenmiyor',
+    CUSTOM_GAME_INVALID: () => 'Bir oyun adı ve kayıt klasörü gir',
     GAME_RUNNING: () => 'Oyun hâlâ çalışıyor — önce onu kapat, sonra sürümü geri yüklemeyi tekrar dene',
     SAVE_FOLDER_NOT_FOUND: () => 'Kayıt klasörü bulunamadı',
     NO_CLOUD_SAVES: () => 'Depoda bu oyuna ait kayıt henüz yok',

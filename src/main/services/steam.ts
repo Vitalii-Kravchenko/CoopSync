@@ -2,6 +2,8 @@ import { execFileSync } from 'child_process'
 import { join } from 'path'
 import { existsSync, readdirSync, readFileSync } from 'fs'
 import { READY_GAMES } from '../games/catalog'
+import { resolveSavePath } from '../games/savePath'
+import { listCustomGames } from '../games/customGames'
 import type { DetectedGame, InstalledGame } from '../../shared/types'
 
 // Steam entries that aren't games (tools, runtimes, redistributables) —
@@ -82,7 +84,7 @@ function getInstalledGames(): Map<string, string> {
 export function detectGames(): DetectedGame[] {
   const installed = getInstalledGames()
   return READY_GAMES.filter((game) => installed.has(game.appId)).map((game) => {
-    const savePath = game.getSavePath()
+    const savePath = resolveSavePath(game)
     return {
       appId: game.appId,
       name: game.name,
@@ -93,15 +95,23 @@ export function detectGames(): DetectedGame[] {
 }
 
 // All installed Steam GAMES (excluding tools/runtimes) flagged with whether
-// CoopSync has ready support for them. Supported ones come first, then sorted by name.
+// CoopSync has ready support for them, plus every manually-added custom game
+// (always "installed" — the user pointed us straight at its save folder, no
+// Steam library scan needed). Supported ones come first, then sorted by name.
 export function detectAllInstalled(): InstalledGame[] {
   const installed = getInstalledGames()
   const readyIds = new Set(READY_GAMES.map((g) => g.appId))
-  return [...installed.entries()]
+  const steamGames = [...installed.entries()]
     .filter(([appId, name]) => isRealGame(appId, name))
     .map(([appId, name]) => ({ appId, name, supported: readyIds.has(appId) }))
-    .sort((a, b) => {
-      if (a.supported !== b.supported) return a.supported ? -1 : 1
-      return a.name.localeCompare(b.name)
-    })
+  const customGames = listCustomGames().map((g) => ({
+    appId: g.appId,
+    name: g.name,
+    supported: true,
+    isCustom: true
+  }))
+  return [...steamGames, ...customGames].sort((a, b) => {
+    if (a.supported !== b.supported) return a.supported ? -1 : 1
+    return a.name.localeCompare(b.name)
+  })
 }

@@ -5,7 +5,8 @@ import { createHash } from 'crypto'
 import { basename, join } from 'path'
 import { existsSync, statSync } from 'fs'
 import { cp, rm, mkdir, readdir, readFile, writeFile } from 'fs/promises'
-import { SUPPORTED_GAMES, READY_GAMES } from '../games/catalog'
+import { resolveSavePath } from '../games/savePath'
+import { getSyncableGames, isCustomGameId, materializeRemoteCustomGame } from '../games/customGames'
 import { SAVES_REPO_NAME } from '../config'
 import { isGameCurrentlyRunning } from './processCheck'
 import { createSavesRepo, leaveSharedRepo } from './github'
@@ -160,9 +161,15 @@ async function doEnsureRepo(token: string, owner: string, retried = false): Prom
 }
 
 function findGame(appId: string): { name: string; savePath: string; saveFilePattern?: RegExp } {
-  const g = SUPPORTED_GAMES.find((x) => x.appId === appId)
+  const g = getSyncableGames().find((x) => x.appId === appId)
   if (!g) throw makeAppError('GAME_NOT_SUPPORTED')
-  return { name: g.name, savePath: g.getSavePath(), saveFilePattern: g.saveFilePattern }
+  const savePath = resolveSavePath(g)
+  // A custom game a co-op partner added but this PC hasn't configured yet
+  // (materializeRemoteCustomGame — empty savePath, no override set). The UI
+  // never offers Upload/Download for 'needs-setup' games, but guard here too
+  // rather than let mkdir/existsSync('') below fail with a raw fs exception.
+  if (!savePath) throw makeAppError('SAVE_FOLDER_NOT_FOUND')
+  return { name: g.name, savePath, saveFilePattern: g.saveFilePattern }
 }
 
 // Copies a folder, skipping files (not folders) that don't match the game's
@@ -488,6 +495,76 @@ export async function getAvatars(
   return result
 }
 
+// --- Custom games registry ---
+// A shared list of {appId, name} for games added manually (customGames.ts) —
+// lives in the repo at .meta/custom-games.json, alongside avatars/history.
+// Only appId+name are shared; savePath/processNames are per-machine and stay
+// in local settings (a co-op partner's save folder is never the same path).
+// A partner's app materializes an entry it doesn't know yet with an empty
+// savePath (materializeRemoteCustomGame) — shown as 'needs-setup' below
+// until they point it at their own save folder via the game's detail screen.
+
+interface RemoteCustomGameEntry {
+  appId: string
+  name: string
+}
+
+function customGamesRegistryPath(): string {
+  return join(repoDir(), '.meta', 'custom-games.json')
+}
+
+async function readCustomGamesRegistry(): Promise<RemoteCustomGameEntry[]> {
+  const p = customGamesRegistryPath()
+  if (!existsSync(p)) return []
+  try {
+    const raw = (await readFile(p, 'utf8')).replace(/^﻿/, '')
+    return JSON.parse(raw) as RemoteCustomGameEntry[]
+  } catch {
+    return []
+  }
+}
+
+/** Add a just-added custom game to the shared registry, so a co-op partner's
+ *  app can see it exists (best-effort — called right after the local add
+ *  succeeds, see ipc.ts's games:add-custom). */
+export async function pushCustomGameToRegistry(
+  token: string,
+  owner: string,
+  actor: string,
+  appId: string,
+  name: string
+): Promise<void> {
+  await ensureRepo(token, owner)
+  const current = await readCustomGamesRegistry()
+  if (current.some((e) => e.appId === appId)) return
+  await mkdir(join(repoDir(), '.meta'), { recursive: true })
+  await writeFile(customGamesRegistryPath(), JSON.stringify([...current, { appId, name }], null, 2))
+  await git(['add', '-A'])
+  await git([...identityFlags(actor), 'commit', '-m', `custom-game: add ${name}`])
+  await git(['push', 'origin', 'main'])
+}
+
+/** Remove a custom game from the shared registry (best-effort — see ipc.ts's
+ *  games:remove-custom). Never touches anyone's already-materialized local
+ *  entry — a partner who already set up their save folder keeps working. */
+export async function removeCustomGameFromRegistry(
+  token: string,
+  owner: string,
+  actor: string,
+  appId: string
+): Promise<void> {
+  await ensureRepo(token, owner)
+  const current = await readCustomGamesRegistry()
+  const next = current.filter((e) => e.appId !== appId)
+  if (next.length === current.length) return
+  await mkdir(join(repoDir(), '.meta'), { recursive: true })
+  await writeFile(customGamesRegistryPath(), JSON.stringify(next, null, 2))
+  await git(['add', '-A'])
+  const name = current.find((e) => e.appId === appId)?.name ?? appId
+  await git([...identityFlags(actor), 'commit', '-m', `custom-game: remove ${name}`])
+  await git(['push', 'origin', 'main'])
+}
+
 /**
  * Download files from the cloud that are missing locally — without touching
  * existing local files (git-like behavior: add what's missing, don't
@@ -657,7 +734,7 @@ export async function getSyncStatuses(token: string, owner: string): Promise<Gam
       // missing or stale) — not a network/token error, but a clear "no
       // repo" state. We show this explicitly on every card instead of
       // failing with an error and leaving games stuck on "Checking..." forever.
-      return READY_GAMES.map((g) => ({
+      return getSyncableGames().map((g) => ({
         appId: g.appId,
         status: 'no-repo',
         localVersion: 0,
@@ -667,10 +744,31 @@ export async function getSyncStatuses(token: string, owner: string): Promise<Gam
     throw e
   }
 
+  // Pick up any custom game a co-op partner added since we last checked
+  // (best-effort — an unreachable/corrupt registry file just means nothing
+  // new gets picked up this cycle, not a hard failure of the whole check).
+  try {
+    for (const entry of await readCustomGamesRegistry()) {
+      materializeRemoteCustomGame(entry.appId, entry.name)
+    }
+  } catch {
+    // See above — try again next time getSyncStatuses runs.
+  }
+
   const localVersions = await readLocalVersions()
   const result: GameSyncStatus[] = []
-  for (const g of READY_GAMES) {
-    const savePath = g.getSavePath()
+  for (const g of getSyncableGames()) {
+    const savePath = resolveSavePath(g)
+
+    // A custom game that's been materialized from a partner's registry entry
+    // but this PC hasn't pointed at a local save folder yet (see
+    // materializeRemoteCustomGame) — nothing to compare until they do, via
+    // the game's detail screen (the same save-path editor a catalog game uses).
+    if (isCustomGameId(g.appId) && !savePath) {
+      result.push({ appId: g.appId, status: 'needs-setup', localVersion: 0, remoteVersion: 0 })
+      continue
+    }
+
     const repoPath = join(repoDir(), g.name)
     const localExists = existsSync(savePath)
     const remoteExists = existsSync(repoPath)

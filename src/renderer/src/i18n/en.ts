@@ -21,7 +21,8 @@ export const en: Translation = {
     pushSkippedStale: "Local save looks outdated (unchanged since the last cloud sync) — auto-upload skipped so it doesn't overwrite the cloud. Download the cloud version manually if needed.",
     pushSkippedNoChange: 'No changes — nothing to upload',
     statusesError: "Couldn't check sync status",
-    retry: 'Try again'
+    retry: 'Try again',
+    addGameCard: 'Add a game'
   },
   gameCard: {
     statusSynced: 'Synced',
@@ -32,6 +33,7 @@ export const en: Translation = {
     statusCloudOnly: 'Cloud only',
     statusNoSaves: 'No saves',
     statusNoRepo: 'Repository not connected',
+    statusNeedsSetup: 'Needs setup',
     statusChecking: 'Checking…',
     unsupported: 'Not supported',
     syncing: 'Syncing…',
@@ -42,7 +44,26 @@ export const en: Translation = {
     notInstalled: 'not installed',
     lastSyncLabel: 'Last synced:',
     savesSizeLabel: 'Save size:',
-    details: 'Details'
+    details: 'Details',
+    customTag: 'Added manually',
+    setUp: 'Set up'
+  },
+  addGame: {
+    title: 'Add a game',
+    description:
+      "This game isn't in CoopSync's built-in catalog, so the whole save folder is copied as-is — we don't know which files are actually save data. Point us to the game's .exe below and launch/exit auto-sync will work just like for a catalog game; skip it and you'll sync manually with the Upload/Download buttons instead. If the folder also contains local settings or account files, those will sync too.",
+    nameLabel: 'Game name',
+    namePlaceholder: 'e.g. My Game',
+    pathLabel: 'Save folder',
+    submit: 'Add game',
+    installPathLabel: 'Install folder (optional)',
+    installPathHint: "So CoopSync can find the game's .exe and enable launch/exit auto-sync.",
+    scanButton: 'Scan',
+    scanning: 'Scanning…',
+    exeFoundLabel: 'Detected executable(s) — pick the one that launches the game:',
+    exeNoneFound:
+      "No .exe found automatically — auto-sync won't be available, but manual Upload/Download will still work.",
+    addExeManually: 'Add .exe manually…'
   },
   friends: {
     title: 'Friends',
@@ -94,7 +115,24 @@ export const en: Translation = {
       `The save will go back to ${version} (last synced by ${who}). The current state won't be lost — it becomes a new entry in the history. If you share access, your partner will pick up this version automatically next time they launch the game.`,
     restoreError: "Couldn't restore this version",
     revertSuccess: (version) => `Restored version ${version}`,
-    restoredFromBadge: (version) => `↩ from ${version}`
+    restoredFromBadge: (version) => `↩ from ${version}`,
+    savePathTitle: 'Save location',
+    savePathCustomBadge: 'Custom',
+    savePathNotFound: 'Folder not found',
+    savePathEdit: 'Edit',
+    savePathBrowse: 'Browse…',
+    savePathPlaceholder: 'Full path to the save folder',
+    savePathSave: 'Save',
+    savePathCancel: 'Cancel',
+    savePathReset: 'Reset to default',
+    savePathSaveError: "Couldn't save this location",
+    customGameWarning:
+      "This game was added manually — the whole save folder syncs as-is (no file filtering), so local settings or account files in the same folder will sync too.",
+    removeCustomGame: 'Remove game',
+    removeCustomGameConfirmTitle: 'Remove this game?',
+    removeCustomGameConfirmDesc: (name) =>
+      `${name} will stop syncing. Its local save files and anything already pushed to the shared repo stay untouched.`,
+    removeCustomGameError: "Couldn't remove this game"
   },
   cloudWarning: {
     title: 'Turn off Steam Cloud for synced games',
@@ -268,6 +306,7 @@ export const en: Translation = {
     LEAVE_REPO_FAILED: (p) => `Couldn't leave the storage (${p.status})`,
     ENCRYPTION_UNAVAILABLE: () => "Encryption isn't available on this system — can't store the token safely",
     GAME_NOT_SUPPORTED: () => 'Game not supported',
+    CUSTOM_GAME_INVALID: () => 'Enter a game name and save folder',
     GAME_RUNNING: () => 'The game is still running — close it first, then try restoring the version again',
     SAVE_FOLDER_NOT_FOUND: () => 'Save folder not found',
     NO_CLOUD_SAVES: () => 'There are no saves for this game in storage yet',

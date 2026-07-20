@@ -1,6 +1,7 @@
 import { execFile } from 'child_process'
 import { promisify } from 'util'
-import { READY_GAMES, type SupportedGame } from '../games/catalog'
+import type { SupportedGame } from '../games/catalog'
+import { getSyncableGames } from '../games/customGames'
 
 const exec = promisify(execFile)
 
@@ -24,7 +25,7 @@ export function isGameRunning(game: SupportedGame, procs: Set<string>): boolean 
 // like restoring an older save, which must never run while the game itself
 // might still be running and writing to those same files.
 export async function isGameCurrentlyRunning(appId: string): Promise<boolean> {
-  const game = READY_GAMES.find((g) => g.appId === appId)
+  const game = getSyncableGames().find((g) => g.appId === appId)
   if (!game) return false
   const procs = await getRunningProcesses()
   return isGameRunning(game, procs)

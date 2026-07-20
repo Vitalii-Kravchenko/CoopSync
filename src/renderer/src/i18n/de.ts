@@ -23,7 +23,8 @@ export const de: Translation = {
       'Der lokale Spielstand wirkt veraltet (seit dem letzten Cloud-Sync unverändert) — automatischer Upload übersprungen, um die Cloud nicht zu überschreiben. Lade bei Bedarf die Cloud-Version manuell herunter.',
     pushSkippedNoChange: 'Keine Änderungen — nichts hochzuladen',
     statusesError: 'Synchronisierungsstatus konnte nicht geprüft werden',
-    retry: 'Erneut versuchen'
+    retry: 'Erneut versuchen',
+    addGameCard: 'Spiel hinzufügen'
   },
   gameCard: {
     statusSynced: 'Synchronisiert',
@@ -34,6 +35,7 @@ export const de: Translation = {
     statusCloudOnly: 'Nur in der Cloud',
     statusNoSaves: 'Keine Spielstände',
     statusNoRepo: 'Repository nicht verbunden',
+    statusNeedsSetup: 'Einrichtung nötig',
     statusChecking: 'Wird geprüft…',
     unsupported: 'Nicht unterstützt',
     syncing: 'Synchronisiere…',
@@ -44,7 +46,27 @@ export const de: Translation = {
     notInstalled: 'nicht installiert',
     lastSyncLabel: 'Zuletzt synchronisiert:',
     savesSizeLabel: 'Speichergröße:',
-    details: 'Details'
+    details: 'Details',
+    customTag: 'Manuell hinzugefügt',
+    setUp: 'Einrichten'
+  },
+  addGame: {
+    title: 'Spiel hinzufügen',
+    description:
+      'Dieses Spiel ist nicht im integrierten Katalog von CoopSync, daher wird der gesamte Speicherordner unverändert kopiert — wir wissen nicht, welche Dateien tatsächlich Spielstände sind. Gib die .exe des Spiels unten an, dann funktioniert die automatische Synchronisierung beim Start/Beenden genauso wie bei einem Katalogspiel; überspringst du das, wird nur manuell über Upload/Download synchronisiert. Wenn im selben Ordner lokale Einstellungen oder Kontodateien liegen, werden diese ebenfalls synchronisiert.',
+    nameLabel: 'Spielname',
+    namePlaceholder: 'z. B. Mein Spiel',
+    pathLabel: 'Speicherordner',
+    submit: 'Spiel hinzufügen',
+    installPathLabel: 'Installationsordner (optional)',
+    installPathHint:
+      'Damit CoopSync die .exe des Spiels findet und die automatische Synchronisierung beim Start/Beenden aktivieren kann.',
+    scanButton: 'Scannen',
+    scanning: 'Wird gescannt…',
+    exeFoundLabel: 'Gefundene ausführbare Dateien — wähle die aus, die das Spiel startet:',
+    exeNoneFound:
+      'Es wurde keine .exe automatisch gefunden — die automatische Synchronisierung ist nicht verfügbar, aber manuelles Upload/Download funktioniert weiterhin.',
+    addExeManually: '.exe manuell hinzufügen…'
   },
   friends: {
     title: 'Freunde',
@@ -96,7 +118,24 @@ export const de: Translation = {
       `Der Spielstand kehrt zu ${version} zurück (zuletzt synchronisiert von ${who}). Der aktuelle Stand geht nicht verloren — er wird zu einem neuen Eintrag im Verlauf. Bei gemeinsamem Zugriff übernimmt dein Partner diese Version automatisch beim nächsten Spielstart.`,
     restoreError: 'Version konnte nicht wiederhergestellt werden',
     revertSuccess: (version) => `Version ${version} wiederhergestellt`,
-    restoredFromBadge: (version) => `↩ von ${version}`
+    restoredFromBadge: (version) => `↩ von ${version}`,
+    savePathTitle: 'Speicherort',
+    savePathCustomBadge: 'Benutzerdefiniert',
+    savePathNotFound: 'Ordner nicht gefunden',
+    savePathEdit: 'Bearbeiten',
+    savePathBrowse: 'Durchsuchen…',
+    savePathPlaceholder: 'Vollständiger Pfad zum Speicherordner',
+    savePathSave: 'Speichern',
+    savePathCancel: 'Abbrechen',
+    savePathReset: 'Auf Standard zurücksetzen',
+    savePathSaveError: 'Speicherort konnte nicht gespeichert werden',
+    customGameWarning:
+      'Dieses Spiel wurde manuell hinzugefügt — der gesamte Speicherordner wird unverändert synchronisiert (ohne Dateifilterung), daher werden lokale Einstellungen oder Kontodateien im selben Ordner ebenfalls synchronisiert.',
+    removeCustomGame: 'Spiel entfernen',
+    removeCustomGameConfirmTitle: 'Dieses Spiel entfernen?',
+    removeCustomGameConfirmDesc: (name) =>
+      `${name} wird nicht mehr synchronisiert. Lokale Spielstände und bereits ins gemeinsame Repository hochgeladene Daten bleiben unangetastet.`,
+    removeCustomGameError: 'Spiel konnte nicht entfernt werden'
   },
   cloudWarning: {
     title: 'Steam Cloud für synchronisierte Spiele deaktivieren',
@@ -271,6 +310,7 @@ export const de: Translation = {
     ENCRYPTION_UNAVAILABLE: () =>
       'Verschlüsselung ist auf diesem System nicht verfügbar — Token kann nicht sicher gespeichert werden',
     GAME_NOT_SUPPORTED: () => 'Spiel nicht unterstützt',
+    CUSTOM_GAME_INVALID: () => 'Gib einen Spielnamen und einen Speicherordner an',
     GAME_RUNNING: () => 'Das Spiel läuft noch — schließe es zuerst und versuche dann erneut, die Version wiederherzustellen',
     SAVE_FOLDER_NOT_FOUND: () => 'Spielstand-Ordner nicht gefunden',
     NO_CLOUD_SAVES: () => 'Für dieses Spiel gibt es noch keine Spielstände im Speicher',

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { colors, fonts, radii, shadows, steamPoster, transitions } from '../theme'
 import { useI18n } from '../i18n'
 import type { Translation } from '../i18n'
-import { UploadIcon, DownloadIcon, HistoryIcon, DiskIcon } from './icons'
+import { UploadIcon, DownloadIcon, HistoryIcon, DiskIcon, EditIcon } from './icons'
 import Button from './Button'
 import type { SyncStatus } from '../../../shared/types'
 import { formatVersion } from '../../../shared/format'
@@ -13,6 +13,9 @@ interface Props {
   installed: boolean
   /** Whether CoopSync supports this game (default true). */
   supported?: boolean
+  /** Added manually, not from CoopSync's built-in catalog — shown with a
+   *  small tag since sync doesn't filter its save files. */
+  isCustom?: boolean
   /** Sync status (installed games only). undefined = still checking. */
   syncStatus?: SyncStatus
   /** Local saves version. */
@@ -105,6 +108,8 @@ function syncDisplay(
         bd: colors.borderDefault,
         text: t.gameCard.statusNoRepo
       }
+    case 'needs-setup':
+      return { color: colors.warning, bg: colors.warningBg, bd: colors.warningBd, text: t.gameCard.statusNeedsSetup }
     default:
       return {
         color: colors.text3,
@@ -120,6 +125,7 @@ function GameCard({
   name,
   installed,
   supported = true,
+  isCustom,
   syncStatus,
   localVersion,
   remoteVersion,
@@ -136,6 +142,11 @@ function GameCard({
 
   // Can only play/sync a game that is installed + supported.
   const playable = installed && supported
+  // A co-op partner added this custom game — this PC hasn't pointed it at a
+  // local save folder yet, so Upload/Download would just fail (see
+  // findGame's SAVE_FOLDER_NOT_FOUND guard in sync.ts). Only the "Set up"
+  // action (-> GameDetailScreen's save-path editor) makes sense here.
+  const needsSetup = syncStatus === 'needs-setup'
   const showOverlay = (hover || busy) && playable
   const status = playable ? syncDisplay(syncStatus, t) : null
 
@@ -174,6 +185,13 @@ function GameCard({
           >
             {busy ? (
               <div style={styles.syncing}>{t.gameCard.syncing}</div>
+            ) : needsSetup ? (
+              <div style={styles.overlayContent}>
+                <Button variant="primary" style={styles.overlayBtn} onClick={onOpenDetails} tabIndex={-1}>
+                  <EditIcon size={15} color={colors.textOnAccent} />
+                  {t.gameCard.setUp}
+                </Button>
+              </div>
             ) : (
               <div style={styles.overlayContent}>
                 {/* tabIndex=-1 — deliberately out of the Tab order: with dozens
@@ -223,6 +241,7 @@ function GameCard({
 
       <div style={styles.caption}>
         <div style={styles.name}>{name}</div>
+        {isCustom && <div style={styles.customTag}>{t.gameCard.customTag}</div>}
         {status && (
           <span style={{ ...styles.badge, color: status.color, background: status.bg, borderColor: status.bd }}>
             <span
@@ -236,11 +255,14 @@ function GameCard({
             />
             {/* Chakra Petch's glyphs sit slightly above the line box's
                 geometric center, so align-items:center alone leaves the
-                text looking a hair higher than the dot — nudge it down. */}
-            <span style={{ position: 'relative', top: 1 }}>{status.text}</span>
+                text looking a hair higher than the dot — nudge it down.
+                Truncated with ellipsis rather than left to wrap — a pill
+                badge that wraps to 2 lines has no room to breathe inside
+                its fixed height (looked cramped/no padding). */}
+            <span style={styles.badgeText}>{status.text}</span>
           </span>
         )}
-        {playable && (
+        {playable && !needsSetup && (
           <div style={styles.versions}>
             {t.gameCard.versions(fmtVersion(localVersion), fmtVersion(remoteVersion))}
           </div>
@@ -324,20 +346,23 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'inline-flex',
     alignItems: 'center',
     gap: 7,
-    height: 26,
-    padding: '0 11px',
+    maxWidth: '100%',
+    minHeight: 26,
+    padding: '5px 11px',
     marginTop: 6,
     fontFamily: fonts.display,
     fontWeight: 600,
     fontSize: 11.5,
-    lineHeight: 1,
+    lineHeight: 1.3,
     letterSpacing: '.04em',
     borderRadius: radii.pill,
     border: '1px solid'
   },
+  badgeText: { position: 'relative', top: 1, minWidth: 0 },
   badgeDot: { width: 6, height: 6, borderRadius: '50%', flexShrink: 0 },
   badgeDotPulse: { animation: 'glowpulse 1.4s ease-in-out infinite' },
   notInstalled: { marginTop: 6, fontSize: 12.5, color: colors.text3 },
+  customTag: { marginTop: 3, fontSize: 10.5, color: colors.text3, fontStyle: 'italic' },
   versions: {
     marginTop: 5,
     fontFamily: fonts.mono,

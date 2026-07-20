@@ -1,6 +1,6 @@
 import { app, ipcMain, shell, clipboard, BrowserWindow, dialog } from 'electron'
-import { readFileSync, statSync } from 'fs'
-import { extname } from 'path'
+import { existsSync, readFileSync, statSync } from 'fs'
+import { basename, extname } from 'path'
 import { makeAppError, parseAppError } from '../shared/errors'
 import { readSettings, writeSettings } from './services/settingsStore'
 import { updateTrayLanguage } from './trayIcon'
@@ -31,13 +31,18 @@ import {
   resetLocalSaveState,
   adoptLocalHistoryAsOwnRepo,
   uploadAvatar,
-  getAvatars
+  getAvatars,
+  pushCustomGameToRegistry,
+  removeCustomGameFromRegistry
 } from './services/sync'
 import { startWatcher, stopWatcher } from './services/watcher'
 import { markSeen } from './services/notifyState'
 import { forgetPending } from './services/backgroundState'
 import { getNotifications, markRead, markAllRead, clearAll } from './services/notificationStore'
 import { READY_GAMES } from './games/catalog'
+import { resolveSavePath, isCustomSavePath, setSavePathOverride } from './games/savePath'
+import { getSyncableGames, addCustomGame, removeCustomGame } from './games/customGames'
+import { scanForExecutables } from './games/exeScan'
 import { saveToken, loadToken, clearToken } from './services/tokenStore'
 import { sendSupportMessage } from './services/support'
 import { checkForUpdates, downloadUpdate, quitAndInstall } from './services/updater'
@@ -58,7 +63,8 @@ import type {
   SupportRequest,
   SteamSearchResult,
   FriendSaveUpdate,
-  AppNotification
+  AppNotification,
+  GameSavePathInfo
 } from '../shared/types'
 
 // Max avatar file size — to keep settings.json from bloating.
@@ -295,6 +301,102 @@ export function registerIpcHandlers(): void {
     'games:search-store',
     async (_event, term: string): Promise<SteamSearchResult[]> => searchSteamStore(term)
   )
+
+  // Current save-folder location (a user override, or the catalog/custom
+  // default), shown on the game's detail screen.
+  ipcMain.handle('games:get-save-path', (_event, appId: string): GameSavePathInfo => {
+    const g = getSyncableGames().find((x) => x.appId === appId)
+    if (!g) throw makeAppError('GAME_NOT_SUPPORTED')
+    const path = resolveSavePath(g)
+    return { path, isCustom: isCustomSavePath(appId), exists: existsSync(path) }
+  })
+
+  // Native folder picker for manually correcting a game's save location.
+  ipcMain.handle('games:pick-save-folder', async (event): Promise<string | null> => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    const options: Electron.OpenDialogOptions = { properties: ['openDirectory'] }
+    const result = await (win ? dialog.showOpenDialog(win, options) : dialog.showOpenDialog(options))
+    if (result.canceled || result.filePaths.length === 0) return null
+    return result.filePaths[0]
+  })
+
+  // Set (or clear, with path=null) a manual save-folder override for a game.
+  ipcMain.handle(
+    'games:set-save-path',
+    (_event, appId: string, path: string | null): GameSavePathInfo => {
+      const g = getSyncableGames().find((x) => x.appId === appId)
+      if (!g) throw makeAppError('GAME_NOT_SUPPORTED')
+      setSavePathOverride(appId, path)
+      const resolved = resolveSavePath(g)
+      return { path: resolved, isCustom: isCustomSavePath(appId), exists: existsSync(resolved) }
+    }
+  )
+
+  // Add a game that isn't in CoopSync's built-in catalog — whole save folder
+  // copied as-is (see AddGame's disclaimer in the renderer, and
+  // customGames.ts's asSupportedGame). processNames (from games:scan-exes,
+  // possibly empty) drives the same launch/exit auto-sync watcher as a
+  // catalog game — empty means manual upload/download only.
+  ipcMain.handle(
+    'games:add-custom',
+    async (_event, name: string, savePath: string, processNames: string[]): Promise<InstalledGame> => {
+      const trimmedName = name.trim()
+      if (!trimmedName || !savePath.trim()) throw makeAppError('CUSTOM_GAME_INVALID')
+      const game = addCustomGame(trimmedName, savePath.trim(), processNames)
+      // Best-effort: let a co-op partner's app see this game exists too (see
+      // pushCustomGameToRegistry). The local add above already succeeded —
+      // no login/repo/internet yet shouldn't block using the game on THIS
+      // PC, so we don't surface a failure here (same reasoning as the
+      // avatar upload right below).
+      try {
+        const { token, owner } = await syncTarget()
+        const { owner: actor } = await requireAuth()
+        await pushCustomGameToRegistry(token, owner, actor, game.appId, game.name)
+      } catch {
+        // silently ignore — see comment above
+      }
+      return { appId: game.appId, name: game.name, supported: true, isCustom: true }
+    }
+  )
+
+  // Scan an install folder the user points at for candidate .exe files
+  // (AddCustomGameModal) — so they don't have to know/type the exe name
+  // themselves. Filters out installers/redistributables/crash reporters.
+  ipcMain.handle('games:scan-exes', (_event, folderPath: string): string[] => {
+    if (!folderPath || !existsSync(folderPath)) return []
+    return scanForExecutables(folderPath)
+  })
+
+  // Manual fallback for when the scan above misses the real exe (filtered
+  // out, nested somewhere unusual, or the user skipped picking an install
+  // folder entirely) — a plain file picker, we only need the basename since
+  // process matching (processCheck.ts) is by image name, not full path.
+  ipcMain.handle('games:pick-exe-file', async (event): Promise<string | null> => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    const options: Electron.OpenDialogOptions = {
+      filters: [{ name: 'Executable', extensions: ['exe'] }],
+      properties: ['openFile']
+    }
+    const result = await (win ? dialog.showOpenDialog(win, options) : dialog.showOpenDialog(options))
+    if (result.canceled || result.filePaths.length === 0) return null
+    return basename(result.filePaths[0])
+  })
+
+  // Remove a manually-added game (stops syncing it — doesn't touch its
+  // local save files or anything already pushed to the shared repo).
+  ipcMain.handle('games:remove-custom', async (_event, appId: string): Promise<void> => {
+    removeCustomGame(appId)
+    // Best-effort, same reasoning as games:add-custom — a partner who
+    // already configured their own save folder for this game keeps working
+    // either way (removeCustomGameFromRegistry never touches their local entry).
+    try {
+      const { token, owner } = await syncTarget()
+      const { owner: actor } = await requireAuth()
+      await removeCustomGameFromRegistry(token, owner, actor, appId)
+    } catch {
+      // silently ignore — see comment above
+    }
+  })
 
   // --- Save sync ---
 

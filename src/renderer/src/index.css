@@ -185,6 +185,14 @@ body {
   -webkit-appearance: none;
   outline: none;
 }
+/* "+ Add a game" placeholder card (Games tab) — dashed outline that lights up
+   cyan on hover, matching the rest of the system's hover language instead of
+   tracking hover state in React for a purely visual affordance. */
+.add-game-card:hover {
+  border-color: rgba(54, 226, 232, 0.45) !important;
+  color: #36e2e8 !important;
+  background: rgba(54, 226, 232, 0.05) !important;
+}
 .btn-primary {
   position: relative;
   z-index: 0;

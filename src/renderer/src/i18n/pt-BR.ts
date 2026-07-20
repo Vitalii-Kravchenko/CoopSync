@@ -23,7 +23,8 @@ export const ptBR: Translation = {
       'O save local parece desatualizado (sem mudanças desde a última sincronização com a nuvem) — envio automático ignorado para não sobrescrever a nuvem. Baixe a versão da nuvem manualmente se necessário.',
     pushSkippedNoChange: 'Sem alterações — nada para enviar',
     statusesError: 'Não foi possível verificar o status de sincronização',
-    retry: 'Tentar novamente'
+    retry: 'Tentar novamente',
+    addGameCard: 'Adicionar jogo'
   },
   gameCard: {
     statusSynced: 'Sincronizado',
@@ -34,6 +35,7 @@ export const ptBR: Translation = {
     statusCloudOnly: 'Somente na nuvem',
     statusNoSaves: 'Sem saves',
     statusNoRepo: 'Repositório não conectado',
+    statusNeedsSetup: 'Precisa configurar',
     statusChecking: 'Verificando…',
     unsupported: 'Não suportado',
     syncing: 'Sincronizando…',
@@ -44,7 +46,26 @@ export const ptBR: Translation = {
     notInstalled: 'não instalado',
     lastSyncLabel: 'Última sincronização:',
     savesSizeLabel: 'Tamanho dos saves:',
-    details: 'Detalhes'
+    details: 'Detalhes',
+    customTag: 'Adicionado manualmente',
+    setUp: 'Configurar'
+  },
+  addGame: {
+    title: 'Adicionar um jogo',
+    description:
+      'Este jogo não está no catálogo interno do CoopSync, então a pasta de saves inteira é copiada como está — não sabemos quais arquivos são realmente dados de save. Informe o .exe do jogo abaixo e a sincronização automática ao iniciar/sair vai funcionar igual a um jogo do catálogo; se pular essa etapa, a sincronização será só manual, pelos botões Upload/Download. Se essa mesma pasta tiver configurações locais ou arquivos de conta, eles também serão sincronizados.',
+    nameLabel: 'Nome do jogo',
+    namePlaceholder: 'ex. Meu jogo',
+    pathLabel: 'Pasta de saves',
+    submit: 'Adicionar jogo',
+    installPathLabel: 'Pasta de instalação (opcional)',
+    installPathHint: 'Para o CoopSync encontrar o .exe do jogo e ativar a sincronização automática ao iniciar/sair.',
+    scanButton: 'Escanear',
+    scanning: 'Escaneando…',
+    exeFoundLabel: 'Executáveis detectados — escolha o que inicia o jogo:',
+    exeNoneFound:
+      'Nenhum .exe encontrado automaticamente — a sincronização automática não estará disponível, mas Upload/Download manual continuará funcionando.',
+    addExeManually: 'Adicionar .exe manualmente…'
   },
   friends: {
     title: 'Amigos',
@@ -96,7 +117,24 @@ export const ptBR: Translation = {
       `O save voltará para a versão ${version} (sincronizado pela última vez por ${who}). O estado atual não será perdido — vira uma nova entrada no histórico. Se vocês compartilham acesso, seu parceiro vai receber essa versão automaticamente na próxima vez que abrir o jogo.`,
     restoreError: 'Não foi possível restaurar a versão',
     revertSuccess: (version) => `Versão ${version} restaurada`,
-    restoredFromBadge: (version) => `↩ de ${version}`
+    restoredFromBadge: (version) => `↩ de ${version}`,
+    savePathTitle: 'Local dos saves',
+    savePathCustomBadge: 'Personalizado',
+    savePathNotFound: 'Pasta não encontrada',
+    savePathEdit: 'Editar',
+    savePathBrowse: 'Procurar…',
+    savePathPlaceholder: 'Caminho completo da pasta de saves',
+    savePathSave: 'Salvar',
+    savePathCancel: 'Cancelar',
+    savePathReset: 'Restaurar padrão',
+    savePathSaveError: 'Não foi possível salvar este local',
+    customGameWarning:
+      'Este jogo foi adicionado manualmente — a pasta de saves inteira é sincronizada como está (sem filtrar arquivos), então configurações locais ou arquivos de conta na mesma pasta também serão sincronizados.',
+    removeCustomGame: 'Remover jogo',
+    removeCustomGameConfirmTitle: 'Remover este jogo?',
+    removeCustomGameConfirmDesc: (name) =>
+      `${name} vai parar de sincronizar. Os saves locais e tudo que já foi enviado ao repositório compartilhado permanecem intactos.`,
+    removeCustomGameError: 'Não foi possível remover o jogo'
   },
   cloudWarning: {
     title: 'Desative o Steam Cloud para os jogos sincronizados',
@@ -271,6 +309,7 @@ export const ptBR: Translation = {
     ENCRYPTION_UNAVAILABLE: () =>
       'A criptografia não está disponível neste sistema — não é possível salvar o token com segurança',
     GAME_NOT_SUPPORTED: () => 'Jogo não suportado',
+    CUSTOM_GAME_INVALID: () => 'Informe um nome de jogo e uma pasta de saves',
     GAME_RUNNING: () => 'O jogo ainda está em execução — feche-o primeiro e tente restaurar a versão novamente',
     SAVE_FOLDER_NOT_FOUND: () => 'Pasta de saves não encontrada',
     NO_CLOUD_SAVES: () => 'Ainda não há saves deste jogo no armazenamento',

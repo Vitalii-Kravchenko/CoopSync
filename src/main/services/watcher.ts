@@ -1,4 +1,4 @@
-import { READY_GAMES } from '../games/catalog'
+import { getSyncableGames } from '../games/customGames'
 import { uploadGame, downloadGame, getSyncStatuses, restoreMissingFiles } from './sync'
 import { getRunningProcesses, isGameRunning } from './processCheck'
 import { getNotified, markNotified } from './notifyState'
@@ -56,7 +56,7 @@ async function checkFriendUpdates(
     for (const s of statuses) {
       if (!s.remoteUpdatedBy || s.remoteVersion <= 0 || s.remoteUpdatedBy === actor) continue
       if (s.remoteVersion <= getNotified(s.appId)) continue
-      const game = READY_GAMES.find((g) => g.appId === s.appId)
+      const game = getSyncableGames().find((g) => g.appId === s.appId)
       updates.push({
         appId: s.appId,
         name: game?.name ?? s.appId,
@@ -156,7 +156,7 @@ async function tick(
       return
     }
     processCheckFailing = false
-    for (const game of READY_GAMES) {
+    for (const game of getSyncableGames()) {
       const now = isGameRunning(game, procs)
       const was = running[game.appId] ?? false
       running[game.appId] = now

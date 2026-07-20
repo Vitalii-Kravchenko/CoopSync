@@ -23,7 +23,8 @@ export const es: Translation = {
       'La partida local parece desactualizada (sin cambios desde la última sincronización con la nube) — subida automática omitida para no sobrescribir la nube. Descarga la versión de la nube manualmente si es necesario.',
     pushSkippedNoChange: 'Sin cambios — nada que subir',
     statusesError: 'No se pudo comprobar el estado de sincronización',
-    retry: 'Reintentar'
+    retry: 'Reintentar',
+    addGameCard: 'Añadir juego'
   },
   gameCard: {
     statusSynced: 'Sincronizado',
@@ -34,6 +35,7 @@ export const es: Translation = {
     statusCloudOnly: 'Solo en la nube',
     statusNoSaves: 'Sin partidas guardadas',
     statusNoRepo: 'Repositorio no conectado',
+    statusNeedsSetup: 'Necesita configuración',
     statusChecking: 'Comprobando…',
     unsupported: 'No compatible',
     syncing: 'Sincronizando…',
@@ -44,7 +46,26 @@ export const es: Translation = {
     notInstalled: 'no instalado',
     lastSyncLabel: 'Última sincronización:',
     savesSizeLabel: 'Tamaño de las partidas:',
-    details: 'Detalles'
+    details: 'Detalles',
+    customTag: 'Añadido manualmente',
+    setUp: 'Configurar'
+  },
+  addGame: {
+    title: 'Añadir un juego',
+    description:
+      'Este juego no está en el catálogo integrado de CoopSync, así que toda la carpeta de guardado se copia tal cual — no sabemos qué archivos son realmente datos de guardado. Indica el .exe del juego abajo y la sincronización automática al iniciar/cerrar funcionará igual que con un juego del catálogo; si te lo saltas, la sincronización será solo manual con los botones Subir/Descargar. Si en esa misma carpeta hay ajustes locales o archivos de cuenta, también se sincronizarán.',
+    nameLabel: 'Nombre del juego',
+    namePlaceholder: 'p. ej. Mi juego',
+    pathLabel: 'Carpeta de guardado',
+    submit: 'Añadir juego',
+    installPathLabel: 'Carpeta de instalación (opcional)',
+    installPathHint: 'Para que CoopSync encuentre el .exe del juego y active la sincronización automática al iniciar/cerrar.',
+    scanButton: 'Escanear',
+    scanning: 'Escaneando…',
+    exeFoundLabel: 'Ejecutables detectados — elige el que inicia el juego:',
+    exeNoneFound:
+      'No se encontró ningún .exe automáticamente — la sincronización automática no estará disponible, pero Subir/Descargar manual seguirá funcionando.',
+    addExeManually: 'Añadir .exe manualmente…'
   },
   friends: {
     title: 'Amigos',
@@ -96,7 +117,24 @@ export const es: Translation = {
       `La partida volverá a la versión ${version} (sincronizada por última vez por ${who}). El estado actual no se perderá — pasará a ser una nueva entrada del historial. Si compartís el acceso, tu compañero recibirá esta versión automáticamente la próxima vez que inicie el juego.`,
     restoreError: 'No se pudo restaurar la versión',
     revertSuccess: (version) => `Versión ${version} restaurada`,
-    restoredFromBadge: (version) => `↩ de ${version}`
+    restoredFromBadge: (version) => `↩ de ${version}`,
+    savePathTitle: 'Ubicación de guardado',
+    savePathCustomBadge: 'Personalizada',
+    savePathNotFound: 'Carpeta no encontrada',
+    savePathEdit: 'Editar',
+    savePathBrowse: 'Examinar…',
+    savePathPlaceholder: 'Ruta completa a la carpeta de guardado',
+    savePathSave: 'Guardar',
+    savePathCancel: 'Cancelar',
+    savePathReset: 'Restablecer predeterminada',
+    savePathSaveError: 'No se pudo guardar la ubicación',
+    customGameWarning:
+      'Este juego se añadió manualmente — toda la carpeta de guardado se sincroniza tal cual (sin filtrar archivos), así que los ajustes locales o archivos de cuenta en esa misma carpeta también se sincronizarán.',
+    removeCustomGame: 'Eliminar juego',
+    removeCustomGameConfirmTitle: '¿Eliminar este juego?',
+    removeCustomGameConfirmDesc: (name) =>
+      `${name} dejará de sincronizarse. Los guardados locales y todo lo que ya se subió al repositorio compartido permanecerán intactos.`,
+    removeCustomGameError: 'No se pudo eliminar el juego'
   },
   cloudWarning: {
     title: 'Desactiva Steam Cloud para los juegos sincronizados',
@@ -271,6 +309,7 @@ export const es: Translation = {
     ENCRYPTION_UNAVAILABLE: () =>
       'El cifrado no está disponible en este sistema — no se puede guardar el token de forma segura',
     GAME_NOT_SUPPORTED: () => 'Juego no compatible',
+    CUSTOM_GAME_INVALID: () => 'Indica un nombre de juego y una carpeta de guardado',
     GAME_RUNNING: () => 'El juego todavía está en ejecución — ciérralo primero y vuelve a intentar restaurar la versión',
     SAVE_FOLDER_NOT_FOUND: () => 'Carpeta de partidas guardadas no encontrada',
     NO_CLOUD_SAVES: () => 'Todavía no hay partidas guardadas de este juego en el almacenamiento',

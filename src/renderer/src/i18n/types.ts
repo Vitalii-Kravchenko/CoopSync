@@ -51,6 +51,7 @@ export interface Translation {
     pushSkippedNoChange: string
     statusesError: string
     retry: string
+    addGameCard: string
   }
   gameCard: {
     statusSynced: string
@@ -62,6 +63,7 @@ export interface Translation {
     statusNoSaves: string
     statusNoRepo: string
     statusChecking: string
+    statusNeedsSetup: string
     unsupported: string
     syncing: string
     upload: string
@@ -72,6 +74,23 @@ export interface Translation {
     lastSyncLabel: string
     savesSizeLabel: string
     details: string
+    customTag: string
+    setUp: string
+  }
+  addGame: {
+    title: string
+    description: string
+    nameLabel: string
+    namePlaceholder: string
+    pathLabel: string
+    submit: string
+    installPathLabel: string
+    installPathHint: string
+    scanButton: string
+    scanning: string
+    exeFoundLabel: string
+    exeNoneFound: string
+    addExeManually: string
   }
   friends: {
     title: string
@@ -123,6 +142,21 @@ export interface Translation {
     restoreError: string
     revertSuccess: (version: string) => string
     restoredFromBadge: (version: string) => string
+    savePathTitle: string
+    savePathCustomBadge: string
+    savePathNotFound: string
+    savePathEdit: string
+    savePathBrowse: string
+    savePathPlaceholder: string
+    savePathSave: string
+    savePathCancel: string
+    savePathReset: string
+    savePathSaveError: string
+    customGameWarning: string
+    removeCustomGame: string
+    removeCustomGameConfirmTitle: string
+    removeCustomGameConfirmDesc: (name: string) => string
+    removeCustomGameError: string
   }
   cloudWarning: {
     title: string

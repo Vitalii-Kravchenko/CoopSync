@@ -19,7 +19,8 @@ import type {
   SupportRequest,
   SteamSearchResult,
   UpdateStatus,
-  AppNotification
+  AppNotification,
+  GameSavePathInfo
 } from '../shared/types'
 
 // API exposed to the renderer as window.api.
@@ -76,7 +77,25 @@ const api = {
     catalog: (): Promise<CatalogGame[]> => ipcRenderer.invoke('games:catalog'),
     /** Search across the whole Steam store (not just installed games). */
     searchStore: (term: string): Promise<SteamSearchResult[]> =>
-      ipcRenderer.invoke('games:search-store', term)
+      ipcRenderer.invoke('games:search-store', term),
+    /** Current save-folder location (override or catalog default). */
+    getSavePath: (appId: string): Promise<GameSavePathInfo> =>
+      ipcRenderer.invoke('games:get-save-path', appId),
+    /** Open a native folder picker. null = cancelled. */
+    pickSaveFolder: (): Promise<string | null> => ipcRenderer.invoke('games:pick-save-folder'),
+    /** Set (path) or clear (null) a manual save-folder override. */
+    setSavePath: (appId: string, path: string | null): Promise<GameSavePathInfo> =>
+      ipcRenderer.invoke('games:set-save-path', appId, path),
+    /** Add a game that isn't in the built-in catalog. processNames (from
+     *  scanExes, possibly empty) enables launch/exit auto-sync for it. */
+    addCustom: (name: string, savePath: string, processNames: string[]): Promise<InstalledGame> =>
+      ipcRenderer.invoke('games:add-custom', name, savePath, processNames),
+    /** Remove a manually-added game. */
+    removeCustom: (appId: string): Promise<void> => ipcRenderer.invoke('games:remove-custom', appId),
+    /** Scan a folder for candidate game executables (install-folder picker). */
+    scanExes: (folderPath: string): Promise<string[]> => ipcRenderer.invoke('games:scan-exes', folderPath),
+    /** Manual fallback — pick a single .exe file directly. Returns its basename. */
+    pickExeFile: (): Promise<string | null> => ipcRenderer.invoke('games:pick-exe-file')
   },
   sync: {
     /** Upload the game's saves to GitHub. */

@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { colors, fonts, radii } from '../theme'
+import { colors, fonts, radii, transitions } from '../theme'
 import { useI18n } from '../i18n'
 import { describeError, describeSyncResult } from '../errors'
 import GameCard from '../components/GameCard'
 import CloudWarningBanner from '../components/CloudWarningBanner'
 import UpdateAvailableBanner from '../components/UpdateAvailableBanner'
+import AddCustomGameModal from '../components/AddCustomGameModal'
 import type { BannerState } from '../components/Banner'
-import { SearchIcon } from '../components/icons'
+import { SearchIcon, PlusIcon } from '../components/icons'
 import GameDetailScreen from './GameDetailScreen'
 import type {
   AuthUser,
@@ -60,7 +61,10 @@ function MainScreen({
   const [catalog, setCatalog] = useState<CatalogGame[]>([])
   const [query, setQuery] = useState('')
   // Selected game -> show GameDetailScreen (its own sync history) instead of the grid.
-  const [selectedGame, setSelectedGame] = useState<{ appId: string; name: string } | null>(null)
+  const [selectedGame, setSelectedGame] = useState<{ appId: string; name: string; isCustom?: boolean } | null>(
+    null
+  )
+  const [showAddGame, setShowAddGame] = useState(false)
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState<string | null>(null)
   const [syncStatuses, setSyncStatuses] = useState<Record<string, GameSyncStatus>>({})
@@ -131,6 +135,13 @@ function MainScreen({
       for (const s of list) map[s.appId] = s
       setSyncStatuses(map)
       setStatusesError(null)
+      // A co-op partner's custom game may have just been materialized
+      // locally (as 'needs-setup') inside this exact statuses call — refresh
+      // the games list so it actually shows up on the grid, instead of only
+      // appearing after some unrelated future reload.
+      if (list.some((s) => !installed.some((g) => g.appId === s.appId))) {
+        window.api.games.allInstalled().then(setInstalled).catch(() => {})
+      }
       // Only mark seen while the tab is genuinely visible — this same
       // function also runs in the background (syncVersion bumps regardless
       // of which tab is open), and a badge the user never actually looked
@@ -204,12 +215,18 @@ function MainScreen({
       <GameDetailScreen
         appId={selectedGame.appId}
         name={selectedGame.name}
+        isCustom={selectedGame.isCustom}
         syncVersion={syncVersion}
         user={user}
         avatarDataUrl={avatarDataUrl}
         onBack={() => setSelectedGame(null)}
         onBanner={onBanner}
         onSynced={onSynced}
+        onCustomGameRemoved={() => {
+          setSelectedGame(null)
+          void loadGames()
+          void loadStatuses()
+        }}
         autoPushPending={autoPushPending.has(selectedGame.appId)}
       />
     )
@@ -272,28 +289,36 @@ function MainScreen({
       {!loading && !gamesError && (
         <>
           <div style={styles.sectionTitle}>{t.main.installedGames}</div>
-          {filteredInstalled.length > 0 ? (
-            <div style={styles.grid}>
-              {filteredInstalled.map((g) => (
-                <GameCard
-                  key={g.appId}
-                  appId={g.appId}
-                  name={g.name}
-                  installed
-                  supported={g.supported}
-                  syncStatus={syncStatuses[g.appId]?.status}
-                  localVersion={syncStatuses[g.appId]?.localVersion}
-                  remoteVersion={syncStatuses[g.appId]?.remoteVersion}
-                  lastSyncAt={syncStatuses[g.appId]?.lastSyncAt}
-                  sizeBytes={syncStatuses[g.appId]?.sizeBytes}
-                  busy={syncing === g.appId}
-                  onUpload={() => handleSync(g.appId, 'upload')}
-                  onDownload={() => handleSync(g.appId, 'download')}
-                  onOpenDetails={() => setSelectedGame({ appId: g.appId, name: g.name })}
-                />
-              ))}
-            </div>
-          ) : (
+          <div style={styles.grid}>
+            <button
+              className="reset-btn add-game-card"
+              style={styles.addGameCard}
+              onClick={() => setShowAddGame(true)}
+            >
+              <PlusIcon size={22} color={colors.text3} />
+              <span>{t.main.addGameCard}</span>
+            </button>
+            {filteredInstalled.map((g) => (
+              <GameCard
+                key={g.appId}
+                appId={g.appId}
+                name={g.name}
+                installed
+                supported={g.supported}
+                isCustom={g.isCustom}
+                syncStatus={syncStatuses[g.appId]?.status}
+                localVersion={syncStatuses[g.appId]?.localVersion}
+                remoteVersion={syncStatuses[g.appId]?.remoteVersion}
+                lastSyncAt={syncStatuses[g.appId]?.lastSyncAt}
+                sizeBytes={syncStatuses[g.appId]?.sizeBytes}
+                busy={syncing === g.appId}
+                onUpload={() => handleSync(g.appId, 'upload')}
+                onDownload={() => handleSync(g.appId, 'download')}
+                onOpenDetails={() => setSelectedGame({ appId: g.appId, name: g.name, isCustom: g.isCustom })}
+              />
+            ))}
+          </div>
+          {filteredInstalled.length === 0 && query.trim() && (
             <div style={styles.muted}>{t.main.nothingFound}</div>
           )}
 
@@ -327,6 +352,16 @@ function MainScreen({
             <div style={styles.muted}>{t.main.nothingFound}</div>
           )}
         </>
+      )}
+
+      {showAddGame && (
+        <AddCustomGameModal
+          onCancel={() => setShowAddGame(false)}
+          onAdded={() => {
+            setShowAddGame(false)
+            void loadGames()
+          }}
+        />
       )}
     </div>
   )
@@ -366,6 +401,23 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))',
     gap: 20
+  },
+  addGameCard: {
+    aspectRatio: '2 / 3',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    border: `1px dashed ${colors.borderDefault}`,
+    borderRadius: radii.lg,
+    background: 'transparent',
+    color: colors.text3,
+    fontFamily: fonts.display,
+    fontSize: 13,
+    fontWeight: 600,
+    cursor: 'pointer',
+    transition: `border-color ${transitions.hover}, color ${transitions.hover}, background ${transitions.hover}`
   },
   muted: { color: colors.text3, fontSize: 14 },
   statusesError: {

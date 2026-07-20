@@ -21,7 +21,8 @@ export const zhCN: Translation = {
     pushSkippedStale: '本地存档看起来已过时（自上次云同步以来未变化）——已跳过自动上传，以免覆盖云端。如有需要，请手动下载云端版本。',
     pushSkippedNoChange: '无变化 — 没有需要上传的内容',
     statusesError: '无法检查同步状态',
-    retry: '重试'
+    retry: '重试',
+    addGameCard: '添加游戏'
   },
   gameCard: {
     statusSynced: '已同步',
@@ -32,6 +33,7 @@ export const zhCN: Translation = {
     statusCloudOnly: '仅云端',
     statusNoSaves: '没有存档',
     statusNoRepo: '仓库未连接',
+    statusNeedsSetup: '需要设置',
     statusChecking: '正在检查…',
     unsupported: '不支持',
     syncing: '同步中…',
@@ -42,7 +44,25 @@ export const zhCN: Translation = {
     notInstalled: '未安装',
     lastSyncLabel: '上次同步：',
     savesSizeLabel: '存档大小：',
-    details: '详情'
+    details: '详情',
+    customTag: '手动添加',
+    setUp: '设置'
+  },
+  addGame: {
+    title: '添加游戏',
+    description:
+      '这款游戏不在 CoopSync 的内置目录中,因此整个存档文件夹将原样复制——我们不知道哪些文件才是真正的存档数据。在下方指定游戏的 .exe,启动/退出时的自动同步就能和目录中的游戏一样正常工作;如果跳过这一步,则只能通过上传/下载按钮手动同步。如果同一文件夹中还有本地设置或账号文件,它们也会被同步。',
+    nameLabel: '游戏名称',
+    namePlaceholder: '例如:我的游戏',
+    pathLabel: '存档文件夹',
+    submit: '添加游戏',
+    installPathLabel: '安装文件夹(可选)',
+    installPathHint: '以便 CoopSync 找到游戏的 .exe 并在启动/退出时启用自动同步。',
+    scanButton: '扫描',
+    scanning: '扫描中…',
+    exeFoundLabel: '检测到的可执行文件——选择启动游戏的那个:',
+    exeNoneFound: '未能自动找到 .exe——自动同步将不可用,但手动上传/下载仍可使用。',
+    addExeManually: '手动添加 .exe…'
   },
   friends: {
     title: '好友',
@@ -94,7 +114,22 @@ export const zhCN: Translation = {
       `存档将恢复到 ${version}（最后由 ${who} 同步）。当前状态不会丢失——会成为历史记录中的新条目。如果你们共享访问权限，搭档下次启动游戏时会自动获取这个版本。`,
     restoreError: '无法恢复该版本',
     revertSuccess: (version) => `已恢复到 ${version}`,
-    restoredFromBadge: (version) => `↩ 来自 ${version}`
+    restoredFromBadge: (version) => `↩ 来自 ${version}`,
+    savePathTitle: '存档位置',
+    savePathCustomBadge: '自定义',
+    savePathNotFound: '未找到文件夹',
+    savePathEdit: '编辑',
+    savePathBrowse: '浏览…',
+    savePathPlaceholder: '存档文件夹的完整路径',
+    savePathSave: '保存',
+    savePathCancel: '取消',
+    savePathReset: '恢复默认',
+    savePathSaveError: '无法保存该位置',
+    customGameWarning: '这款游戏是手动添加的——整个存档文件夹会原样同步(不做文件过滤),因此同一文件夹中的本地设置或账号文件也会被同步。',
+    removeCustomGame: '移除游戏',
+    removeCustomGameConfirmTitle: '移除这款游戏?',
+    removeCustomGameConfirmDesc: (name) => `${name} 将停止同步。本地存档以及已上传到共享仓库的内容都不会受影响。`,
+    removeCustomGameError: '无法移除该游戏'
   },
   cloudWarning: {
     title: '为已同步的游戏关闭 Steam 云存储',
@@ -261,6 +296,7 @@ export const zhCN: Translation = {
     LEAVE_REPO_FAILED: (p) => `无法退出存储 (${p.status})`,
     ENCRYPTION_UNAVAILABLE: () => '此系统上加密不可用 — 无法安全保存令牌',
     GAME_NOT_SUPPORTED: () => '该游戏不受支持',
+    CUSTOM_GAME_INVALID: () => '请输入游戏名称和存档文件夹',
     GAME_RUNNING: () => '游戏仍在运行——请先关闭游戏，再重新尝试恢复该版本',
     SAVE_FOLDER_NOT_FOUND: () => '未找到存档文件夹',
     NO_CLOUD_SAVES: () => '存储中还没有这个游戏的存档',

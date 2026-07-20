@@ -3,7 +3,7 @@ import { colors, fonts, radii, steamPoster, transitions } from '../theme'
 import { useI18n } from '../i18n'
 import { describeError, describeSyncResult } from '../errors'
 import type { Translation } from '../i18n'
-import { ChevronRightIcon, HistoryIcon } from '../components/icons'
+import { ChevronRightIcon, HistoryIcon, FolderIcon, EditIcon, TrashIcon, AlertTriangleIcon } from '../components/icons'
 import Avatar from '../components/Avatar'
 import Button from '../components/Button'
 import ConfirmModal from '../components/ConfirmModal'
@@ -11,7 +11,7 @@ import Pagination from '../components/Pagination'
 import type { BannerState } from '../components/Banner'
 import { useAvatars } from '../hooks/useAvatars'
 import { useRowCapacity } from '../hooks/useRowCapacity'
-import type { AuthUser, SyncHistoryEntry } from '../../../shared/types'
+import type { AuthUser, SyncHistoryEntry, GameSavePathInfo } from '../../../shared/types'
 import { formatVersion as fmtVersion } from '../../../shared/format'
 import { devHistoryMock } from '../devHistoryMock'
 
@@ -29,6 +29,9 @@ function formatRelativeTime(iso: string, t: Translation): string {
 interface Props {
   appId: string
   name: string
+  /** Added manually, not from CoopSync's built-in catalog — shows a
+   *  disclaimer and a "Remove game" action. */
+  isCustom?: boolean
   /** Changes after every real push — a signal to reread this game's history. */
   syncVersion: number
   user: AuthUser
@@ -39,6 +42,9 @@ interface Props {
   onBanner: (banner: BannerState) => void
   /** Call after a real push (a revert is one) — lets History/MainScreen reread. */
   onSynced: () => void
+  /** A custom game was just removed — lets MainScreen drop it and go back to
+   *  the grid (only relevant when isCustom is true). */
+  onCustomGameRemoved: () => void
   /** True while this game's background autopush (post game-exit) is still in
    *  flight — blocks "Restore" so it can't race the same git clone. */
   autoPushPending: boolean
@@ -51,12 +57,14 @@ interface Props {
 function GameDetailScreen({
   appId,
   name,
+  isCustom,
   syncVersion,
   user,
   avatarDataUrl,
   onBack,
   onBanner,
   onSynced,
+  onCustomGameRemoved,
   autoPushPending
 }: Props): React.JSX.Element {
   const { t } = useI18n()
@@ -73,6 +81,78 @@ function GameDetailScreen({
   const [restoreTarget, setRestoreTarget] = useState<SyncHistoryEntry | null>(null)
   const [restoring, setRestoring] = useState(false)
   const [restoreError, setRestoreError] = useState<string | null>(null)
+
+  // Where this game's saves live — a user override, or the catalog default.
+  const [savePathInfo, setSavePathInfo] = useState<GameSavePathInfo | null>(null)
+  const [editingPath, setEditingPath] = useState(false)
+  const [pathInput, setPathInput] = useState('')
+  const [savingPath, setSavingPath] = useState(false)
+  const [savePathError, setSavePathError] = useState<string | null>(null)
+
+  useEffect(() => {
+    setEditingPath(false)
+    setSavePathError(null)
+    window.api.games
+      .getSavePath(appId)
+      .then(setSavePathInfo)
+      .catch(() => setSavePathInfo(null))
+  }, [appId])
+
+  function startEditPath(): void {
+    setPathInput(savePathInfo?.path ?? '')
+    setSavePathError(null)
+    setEditingPath(true)
+  }
+
+  async function handleBrowsePath(): Promise<void> {
+    const picked = await window.api.games.pickSaveFolder()
+    if (picked) setPathInput(picked)
+  }
+
+  async function handleSavePath(): Promise<void> {
+    const trimmed = pathInput.trim()
+    if (!trimmed) return
+    setSavingPath(true)
+    setSavePathError(null)
+    try {
+      const info = await window.api.games.setSavePath(appId, trimmed)
+      setSavePathInfo(info)
+      setEditingPath(false)
+    } catch (e) {
+      setSavePathError(describeError(e, t, t.history.savePathSaveError))
+    } finally {
+      setSavingPath(false)
+    }
+  }
+
+  async function handleResetPath(): Promise<void> {
+    setSavingPath(true)
+    try {
+      const info = await window.api.games.setSavePath(appId, null)
+      setSavePathInfo(info)
+    } catch (e) {
+      onBanner({ text: describeError(e, t, t.history.savePathSaveError), kind: 'error' })
+    } finally {
+      setSavingPath(false)
+    }
+  }
+
+  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
+  const [removing, setRemoving] = useState(false)
+  const [removeError, setRemoveError] = useState<string | null>(null)
+
+  async function handleRemoveGame(): Promise<void> {
+    setRemoving(true)
+    setRemoveError(null)
+    try {
+      await window.api.games.removeCustom(appId)
+      onCustomGameRemoved()
+    } catch (e) {
+      setRemoveError(describeError(e, t, t.history.removeCustomGameError))
+    } finally {
+      setRemoving(false)
+    }
+  }
 
   function load(): void {
     setLoading(true)
@@ -157,6 +237,88 @@ function GameDetailScreen({
         <div style={styles.h1}>{name}</div>
       </div>
 
+      {isCustom && (
+        <div style={styles.customWarning}>
+          <AlertTriangleIcon size={15} color={colors.warning} />
+          <span>{t.history.customGameWarning}</span>
+        </div>
+      )}
+
+      <div style={styles.savePathCard}>
+        <div style={styles.savePathTopRow}>
+          <div style={styles.savePathLabelRow}>
+            <FolderIcon size={14} color={colors.text3} />
+            <span style={styles.savePathLabel}>{t.history.savePathTitle}</span>
+            {savePathInfo?.isCustom && <span style={styles.customBadge}>{t.history.savePathCustomBadge}</span>}
+          </div>
+          {!editingPath && (
+            <div style={{ display: 'flex', gap: 8 }}>
+              {savePathInfo?.isCustom && (
+                <Button
+                  variant="ghost"
+                  style={styles.smallBtn}
+                  onClick={handleResetPath}
+                  disabled={savingPath}
+                >
+                  {t.history.savePathReset}
+                </Button>
+              )}
+              <Button variant="ghost" style={styles.smallBtn} onClick={startEditPath}>
+                <EditIcon size={13} color={colors.text2} />
+                {t.history.savePathEdit}
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {!editingPath ? (
+          <>
+            <div style={styles.savePathValue} title={savePathInfo?.path}>
+              {savePathInfo?.path ?? '—'}
+            </div>
+            {savePathInfo && !savePathInfo.exists && (
+              <div style={styles.savePathWarning}>{t.history.savePathNotFound}</div>
+            )}
+          </>
+        ) : (
+          <div>
+            <div style={styles.editRow}>
+              <input
+                className="input-field"
+                style={styles.pathInput}
+                value={pathInput}
+                onChange={(e) => setPathInput(e.target.value)}
+                placeholder={t.history.savePathPlaceholder}
+                autoFocus
+              />
+              <Button variant="secondary" style={styles.browseBtn} onClick={handleBrowsePath}>
+                {t.history.savePathBrowse}
+              </Button>
+            </div>
+            {savePathError && <div style={styles.savePathErrorText}>{savePathError}</div>}
+            <div style={styles.editActions}>
+              <Button
+                variant="primary"
+                style={styles.smallBtn}
+                onClick={handleSavePath}
+                disabled={savingPath || !pathInput.trim()}
+              >
+                {savingPath && <span className="spinner" />}
+                {t.history.savePathSave}
+              </Button>
+              <Button
+                variant="ghost"
+                style={styles.smallBtn}
+                onClick={() => setEditingPath(false)}
+                disabled={savingPath}
+              >
+                {t.history.savePathCancel}
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+
       {showTable && (
         <div style={styles.table}>
           <div style={styles.headerRow}>
@@ -196,6 +358,15 @@ function GameDetailScreen({
         </div>
       )}
 
+      {isCustom && (
+        <div style={styles.removeRow}>
+          <Button variant="danger" style={styles.removeBtn} onClick={() => setShowRemoveConfirm(true)}>
+            <TrashIcon size={14} color={colors.danger} />
+            {t.history.removeCustomGame}
+          </Button>
+        </div>
+      )}
+
       {restoreTarget && (
         <ConfirmModal
           title={t.history.restoreConfirmTitle}
@@ -211,6 +382,22 @@ function GameDetailScreen({
           onCancel={() => {
             setRestoreTarget(null)
             setRestoreError(null)
+          }}
+        />
+      )}
+
+      {showRemoveConfirm && (
+        <ConfirmModal
+          title={t.history.removeCustomGameConfirmTitle}
+          description={t.history.removeCustomGameConfirmDesc(name)}
+          confirmLabel={t.history.removeCustomGame}
+          cancelLabel={t.settings.cancel}
+          busy={removing}
+          error={removeError}
+          onConfirm={handleRemoveGame}
+          onCancel={() => {
+            setShowRemoveConfirm(false)
+            setRemoveError(null)
           }}
         />
       )}
@@ -346,6 +533,82 @@ const styles: Record<string, React.CSSProperties> = {
     flexShrink: 0
   },
   h1: { fontFamily: fonts.display, fontSize: 22, fontWeight: 700, color: colors.text1 },
+  customWarning: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    fontSize: 12.5,
+    lineHeight: 1.5,
+    color: colors.text2,
+    background: colors.warningBg,
+    border: `1px solid ${colors.warningBd}`,
+    borderRadius: radii.md,
+    padding: '10px 14px',
+    marginBottom: 20
+  },
+  removeRow: { marginTop: 24, display: 'flex', justifyContent: 'flex-end' },
+  removeBtn: { height: 34, padding: '0 14px', fontSize: 12.5 },
+  savePathCard: {
+    border: `1px solid ${colors.borderSubtle}`,
+    borderRadius: radii.lg,
+    padding: '16px 18px',
+    marginBottom: 20
+  },
+  savePathTopRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginBottom: 10
+  },
+  savePathLabelRow: { display: 'flex', alignItems: 'center', gap: 8 },
+  savePathLabel: {
+    fontFamily: fonts.display,
+    fontSize: 13,
+    fontWeight: 600,
+    color: colors.text2,
+    textTransform: 'uppercase',
+    letterSpacing: '.04em'
+  },
+  customBadge: {
+    fontSize: 10.5,
+    fontWeight: 600,
+    color: colors.cy,
+    background: 'rgba(54,226,232,.1)',
+    border: `1px solid ${colors.borderAccent}`,
+    borderRadius: radii.pill,
+    padding: '2px 8px'
+  },
+  savePathValue: {
+    fontFamily: fonts.mono,
+    fontSize: 12.5,
+    color: colors.text2,
+    background: colors.bgInset,
+    border: `1px solid ${colors.borderDefault}`,
+    borderRadius: radii.md,
+    padding: '10px 12px',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap'
+  },
+  savePathWarning: { fontSize: 12, color: colors.warning, marginTop: 8 },
+  editRow: { display: 'flex', gap: 8 },
+  pathInput: {
+    flex: 1,
+    height: 38,
+    padding: '0 12px',
+    border: `1px solid ${colors.borderDefault}`,
+    borderRadius: radii.md,
+    background: colors.bgInset,
+    color: colors.text1,
+    fontFamily: fonts.mono,
+    fontSize: 12.5,
+    outline: 'none'
+  },
+  browseBtn: { height: 38, padding: '0 14px', fontSize: 12.5, whiteSpace: 'nowrap' },
+  savePathErrorText: { fontSize: 12, color: colors.danger, marginTop: 8 },
+  editActions: { display: 'flex', gap: 8, marginTop: 10 },
+  smallBtn: { height: 32, padding: '0 14px', fontSize: 12.5 },
   table: {
     border: `1px solid ${colors.borderSubtle}`,
     borderRadius: radii.lg,

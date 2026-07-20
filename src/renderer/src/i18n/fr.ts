@@ -23,7 +23,8 @@ export const fr: Translation = {
       "La sauvegarde locale semble obsolète (inchangée depuis la dernière synchro cloud) — envoi automatique ignoré pour ne pas écraser le cloud. Télécharge la version cloud manuellement si besoin.",
     pushSkippedNoChange: 'Aucun changement — rien à envoyer',
     statusesError: 'Impossible de vérifier le statut de synchronisation',
-    retry: 'Réessayer'
+    retry: 'Réessayer',
+    addGameCard: 'Ajouter un jeu'
   },
   gameCard: {
     statusSynced: 'Synchronisé',
@@ -34,6 +35,7 @@ export const fr: Translation = {
     statusCloudOnly: 'Cloud uniquement',
     statusNoSaves: 'Aucune sauvegarde',
     statusNoRepo: 'Dépôt non connecté',
+    statusNeedsSetup: 'Configuration requise',
     statusChecking: 'Vérification…',
     unsupported: 'Non pris en charge',
     syncing: 'Synchronisation…',
@@ -44,7 +46,27 @@ export const fr: Translation = {
     notInstalled: 'non installé',
     lastSyncLabel: 'Dernière synchro :',
     savesSizeLabel: 'Taille des sauvegardes :',
-    details: 'Détails'
+    details: 'Détails',
+    customTag: 'Ajouté manuellement',
+    setUp: 'Configurer'
+  },
+  addGame: {
+    title: 'Ajouter un jeu',
+    description:
+      "Ce jeu n'est pas dans le catalogue intégré de CoopSync, donc tout le dossier de sauvegarde est copié tel quel — nous ne savons pas quels fichiers sont réellement des données de sauvegarde. Indique l'exécutable du jeu ci-dessous et la synchronisation automatique au lancement/à la fermeture fonctionnera comme pour un jeu du catalogue ; si tu passes cette étape, la synchronisation sera uniquement manuelle via les boutons Upload/Download. Si ce dossier contient aussi des paramètres locaux ou des fichiers de compte, ils seront synchronisés aussi.",
+    nameLabel: 'Nom du jeu',
+    namePlaceholder: 'ex. Mon jeu',
+    pathLabel: 'Dossier de sauvegarde',
+    submit: 'Ajouter le jeu',
+    installPathLabel: "Dossier d'installation (facultatif)",
+    installPathHint:
+      "Pour que CoopSync trouve l'exécutable du jeu et active la synchronisation automatique au lancement/à la fermeture.",
+    scanButton: 'Analyser',
+    scanning: 'Analyse…',
+    exeFoundLabel: 'Exécutables détectés — choisissez celui qui lance le jeu :',
+    exeNoneFound:
+      "Aucun .exe trouvé automatiquement — la synchronisation automatique ne sera pas disponible, mais l'Upload/Download manuel fonctionnera toujours.",
+    addExeManually: 'Ajouter un .exe manuellement…'
   },
   friends: {
     title: 'Amis',
@@ -96,7 +118,24 @@ export const fr: Translation = {
       `La sauvegarde reviendra à la version ${version} (dernière synchro par ${who}). L'état actuel ne sera pas perdu — il deviendra une nouvelle entrée dans l'historique. Si l'accès est partagé, votre partenaire récupérera automatiquement cette version au prochain lancement du jeu.`,
     restoreError: 'Impossible de restaurer cette version',
     revertSuccess: (version) => `Version ${version} restaurée`,
-    restoredFromBadge: (version) => `↩ depuis ${version}`
+    restoredFromBadge: (version) => `↩ depuis ${version}`,
+    savePathTitle: 'Emplacement des sauvegardes',
+    savePathCustomBadge: 'Personnalisé',
+    savePathNotFound: 'Dossier introuvable',
+    savePathEdit: 'Modifier',
+    savePathBrowse: 'Parcourir…',
+    savePathPlaceholder: 'Chemin complet du dossier de sauvegarde',
+    savePathSave: 'Enregistrer',
+    savePathCancel: 'Annuler',
+    savePathReset: 'Réinitialiser par défaut',
+    savePathSaveError: "Impossible d'enregistrer cet emplacement",
+    customGameWarning:
+      "Ce jeu a été ajouté manuellement — tout le dossier de sauvegarde est synchronisé tel quel (sans filtrage des fichiers), donc les paramètres locaux ou fichiers de compte présents dans ce même dossier seront synchronisés aussi.",
+    removeCustomGame: 'Supprimer le jeu',
+    removeCustomGameConfirmTitle: 'Supprimer ce jeu ?',
+    removeCustomGameConfirmDesc: (name) =>
+      `${name} ne sera plus synchronisé. Les sauvegardes locales et tout ce qui a déjà été envoyé vers le dépôt partagé resteront intacts.`,
+    removeCustomGameError: "Impossible de supprimer ce jeu"
   },
   cloudWarning: {
     title: 'Désactive Steam Cloud pour les jeux synchronisés',
@@ -271,6 +310,7 @@ export const fr: Translation = {
     ENCRYPTION_UNAVAILABLE: () =>
       "Le chiffrement n'est pas disponible sur ce système — impossible de stocker le token en sécurité",
     GAME_NOT_SUPPORTED: () => 'Jeu non pris en charge',
+    CUSTOM_GAME_INVALID: () => 'Indique un nom de jeu et un dossier de sauvegarde',
     GAME_RUNNING: () => "Le jeu est encore en cours d'exécution — ferme-le d'abord, puis réessaie de restaurer la version",
     SAVE_FOLDER_NOT_FOUND: () => 'Dossier de sauvegarde introuvable',
     NO_CLOUD_SAVES: () => "Aucune sauvegarde de ce jeu dans le stockage pour l'instant",

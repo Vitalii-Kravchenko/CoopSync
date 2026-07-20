@@ -71,11 +71,40 @@ export interface CatalogGame {
   name: string
 }
 
+/** Effective save-folder location for a game — a user override if set,
+ *  otherwise the catalog default (see games/catalog.ts). */
+export interface GameSavePathInfo {
+  path: string
+  /** True if `path` is a user override, not the catalog default. */
+  isCustom: boolean
+  /** Whether the folder actually exists on disk right now. */
+  exists: boolean
+}
+
 /** Any installed Steam game + whether CoopSync supports it. */
 export interface InstalledGame {
   appId: string
   name: string
   supported: boolean
+  /** True for a game the user added manually (not in CoopSync's built-in
+   *  catalog) — shown with a disclaimer since its save folder isn't
+   *  filtered the way SupportedGame.saveFilePattern filters a catalog game. */
+  isCustom?: boolean
+}
+
+/** A user-added game not in CoopSync's built-in catalog — appId is a
+ *  synthetic id ("custom:<uuid>"), not a real Steam AppID. Sync works
+ *  (manual upload/download only, no launch/exit auto-sync), but the whole
+ *  save folder is copied as-is — we don't know its structure well enough to
+ *  filter out unrelated local files the way the catalog does. */
+export interface CustomGame {
+  appId: string
+  name: string
+  savePath: string
+  /** .exe name(s) detected in the install folder the user pointed at when
+   *  adding the game — drives the same launch/exit auto-sync watcher as
+   *  catalog games. Empty = manual Upload/Download only, no auto-sync. */
+  processNames: string[]
 }
 
 /** Sync status of a game's saves (comparing local against GitHub). */
@@ -88,6 +117,7 @@ export type SyncStatus =
   | 'cloud-only' // cloud exists, local doesn't
   | 'no-saves' // neither exists
   | 'no-repo' // repo deleted/not connected — nothing to compare cloud versions against
+  | 'needs-setup' // a co-op partner added this custom game — this PC hasn't set its local save folder yet
 
 export interface GameSyncStatus {
   appId: string

@@ -23,7 +23,8 @@ export const uk: Translation = {
       'Локальний сейв виглядає застарілим (не змінювався після останнього синку) — автовивантаження пропущено, щоб не затерти хмару. За потреби завантаж хмарну версію вручну.',
     pushSkippedNoChange: 'Без змін — нічого вивантажувати',
     statusesError: 'Не вдалося перевірити статус синку',
-    retry: 'Спробувати ще раз'
+    retry: 'Спробувати ще раз',
+    addGameCard: 'Додати гру'
   },
   gameCard: {
     statusSynced: 'Синхронізовано',
@@ -34,6 +35,7 @@ export const uk: Translation = {
     statusCloudOnly: 'Тільки в хмарі',
     statusNoSaves: 'Сейвів нема',
     statusNoRepo: 'Сховище не підключено',
+    statusNeedsSetup: 'Потрібне налаштування',
     statusChecking: 'Перевіряю…',
     unsupported: 'Не підтримується',
     syncing: 'Синхронізую…',
@@ -44,7 +46,26 @@ export const uk: Translation = {
     notInstalled: 'не встановлено',
     lastSyncLabel: 'Останній синк:',
     savesSizeLabel: 'Розмір сейвів:',
-    details: 'Деталі'
+    details: 'Деталі',
+    customTag: 'Додано вручну',
+    setUp: 'Налаштувати'
+  },
+  addGame: {
+    title: 'Додати гру',
+    description:
+      'Цієї гри немає у вбудованому каталозі CoopSync, тому вся папка сейвів копіюється як є — ми не знаємо, які файли в ній насправді є сейвами. Вкажи .exe гри нижче — і автосинк при старті/виході запрацює так само, як у звичайних ігор; якщо пропустиш цей крок, синхронізація буде лише вручну через кнопки Upload/Download. Якщо в тій самій папці лежать локальні налаштування чи файли акаунту — вони теж синхронізуються.',
+    nameLabel: 'Назва гри',
+    namePlaceholder: 'напр. Моя гра',
+    pathLabel: 'Папка з сейвами',
+    submit: 'Додати гру',
+    installPathLabel: 'Папка встановлення (необовʼязково)',
+    installPathHint: 'Щоб CoopSync знайшов .exe гри й увімкнув автосинк при старті/виході.',
+    scanButton: 'Сканувати',
+    scanning: 'Сканування…',
+    exeFoundLabel: 'Знайдені виконувані файли — вибери той, що запускає гру:',
+    exeNoneFound:
+      'Не вдалося знайти .exe автоматично — автосинк буде недоступний, але ручний Upload/Download працюватиме.',
+    addExeManually: 'Додати .exe вручну…'
   },
   friends: {
     title: 'Друзі',
@@ -96,7 +117,24 @@ export const uk: Translation = {
       `Сейв повернеться до версії ${version} (востаннє синкав ${who}). Поточний стан не зникне — стане новим записом в історії. Якщо в тебе є спільний доступ, партнер підхопить цю версію автоматично, коли наступного разу зайде в гру.`,
     restoreError: 'Не вдалося відновити версію',
     revertSuccess: (version) => `Відновлено версію ${version}`,
-    restoredFromBadge: (version) => `↩ з ${version}`
+    restoredFromBadge: (version) => `↩ з ${version}`,
+    savePathTitle: 'Розташування сейвів',
+    savePathCustomBadge: 'Власний шлях',
+    savePathNotFound: 'Папку не знайдено',
+    savePathEdit: 'Редагувати',
+    savePathBrowse: 'Огляд…',
+    savePathPlaceholder: 'Повний шлях до папки з сейвами',
+    savePathSave: 'Зберегти',
+    savePathCancel: 'Скасувати',
+    savePathReset: 'Скинути до типового',
+    savePathSaveError: 'Не вдалося зберегти шлях',
+    customGameWarning:
+      'Ця гра додана вручну — вся папка сейвів синхронізується як є (без фільтрації файлів), тож локальні налаштування чи файли акаунту в тій самій папці теж синхронізуються.',
+    removeCustomGame: 'Видалити гру',
+    removeCustomGameConfirmTitle: 'Видалити цю гру?',
+    removeCustomGameConfirmDesc: (name) =>
+      `${name} перестане синхронізуватись. Локальні сейви та все, що вже завантажено у спільний репозиторій, залишаться недоторканими.`,
+    removeCustomGameError: 'Не вдалося видалити гру'
   },
   cloudWarning: {
     title: 'Вимкни Steam Cloud для ігор, які синкає CoopSync',
@@ -270,6 +308,7 @@ export const uk: Translation = {
     LEAVE_REPO_FAILED: (p) => `Не вдалось покинути сховище (${p.status})`,
     ENCRYPTION_UNAVAILABLE: () => 'Шифрування недоступне в системі — не можу безпечно зберегти токен',
     GAME_NOT_SUPPORTED: () => 'Гра не підтримується',
+    CUSTOM_GAME_INVALID: () => 'Вкажи назву гри та папку з сейвами',
     GAME_RUNNING: () => 'Гра ще запущена — спершу закрий її, потім спробуй відновити версію ще раз',
     SAVE_FOLDER_NOT_FOUND: () => 'Папку сейвів не знайдено',
     NO_CLOUD_SAVES: () => 'У сховищі ще немає сейвів цієї гри',

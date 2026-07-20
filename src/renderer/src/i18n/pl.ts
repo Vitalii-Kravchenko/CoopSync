@@ -23,7 +23,8 @@ export const pl: Translation = {
       'Lokalny zapis wygląda na nieaktualny (bez zmian od ostatniej synchronizacji z chmurą) — automatyczne wysyłanie pominięte, by nie nadpisać chmury. W razie potrzeby pobierz wersję z chmury ręcznie.',
     pushSkippedNoChange: 'Bez zmian — nie było czego wysyłać',
     statusesError: 'Nie udało się sprawdzić statusu synchronizacji',
-    retry: 'Spróbuj ponownie'
+    retry: 'Spróbuj ponownie',
+    addGameCard: 'Dodaj grę'
   },
   gameCard: {
     statusSynced: 'Zsynchronizowano',
@@ -34,6 +35,7 @@ export const pl: Translation = {
     statusCloudOnly: 'Tylko w chmurze',
     statusNoSaves: 'Brak zapisów',
     statusNoRepo: 'Repozytorium niepodłączone',
+    statusNeedsSetup: 'Wymaga konfiguracji',
     statusChecking: 'Sprawdzam…',
     unsupported: 'Nieobsługiwana',
     syncing: 'Synchronizuję…',
@@ -44,7 +46,26 @@ export const pl: Translation = {
     notInstalled: 'niezainstalowana',
     lastSyncLabel: 'Ostatnia synchronizacja:',
     savesSizeLabel: 'Rozmiar zapisów:',
-    details: 'Szczegóły'
+    details: 'Szczegóły',
+    customTag: 'Dodano ręcznie',
+    setUp: 'Skonfiguruj'
+  },
+  addGame: {
+    title: 'Dodaj grę',
+    description:
+      'Tej gry nie ma we wbudowanym katalogu CoopSync, więc cały folder zapisów jest kopiowany bez zmian — nie wiemy, które pliki są faktycznie zapisami. Wskaż plik .exe gry poniżej, a autosynchronizacja przy starcie/wyjściu zadziała tak samo jak w przypadku gry z katalogu; jeśli pominiesz ten krok, synchronizacja będzie tylko ręczna, przyciskami Upload/Download. Jeśli w tym samym folderze są lokalne ustawienia lub pliki konta — one też się zsynchronizują.',
+    nameLabel: 'Nazwa gry',
+    namePlaceholder: 'np. Moja gra',
+    pathLabel: 'Folder zapisów',
+    submit: 'Dodaj grę',
+    installPathLabel: 'Folder instalacji (opcjonalnie)',
+    installPathHint: 'Żeby CoopSync znalazł plik .exe gry i włączył autosynchronizację przy starcie/wyjściu.',
+    scanButton: 'Skanuj',
+    scanning: 'Skanowanie…',
+    exeFoundLabel: 'Wykryte pliki wykonywalne — wybierz ten, który uruchamia grę:',
+    exeNoneFound:
+      'Nie udało się automatycznie znaleźć .exe — autosynchronizacja nie będzie dostępna, ale ręczny Upload/Download nadal zadziała.',
+    addExeManually: 'Dodaj .exe ręcznie…'
   },
   friends: {
     title: 'Znajomi',
@@ -96,7 +117,24 @@ export const pl: Translation = {
       `Zapis wróci do wersji ${version} (ostatnio synchronizował ${who}). Obecny stan nie zniknie — stanie się nowym wpisem w historii. Jeśli macie wspólny dostęp, partner podchwyci tę wersję automatycznie przy następnym uruchomieniu gry.`,
     restoreError: 'Nie udało się przywrócić wersji',
     revertSuccess: (version) => `Przywrócono wersję ${version}`,
-    restoredFromBadge: (version) => `↩ z ${version}`
+    restoredFromBadge: (version) => `↩ z ${version}`,
+    savePathTitle: 'Lokalizacja zapisów',
+    savePathCustomBadge: 'Niestandardowa',
+    savePathNotFound: 'Nie znaleziono folderu',
+    savePathEdit: 'Edytuj',
+    savePathBrowse: 'Przeglądaj…',
+    savePathPlaceholder: 'Pełna ścieżka do folderu zapisów',
+    savePathSave: 'Zapisz',
+    savePathCancel: 'Anuluj',
+    savePathReset: 'Przywróć domyślną',
+    savePathSaveError: 'Nie udało się zapisać lokalizacji',
+    customGameWarning:
+      'Ta gra została dodana ręcznie — cały folder zapisów synchronizuje się bez zmian (bez filtrowania plików), więc lokalne ustawienia lub pliki konta w tym samym folderze też się zsynchronizują.',
+    removeCustomGame: 'Usuń grę',
+    removeCustomGameConfirmTitle: 'Usunąć tę grę?',
+    removeCustomGameConfirmDesc: (name) =>
+      `${name} przestanie się synchronizować. Lokalne zapisy i wszystko, co już trafiło do wspólnego repozytorium, pozostaną nietknięte.`,
+    removeCustomGameError: 'Nie udało się usunąć gry'
   },
   cloudWarning: {
     title: 'Wyłącz Steam Cloud dla synchronizowanych gier',
@@ -271,6 +309,7 @@ export const pl: Translation = {
     ENCRYPTION_UNAVAILABLE: () =>
       'Szyfrowanie jest niedostępne w systemie — nie można bezpiecznie zapisać tokenu',
     GAME_NOT_SUPPORTED: () => 'Gra nieobsługiwana',
+    CUSTOM_GAME_INVALID: () => 'Podaj nazwę gry i folder zapisów',
     GAME_RUNNING: () => 'Gra wciąż działa — zamknij ją najpierw, a potem spróbuj ponownie przywrócić wersję',
     SAVE_FOLDER_NOT_FOUND: () => 'Nie znaleziono folderu zapisów',
     NO_CLOUD_SAVES: () => 'W magazynie nie ma jeszcze zapisów tej gry',

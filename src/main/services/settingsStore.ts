@@ -2,7 +2,7 @@ import { app } from 'electron'
 import { dirname, join } from 'path'
 import { readFileSync, unlinkSync, writeFileSync } from 'fs'
 
-import type { UserRole } from '../../shared/types'
+import type { UserRole, CustomGame } from '../../shared/types'
 
 // Simple app settings (except autostart, which the OS stores).
 interface AppSettings {
@@ -19,6 +19,11 @@ interface AppSettings {
   showCloudWarning: boolean
   /** Whether to silently check GitHub for a new release shortly after launch. */
   autoCheckUpdates: boolean
+  /** Manual save-folder overrides, keyed by appId — set via a game's detail
+   *  screen when the catalog default path is wrong for this PC/install. */
+  savePathOverrides?: Record<string, string>
+  /** Games the user added manually (not in the built-in catalog). */
+  customGames?: CustomGame[]
 }
 
 // English — universal fallback if the installer's language couldn't be determined.

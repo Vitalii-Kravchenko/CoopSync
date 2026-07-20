@@ -66,7 +66,8 @@ export const ptBR: Translation = {
     exeNoneFound:
       'Nenhum .exe encontrado automaticamente — a sincronização automática não estará disponível, mas Upload/Download manual continuará funcionando.',
     addExeManually: 'Adicionar .exe manualmente…',
-    addCover: 'Adicionar capa'
+    addCover: 'Adicionar capa',
+    coverLabel: 'Capa (opcional)'
   },
   friends: {
     title: 'Amigos',
@@ -137,7 +138,12 @@ export const ptBR: Translation = {
       `${name} vai parar de sincronizar. Os saves locais e tudo que já foi enviado ao repositório compartilhado permanecem intactos.`,
     removeCustomGameError: 'Não foi possível remover o jogo',
     changeCover: 'Alterar capa',
-    coverError: 'Não foi possível carregar a capa'
+    coverError: 'Não foi possível carregar a capa',
+    coverUpdated: 'Capa atualizada',
+    excludeFilesTitle: 'Excluir arquivos da sincronização',
+    excludeFilesHint:
+      'Marque aqui os arquivos que não devem ser sincronizados — configurações locais, dados de conta, qualquer coisa que não seja realmente um save. Só os arquivos diretamente na pasta de save são listados (sem subpastas).',
+    excludeFilesEmpty: 'Ainda não há arquivos na pasta de save.'
   },
   cloudWarning: {
     title: 'Desative o Steam Cloud para os jogos sincronizados',

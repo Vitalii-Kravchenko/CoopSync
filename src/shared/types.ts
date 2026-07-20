@@ -111,6 +111,12 @@ export interface CustomGame {
   /** User-picked, cropped cover art (2:3, a JPEG data URL) — there's no
    *  Steam poster for a game outside the catalog. */
   coverDataUrl?: string
+  /** Exact file names (not paths — matched the same way saveFilePattern
+   *  matches a catalog game, by basename only) to leave out of sync — local
+   *  settings, account data, anything sitting in the save folder that isn't
+   *  actually save data. Local to this machine, not pushed to a co-op
+   *  partner (unlike the name/save-path registry entry). */
+  excludedFiles?: string[]
 }
 
 /** Sync status of a game's saves (comparing local against GitHub). */

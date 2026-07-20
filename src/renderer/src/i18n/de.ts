@@ -67,7 +67,8 @@ export const de: Translation = {
     exeNoneFound:
       'Es wurde keine .exe automatisch gefunden — die automatische Synchronisierung ist nicht verfügbar, aber manuelles Upload/Download funktioniert weiterhin.',
     addExeManually: '.exe manuell hinzufügen…',
-    addCover: 'Cover hinzufügen'
+    addCover: 'Cover hinzufügen',
+    coverLabel: 'Cover (optional)'
   },
   friends: {
     title: 'Freunde',
@@ -138,7 +139,12 @@ export const de: Translation = {
       `${name} wird nicht mehr synchronisiert. Lokale Spielstände und bereits ins gemeinsame Repository hochgeladene Daten bleiben unangetastet.`,
     removeCustomGameError: 'Spiel konnte nicht entfernt werden',
     changeCover: 'Cover ändern',
-    coverError: 'Cover konnte nicht geladen werden'
+    coverError: 'Cover konnte nicht geladen werden',
+    coverUpdated: 'Cover aktualisiert',
+    excludeFilesTitle: 'Dateien von der Synchronisierung ausschließen',
+    excludeFilesHint:
+      'Markiere hier Dateien, die nicht synchronisiert werden sollen — lokale Einstellungen, Kontodaten, alles, was eigentlich kein Spielstand ist. Aufgelistet werden nur Dateien direkt im Speicherordner (keine Unterordner).',
+    excludeFilesEmpty: 'Im Speicherordner sind noch keine Dateien vorhanden.'
   },
   cloudWarning: {
     title: 'Steam Cloud für synchronisierte Spiele deaktivieren',

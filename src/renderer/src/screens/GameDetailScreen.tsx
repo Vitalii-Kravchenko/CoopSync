@@ -3,11 +3,21 @@ import { colors, fonts, radii, steamPoster, transitions } from '../theme'
 import { useI18n } from '../i18n'
 import { describeError, describeSyncResult } from '../errors'
 import type { Translation } from '../i18n'
-import { ChevronRightIcon, HistoryIcon, FolderIcon, EditIcon, TrashIcon, AlertTriangleIcon } from '../components/icons'
+import {
+  ChevronRightIcon,
+  HistoryIcon,
+  FolderIcon,
+  EditIcon,
+  TrashIcon,
+  AlertTriangleIcon,
+  DiskIcon,
+  SyncIcon
+} from '../components/icons'
 import Avatar from '../components/Avatar'
 import Button from '../components/Button'
 import ConfirmModal from '../components/ConfirmModal'
 import CoverCropModal from '../components/CoverCropModal'
+import ExePicker from '../components/ExePicker'
 import Pagination from '../components/Pagination'
 import type { BannerState } from '../components/Banner'
 import { useAvatars } from '../hooks/useAvatars'
@@ -102,6 +112,7 @@ function GameDetailScreen({
       setCover(dataUrl)
       setImgError(false)
       onCoverChanged(appId, dataUrl)
+      onBanner({ text: t.history.coverUpdated, kind: 'success' })
     } catch (e) {
       setCoverError(describeError(e, t, t.history.coverError))
     } finally {
@@ -134,6 +145,61 @@ function GameDetailScreen({
       .then(setSavePathInfo)
       .catch(() => setSavePathInfo(null))
   }, [appId])
+
+  // .exe name(s) driving launch/exit auto-sync — only relevant for a custom
+  // game. Loaded separately from the save path since a co-op partner setting
+  // up a game they didn't add themselves needs to configure both.
+  const [processNames, setProcessNames] = useState<string[]>([])
+
+  useEffect(() => {
+    if (!isCustom) return
+    window.api.games
+      .getProcessNames(appId)
+      .then(setProcessNames)
+      .catch(() => setProcessNames([]))
+  }, [appId, isCustom])
+
+  function handleProcessNamesChange(names: string[]): void {
+    setProcessNames(names)
+    window.api.games.setProcessNames(appId, names).catch((e) => {
+      onBanner({ text: describeError(e, t, t.history.savePathSaveError), kind: 'error' })
+    })
+  }
+
+  // Files sitting in the save folder's top level (not subfolders — see
+  // games:list-save-files), for excluding local/settings files from sync —
+  // only relevant for a custom game (a catalog game's saveFilePattern is
+  // already known up front, no picker needed).
+  const [saveFiles, setSaveFiles] = useState<string[]>([])
+  const [excludedFiles, setExcludedFiles] = useState<string[]>([])
+  const [loadingSaveFiles, setLoadingSaveFiles] = useState(false)
+
+  function loadSaveFiles(): void {
+    if (!isCustom) return
+    setLoadingSaveFiles(true)
+    Promise.all([window.api.games.listSaveFiles(appId), window.api.games.getExcludedFiles(appId)])
+      .then(([files, excluded]) => {
+        setSaveFiles(files)
+        setExcludedFiles(excluded)
+      })
+      .catch(() => setSaveFiles([]))
+      .finally(() => setLoadingSaveFiles(false))
+  }
+
+  useEffect(() => {
+    loadSaveFiles()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appId, isCustom])
+
+  function toggleExcludedFile(file: string): void {
+    const next = excludedFiles.includes(file)
+      ? excludedFiles.filter((f) => f !== file)
+      : [...excludedFiles, file]
+    setExcludedFiles(next)
+    window.api.games.setExcludedFiles(appId, next).catch((e) => {
+      onBanner({ text: describeError(e, t, t.history.savePathSaveError), kind: 'error' })
+    })
+  }
 
   function startEditPath(): void {
     setPathInput(savePathInfo?.path ?? '')
@@ -375,6 +441,41 @@ function GameDetailScreen({
           </div>
         )}
       </div>
+
+      {isCustom && <ExePicker selected={processNames} onSelectedChange={handleProcessNamesChange} />}
+
+      {isCustom && (
+        <div style={styles.excludeCard}>
+          <div style={styles.savePathTopRow}>
+            <div style={styles.savePathLabelRow}>
+              <DiskIcon size={14} color={colors.text3} />
+              <span style={styles.savePathLabel}>{t.history.excludeFilesTitle}</span>
+            </div>
+            <Button variant="ghost" style={styles.smallBtn} onClick={loadSaveFiles} disabled={loadingSaveFiles}>
+              <SyncIcon size={13} color={colors.text2} />
+              {t.main.retry}
+            </Button>
+          </div>
+          <div style={styles.excludeHint}>{t.history.excludeFilesHint}</div>
+          {!loadingSaveFiles && saveFiles.length === 0 && (
+            <div style={styles.excludeHint}>{t.history.excludeFilesEmpty}</div>
+          )}
+          {!loadingSaveFiles && saveFiles.length > 0 && (
+            <div style={styles.excludeFilesBox}>
+              {saveFiles.map((file) => (
+                <label key={file} style={styles.excludeFileRow}>
+                  <input
+                    type="checkbox"
+                    checked={excludedFiles.includes(file)}
+                    onChange={() => toggleExcludedFile(file)}
+                  />
+                  <span style={styles.excludeFileName}>{file}</span>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {showTable && (
         <div style={styles.table}>
@@ -667,6 +768,24 @@ const styles: Record<string, React.CSSProperties> = {
   savePathErrorText: { fontSize: 12, color: colors.danger, marginTop: 8 },
   editActions: { display: 'flex', gap: 8, marginTop: 10 },
   smallBtn: { height: 32, padding: '0 14px', fontSize: 12.5 },
+  excludeCard: {
+    border: `1px solid ${colors.borderSubtle}`,
+    borderRadius: radii.lg,
+    padding: '16px 18px',
+    marginBottom: 20
+  },
+  excludeHint: { fontSize: 11.5, color: colors.text3, lineHeight: 1.5 },
+  excludeFilesBox: {
+    border: `1px solid ${colors.borderDefault}`,
+    borderRadius: radii.md,
+    background: colors.bgInset,
+    padding: '8px 12px',
+    marginTop: 10,
+    maxHeight: 180,
+    overflowY: 'auto'
+  },
+  excludeFileRow: { display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', cursor: 'pointer' },
+  excludeFileName: { fontFamily: fonts.mono, fontSize: 12.5, color: colors.text1 },
   table: {
     border: `1px solid ${colors.borderSubtle}`,
     borderRadius: radii.lg,

@@ -66,7 +66,8 @@ export const pl: Translation = {
     exeNoneFound:
       'Nie udało się automatycznie znaleźć .exe — autosynchronizacja nie będzie dostępna, ale ręczny Upload/Download nadal zadziała.',
     addExeManually: 'Dodaj .exe ręcznie…',
-    addCover: 'Dodaj okładkę'
+    addCover: 'Dodaj okładkę',
+    coverLabel: 'Okładka (opcjonalnie)'
   },
   friends: {
     title: 'Znajomi',
@@ -137,7 +138,12 @@ export const pl: Translation = {
       `${name} przestanie się synchronizować. Lokalne zapisy i wszystko, co już trafiło do wspólnego repozytorium, pozostaną nietknięte.`,
     removeCustomGameError: 'Nie udało się usunąć gry',
     changeCover: 'Zmień okładkę',
-    coverError: 'Nie udało się wczytać okładki'
+    coverError: 'Nie udało się wczytać okładki',
+    coverUpdated: 'Zaktualizowano okładkę',
+    excludeFilesTitle: 'Wyklucz pliki z synchronizacji',
+    excludeFilesHint:
+      'Zaznacz tu pliki, które nie powinny być synchronizowane — lokalne ustawienia, dane konta, wszystko, co nie jest właściwym zapisem. Lista zawiera tylko pliki bezpośrednio w folderze zapisów (bez podfolderów).',
+    excludeFilesEmpty: 'W folderze zapisów nie ma jeszcze żadnych plików.'
   },
   cloudWarning: {
     title: 'Wyłącz Steam Cloud dla synchronizowanych gier',

@@ -5,6 +5,7 @@ import { useI18n } from '../i18n'
 import { describeError } from '../errors'
 import Button from './Button'
 import CoverCropModal from './CoverCropModal'
+import ExePicker from './ExePicker'
 import { CloseIcon } from './icons'
 
 interface Props {
@@ -20,10 +21,6 @@ function AddCustomGameModal({ onAdded, onCancel }: Props): React.JSX.Element {
   const { t } = useI18n()
   const [name, setName] = useState('')
   const [path, setPath] = useState('')
-  const [installPath, setInstallPath] = useState('')
-  const [scanning, setScanning] = useState(false)
-  const [hasScanned, setHasScanned] = useState(false)
-  const [exeCandidates, setExeCandidates] = useState<string[]>([])
   const [selectedExes, setSelectedExes] = useState<string[]>([])
   const [coverSrc, setCoverSrc] = useState<string | null>(null)
   const [cover, setCover] = useState<string | null>(null)
@@ -36,39 +33,6 @@ function AddCustomGameModal({ onAdded, onCancel }: Props): React.JSX.Element {
   async function handleBrowse(): Promise<void> {
     const picked = await window.api.games.pickSaveFolder()
     if (picked) setPath(picked)
-  }
-
-  async function scanInstallPath(folder: string): Promise<void> {
-    if (!folder.trim()) return
-    setScanning(true)
-    try {
-      const found = await window.api.games.scanExes(folder.trim())
-      setExeCandidates(found)
-      setSelectedExes(found.length === 1 ? found : [])
-      setHasScanned(true)
-    } finally {
-      setScanning(false)
-    }
-  }
-
-  async function handleBrowseInstall(): Promise<void> {
-    const picked = await window.api.games.pickSaveFolder()
-    if (!picked) return
-    setInstallPath(picked)
-    setHasScanned(false)
-    await scanInstallPath(picked)
-  }
-
-  async function handlePickExeManually(): Promise<void> {
-    const picked = await window.api.games.pickExeFile()
-    if (!picked) return
-    setExeCandidates((prev) => (prev.includes(picked) ? prev : [...prev, picked]))
-    setSelectedExes((prev) => (prev.includes(picked) ? prev : [...prev, picked]))
-    setHasScanned(true)
-  }
-
-  function toggleExe(exe: string): void {
-    setSelectedExes((prev) => (prev.includes(exe) ? prev.filter((e) => e !== exe) : [...prev, exe]))
   }
 
   async function handlePickCover(): Promise<void> {
@@ -141,53 +105,10 @@ function AddCustomGameModal({ onAdded, onCancel }: Props): React.JSX.Element {
             </Button>
           </div>
 
-          <label style={styles.label} htmlFor="add-game-install-path">
-            {t.addGame.installPathLabel}
-          </label>
-          <div style={styles.hint}>{t.addGame.installPathHint}</div>
-          <div style={styles.pathRow}>
-            <input
-              id="add-game-install-path"
-              className="input-field"
-              style={{ ...styles.input, flex: 1, minWidth: 0 }}
-              value={installPath}
-              onChange={(e) => {
-                setInstallPath(e.target.value)
-                setHasScanned(false)
-              }}
-              onBlur={() => scanInstallPath(installPath)}
-            />
-            <Button variant="secondary" style={styles.browseBtn} onClick={handleBrowseInstall}>
-              {t.history.savePathBrowse}
-            </Button>
-          </div>
+          <ExePicker selected={selectedExes} onSelectedChange={setSelectedExes} />
 
-          {scanning && <div style={styles.hint}>{t.addGame.scanning}</div>}
-
-          {!scanning && hasScanned && exeCandidates.length === 0 && (
-            <div style={styles.hint}>{t.addGame.exeNoneFound}</div>
-          )}
-
-          {!scanning && exeCandidates.length > 0 && (
-            <div style={styles.exeBox}>
-              <div style={styles.exeLabel}>{t.addGame.exeFoundLabel}</div>
-              {exeCandidates.map((exe) => (
-                <label key={exe} style={styles.exeRow}>
-                  <input
-                    type="checkbox"
-                    checked={selectedExes.includes(exe)}
-                    onChange={() => toggleExe(exe)}
-                  />
-                  <span style={styles.exeName}>{exe}</span>
-                </label>
-              ))}
-            </div>
-          )}
-
-          <div style={styles.actionRow}>
-            <Button variant="ghost" style={styles.manualExeBtn} onClick={handlePickExeManually}>
-              {t.addGame.addExeManually}
-            </Button>
+          <div style={styles.label}>{t.addGame.coverLabel}</div>
+          <div style={styles.coverRow}>
             <Button variant="ghost" style={styles.manualExeBtn} onClick={handlePickCover}>
               {cover ? t.history.changeCover : t.addGame.addCover}
             </Button>
@@ -277,24 +198,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   pathRow: { display: 'flex', gap: 8 },
   browseBtn: { height: 40, minWidth: 110, padding: '0 16px', fontSize: 13, whiteSpace: 'nowrap', flexShrink: 0 },
-  hint: { fontSize: 11.5, color: colors.text3, lineHeight: 1.5, marginTop: 4, marginBottom: 8 },
-  exeBox: {
-    border: `1px solid ${colors.borderDefault}`,
-    borderRadius: radii.md,
-    background: colors.bgInset,
-    padding: '10px 12px',
-    marginTop: 6
-  },
-  exeLabel: { fontSize: 11.5, fontWeight: 600, color: colors.text2, marginBottom: 8 },
-  exeRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    padding: '4px 0',
-    cursor: 'pointer'
-  },
-  exeName: { fontFamily: fonts.mono, fontSize: 12.5, color: colors.text1 },
-  actionRow: { display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, flexWrap: 'wrap' },
+  coverRow: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   manualExeBtn: {
     height: 32,
     padding: '0 14px',

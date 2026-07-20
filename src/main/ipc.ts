@@ -1,5 +1,5 @@
 import { app, ipcMain, shell, clipboard, BrowserWindow, dialog } from 'electron'
-import { existsSync, readFileSync, statSync } from 'fs'
+import { existsSync, readdirSync, readFileSync, statSync } from 'fs'
 import { basename, extname } from 'path'
 import { makeAppError, parseAppError } from '../shared/errors'
 import { readSettings, writeSettings } from './services/settingsStore'
@@ -33,7 +33,8 @@ import {
   uploadAvatar,
   getAvatars,
   pushCustomGameToRegistry,
-  removeCustomGameFromRegistry
+  removeCustomGameFromRegistry,
+  pushCustomGameCover
 } from './services/sync'
 import { startWatcher, stopWatcher } from './services/watcher'
 import { markSeen } from './services/notifyState'
@@ -41,7 +42,16 @@ import { forgetPending } from './services/backgroundState'
 import { getNotifications, markRead, markAllRead, clearAll } from './services/notificationStore'
 import { READY_GAMES } from './games/catalog'
 import { resolveSavePath, isCustomSavePath, setSavePathOverride } from './games/savePath'
-import { getSyncableGames, addCustomGame, removeCustomGame, setCustomGameCover } from './games/customGames'
+import {
+  getSyncableGames,
+  addCustomGame,
+  removeCustomGame,
+  setCustomGameCover,
+  getCustomGameProcessNames,
+  setCustomGameProcessNames,
+  getCustomGameExcludedFiles,
+  setCustomGameExcludedFiles
+} from './games/customGames'
 import { scanForExecutables } from './games/exeScan'
 import { saveToken, loadToken, clearToken } from './services/tokenStore'
 import { sendSupportMessage } from './services/support'
@@ -386,6 +396,9 @@ export function registerIpcHandlers(): void {
         const { token, owner } = await syncTarget()
         const { owner: actor } = await requireAuth()
         await pushCustomGameToRegistry(token, owner, actor, game.appId, game.name)
+        if (game.coverDataUrl) {
+          await pushCustomGameCover(token, owner, actor, game.appId, game.coverDataUrl)
+        }
       } catch {
         // silently ignore — see comment above
       }
@@ -438,9 +451,56 @@ export function registerIpcHandlers(): void {
     pickImageFile(event, 'Обери обкладинку гри')
   )
 
-  // Save (dataUrl) or clear (null) a custom game's already-cropped cover.
-  ipcMain.handle('games:save-cover', (_event, appId: string, dataUrl: string | null): void => {
+  // Save (dataUrl) or clear (null) a custom game's already-cropped cover —
+  // then best-effort push it to the shared repo (same reasoning as
+  // games:add-custom above) so a co-op partner sees the same cover too.
+  ipcMain.handle('games:save-cover', async (_event, appId: string, dataUrl: string | null): Promise<void> => {
     setCustomGameCover(appId, dataUrl)
+    try {
+      const { token, owner } = await syncTarget()
+      const { owner: actor } = await requireAuth()
+      await pushCustomGameCover(token, owner, actor, appId, dataUrl)
+    } catch {
+      // silently ignore — see comment above
+    }
+  })
+
+  // Current .exe name(s) driving a custom game's launch/exit auto-sync —
+  // read when opening its detail screen's install-folder section (a co-op
+  // partner setting up their own copy of a game they didn't add themselves
+  // has no other way to see/set this, unlike the save path).
+  ipcMain.handle('games:get-process-names', (_event, appId: string): string[] =>
+    getCustomGameProcessNames(appId)
+  )
+
+  ipcMain.handle('games:set-process-names', (_event, appId: string, names: string[]): void => {
+    setCustomGameProcessNames(appId, names)
+  })
+
+  // Top-level file names (not subfolders — matches copyFiltered/
+  // clearFiltered's own basename-only matching) actually sitting in a custom
+  // game's resolved save folder, for the "exclude from sync" picker on its
+  // detail screen. Empty if the folder doesn't exist yet or isn't set.
+  ipcMain.handle('games:list-save-files', (_event, appId: string): string[] => {
+    const g = getSyncableGames().find((x) => x.appId === appId)
+    if (!g) return []
+    const savePath = resolveSavePath(g)
+    if (!savePath || !existsSync(savePath)) return []
+    try {
+      return readdirSync(savePath, { withFileTypes: true })
+        .filter((e) => e.isFile())
+        .map((e) => e.name)
+    } catch {
+      return []
+    }
+  })
+
+  ipcMain.handle('games:get-excluded-files', (_event, appId: string): string[] =>
+    getCustomGameExcludedFiles(appId)
+  )
+
+  ipcMain.handle('games:set-excluded-files', (_event, appId: string, files: string[]): void => {
+    setCustomGameExcludedFiles(appId, files)
   })
 
   // --- Save sync ---

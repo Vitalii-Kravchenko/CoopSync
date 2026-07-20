@@ -106,7 +106,23 @@ const api = {
     pickCoverFile: (): Promise<string | null> => ipcRenderer.invoke('games:pick-cover-file'),
     /** Save (or clear, with dataUrl=null) a custom game's already-cropped cover. */
     saveCover: (appId: string, dataUrl: string | null): Promise<void> =>
-      ipcRenderer.invoke('games:save-cover', appId, dataUrl)
+      ipcRenderer.invoke('games:save-cover', appId, dataUrl),
+    /** Current .exe name(s) driving a custom game's launch/exit auto-sync. */
+    getProcessNames: (appId: string): Promise<string[]> =>
+      ipcRenderer.invoke('games:get-process-names', appId),
+    /** Set the .exe name(s) — the setup step for a game a co-op partner added. */
+    setProcessNames: (appId: string, names: string[]): Promise<void> =>
+      ipcRenderer.invoke('games:set-process-names', appId, names),
+    /** File names sitting at the top level of a custom game's save folder
+     *  (not subfolders) — for the "exclude from sync" picker. */
+    listSaveFiles: (appId: string): Promise<string[]> =>
+      ipcRenderer.invoke('games:list-save-files', appId),
+    /** Currently excluded file names for a custom game. */
+    getExcludedFiles: (appId: string): Promise<string[]> =>
+      ipcRenderer.invoke('games:get-excluded-files', appId),
+    /** Set which file names to leave out of sync for a custom game. */
+    setExcludedFiles: (appId: string, files: string[]): Promise<void> =>
+      ipcRenderer.invoke('games:set-excluded-files', appId, files)
   },
   sync: {
     /** Upload the game's saves to GitHub. */

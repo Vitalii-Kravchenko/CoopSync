@@ -63,7 +63,8 @@ export const zhCN: Translation = {
     exeFoundLabel: '检测到的可执行文件——选择启动游戏的那个:',
     exeNoneFound: '未能自动找到 .exe——自动同步将不可用,但手动上传/下载仍可使用。',
     addExeManually: '手动添加 .exe…',
-    addCover: '添加封面'
+    addCover: '添加封面',
+    coverLabel: '封面(可选)'
   },
   friends: {
     title: '好友',
@@ -132,7 +133,11 @@ export const zhCN: Translation = {
     removeCustomGameConfirmDesc: (name) => `${name} 将停止同步。本地存档以及已上传到共享仓库的内容都不会受影响。`,
     removeCustomGameError: '无法移除该游戏',
     changeCover: '更换封面',
-    coverError: '无法加载封面'
+    coverError: '无法加载封面',
+    coverUpdated: '封面已更新',
+    excludeFilesTitle: '从同步中排除文件',
+    excludeFilesHint: '在这里勾选不应该同步的文件——本地设置、账号数据，任何实际上不是存档的内容。这里只列出存档文件夹中直接包含的文件（不包括子文件夹）。',
+    excludeFilesEmpty: '存档文件夹中还没有文件。'
   },
   cloudWarning: {
     title: '为已同步的游戏关闭 Steam 云存储',

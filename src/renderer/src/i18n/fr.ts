@@ -67,7 +67,8 @@ export const fr: Translation = {
     exeNoneFound:
       "Aucun .exe trouvé automatiquement — la synchronisation automatique ne sera pas disponible, mais l'Upload/Download manuel fonctionnera toujours.",
     addExeManually: 'Ajouter un .exe manuellement…',
-    addCover: 'Ajouter une jaquette'
+    addCover: 'Ajouter une jaquette',
+    coverLabel: 'Jaquette (facultatif)'
   },
   friends: {
     title: 'Amis',
@@ -138,7 +139,12 @@ export const fr: Translation = {
       `${name} ne sera plus synchronisé. Les sauvegardes locales et tout ce qui a déjà été envoyé vers le dépôt partagé resteront intacts.`,
     removeCustomGameError: "Impossible de supprimer ce jeu",
     changeCover: 'Changer la jaquette',
-    coverError: "Impossible de charger la jaquette"
+    coverError: "Impossible de charger la jaquette",
+    coverUpdated: 'Jaquette mise à jour',
+    excludeFilesTitle: 'Exclure des fichiers de la synchronisation',
+    excludeFilesHint:
+      "Coche ici les fichiers qui ne doivent pas être synchronisés — paramètres locaux, données de compte, tout ce qui n'est pas vraiment une sauvegarde. Seuls les fichiers directement dans le dossier de sauvegarde sont listés (pas les sous-dossiers).",
+    excludeFilesEmpty: "Il n'y a pas encore de fichiers dans le dossier de sauvegarde."
   },
   cloudWarning: {
     title: 'Désactive Steam Cloud pour les jeux synchronisés',

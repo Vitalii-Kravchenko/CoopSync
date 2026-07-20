@@ -64,7 +64,8 @@ export const en: Translation = {
     exeNoneFound:
       "No .exe found automatically — auto-sync won't be available, but manual Upload/Download will still work.",
     addExeManually: 'Add .exe manually…',
-    addCover: 'Add cover'
+    addCover: 'Add cover',
+    coverLabel: 'Cover (optional)'
   },
   friends: {
     title: 'Friends',
@@ -135,7 +136,12 @@ export const en: Translation = {
       `${name} will stop syncing. Its local save files and anything already pushed to the shared repo stay untouched.`,
     removeCustomGameError: "Couldn't remove this game",
     changeCover: 'Change cover',
-    coverError: "Couldn't load the cover"
+    coverError: "Couldn't load the cover",
+    coverUpdated: 'Cover updated',
+    excludeFilesTitle: 'Exclude files from sync',
+    excludeFilesHint:
+      "Check any files here that shouldn't be synced — local settings, account data, anything that isn't actually save data. Only files directly in the save folder are listed (not subfolders).",
+    excludeFilesEmpty: 'No files found in the save folder yet.'
   },
   cloudWarning: {
     title: 'Turn off Steam Cloud for synced games',

@@ -66,7 +66,8 @@ export const es: Translation = {
     exeNoneFound:
       'No se encontró ningún .exe automáticamente — la sincronización automática no estará disponible, pero Subir/Descargar manual seguirá funcionando.',
     addExeManually: 'Añadir .exe manualmente…',
-    addCover: 'Añadir portada'
+    addCover: 'Añadir portada',
+    coverLabel: 'Portada (opcional)'
   },
   friends: {
     title: 'Amigos',
@@ -137,7 +138,12 @@ export const es: Translation = {
       `${name} dejará de sincronizarse. Los guardados locales y todo lo que ya se subió al repositorio compartido permanecerán intactos.`,
     removeCustomGameError: 'No se pudo eliminar el juego',
     changeCover: 'Cambiar portada',
-    coverError: 'No se pudo cargar la portada'
+    coverError: 'No se pudo cargar la portada',
+    coverUpdated: 'Portada actualizada',
+    excludeFilesTitle: 'Excluir archivos de la sincronización',
+    excludeFilesHint:
+      'Marca aquí los archivos que no deberían sincronizarse — ajustes locales, datos de la cuenta, cualquier cosa que en realidad no sea un guardado. Solo se listan los archivos directamente en la carpeta de guardado (sin subcarpetas).',
+    excludeFilesEmpty: 'Todavía no hay archivos en la carpeta de guardado.'
   },
   cloudWarning: {
     title: 'Desactiva Steam Cloud para los juegos sincronizados',

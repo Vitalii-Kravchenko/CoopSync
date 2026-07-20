@@ -6,7 +6,13 @@ import { basename, join } from 'path'
 import { existsSync, statSync } from 'fs'
 import { cp, rm, mkdir, readdir, readFile, writeFile } from 'fs/promises'
 import { resolveSavePath } from '../games/savePath'
-import { getSyncableGames, isCustomGameId, materializeRemoteCustomGame } from '../games/customGames'
+import {
+  getSyncableGames,
+  isCustomGameId,
+  materializeRemoteCustomGame,
+  listCustomGames,
+  setCustomGameCover
+} from '../games/customGames'
 import { SAVES_REPO_NAME } from '../config'
 import { isGameCurrentlyRunning } from './processCheck'
 import { createSavesRepo, leaveSharedRepo } from './github'
@@ -565,6 +571,52 @@ export async function removeCustomGameFromRegistry(
   await git(['push', 'origin', 'main'])
 }
 
+// --- Custom game covers ---
+// A custom game's cover art is shared, not per-machine, like its name (see
+// the registry above) — unlike the save path/processNames, there's no
+// reason for a co-op partner's copy to look different. Stored the same way
+// avatars are (.meta/covers/<appId>.txt, a raw data URL).
+
+function coverPath(appId: string): string {
+  return join(repoDir(), '.meta', 'covers', `${appId}.txt`)
+}
+
+/** Push a custom game's already-cropped cover (or clear it, dataUrl=null) to
+ *  the shared repo — best-effort, called right after the local save
+ *  succeeds (see ipc.ts's games:save-cover / games:add-custom). */
+export async function pushCustomGameCover(
+  token: string,
+  owner: string,
+  actor: string,
+  appId: string,
+  dataUrl: string | null
+): Promise<void> {
+  await ensureRepo(token, owner)
+  await mkdir(join(repoDir(), '.meta', 'covers'), { recursive: true })
+  const p = coverPath(appId)
+  if (dataUrl) {
+    await writeFile(p, dataUrl)
+  } else {
+    if (!existsSync(p)) return
+    await rm(p, { force: true })
+  }
+  await git(['add', '-A'])
+  const status = await git(['status', '--porcelain'])
+  if (!status.trim()) return
+  await git([...identityFlags(actor), 'commit', '-m', `custom-game-cover: ${appId}`])
+  await git(['push', 'origin', 'main'])
+}
+
+async function readRemoteCover(appId: string): Promise<string | null> {
+  const p = coverPath(appId)
+  if (!existsSync(p)) return null
+  try {
+    return (await readFile(p, 'utf8')).replace(/^﻿/, '')
+  } catch {
+    return null
+  }
+}
+
 /**
  * Download files from the cloud that are missing locally — without touching
  * existing local files (git-like behavior: add what's missing, don't
@@ -753,6 +805,19 @@ export async function getSyncStatuses(token: string, owner: string): Promise<Gam
     }
   } catch {
     // See above — try again next time getSyncStatuses runs.
+  }
+
+  // Adopt a co-op partner's cover for a custom game we don't already have
+  // one for — never overwrites a cover already set locally (own choice, or
+  // one already adopted), so this can't clobber an intentional local pick.
+  try {
+    for (const g of listCustomGames()) {
+      if (g.coverDataUrl) continue
+      const remoteCover = await readRemoteCover(g.appId)
+      if (remoteCover) setCustomGameCover(g.appId, remoteCover)
+    }
+  } catch {
+    // Best-effort, same reasoning as the registry pass above.
   }
 
   const localVersions = await readLocalVersions()

@@ -8,11 +8,13 @@ import type { CustomGame } from '../../shared/types'
 // User-added games (not in the built-in catalog). processNames comes from
 // scanning an install folder the user points at (see exeScan.ts) — if empty,
 // the watcher's isGameRunning() never matches, so that game just gets no
-// launch/exit auto-sync, only manual upload/download. There's still no
-// saveFilePattern (the whole folder is copied as-is, see AddGame's
-// disclaimer in the renderer) — upload/download/status/the save-path editor
-// reuse the exact same code as catalog games via asSupportedGame()/
-// getSyncableGames() below, instead of a parallel codepath.
+// launch/exit auto-sync, only manual upload/download. Unlike a catalog game,
+// there's no saveFilePattern known up front (see AddGame's disclaimer in the
+// renderer) — excludedFiles (set later, from the game's detail screen) lets
+// the user carve one out by hand once they notice unwanted files synced.
+// Upload/download/status/the save-path editor all reuse the exact same code
+// as catalog games via asSupportedGame()/getSyncableGames() below, instead
+// of a parallel codepath.
 
 const CUSTOM_ID_PREFIX = 'custom:'
 
@@ -54,6 +56,21 @@ export function materializeRemoteCustomGame(appId: string, name: string): void {
   writeSettings({ customGames: [...listCustomGames(), game] })
 }
 
+export function getCustomGameProcessNames(appId: string): string[] {
+  return listCustomGames().find((g) => g.appId === appId)?.processNames ?? []
+}
+
+/** Set the .exe name(s) that drive launch/exit auto-sync for a custom game —
+ *  the setup step a co-op partner does on their own machine for a game
+ *  materialized from the shared registry (see materializeRemoteCustomGame),
+ *  or a later correction for a game added on this PC. No-op if appId isn't
+ *  a locally-known custom game. */
+export function setCustomGameProcessNames(appId: string, processNames: string[]): void {
+  writeSettings({
+    customGames: listCustomGames().map((g) => (g.appId === appId ? { ...g, processNames } : g))
+  })
+}
+
 /** Set (dataUrl) or clear (null) a custom game's cover art. No-op if appId
  *  isn't a locally-known custom game (the UI only offers this once it is). */
 export function setCustomGameCover(appId: string, dataUrl: string | null): void {
@@ -66,11 +83,42 @@ export function setCustomGameCover(appId: string, dataUrl: string | null): void 
   writeSettings({ customGames: next })
 }
 
+export function getCustomGameExcludedFiles(appId: string): string[] {
+  return listCustomGames().find((g) => g.appId === appId)?.excludedFiles ?? []
+}
+
+/** Set which file names (in the save folder's top level) to leave out of
+ *  sync — e.g. local settings sitting next to actual save data, the same
+ *  problem SupportedGame.saveFilePattern solves for a catalog game, just
+ *  configured by hand here since we don't know a custom game's structure
+ *  up front. No-op if appId isn't a locally-known custom game. */
+export function setCustomGameExcludedFiles(appId: string, excludedFiles: string[]): void {
+  writeSettings({
+    customGames: listCustomGames().map((g) => (g.appId === appId ? { ...g, excludedFiles } : g))
+  })
+}
+
 export function removeCustomGame(appId: string): void {
   writeSettings({ customGames: listCustomGames().filter((g) => g.appId !== appId) })
   // Drop any save-path override tied to this id too — otherwise it just sits
   // there orphaned in settings forever.
   setSavePathOverride(appId, null)
+}
+
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+// SupportedGame.saveFilePattern is an INCLUDE pattern (only a matching file
+// name syncs) — excludedFiles is the opposite (everything syncs EXCEPT a
+// listed name). A negative lookahead flips one into the other: matches any
+// name that ISN'T exactly one of the excluded ones, so copyFiltered/
+// clearFiltered (which already apply this exact field for catalog games)
+// need no changes at all to also support exclusion for a custom game.
+function buildExcludePattern(excludedFiles?: string[]): RegExp | undefined {
+  if (!excludedFiles || excludedFiles.length === 0) return undefined
+  const alternation = excludedFiles.map(escapeRegExp).join('|')
+  return new RegExp(`^(?!(?:${alternation})$).*$`)
 }
 
 function asSupportedGame(g: CustomGame): SupportedGame {
@@ -79,7 +127,8 @@ function asSupportedGame(g: CustomGame): SupportedGame {
     name: g.name,
     getSavePath: () => g.savePath,
     processNames: g.processNames,
-    ready: true
+    ready: true,
+    saveFilePattern: buildExcludePattern(g.excludedFiles)
   }
 }
 

@@ -349,7 +349,7 @@ const styles: Record<string, React.CSSProperties> = {
   titleRow: { display: 'flex', alignItems: 'baseline', gap: 5, minWidth: 0 },
   name: {
     minWidth: 0,
-    flex: '1 1 auto',
+    flexShrink: 1,
     fontFamily: fonts.display,
     fontWeight: 600,
     fontSize: 14,

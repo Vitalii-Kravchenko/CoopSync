@@ -109,7 +109,8 @@ export function detectAllInstalled(): InstalledGame[] {
     name: g.name,
     supported: true,
     isCustom: true,
-    coverDataUrl: g.coverDataUrl
+    coverDataUrl: g.coverDataUrl,
+    coverSyncFailed: g.coverSyncFailed
   }))
   return [...steamGames, ...customGames].sort((a, b) => {
     if (a.supported !== b.supported) return a.supported ? -1 : 1

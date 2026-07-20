@@ -64,7 +64,10 @@ export const zhCN: Translation = {
     exeNoneFound: '未能自动找到 .exe——自动同步将不可用,但手动上传/下载仍可使用。',
     addExeManually: '手动添加 .exe…',
     addCover: '添加封面',
-    coverLabel: '封面(可选)'
+    coverLabel: '封面(可选)',
+    excludeStepTitle: '有需要排除同步的文件吗？',
+    excludeStepDescription: '可选——在存档文件夹中选择不需要上传的文件（如本地设置或账号文件）。以后可以随时在游戏详情中修改。',
+    done: '完成'
   },
   friends: {
     title: '好友',
@@ -135,6 +138,8 @@ export const zhCN: Translation = {
     changeCover: '更换封面',
     coverError: '无法加载封面',
     coverUpdated: '封面已更新',
+    coverSyncFailedBanner: '封面未同步到云端——队友暂时还看不到。',
+    coverSyncRetrySuccess: '封面已同步。',
     excludeFilesTitle: '从同步中排除文件',
     excludeFilesHint: '在这里勾选不应该同步的文件——本地设置、账号数据，任何实际上不是存档的内容。这里只列出存档文件夹中直接包含的文件（不包括子文件夹）。',
     excludeFilesEmpty: '存档文件夹中还没有文件。'

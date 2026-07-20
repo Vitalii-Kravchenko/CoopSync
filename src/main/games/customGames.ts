@@ -83,6 +83,24 @@ export function setCustomGameCover(appId: string, dataUrl: string | null): void 
   writeSettings({ customGames: next })
 }
 
+/** Tracks whether the last attempt to push a custom game's cover to the
+ *  shared repo failed — lets the renderer show a persistent retry affordance
+ *  instead of the failure just vanishing (see ipc.ts's games:add-custom /
+ *  games:save-cover / games:retry-cover-push). No-op if appId isn't a
+ *  locally-known custom game. */
+export function setCustomGameCoverSyncFailed(appId: string, failed: boolean): void {
+  writeSettings({
+    customGames: listCustomGames().map((g) => {
+      if (g.appId !== appId) return g
+      if (!failed) {
+        const { coverSyncFailed: _drop, ...rest } = g
+        return rest
+      }
+      return { ...g, coverSyncFailed: true }
+    })
+  })
+}
+
 export function getCustomGameExcludedFiles(appId: string): string[] {
   return listCustomGames().find((g) => g.appId === appId)?.excludedFiles ?? []
 }

@@ -104,9 +104,15 @@ const api = {
     pickExeFile: (): Promise<string | null> => ipcRenderer.invoke('games:pick-exe-file'),
     /** Open the file picker dialog and read the raw cover image. null = cancelled. */
     pickCoverFile: (): Promise<string | null> => ipcRenderer.invoke('games:pick-cover-file'),
-    /** Save (or clear, with dataUrl=null) a custom game's already-cropped cover. */
-    saveCover: (appId: string, dataUrl: string | null): Promise<void> =>
+    /** Save (or clear, with dataUrl=null) a custom game's already-cropped
+     *  cover. coverSyncFailed=true means it saved locally but didn't reach
+     *  the shared repo — a friend won't see it until a retry succeeds. */
+    saveCover: (appId: string, dataUrl: string | null): Promise<{ coverSyncFailed: boolean }> =>
       ipcRenderer.invoke('games:save-cover', appId, dataUrl),
+    /** Re-attempt pushing a custom game's already-saved cover to the shared
+     *  repo, after a previous push (add or save) failed. */
+    retryCoverPush: (appId: string): Promise<{ coverSyncFailed: boolean }> =>
+      ipcRenderer.invoke('games:retry-cover-push', appId),
     /** Current .exe name(s) driving a custom game's launch/exit auto-sync. */
     getProcessNames: (appId: string): Promise<string[]> =>
       ipcRenderer.invoke('games:get-process-names', appId),

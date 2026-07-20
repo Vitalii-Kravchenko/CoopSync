@@ -68,7 +68,11 @@ export const tr: Translation = {
       'Otomatik olarak .exe bulunamadı — otomatik senkronizasyon kullanılamayacak, ancak manuel Upload/Download çalışmaya devam edecek.',
     addExeManually: '.exe dosyasını elle ekle…',
     addCover: 'Kapak ekle',
-    coverLabel: 'Kapak (isteğe bağlı)'
+    coverLabel: 'Kapak (isteğe bağlı)',
+    excludeStepTitle: 'Senkronizasyondan hariç tutulacak bir şey var mı?',
+    excludeStepDescription:
+      'İsteğe bağlı — kayıt klasöründe yüklenmemesi gereken dosyaları seç (yerel ayarlar, hesap dosyaları vb). Bunu daha sonra oyunun ayrıntılarından her zaman değiştirebilirsin.',
+    done: 'Tamam'
   },
   friends: {
     title: 'Arkadaşlar',
@@ -141,6 +145,8 @@ export const tr: Translation = {
     changeCover: 'Kapağı değiştir',
     coverError: 'Kapak yüklenemedi',
     coverUpdated: 'Kapak güncellendi',
+    coverSyncFailedBanner: 'Kapak buluta senkronize olmadı — arkadaşın henüz göremiyor.',
+    coverSyncRetrySuccess: 'Kapak senkronize edildi.',
     excludeFilesTitle: 'Senkronizasyondan dosya hariç tut',
     excludeFilesHint:
       'Senkronize edilmemesi gereken dosyaları buradan işaretle — yerel ayarlar, hesap verileri, aslında kayıt olmayan her şey. Yalnızca kayıt klasöründeki doğrudan dosyalar listelenir (alt klasörler değil).',

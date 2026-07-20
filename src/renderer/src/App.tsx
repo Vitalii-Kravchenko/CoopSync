@@ -120,6 +120,31 @@ function App(): React.JSX.Element {
     const hidden = await window.api.window.wasStartedHidden()
     if (!hidden) void window.api.window.maximize()
     void window.api.watcher.start()
+    void recoverOwnAvatarIfMissing()
+  }
+
+  // A full uninstall+reinstall wipes local settings (deleteAppDataOnUninstall),
+  // taking the local avatar with it — even though .meta/avatars/<login>.txt
+  // still has it in the shared repo. useAvatars.ts deliberately never fetches
+  // our OWN avatar remotely (local is meant to always be fresher), so without
+  // this it can never come back on its own. Only runs when local is empty —
+  // never overwrites a real local choice, so that rule still holds once we
+  // have one again. Re-fetches auth fresh instead of trusting the `user`
+  // state closure, which may still be stale at this point in the flow.
+  async function recoverOwnAvatarIfMissing(): Promise<void> {
+    try {
+      const general = await window.api.settings.getGeneral()
+      if (general.avatarDataUrl) return
+      const auth = await window.api.auth.getStatus()
+      if (auth.state !== 'logged-in') return
+      const fetched = await window.api.repo.getAvatars([auth.user.login])
+      const remote = fetched[auth.user.login]
+      if (!remote) return
+      await window.api.settings.saveAvatar(remote)
+      setAvatarDataUrl(remote)
+    } catch {
+      // Offline or repo not reachable yet — not critical, next launch retries.
+    }
   }
 
   async function handleOnboardingComplete(): Promise<void> {

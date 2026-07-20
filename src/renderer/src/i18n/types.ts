@@ -93,6 +93,9 @@ export interface Translation {
     addExeManually: string
     addCover: string
     coverLabel: string
+    excludeStepTitle: string
+    excludeStepDescription: string
+    done: string
   }
   friends: {
     title: string
@@ -162,6 +165,8 @@ export interface Translation {
     changeCover: string
     coverError: string
     coverUpdated: string
+    coverSyncFailedBanner: string
+    coverSyncRetrySuccess: string
     excludeFilesTitle: string
     excludeFilesHint: string
     excludeFilesEmpty: string

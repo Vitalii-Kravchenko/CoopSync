@@ -62,7 +62,7 @@ function MainScreen({
   const [query, setQuery] = useState('')
   // Selected game -> show GameDetailScreen (its own sync history) instead of the grid.
   const [selectedGame, setSelectedGame] = useState<
-    { appId: string; name: string; isCustom?: boolean; coverDataUrl?: string } | null
+    { appId: string; name: string; isCustom?: boolean; coverDataUrl?: string; coverSyncFailed?: boolean } | null
   >(null)
   const [showAddGame, setShowAddGame] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -217,6 +217,7 @@ function MainScreen({
         name={selectedGame.name}
         isCustom={selectedGame.isCustom}
         coverDataUrl={selectedGame.coverDataUrl}
+        coverSyncFailed={selectedGame.coverSyncFailed}
         onCoverChanged={(_appId, dataUrl) => {
           setSelectedGame((g) => (g ? { ...g, coverDataUrl: dataUrl ?? undefined } : g))
           void loadGames()
@@ -321,7 +322,13 @@ function MainScreen({
                 onUpload={() => handleSync(g.appId, 'upload')}
                 onDownload={() => handleSync(g.appId, 'download')}
                 onOpenDetails={() =>
-                  setSelectedGame({ appId: g.appId, name: g.name, isCustom: g.isCustom, coverDataUrl: g.coverDataUrl })
+                  setSelectedGame({
+                    appId: g.appId,
+                    name: g.name,
+                    isCustom: g.isCustom,
+                    coverDataUrl: g.coverDataUrl,
+                    coverSyncFailed: g.coverSyncFailed
+                  })
                 }
               />
             ))}
@@ -369,6 +376,7 @@ function MainScreen({
             setShowAddGame(false)
             void loadGames()
           }}
+          onBanner={onBanner}
         />
       )}
     </div>

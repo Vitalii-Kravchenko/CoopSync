@@ -1,10 +1,12 @@
 ; oneClick installers show no wizard pages at all, so the LangDLL-based
-; language dialog and its registry/UAC-relaunch plumbing that used to live
-; here are gone -- NSIS just falls back to its first compiled language
-; (English), same default the app itself uses (settingsStore.ts's DEFAULTS).
-; installerLanguages in electron-builder.yml still compiles the other 9 in,
-; so LangString below CAN resolve to them if $LANGUAGE is ever set some other
-; way -- but nothing currently changes it away from the default.
+; language picker DIALOG that used to live here is gone. But customInit below
+; now sets $LANGUAGE from the OS's own UI language (GetUserDefaultUILanguage)
+; before the Smart App Control check runs, so the MessageBox still shows in
+; the user's Windows language when it's one of the 10 compiled in. Anything
+; else (an unmatched locale, or a call that fails) leaves $LANGUAGE at NSIS's
+; first compiled language -- English -- same fallback the app itself uses
+; (settingsStore.ts's DEFAULTS), and same intent as the app's language
+; setting, though the two are set independently.
 !macro customHeader
   LangString smartAppTitle ${LANG_ENGLISH} "Important: Windows Security Notice"
   LangString smartAppTitle ${LANG_UKRAINIAN} "Важливо: попередження безпеки Windows"
@@ -42,6 +44,32 @@
 ; can still block things while active. Reading HKLM doesn't need admin rights.
 !macro customInit
   IfSilent skip_sac_check
+    ; Match the installer's language to the OS UI language so the MessageBox
+    ; below shows in it. Only exact matches against the 10 compiled
+    ; LangStrings are handled -- any other locale (or a failed/odd return
+    ; from GetUserDefaultUILanguage) just leaves $LANGUAGE at its default,
+    ; English.
+    System::Call 'kernel32::GetUserDefaultUILanguage() i .r1'
+    ${If} $1 == ${LANG_UKRAINIAN}
+      StrCpy $LANGUAGE ${LANG_UKRAINIAN}
+    ${ElseIf} $1 == ${LANG_GERMAN}
+      StrCpy $LANGUAGE ${LANG_GERMAN}
+    ${ElseIf} $1 == ${LANG_FRENCH}
+      StrCpy $LANGUAGE ${LANG_FRENCH}
+    ${ElseIf} $1 == ${LANG_POLISH}
+      StrCpy $LANGUAGE ${LANG_POLISH}
+    ${ElseIf} $1 == ${LANG_RUSSIAN}
+      StrCpy $LANGUAGE ${LANG_RUSSIAN}
+    ${ElseIf} $1 == ${LANG_SPANISHINTERNATIONAL}
+      StrCpy $LANGUAGE ${LANG_SPANISHINTERNATIONAL}
+    ${ElseIf} $1 == ${LANG_PORTUGUESEBR}
+      StrCpy $LANGUAGE ${LANG_PORTUGUESEBR}
+    ${ElseIf} $1 == ${LANG_TURKISH}
+      StrCpy $LANGUAGE ${LANG_TURKISH}
+    ${ElseIf} $1 == ${LANG_SIMPCHINESE}
+      StrCpy $LANGUAGE ${LANG_SIMPCHINESE}
+    ${EndIf}
+
     ReadRegDWORD $0 HKLM "SYSTEM\CurrentControlSet\Control\CI\Policy" "VerifiedAndReputablePolicyState"
     ${If} $0 == 1
     ${OrIf} $0 == 2

@@ -9,14 +9,13 @@ import {
   FolderIcon,
   EditIcon,
   TrashIcon,
-  AlertTriangleIcon,
-  DiskIcon,
-  SyncIcon
+  AlertTriangleIcon
 } from '../components/icons'
 import Avatar from '../components/Avatar'
 import Button from '../components/Button'
 import ConfirmModal from '../components/ConfirmModal'
 import CoverCropModal from '../components/CoverCropModal'
+import ExcludeFilesCard from '../components/ExcludeFilesCard'
 import ExePicker from '../components/ExePicker'
 import Pagination from '../components/Pagination'
 import type { BannerState } from '../components/Banner'
@@ -45,6 +44,9 @@ interface Props {
   isCustom?: boolean
   /** Custom game's own cover art, if set (isCustom only). */
   coverDataUrl?: string
+  /** True if the last attempt to push the cover to the shared repo failed —
+   *  shows a persistent retry banner instead of the failure just vanishing. */
+  coverSyncFailed?: boolean
   /** A custom game's cover was just changed — lets MainScreen's game list
    *  pick up the new art (only relevant when isCustom is true). */
   onCoverChanged: (appId: string, dataUrl: string | null) => void
@@ -75,6 +77,7 @@ function GameDetailScreen({
   name,
   isCustom,
   coverDataUrl,
+  coverSyncFailed: coverSyncFailedProp,
   onCoverChanged,
   syncVersion,
   user,
@@ -94,6 +97,8 @@ function GameDetailScreen({
   const [coverSrc, setCoverSrc] = useState<string | null>(null)
   const [savingCover, setSavingCover] = useState(false)
   const [coverError, setCoverError] = useState<string | null>(null)
+  const [coverSyncFailed, setCoverSyncFailed] = useState(!!coverSyncFailedProp)
+  const [retryingCoverSync, setRetryingCoverSync] = useState(false)
 
   async function handlePickCover(): Promise<void> {
     setCoverError(null)
@@ -108,16 +113,34 @@ function GameDetailScreen({
   async function handleCoverCropped(dataUrl: string): Promise<void> {
     setSavingCover(true)
     try {
-      await window.api.games.saveCover(appId, dataUrl)
+      const result = await window.api.games.saveCover(appId, dataUrl)
       setCover(dataUrl)
       setImgError(false)
       onCoverChanged(appId, dataUrl)
-      onBanner({ text: t.history.coverUpdated, kind: 'success' })
+      setCoverSyncFailed(result.coverSyncFailed)
+      onBanner(
+        result.coverSyncFailed
+          ? { text: t.history.coverSyncFailedBanner, kind: 'error' }
+          : { text: t.history.coverUpdated, kind: 'success' }
+      )
     } catch (e) {
       setCoverError(describeError(e, t, t.history.coverError))
     } finally {
       setSavingCover(false)
       setCoverSrc(null)
+    }
+  }
+
+  async function handleRetryCoverSync(): Promise<void> {
+    setRetryingCoverSync(true)
+    try {
+      const result = await window.api.games.retryCoverPush(appId)
+      setCoverSyncFailed(result.coverSyncFailed)
+      if (!result.coverSyncFailed) onBanner({ text: t.history.coverSyncRetrySuccess, kind: 'success' })
+    } catch (e) {
+      onBanner({ text: describeError(e, t, t.history.coverError), kind: 'error' })
+    } finally {
+      setRetryingCoverSync(false)
     }
   }
   // This screen's header (breadcrumbs + poster/title row, ~140px) is taller
@@ -162,41 +185,6 @@ function GameDetailScreen({
   function handleProcessNamesChange(names: string[]): void {
     setProcessNames(names)
     window.api.games.setProcessNames(appId, names).catch((e) => {
-      onBanner({ text: describeError(e, t, t.history.savePathSaveError), kind: 'error' })
-    })
-  }
-
-  // Files sitting in the save folder's top level (not subfolders — see
-  // games:list-save-files), for excluding local/settings files from sync —
-  // only relevant for a custom game (a catalog game's saveFilePattern is
-  // already known up front, no picker needed).
-  const [saveFiles, setSaveFiles] = useState<string[]>([])
-  const [excludedFiles, setExcludedFiles] = useState<string[]>([])
-  const [loadingSaveFiles, setLoadingSaveFiles] = useState(false)
-
-  function loadSaveFiles(): void {
-    if (!isCustom) return
-    setLoadingSaveFiles(true)
-    Promise.all([window.api.games.listSaveFiles(appId), window.api.games.getExcludedFiles(appId)])
-      .then(([files, excluded]) => {
-        setSaveFiles(files)
-        setExcludedFiles(excluded)
-      })
-      .catch(() => setSaveFiles([]))
-      .finally(() => setLoadingSaveFiles(false))
-  }
-
-  useEffect(() => {
-    loadSaveFiles()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appId, isCustom])
-
-  function toggleExcludedFile(file: string): void {
-    const next = excludedFiles.includes(file)
-      ? excludedFiles.filter((f) => f !== file)
-      : [...excludedFiles, file]
-    setExcludedFiles(next)
-    window.api.games.setExcludedFiles(appId, next).catch((e) => {
       onBanner({ text: describeError(e, t, t.history.savePathSaveError), kind: 'error' })
     })
   }
@@ -367,6 +355,22 @@ function GameDetailScreen({
         </div>
       )}
 
+      {isCustom && coverSyncFailed && (
+        <div style={styles.customWarning}>
+          <AlertTriangleIcon size={15} color={colors.warning} />
+          <span style={styles.retryCoverText}>{t.history.coverSyncFailedBanner}</span>
+          <Button
+            variant="ghost"
+            style={styles.retryCoverBtn}
+            onClick={handleRetryCoverSync}
+            disabled={retryingCoverSync}
+          >
+            {retryingCoverSync && <span className="spinner" />}
+            {t.main.retry}
+          </Button>
+        </div>
+      )}
+
       <div style={styles.savePathCard}>
         <div style={styles.savePathTopRow}>
           <div style={styles.savePathLabelRow}>
@@ -445,36 +449,7 @@ function GameDetailScreen({
       {isCustom && <ExePicker selected={processNames} onSelectedChange={handleProcessNamesChange} />}
 
       {isCustom && (
-        <div style={styles.excludeCard}>
-          <div style={styles.savePathTopRow}>
-            <div style={styles.savePathLabelRow}>
-              <DiskIcon size={14} color={colors.text3} />
-              <span style={styles.savePathLabel}>{t.history.excludeFilesTitle}</span>
-            </div>
-            <Button variant="ghost" style={styles.smallBtn} onClick={loadSaveFiles} disabled={loadingSaveFiles}>
-              <SyncIcon size={13} color={colors.text2} />
-              {t.main.retry}
-            </Button>
-          </div>
-          <div style={styles.excludeHint}>{t.history.excludeFilesHint}</div>
-          {!loadingSaveFiles && saveFiles.length === 0 && (
-            <div style={styles.excludeHint}>{t.history.excludeFilesEmpty}</div>
-          )}
-          {!loadingSaveFiles && saveFiles.length > 0 && (
-            <div style={styles.excludeFilesBox}>
-              {saveFiles.map((file) => (
-                <label key={file} style={styles.excludeFileRow}>
-                  <input
-                    type="checkbox"
-                    checked={excludedFiles.includes(file)}
-                    onChange={() => toggleExcludedFile(file)}
-                  />
-                  <span style={styles.excludeFileName}>{file}</span>
-                </label>
-              ))}
-            </div>
-          )}
-        </div>
+        <ExcludeFilesCard appId={appId} onError={(msg) => onBanner({ text: msg, kind: 'error' })} />
       )}
 
       {showTable && (
@@ -705,6 +680,8 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '10px 14px',
     marginBottom: 20
   },
+  retryCoverText: { flex: 1, minWidth: 0 },
+  retryCoverBtn: { height: 28, padding: '0 12px', fontSize: 12, whiteSpace: 'nowrap', flexShrink: 0 },
   removeRow: { marginTop: 24, display: 'flex', justifyContent: 'flex-end' },
   removeBtn: { height: 34, padding: '0 14px', fontSize: 12.5 },
   savePathCard: {
@@ -768,24 +745,6 @@ const styles: Record<string, React.CSSProperties> = {
   savePathErrorText: { fontSize: 12, color: colors.danger, marginTop: 8 },
   editActions: { display: 'flex', gap: 8, marginTop: 10 },
   smallBtn: { height: 32, padding: '0 14px', fontSize: 12.5 },
-  excludeCard: {
-    border: `1px solid ${colors.borderSubtle}`,
-    borderRadius: radii.lg,
-    padding: '16px 18px',
-    marginBottom: 20
-  },
-  excludeHint: { fontSize: 11.5, color: colors.text3, lineHeight: 1.5 },
-  excludeFilesBox: {
-    border: `1px solid ${colors.borderDefault}`,
-    borderRadius: radii.md,
-    background: colors.bgInset,
-    padding: '8px 12px',
-    marginTop: 10,
-    maxHeight: 180,
-    overflowY: 'auto'
-  },
-  excludeFileRow: { display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', cursor: 'pointer' },
-  excludeFileName: { fontFamily: fonts.mono, fontSize: 12.5, color: colors.text1 },
   table: {
     border: `1px solid ${colors.borderSubtle}`,
     borderRadius: radii.lg,

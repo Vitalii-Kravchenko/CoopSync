@@ -85,7 +85,7 @@ installer — the same warning appears on the installer's first screen too.
 - 🔔 **In-app updates** — checks for a new release in the background and lets you
   download and install it with one click, no manual downloads.
 - 🌍 **10 languages** — English, French, German, Polish, Portuguese (Brazil), Russian,
-  Chinese (Simplified), Spanish, Turkish, and Ukrainian.
+  Chinese (Simplified), Spanish, Turkish, and Ukrainian. Switch anytime in Settings.
 
 ## Stack
 

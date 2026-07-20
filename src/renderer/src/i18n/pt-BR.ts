@@ -67,7 +67,11 @@ export const ptBR: Translation = {
       'Nenhum .exe encontrado automaticamente — a sincronização automática não estará disponível, mas Upload/Download manual continuará funcionando.',
     addExeManually: 'Adicionar .exe manualmente…',
     addCover: 'Adicionar capa',
-    coverLabel: 'Capa (opcional)'
+    coverLabel: 'Capa (opcional)',
+    excludeStepTitle: 'Algo para excluir da sincronização?',
+    excludeStepDescription:
+      'Opcional — escolha arquivos da pasta de save que não devem ser enviados (configurações locais, arquivos de conta, etc). Você pode mudar isso depois nos detalhes do jogo.',
+    done: 'Concluído'
   },
   friends: {
     title: 'Amigos',
@@ -140,6 +144,8 @@ export const ptBR: Translation = {
     changeCover: 'Alterar capa',
     coverError: 'Não foi possível carregar a capa',
     coverUpdated: 'Capa atualizada',
+    coverSyncFailedBanner: 'A capa não sincronizou com a nuvem — seu parceiro ainda não consegue vê-la.',
+    coverSyncRetrySuccess: 'Capa sincronizada.',
     excludeFilesTitle: 'Excluir arquivos da sincronização',
     excludeFilesHint:
       'Marque aqui os arquivos que não devem ser sincronizados — configurações locais, dados de conta, qualquer coisa que não seja realmente um save. Só os arquivos diretamente na pasta de save são listados (sem subpastas).',

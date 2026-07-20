@@ -67,7 +67,11 @@ export const pl: Translation = {
       'Nie udało się automatycznie znaleźć .exe — autosynchronizacja nie będzie dostępna, ale ręczny Upload/Download nadal zadziała.',
     addExeManually: 'Dodaj .exe ręcznie…',
     addCover: 'Dodaj okładkę',
-    coverLabel: 'Okładka (opcjonalnie)'
+    coverLabel: 'Okładka (opcjonalnie)',
+    excludeStepTitle: 'Coś do wykluczenia z synchronizacji?',
+    excludeStepDescription:
+      'Opcjonalnie — zaznacz pliki w folderze zapisów, których nie chcesz wysyłać (lokalne ustawienia, pliki konta itp.). Zawsze możesz to zmienić później w szczegółach gry.',
+    done: 'Gotowe'
   },
   friends: {
     title: 'Znajomi',
@@ -140,6 +144,8 @@ export const pl: Translation = {
     changeCover: 'Zmień okładkę',
     coverError: 'Nie udało się wczytać okładki',
     coverUpdated: 'Zaktualizowano okładkę',
+    coverSyncFailedBanner: 'Okładka nie zsynchronizowała się z chmurą — znajomy jeszcze jej nie widzi.',
+    coverSyncRetrySuccess: 'Okładka zsynchronizowana.',
     excludeFilesTitle: 'Wyklucz pliki z synchronizacji',
     excludeFilesHint:
       'Zaznacz tu pliki, które nie powinny być synchronizowane — lokalne ustawienia, dane konta, wszystko, co nie jest właściwym zapisem. Lista zawiera tylko pliki bezpośrednio w folderze zapisów (bez podfolderów).',

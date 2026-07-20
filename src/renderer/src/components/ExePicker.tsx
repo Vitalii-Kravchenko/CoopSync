@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { colors, fonts, radii } from '../theme'
 import { useI18n } from '../i18n'
 import Button from './Button'
@@ -24,6 +24,15 @@ function ExePicker({ selected, onSelectedChange }: Props): React.JSX.Element {
   // Seeded with whatever's already selected, so an already-configured .exe
   // shows up as a checked row immediately, before any scan runs this session.
   const [candidates, setCandidates] = useState<string[]>(selected)
+
+  // GameDetailScreen mounts this with selected=[] and only gets the real
+  // saved value back after an async IPC round-trip -- without this, the seed
+  // above permanently freezes on the empty initial value and the previously
+  // picked .exe never shows a row at all.
+  useEffect(() => {
+    if (selected.length === 0) return
+    setCandidates((prev) => [...new Set([...prev, ...selected])])
+  }, [selected])
 
   async function scan(folder: string): Promise<void> {
     if (!folder.trim()) return

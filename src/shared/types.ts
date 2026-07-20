@@ -93,6 +93,10 @@ export interface InstalledGame {
   /** Custom game's own cover art, if set — GameCard/GameDetailScreen use
    *  this instead of the Steam poster (there isn't one). */
   coverDataUrl?: string
+  /** True if the last attempt to push coverDataUrl to the shared repo
+   *  failed (no login/repo/internet at the time) — the cover still shows
+   *  on this PC, but a co-op partner won't see it until a retry succeeds. */
+  coverSyncFailed?: boolean
 }
 
 /** A user-added game not in CoopSync's built-in catalog — appId is a
@@ -111,6 +115,9 @@ export interface CustomGame {
   /** User-picked, cropped cover art (2:3, a JPEG data URL) — there's no
    *  Steam poster for a game outside the catalog. */
   coverDataUrl?: string
+  /** True if the last attempt to push coverDataUrl to the shared repo
+   *  failed — cleared the next time a push (initial or retry) succeeds. */
+  coverSyncFailed?: boolean
   /** Exact file names (not paths — matched the same way saveFilePattern
    *  matches a catalog game, by basename only) to leave out of sync — local
    *  settings, account data, anything sitting in the save folder that isn't

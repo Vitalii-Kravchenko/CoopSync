@@ -44,9 +44,11 @@ import { READY_GAMES } from './games/catalog'
 import { resolveSavePath, isCustomSavePath, setSavePathOverride } from './games/savePath'
 import {
   getSyncableGames,
+  listCustomGames,
   addCustomGame,
   removeCustomGame,
   setCustomGameCover,
+  setCustomGameCoverSyncFailed,
   getCustomGameProcessNames,
   setCustomGameProcessNames,
   getCustomGameExcludedFiles,
@@ -125,18 +127,37 @@ async function requireOwner(): Promise<{ token: string; owner: string }> {
   return requireAuth()
 }
 
+// Minimal separate i18n for this native OS dialog — same reasoning as
+// trayIcon.ts/updater.ts's own small dicts (doesn't pull in the renderer's
+// full i18n bundle for two strings' worth of main-process UI).
+type PickerLang = 'en' | 'uk' | 'de' | 'fr' | 'pl' | 'ru' | 'es' | 'pt-BR' | 'tr' | 'zh-CN'
+const IMAGE_PICKER: Record<PickerLang, { cover: string; avatar: string; filter: string }> = {
+  en: { cover: 'Choose a game cover', avatar: 'Choose a profile picture', filter: 'Images' },
+  uk: { cover: 'Обери обкладинку гри', avatar: 'Обери зображення профілю', filter: 'Зображення' },
+  de: { cover: 'Spielcover auswählen', avatar: 'Profilbild auswählen', filter: 'Bilder' },
+  fr: { cover: 'Choisir une jaquette de jeu', avatar: 'Choisir une photo de profil', filter: 'Images' },
+  pl: { cover: 'Wybierz okładkę gry', avatar: 'Wybierz zdjęcie profilowe', filter: 'Obrazy' },
+  ru: { cover: 'Выбери обложку игры', avatar: 'Выбери изображение профиля', filter: 'Изображения' },
+  es: { cover: 'Elige una carátula del juego', avatar: 'Elige una foto de perfil', filter: 'Imágenes' },
+  'pt-BR': { cover: 'Escolha uma capa do jogo', avatar: 'Escolha uma foto de perfil', filter: 'Imagens' },
+  tr: { cover: 'Bir oyun kapağı seç', avatar: 'Bir profil resmi seç', filter: 'Görseller' },
+  'zh-CN': { cover: '选择游戏封面', avatar: '选择头像', filter: '图片' }
+}
+
 // Shared by settings:pick-avatar-file and games:pick-cover-file — opens an
 // image file picker and returns the raw file as a data URL. No crop yet;
 // the renderer's crop modal (square for avatars, 2:3 for game covers)
 // handles that right after, using this as its source image.
 async function pickImageFile(
   event: Electron.IpcMainInvokeEvent,
-  dialogTitle: string
+  kind: 'cover' | 'avatar'
 ): Promise<string | null> {
+  const language = readSettings().language as PickerLang
+  const strings = IMAGE_PICKER[language] ?? IMAGE_PICKER.en
   const win = BrowserWindow.fromWebContents(event.sender)
   const options: Electron.OpenDialogOptions = {
-    title: dialogTitle,
-    filters: [{ name: 'Зображення', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'] }],
+    title: strings[kind],
+    filters: [{ name: strings.filter, extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'] }],
     properties: ['openFile']
   }
   const result = await (win ? dialog.showOpenDialog(win, options) : dialog.showOpenDialog(options))
@@ -396,13 +417,33 @@ export function registerIpcHandlers(): void {
         const { token, owner } = await syncTarget()
         const { owner: actor } = await requireAuth()
         await pushCustomGameToRegistry(token, owner, actor, game.appId, game.name)
-        if (game.coverDataUrl) {
-          await pushCustomGameCover(token, owner, actor, game.appId, game.coverDataUrl)
-        }
       } catch {
         // silently ignore — see comment above
       }
-      return { appId: game.appId, name: game.name, supported: true, isCustom: true, coverDataUrl: game.coverDataUrl }
+      // The cover is tracked separately: unlike the registry entry above, a
+      // failure here means a co-op partner silently never sees the cover at
+      // all, with nothing on this PC hinting it didn't make it — so it's
+      // persisted (setCustomGameCoverSyncFailed) and surfaced to the
+      // renderer instead of swallowed, letting the user retry.
+      let coverSyncFailed = false
+      if (game.coverDataUrl) {
+        try {
+          const { token, owner } = await syncTarget()
+          const { owner: actor } = await requireAuth()
+          await pushCustomGameCover(token, owner, actor, game.appId, game.coverDataUrl)
+        } catch {
+          coverSyncFailed = true
+          setCustomGameCoverSyncFailed(game.appId, true)
+        }
+      }
+      return {
+        appId: game.appId,
+        name: game.name,
+        supported: true,
+        isCustom: true,
+        coverDataUrl: game.coverDataUrl,
+        coverSyncFailed
+      }
     }
   )
 
@@ -448,22 +489,51 @@ export function registerIpcHandlers(): void {
   // Open a file picker for a custom game's cover art (2:3 poster — no Steam
   // artwork exists for it). The renderer crops it before saving.
   ipcMain.handle('games:pick-cover-file', async (event): Promise<string | null> =>
-    pickImageFile(event, 'Обери обкладинку гри')
+    pickImageFile(event, 'cover')
   )
 
-  // Save (dataUrl) or clear (null) a custom game's already-cropped cover —
-  // then best-effort push it to the shared repo (same reasoning as
-  // games:add-custom above) so a co-op partner sees the same cover too.
-  ipcMain.handle('games:save-cover', async (_event, appId: string, dataUrl: string | null): Promise<void> => {
-    setCustomGameCover(appId, dataUrl)
-    try {
-      const { token, owner } = await syncTarget()
-      const { owner: actor } = await requireAuth()
-      await pushCustomGameCover(token, owner, actor, appId, dataUrl)
-    } catch {
-      // silently ignore — see comment above
+  // Save (dataUrl) or clear (null) a custom game's already-cropped cover,
+  // then push it to the shared repo so a co-op partner sees the same cover
+  // too. Unlike games:add-custom's registry entry, a failed push here is
+  // reported back (and persisted via setCustomGameCoverSyncFailed) instead
+  // of swallowed — the cover would otherwise silently never reach a friend.
+  ipcMain.handle(
+    'games:save-cover',
+    async (_event, appId: string, dataUrl: string | null): Promise<{ coverSyncFailed: boolean }> => {
+      setCustomGameCover(appId, dataUrl)
+      try {
+        const { token, owner } = await syncTarget()
+        const { owner: actor } = await requireAuth()
+        await pushCustomGameCover(token, owner, actor, appId, dataUrl)
+        setCustomGameCoverSyncFailed(appId, false)
+        return { coverSyncFailed: false }
+      } catch {
+        setCustomGameCoverSyncFailed(appId, true)
+        return { coverSyncFailed: true }
+      }
     }
-  })
+  )
+
+  // Re-attempt pushing a custom game's cover after a previous failed push
+  // (games:add-custom / games:save-cover) — reads the cover already stored
+  // locally instead of requiring the renderer to resend it.
+  ipcMain.handle(
+    'games:retry-cover-push',
+    async (_event, appId: string): Promise<{ coverSyncFailed: boolean }> => {
+      const game = listCustomGames().find((g) => g.appId === appId)
+      if (!game) return { coverSyncFailed: false }
+      try {
+        const { token, owner } = await syncTarget()
+        const { owner: actor } = await requireAuth()
+        await pushCustomGameCover(token, owner, actor, appId, game.coverDataUrl ?? null)
+        setCustomGameCoverSyncFailed(appId, false)
+        return { coverSyncFailed: false }
+      } catch {
+        setCustomGameCoverSyncFailed(appId, true)
+        return { coverSyncFailed: true }
+      }
+    }
+  )
 
   // Current .exe name(s) driving a custom game's launch/exit auto-sync —
   // read when opening its detail screen's install-folder section (a co-op
@@ -673,7 +743,7 @@ export function registerIpcHandlers(): void {
   // yet, the renderer runs it through the crop modal first. Returns null if
   // the user cancelled the selection.
   ipcMain.handle('settings:pick-avatar-file', async (event): Promise<string | null> =>
-    pickImageFile(event, 'Обери зображення профілю')
+    pickImageFile(event, 'avatar')
   )
 
   // Save the already-cropped (square, small) avatar the renderer produced

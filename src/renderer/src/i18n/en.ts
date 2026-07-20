@@ -65,7 +65,11 @@ export const en: Translation = {
       "No .exe found automatically — auto-sync won't be available, but manual Upload/Download will still work.",
     addExeManually: 'Add .exe manually…',
     addCover: 'Add cover',
-    coverLabel: 'Cover (optional)'
+    coverLabel: 'Cover (optional)',
+    excludeStepTitle: 'Anything to leave out of sync?',
+    excludeStepDescription:
+      "Optional — pick any files in the save folder that shouldn't be uploaded, like local settings or account files. You can always change this later from the game's details.",
+    done: 'Done'
   },
   friends: {
     title: 'Friends',
@@ -138,6 +142,8 @@ export const en: Translation = {
     changeCover: 'Change cover',
     coverError: "Couldn't load the cover",
     coverUpdated: 'Cover updated',
+    coverSyncFailedBanner: "The cover didn't sync to the cloud — your co-op partner can't see it yet.",
+    coverSyncRetrySuccess: 'Cover synced.',
     excludeFilesTitle: 'Exclude files from sync',
     excludeFilesHint:
       "Check any files here that shouldn't be synced — local settings, account data, anything that isn't actually save data. Only files directly in the save folder are listed (not subfolders).",

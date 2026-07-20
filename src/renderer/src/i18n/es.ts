@@ -67,7 +67,11 @@ export const es: Translation = {
       'No se encontró ningún .exe automáticamente — la sincronización automática no estará disponible, pero Subir/Descargar manual seguirá funcionando.',
     addExeManually: 'Añadir .exe manualmente…',
     addCover: 'Añadir portada',
-    coverLabel: 'Portada (opcional)'
+    coverLabel: 'Portada (opcional)',
+    excludeStepTitle: '¿Algo que excluir de la sincronización?',
+    excludeStepDescription:
+      'Opcional — elige archivos de la carpeta de guardado que no deban subirse (ajustes locales, archivos de cuenta, etc.). Siempre puedes cambiarlo luego en los detalles del juego.',
+    done: 'Listo'
   },
   friends: {
     title: 'Amigos',
@@ -140,6 +144,8 @@ export const es: Translation = {
     changeCover: 'Cambiar portada',
     coverError: 'No se pudo cargar la portada',
     coverUpdated: 'Portada actualizada',
+    coverSyncFailedBanner: 'La carátula no se sincronizó con la nube — tu compañero aún no puede verla.',
+    coverSyncRetrySuccess: 'Carátula sincronizada.',
     excludeFilesTitle: 'Excluir archivos de la sincronización',
     excludeFilesHint:
       'Marca aquí los archivos que no deberían sincronizarse — ajustes locales, datos de la cuenta, cualquier cosa que en realidad no sea un guardado. Solo se listan los archivos directamente en la carpeta de guardado (sin subcarpetas).',

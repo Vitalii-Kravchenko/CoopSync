@@ -68,7 +68,11 @@ export const fr: Translation = {
       "Aucun .exe trouvé automatiquement — la synchronisation automatique ne sera pas disponible, mais l'Upload/Download manuel fonctionnera toujours.",
     addExeManually: 'Ajouter un .exe manuellement…',
     addCover: 'Ajouter une jaquette',
-    coverLabel: 'Jaquette (facultatif)'
+    coverLabel: 'Jaquette (facultatif)',
+    excludeStepTitle: 'Des fichiers à exclure de la synchronisation ?',
+    excludeStepDescription:
+      'Facultatif — sélectionne les fichiers du dossier de sauvegarde à ne pas envoyer (paramètres locaux, fichiers de compte, etc.). Modifiable à tout moment depuis les détails du jeu.',
+    done: 'Terminé'
   },
   friends: {
     title: 'Amis',
@@ -141,6 +145,8 @@ export const fr: Translation = {
     changeCover: 'Changer la jaquette',
     coverError: "Impossible de charger la jaquette",
     coverUpdated: 'Jaquette mise à jour',
+    coverSyncFailedBanner: "La jaquette n'a pas été synchronisée avec le cloud — ton coéquipier ne la voit pas encore.",
+    coverSyncRetrySuccess: 'Jaquette synchronisée.',
     excludeFilesTitle: 'Exclure des fichiers de la synchronisation',
     excludeFilesHint:
       "Coche ici les fichiers qui ne doivent pas être synchronisés — paramètres locaux, données de compte, tout ce qui n'est pas vraiment une sauvegarde. Seuls les fichiers directement dans le dossier de sauvegarde sont listés (pas les sous-dossiers).",

@@ -246,8 +246,15 @@ function GameCard({
       </div>
 
       <div style={styles.caption}>
-        <div style={styles.name}>{name}</div>
-        {isCustom && <div style={styles.customTag}>{t.gameCard.customTag}</div>}
+        <div style={styles.titleRow}>
+          <div style={styles.name}>{name}</div>
+          {isCustom && (
+            <>
+              <span style={styles.customTagDot}>·</span>
+              <span style={styles.customTag}>{t.gameCard.customTag}</span>
+            </>
+          )}
+        </div>
         {status && (
           <span style={{ ...styles.badge, color: status.color, background: status.bg, borderColor: status.bd }}>
             <span
@@ -339,7 +346,10 @@ const styles: Record<string, React.CSSProperties> = {
   },
   overlayMetaDot: { color: colors.text3, opacity: 0.6 },
   caption: { minWidth: 0 },
+  titleRow: { display: 'flex', alignItems: 'baseline', gap: 5, minWidth: 0 },
   name: {
+    minWidth: 0,
+    flex: '1 1 auto',
     fontFamily: fonts.display,
     fontWeight: 600,
     fontSize: 14,
@@ -368,7 +378,14 @@ const styles: Record<string, React.CSSProperties> = {
   badgeDot: { width: 6, height: 6, borderRadius: '50%', flexShrink: 0 },
   badgeDotPulse: { animation: 'glowpulse 1.4s ease-in-out infinite' },
   notInstalled: { marginTop: 6, fontSize: 12.5, color: colors.text3 },
-  customTag: { marginTop: 3, fontSize: 10.5, color: colors.text3, fontStyle: 'italic' },
+  customTagDot: { color: colors.text3, opacity: 0.6, flexShrink: 0 },
+  customTag: {
+    fontSize: 10.5,
+    color: colors.text3,
+    fontStyle: 'italic',
+    flexShrink: 0,
+    whiteSpace: 'nowrap'
+  },
   versions: {
     marginTop: 5,
     fontFamily: fonts.mono,

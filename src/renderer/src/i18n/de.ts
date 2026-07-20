@@ -68,7 +68,11 @@ export const de: Translation = {
       'Es wurde keine .exe automatisch gefunden — die automatische Synchronisierung ist nicht verfügbar, aber manuelles Upload/Download funktioniert weiterhin.',
     addExeManually: '.exe manuell hinzufügen…',
     addCover: 'Cover hinzufügen',
-    coverLabel: 'Cover (optional)'
+    coverLabel: 'Cover (optional)',
+    excludeStepTitle: 'Etwas von der Synchronisierung ausschließen?',
+    excludeStepDescription:
+      'Optional — wähle Dateien im Speicherordner aus, die nicht hochgeladen werden sollen (z. B. lokale Einstellungen oder Kontodateien). Das lässt sich später jederzeit in den Spieldetails ändern.',
+    done: 'Fertig'
   },
   friends: {
     title: 'Freunde',
@@ -141,6 +145,8 @@ export const de: Translation = {
     changeCover: 'Cover ändern',
     coverError: 'Cover konnte nicht geladen werden',
     coverUpdated: 'Cover aktualisiert',
+    coverSyncFailedBanner: 'Das Cover wurde nicht mit der Cloud synchronisiert — dein Mitspieler kann es noch nicht sehen.',
+    coverSyncRetrySuccess: 'Cover synchronisiert.',
     excludeFilesTitle: 'Dateien von der Synchronisierung ausschließen',
     excludeFilesHint:
       'Markiere hier Dateien, die nicht synchronisiert werden sollen — lokale Einstellungen, Kontodaten, alles, was eigentlich kein Spielstand ist. Aufgelistet werden nur Dateien direkt im Speicherordner (keine Unterordner).',

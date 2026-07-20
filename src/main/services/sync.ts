@@ -11,7 +11,10 @@ import {
   isCustomGameId,
   materializeRemoteCustomGame,
   listCustomGames,
-  setCustomGameCover
+  setCustomGameCover,
+  removeCustomGame,
+  getPendingCustomGameRemovals,
+  clearPendingCustomGameRemoval
 } from '../games/customGames'
 import { SAVES_REPO_NAME } from '../config'
 import { isGameCurrentlyRunning } from './processCheck'
@@ -809,7 +812,12 @@ export async function getSyncStatuses(
   // game that never made it into the registry no matter how many times they
   // check, so retrying here on every check (on-demand and the ~2min
   // background one) is the only way it ever heals without the user knowing
-  // anything failed in the first place.
+  // anything failed in the first place. And mirror a partner removing a
+  // game they own — games:remove-custom only ever drops the registry entry,
+  // never touches an already-materialized local copy elsewhere (so a
+  // partner mid-game never loses their local setup out from under them just
+  // because a check happened to run) — so removal has to be noticed here
+  // instead, the same way an add is.
   try {
     const registry = await readCustomGamesRegistry()
     const registered = new Set(registry.map((e) => e.appId))
@@ -817,11 +825,15 @@ export async function getSyncStatuses(
       materializeRemoteCustomGame(entry.appId, entry.name)
     }
     for (const g of listCustomGames()) {
-      // A real save path means we added this game ourselves — a partner's
-      // entry always materializes with savePath: '' (see
-      // materializeRemoteCustomGame above), so only games we actually own
-      // should ever get (re)registered here.
-      if (!g.savePath || registered.has(g.appId)) continue
+      if (registered.has(g.appId)) continue
+      if (g.receivedFromPartner) {
+        // The owner removed it on their end — stop tracking it here too.
+        removeCustomGame(g.appId)
+        continue
+      }
+      // Not in the registry and not something we received -- we own it (added
+      // it ourselves on this PC), so it's missing because the original push
+      // failed, not because anyone removed it. Push it again.
       try {
         await pushCustomGameToRegistry(token, owner, actor, g.appId, g.name)
       } catch {
@@ -830,6 +842,19 @@ export async function getSyncStatuses(
     }
   } catch {
     // See above — try again next time getSyncStatuses runs.
+  }
+
+  // Retry a custom game's registry-removal push that failed when it was
+  // removed locally (games:remove-custom) — nothing local still references
+  // that appId to fall back on, so this list (not the registry-sync pass
+  // above) is what remembers it still needs to happen.
+  for (const appId of getPendingCustomGameRemovals()) {
+    try {
+      await removeCustomGameFromRegistry(token, owner, actor, appId)
+      clearPendingCustomGameRemoval(appId)
+    } catch {
+      // Try again next check.
+    }
   }
 
   // Adopt a co-op partner's cover for a custom game we don't already have

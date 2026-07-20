@@ -52,7 +52,7 @@ export function addCustomGame(
 // is already known locally, whether still unconfigured or already set up.
 export function materializeRemoteCustomGame(appId: string, name: string): void {
   if (listCustomGames().some((g) => g.appId === appId)) return
-  const game: CustomGame = { appId, name, savePath: '', processNames: [] }
+  const game: CustomGame = { appId, name, savePath: '', processNames: [], receivedFromPartner: true }
   writeSettings({ customGames: [...listCustomGames(), game] })
 }
 
@@ -121,6 +121,23 @@ export function removeCustomGame(appId: string): void {
   // Drop any save-path override tied to this id too — otherwise it just sits
   // there orphaned in settings forever.
   setSavePathOverride(appId, null)
+}
+
+export function getPendingCustomGameRemovals(): string[] {
+  return readSettings().pendingCustomGameRemovals ?? []
+}
+
+/** Remembers that this custom game's registry-removal push still needs to
+ *  happen (see ipc.ts's games:remove-custom / sync.ts's getSyncStatuses
+ *  retry). No-op if already pending. */
+export function addPendingCustomGameRemoval(appId: string): void {
+  const pending = getPendingCustomGameRemovals()
+  if (pending.includes(appId)) return
+  writeSettings({ pendingCustomGameRemovals: [...pending, appId] })
+}
+
+export function clearPendingCustomGameRemoval(appId: string): void {
+  writeSettings({ pendingCustomGameRemovals: getPendingCustomGameRemovals().filter((id) => id !== appId) })
 }
 
 function escapeRegExp(s: string): string {

@@ -52,7 +52,8 @@ import {
   getCustomGameProcessNames,
   setCustomGameProcessNames,
   getCustomGameExcludedFiles,
-  setCustomGameExcludedFiles
+  setCustomGameExcludedFiles,
+  addPendingCustomGameRemoval
 } from './games/customGames'
 import { scanForExecutables } from './games/exeScan'
 import { saveToken, loadToken, clearToken } from './services/tokenStore'
@@ -474,15 +475,20 @@ export function registerIpcHandlers(): void {
   // local save files or anything already pushed to the shared repo).
   ipcMain.handle('games:remove-custom', async (_event, appId: string): Promise<void> => {
     removeCustomGame(appId)
-    // Best-effort, same reasoning as games:add-custom — a partner who
-    // already configured their own save folder for this game keeps working
-    // either way (removeCustomGameFromRegistry never touches their local entry).
+    // Best-effort — no login/repo/internet yet shouldn't block removing a
+    // game locally. But a partner who already materialized this game only
+    // ever stops seeing it once the registry entry is actually gone (see
+    // sync.ts's getSyncStatuses), so a failed push here can't just be
+    // swallowed like games:add-custom's — nothing local still references
+    // this appId to retry from once removeCustomGame above has already run.
+    // Remembered separately instead, and retried on every check until it
+    // succeeds.
     try {
       const { token, owner } = await syncTarget()
       const { owner: actor } = await requireAuth()
       await removeCustomGameFromRegistry(token, owner, actor, appId)
     } catch {
-      // silently ignore — see comment above
+      addPendingCustomGameRemoval(appId)
     }
   })
 

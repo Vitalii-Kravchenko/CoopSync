@@ -24,6 +24,11 @@ interface AppSettings {
   savePathOverrides?: Record<string, string>
   /** Games the user added manually (not in the built-in catalog). */
   customGames?: CustomGame[]
+  /** appIds of a custom game removed locally (games:remove-custom) whose
+   *  matching push to drop it from the shared registry failed — otherwise a
+   *  partner who already knows about the game never finds out it was
+   *  removed. Retried on every getSyncStatuses check until it succeeds. */
+  pendingCustomGameRemovals?: string[]
 }
 
 // English — universal fallback if the installer's language couldn't be determined.

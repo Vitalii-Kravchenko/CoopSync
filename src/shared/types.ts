@@ -124,6 +124,13 @@ export interface CustomGame {
    *  actually save data. Local to this machine, not pushed to a co-op
    *  partner (unlike the name/save-path registry entry). */
   excludedFiles?: string[]
+  /** True once this entry was materialized locally from a co-op partner's
+   *  registry push (materializeRemoteCustomGame) rather than added on this
+   *  PC — stays true even after the save path/exe get configured here.
+   *  Distinguishes "we own this, keep re-registering it if it ever drops
+   *  out of the shared registry" from "a partner owns this, remove it here
+   *  too once they do" (see sync.ts's getSyncStatuses). */
+  receivedFromPartner?: boolean
 }
 
 /** Sync status of a game's saves (comparing local against GitHub). */

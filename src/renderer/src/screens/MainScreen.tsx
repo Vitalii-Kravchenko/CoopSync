@@ -7,7 +7,7 @@ import CloudWarningBanner from '../components/CloudWarningBanner'
 import UpdateAvailableBanner from '../components/UpdateAvailableBanner'
 import AddCustomGameModal from '../components/AddCustomGameModal'
 import type { BannerState } from '../components/Banner'
-import { SearchIcon, PlusIcon } from '../components/icons'
+import { SearchIcon, PlusIcon, SyncIcon } from '../components/icons'
 import GameDetailScreen from './GameDetailScreen'
 import type {
   AuthUser,
@@ -80,6 +80,9 @@ function MainScreen({
   // Same for the game list itself — previously a failure here (e.g. no
   // permissions on the Steam library folder) left "Loading games..." forever.
   const [gamesError, setGamesError] = useState<string | null>(null)
+  // Manual refresh button next to the "Installed games" heading — otherwise
+  // the only way to force a recheck was leaving the tab and coming back.
+  const [manualRefreshing, setManualRefreshing] = useState(false)
 
   useEffect(() => {
     void loadGames()
@@ -180,6 +183,15 @@ function MainScreen({
       // error — cards should fall back to "Checking...", not lie with old data.
       setSyncStatuses({})
       setStatusesError(describeError(e, t, t.main.statusesError))
+    }
+  }
+
+  async function handleManualRefresh(): Promise<void> {
+    setManualRefreshing(true)
+    try {
+      await Promise.all([loadGames(), loadStatuses()])
+    } finally {
+      setManualRefreshing(false)
     }
   }
 
@@ -322,7 +334,26 @@ function MainScreen({
 
       {!loading && !gamesError && (
         <>
-          <div style={styles.sectionTitle}>{t.main.installedGames}</div>
+          <div style={styles.sectionTitleRow}>
+            <div style={styles.sectionTitleNoMargin}>{t.main.installedGames}</div>
+            <button
+              className="reset-btn"
+              style={styles.refreshBtn}
+              onClick={() => void handleManualRefresh()}
+              disabled={manualRefreshing}
+              title={t.main.refreshGames}
+              aria-label={t.main.refreshGames}
+            >
+              <span
+                style={{
+                  display: 'inline-flex',
+                  animation: manualRefreshing ? 'spin 0.8s linear infinite' : undefined
+                }}
+              >
+                <SyncIcon size={14} color={colors.text2} />
+              </span>
+            </button>
+          </div>
           <div style={styles.grid}>
             <button
               className="reset-btn add-game-card"
@@ -445,6 +476,31 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     color: colors.text1,
     marginBottom: 16
+  },
+  sectionTitleRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16
+  },
+  sectionTitleNoMargin: {
+    fontFamily: fonts.display,
+    fontSize: 17,
+    fontWeight: 600,
+    color: colors.text1
+  },
+  refreshBtn: {
+    width: 28,
+    height: 28,
+    padding: 0,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radii.sm,
+    border: `1px solid ${colors.borderDefault}`,
+    background: colors.bgSurface,
+    cursor: 'pointer',
+    flexShrink: 0
   },
   grid: {
     display: 'grid',

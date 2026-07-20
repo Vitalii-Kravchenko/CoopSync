@@ -8,6 +8,7 @@ export const en: Translation = {
     searchPlaceholder: 'Search for a game...',
     loadingGames: 'Looking for games…',
     installedGames: 'Installed games',
+    refreshGames: 'Refresh',
     allSupportedGames: 'All supported games',
     nothingFound: 'Nothing found',
     alreadySynced: 'Versions match — no need to sync',
@@ -139,6 +140,7 @@ export const en: Translation = {
     removeCustomGameConfirmDesc: (name) =>
       `${name} will stop syncing. Its local save files and anything already pushed to the shared repo stay untouched.`,
     removeCustomGameError: "Couldn't remove this game",
+    removeCustomGameSuccess: (name) => `"${name}" removed.`,
     changeCover: 'Change cover',
     coverError: "Couldn't load the cover",
     coverUpdated: 'Cover updated',

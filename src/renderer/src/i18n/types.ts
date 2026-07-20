@@ -37,6 +37,7 @@ export interface Translation {
     searchPlaceholder: string
     loadingGames: string
     installedGames: string
+    refreshGames: string
     allSupportedGames: string
     nothingFound: string
     alreadySynced: string
@@ -162,6 +163,7 @@ export interface Translation {
     removeCustomGameConfirmTitle: string
     removeCustomGameConfirmDesc: (name: string) => string
     removeCustomGameError: string
+    removeCustomGameSuccess: (name: string) => string
     changeCover: string
     coverError: string
     coverUpdated: string

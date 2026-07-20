@@ -8,6 +8,7 @@ export const ru: Translation = {
     searchPlaceholder: 'Поиск игры...',
     loadingGames: 'Ищу игры…',
     installedGames: 'Установленные игры',
+    refreshGames: 'Обновить',
     allSupportedGames: 'Все поддерживаемые игры',
     nothingFound: 'Ничего не найдено',
     alreadySynced: 'Версии совпадают — синхронизация не нужна',
@@ -141,6 +142,7 @@ export const ru: Translation = {
     removeCustomGameConfirmDesc: (name) =>
       `${name} перестанет синхронизироваться. Локальные сохранения и всё, что уже загружено в общий репозиторий, останутся нетронутыми.`,
     removeCustomGameError: 'Не удалось удалить игру',
+    removeCustomGameSuccess: (name) => `«${name}» удалена.`,
     changeCover: 'Изменить обложку',
     coverError: 'Не удалось загрузить обложку',
     coverUpdated: 'Обложка обновлена',

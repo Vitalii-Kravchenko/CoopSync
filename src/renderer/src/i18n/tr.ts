@@ -8,6 +8,7 @@ export const tr: Translation = {
     searchPlaceholder: 'Oyun ara...',
     loadingGames: 'Oyunlar aranıyor…',
     installedGames: 'Yüklü oyunlar',
+    refreshGames: 'Yenile',
     allSupportedGames: 'Desteklenen tüm oyunlar',
     nothingFound: 'Hiçbir şey bulunamadı',
     alreadySynced: 'Sürümler eşleşiyor — senkronizasyona gerek yok',
@@ -142,6 +143,7 @@ export const tr: Translation = {
     removeCustomGameConfirmDesc: (name) =>
       `${name} artık senkronize edilmeyecek. Yerel kayıtlar ve paylaşılan depoya zaten gönderilmiş olan her şey dokunulmadan kalır.`,
     removeCustomGameError: 'Oyun kaldırılamadı',
+    removeCustomGameSuccess: (name) => `"${name}" kaldırıldı.`,
     changeCover: 'Kapağı değiştir',
     coverError: 'Kapak yüklenemedi',
     coverUpdated: 'Kapak güncellendi',

@@ -8,6 +8,7 @@ export const es: Translation = {
     searchPlaceholder: 'Buscar un juego...',
     loadingGames: 'Buscando juegos…',
     installedGames: 'Juegos instalados',
+    refreshGames: 'Actualizar',
     allSupportedGames: 'Todos los juegos compatibles',
     nothingFound: 'No se encontró nada',
     alreadySynced: 'Las versiones coinciden — no es necesario sincronizar',
@@ -141,6 +142,7 @@ export const es: Translation = {
     removeCustomGameConfirmDesc: (name) =>
       `${name} dejará de sincronizarse. Los guardados locales y todo lo que ya se subió al repositorio compartido permanecerán intactos.`,
     removeCustomGameError: 'No se pudo eliminar el juego',
+    removeCustomGameSuccess: (name) => `"${name}" eliminado.`,
     changeCover: 'Cambiar portada',
     coverError: 'No se pudo cargar la portada',
     coverUpdated: 'Portada actualizada',

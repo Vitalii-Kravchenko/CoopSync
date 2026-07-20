@@ -8,6 +8,7 @@ export const ptBR: Translation = {
     searchPlaceholder: 'Buscar um jogo...',
     loadingGames: 'Procurando jogos…',
     installedGames: 'Jogos instalados',
+    refreshGames: 'Atualizar',
     allSupportedGames: 'Todos os jogos suportados',
     nothingFound: 'Nada encontrado',
     alreadySynced: 'As versões coincidem — não é necessário sincronizar',
@@ -141,6 +142,7 @@ export const ptBR: Translation = {
     removeCustomGameConfirmDesc: (name) =>
       `${name} vai parar de sincronizar. Os saves locais e tudo que já foi enviado ao repositório compartilhado permanecem intactos.`,
     removeCustomGameError: 'Não foi possível remover o jogo',
+    removeCustomGameSuccess: (name) => `"${name}" removido.`,
     changeCover: 'Alterar capa',
     coverError: 'Não foi possível carregar a capa',
     coverUpdated: 'Capa atualizada',

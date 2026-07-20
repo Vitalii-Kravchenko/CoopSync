@@ -8,6 +8,7 @@ export const de: Translation = {
     searchPlaceholder: 'Spiel suchen...',
     loadingGames: 'Suche nach Spielen…',
     installedGames: 'Installierte Spiele',
+    refreshGames: 'Aktualisieren',
     allSupportedGames: 'Alle unterstützten Spiele',
     nothingFound: 'Nichts gefunden',
     alreadySynced: 'Versionen stimmen überein — keine Synchronisierung nötig',
@@ -142,6 +143,7 @@ export const de: Translation = {
     removeCustomGameConfirmDesc: (name) =>
       `${name} wird nicht mehr synchronisiert. Lokale Spielstände und bereits ins gemeinsame Repository hochgeladene Daten bleiben unangetastet.`,
     removeCustomGameError: 'Spiel konnte nicht entfernt werden',
+    removeCustomGameSuccess: (name) => `„${name}" entfernt.`,
     changeCover: 'Cover ändern',
     coverError: 'Cover konnte nicht geladen werden',
     coverUpdated: 'Cover aktualisiert',

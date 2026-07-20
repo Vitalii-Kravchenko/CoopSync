@@ -8,6 +8,7 @@ export const fr: Translation = {
     searchPlaceholder: 'Rechercher un jeu...',
     loadingGames: 'Recherche de jeux…',
     installedGames: 'Jeux installés',
+    refreshGames: 'Actualiser',
     allSupportedGames: 'Tous les jeux pris en charge',
     nothingFound: 'Aucun résultat',
     alreadySynced: 'Les versions correspondent — synchronisation inutile',
@@ -142,6 +143,7 @@ export const fr: Translation = {
     removeCustomGameConfirmDesc: (name) =>
       `${name} ne sera plus synchronisé. Les sauvegardes locales et tout ce qui a déjà été envoyé vers le dépôt partagé resteront intacts.`,
     removeCustomGameError: "Impossible de supprimer ce jeu",
+    removeCustomGameSuccess: (name) => `« ${name} » supprimé.`,
     changeCover: 'Changer la jaquette',
     coverError: "Impossible de charger la jaquette",
     coverUpdated: 'Jaquette mise à jour',

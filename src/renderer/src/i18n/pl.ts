@@ -8,6 +8,7 @@ export const pl: Translation = {
     searchPlaceholder: 'Szukaj gry...',
     loadingGames: 'Szukam gier…',
     installedGames: 'Zainstalowane gry',
+    refreshGames: 'Odśwież',
     allSupportedGames: 'Wszystkie obsługiwane gry',
     nothingFound: 'Nic nie znaleziono',
     alreadySynced: 'Wersje się zgadzają — synchronizacja niepotrzebna',
@@ -141,6 +142,7 @@ export const pl: Translation = {
     removeCustomGameConfirmDesc: (name) =>
       `${name} przestanie się synchronizować. Lokalne zapisy i wszystko, co już trafiło do wspólnego repozytorium, pozostaną nietknięte.`,
     removeCustomGameError: 'Nie udało się usunąć gry',
+    removeCustomGameSuccess: (name) => `„${name}" usunięto.`,
     changeCover: 'Zmień okładkę',
     coverError: 'Nie udało się wczytać okładki',
     coverUpdated: 'Zaktualizowano okładkę',

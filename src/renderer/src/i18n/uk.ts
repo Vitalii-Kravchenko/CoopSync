@@ -8,6 +8,7 @@ export const uk: Translation = {
     searchPlaceholder: 'Пошук гри...',
     loadingGames: 'Шукаю ігри…',
     installedGames: 'Встановлені ігри',
+    refreshGames: 'Оновити',
     allSupportedGames: 'Усі підтримувані ігри',
     nothingFound: 'Нічого не знайдено',
     alreadySynced: 'Версії збігаються — синхронізувати не потрібно',
@@ -141,6 +142,7 @@ export const uk: Translation = {
     removeCustomGameConfirmDesc: (name) =>
       `${name} перестане синхронізуватись. Локальні сейви та все, що вже завантажено у спільний репозиторій, залишаться недоторканими.`,
     removeCustomGameError: 'Не вдалося видалити гру',
+    removeCustomGameSuccess: (name) => `«${name}» видалено.`,
     changeCover: 'Змінити обкладинку',
     coverError: 'Не вдалося завантажити обкладинку',
     coverUpdated: 'Обкладинку оновлено',

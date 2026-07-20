@@ -237,9 +237,12 @@ function GameDetailScreen({
     setRemoveError(null)
     try {
       await window.api.games.removeCustom(appId)
+      onBanner({ text: t.history.removeCustomGameSuccess(name), kind: 'success' })
       onCustomGameRemoved()
     } catch (e) {
-      setRemoveError(describeError(e, t, t.history.removeCustomGameError))
+      const msg = describeError(e, t, t.history.removeCustomGameError)
+      setRemoveError(msg)
+      onBanner({ text: msg, kind: 'error' })
     } finally {
       setRemoving(false)
     }

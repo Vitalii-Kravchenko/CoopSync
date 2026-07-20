@@ -2,7 +2,7 @@ import { app, BrowserWindow, shell, nativeTheme } from 'electron'
 import { join } from 'path'
 import { registerIpcHandlers } from './ipc'
 import { createTray } from './trayIcon'
-import { consumeInstallerLanguage, readSettings, writeSettings } from './services/settingsStore'
+import { consumeJustInstalledMarker, readSettings, writeSettings } from './services/settingsStore'
 import { scheduleStartupCheck, setShowWindowCallback } from './services/updater'
 import { READY_GAMES } from './games/catalog'
 import { getKnownGameIds, setKnownGameIds } from './services/backgroundState'
@@ -150,13 +150,9 @@ if (!gotSingleInstanceLock) {
     // over existing settings (without uninstalling). Previously
     // autostart+tray were only enabled based on isFirstRun() (absence of
     // app-settings.json), so they'd get reset on reinstalls — now it's tied
-    // to the same marker as the language, so both are always enabled
-    // consistently right after the installer runs.
-    const installerLanguage = consumeInstallerLanguage()
-    const justInstalled = installerLanguage !== null
-    if (installerLanguage) {
-      writeSettings({ language: installerLanguage })
-    }
+    // to this marker instead, so both are always enabled consistently right
+    // after the installer runs.
+    const justInstalled = consumeJustInstalledMarker()
     if (justInstalled) {
       writeSettings({ startMinimized: true })
       app.setLoginItemSettings({ openAtLogin: true, args: ['--hidden'] })

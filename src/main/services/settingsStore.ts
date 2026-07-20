@@ -53,26 +53,26 @@ export function writeSettings(patch: Partial<AppSettings>): void {
 }
 
 /**
- * Language the user picked in the NSIS installer's language selection dialog
- * (written to build/installer.nsh) into the install folder — NOT userData,
- * because with "install for all users" the installer's admin session and the
- * later app launch by a regular user can have different %APPDATA%, while
- * $INSTDIR (the folder next to the .exe) is always the same.
- * The file is one-time use — we read it and try to delete it (this can fail
- * if the app is installed in Program Files and launched without admin
+ * Whether the NSIS installer (build/installer.nsh) just ran — written to the
+ * install folder, NOT userData, because with "install for all users" the
+ * installer's admin session and the later app launch by a regular user can
+ * have different %APPDATA%, while $INSTDIR (the folder next to the .exe) is
+ * always the same.
+ * The marker is one-time use — we read it and try to delete it (this can
+ * fail if the app is installed in Program Files and launched without admin
  * rights — harmless, it just leaves an empty file behind).
  */
-export function consumeInstallerLanguage(): string | null {
-  const markerPath = join(dirname(app.getPath('exe')), 'installer-language.txt')
+export function consumeJustInstalledMarker(): boolean {
+  const markerPath = join(dirname(app.getPath('exe')), 'just-installed.txt')
   try {
-    const lang = readFileSync(markerPath, 'utf8').trim()
+    readFileSync(markerPath, 'utf8')
     try {
       unlinkSync(markerPath)
     } catch {
       // No permission to delete (Program Files, non-admin) — not critical.
     }
-    return lang || null
+    return true
   } catch {
-    return null
+    return false
   }
 }

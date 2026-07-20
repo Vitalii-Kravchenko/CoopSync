@@ -24,11 +24,19 @@ nsis:
   # matching (404 when the app tries to download the update). Building the
   # installer with the same dash-based name from the start keeps them in sync.
   artifactName: '${productName}-Setup-${version}.${ext}'
-  oneClick: false
+  # oneClick is what actually makes silent in-app updates possible -- NSIS's
+  # /S silent flag (which quitAndInstall uses) still shows the full wizard for
+  # an "assisted" (oneClick: false) installer; only a one-click installer can
+  # truly update in the background with just a restart. Trade-off: no more
+  # install-directory picker or installer language dialog (the app still has
+  # its own in-settings language switcher) -- see build/installer.nsh for the
+  # Smart App Control check that replaces the old welcome-page warning, which
+  # relied on there being a wizard page to show it on.
+  oneClick: true
   perMachine: false
-  allowToChangeInstallationDirectory: true
   deleteAppDataOnUninstall: true
-  displayLanguageSelector: true
+  # Still compiled in so build/installer.nsh's Smart App Control MessageBox
+  # can show in the OS's UI language -- oneClick just means no picker DIALOG.
   installerLanguages:
     - en_US
     - uk_UA

@@ -11,7 +11,7 @@ import MainScreen from './screens/MainScreen'
 import FriendsScreen from './screens/FriendsScreen'
 import HistoryScreen from './screens/HistoryScreen'
 import SettingsScreen from './screens/SettingsScreen'
-import type { AuthUser } from '../../shared/types'
+import type { AppNotification, AuthUser } from '../../shared/types'
 
 type Phase = 'loading' | 'onboarding' | 'app' | 'error'
 
@@ -50,6 +50,26 @@ function App(): React.JSX.Element {
   // History's badge + the tray toast, both covering the same signal).
   const [unseenHistory, setUnseenHistory] = useState<Set<string>>(new Set())
   const markHistorySeen = (): void => setUnseenHistory(new Set())
+
+  // Colored dot on the Sidebar's "Settings" item — a hint that something in
+  // the bell needs attention beyond just "there's an update" (the existing
+  // cyan dot below), specifically the kind of thing Settings' Storage card
+  // is about: losing access (kicked, or the host deleted the repo) is
+  // 'danger' (red), a skipped/declined sync-adjacent event is 'warning'
+  // (amber). Anything else in the bell (new games, friend accepted, an
+  // update) doesn't need a second indicator here.
+  const [settingsAlert, setSettingsAlert] = useState<'danger' | 'warning' | null>(null)
+  useEffect(() => {
+    function computeAlert(list: AppNotification[]): void {
+      const unread = list.filter((n) => !n.read)
+      if (unread.some((n) => n.kind === 'access-revoked')) setSettingsAlert('danger')
+      else if (unread.some((n) => n.kind === 'friend-declined' || n.kind === 'sync-conflict-skipped')) {
+        setSettingsAlert('warning')
+      } else setSettingsAlert(null)
+    }
+    window.api.notifications.list().then(computeAlert)
+    return window.api.notifications.onChanged(computeAlert)
+  }, [])
 
   // Tells main which game/version pairs were just shown on the Games screen —
   // main-side bookkeeping only now (suppresses a re-toast for a version the
@@ -359,7 +379,12 @@ function App(): React.JSX.Element {
             />
           </div>
 
-          <Sidebar active={screen} onNavigate={handleNavigate} historyBadge={unseenHistory.size} />
+          <Sidebar
+            active={screen}
+            onNavigate={handleNavigate}
+            historyBadge={unseenHistory.size}
+            settingsAlert={settingsAlert}
+          />
           <Banner banner={banner} />
         </div>
       )}

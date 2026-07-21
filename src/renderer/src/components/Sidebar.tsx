@@ -18,11 +18,16 @@ interface Props {
    *  No equivalent on "Games" (deliberately removed — redundant with this
    *  plus the tray toast, and auto-sync already pulls the save regardless). */
   historyBadge?: number
+  /** Unread bell notification that needs attention in Settings specifically
+   *  (lost access to a shared repo, a declined/skipped sync event) — takes
+   *  over the "Settings" dot from the plain update-available one below,
+   *  since losing access is more urgent than "there's a new version". */
+  settingsAlert?: 'danger' | 'warning' | null
 }
 
 // Left panel: sections at the top, "Settings" at the bottom.
 // The active item has the brand accent stripe on the left + a soft gradient background.
-function Sidebar({ active, onNavigate, historyBadge }: Props): React.JSX.Element {
+function Sidebar({ active, onNavigate, historyBadge, settingsAlert }: Props): React.JSX.Element {
   const { t } = useI18n()
   // Small dot on "Settings" when an update is ready — the only hint outside
   // the Settings screen itself, since the auto-update check runs silently in
@@ -34,6 +39,10 @@ function Sidebar({ active, onNavigate, historyBadge }: Props): React.JSX.Element
       setUpdateAvailable(status.state === 'available' || status.state === 'downloaded')
     })
   }, [])
+
+  // settingsAlert (access lost, etc.) wins over the plain cyan update dot —
+  // only one dot fits, and losing repo access is the more urgent of the two.
+  const dotColor = settingsAlert === 'danger' ? colors.danger : settingsAlert === 'warning' ? colors.warning : undefined
 
   return (
     <div style={styles.rail}>
@@ -64,7 +73,7 @@ function Sidebar({ active, onNavigate, historyBadge }: Props): React.JSX.Element
         label={t.sidebar.settings}
         active={active === 'settings'}
         onClick={() => onNavigate('settings')}
-        dot={updateAvailable}
+        dotColor={dotColor ?? (updateAvailable ? colors.cy : undefined)}
       />
     </div>
   )
@@ -75,14 +84,14 @@ function NavItem({
   label,
   active,
   onClick,
-  dot,
+  dotColor,
   badge
 }: {
   icon: React.ReactNode
   label: string
   active: boolean
   onClick: () => void
-  dot?: boolean
+  dotColor?: string
   badge?: number
 }): React.JSX.Element {
   const [hover, setHover] = useState(false)
@@ -102,7 +111,9 @@ function NavItem({
       {active && <span style={styles.accentBar} />}
       <span style={{ display: 'flex', position: 'relative' }}>
         {icon}
-        {dot && <span style={styles.updateDot} />}
+        {dotColor && (
+          <span style={{ ...styles.updateDot, background: dotColor, boxShadow: `0 0 8px ${dotColor}66` }} />
+        )}
       </span>
       {label}
       {/* Outer span is the pill; the number lives in its own inner span so it
@@ -163,9 +174,7 @@ const styles: Record<string, React.CSSProperties> = {
     right: -3,
     width: 7,
     height: 7,
-    borderRadius: '50%',
-    background: colors.cy,
-    boxShadow: shadows.glowCy
+    borderRadius: '50%'
   },
   countBadge: {
     marginLeft: 'auto',

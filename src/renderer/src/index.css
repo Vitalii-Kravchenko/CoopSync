@@ -196,9 +196,9 @@ body {
 /* Games tab's manual refresh button — same cyan hover language as the
    "+ Add a game" card above, scaled down for a small icon-only button. */
 .games-refresh-btn:hover:not(:disabled) {
-  border-color: rgba(54, 226, 232, 0.45);
-  color: #36e2e8;
-  background: rgba(54, 226, 232, 0.05);
+  border-color: rgba(54, 226, 232, 0.45) !important;
+  color: #36e2e8 !important;
+  background: rgba(54, 226, 232, 0.05) !important;
 }
 .games-refresh-btn:disabled {
   cursor: not-allowed;

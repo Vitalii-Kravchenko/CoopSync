@@ -258,6 +258,18 @@ export function registerIpcHandlers(): void {
     const { token, owner } = await requireAuth()
     const repo = await createSavesRepo(token, owner)
     writeSettings({ role: 'host', hostOwner: owner })
+    // Best-effort: a brand-new repo (first one, or a recreated one after a
+    // delete) has no .meta/avatars yet — if we already have a local avatar,
+    // push it right away instead of leaving it stuck until the next manual
+    // "change avatar", so a friend connecting to this storage sees it immediately.
+    const avatarDataUrl = readSettings().avatarDataUrl
+    if (avatarDataUrl) {
+      try {
+        await uploadAvatar(token, owner, owner, avatarDataUrl)
+      } catch {
+        // Not critical — the repo itself is already created either way.
+      }
+    }
     return { state: 'ready', repo }
   })
 
@@ -811,6 +823,19 @@ export function registerIpcHandlers(): void {
       throw makeAppError('NO_ACCESS_TO_HOST_REPO', { host })
     }
     writeSettings({ role: 'join', hostOwner: host })
+    // Best-effort: same reasoning as repo:create — if we already have a
+    // local avatar (set before ever connecting, or left over from a
+    // previous, now-gone storage), push it to the host's repo right away
+    // so they see it without us having to re-save it from Settings.
+    const avatarDataUrl = readSettings().avatarDataUrl
+    if (avatarDataUrl) {
+      const { owner: selfLogin } = await requireAuth()
+      try {
+        await uploadAvatar(token, host, selfLogin, avatarDataUrl)
+      } catch {
+        // Not critical — access to the repo is already confirmed either way.
+      }
+    }
     return { role: 'join', hostOwner: host }
   })
 

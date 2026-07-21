@@ -337,7 +337,7 @@ function MainScreen({
           <div style={styles.sectionTitleRow}>
             <div style={styles.sectionTitleNoMargin}>{t.main.installedGames}</div>
             <button
-              className="reset-btn"
+              className="reset-btn games-refresh-btn"
               style={styles.refreshBtn}
               onClick={() => void handleManualRefresh()}
               disabled={manualRefreshing}
@@ -350,7 +350,7 @@ function MainScreen({
                   animation: manualRefreshing ? 'spin 0.8s linear infinite' : undefined
                 }}
               >
-                <SyncIcon size={14} color={colors.text2} />
+                <SyncIcon size={14} />
               </span>
             </button>
           </div>
@@ -480,7 +480,7 @@ const styles: Record<string, React.CSSProperties> = {
   sectionTitleRow: {
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 10,
     marginBottom: 16
   },
   sectionTitleNoMargin: {
@@ -499,8 +499,10 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: radii.sm,
     border: `1px solid ${colors.borderDefault}`,
     background: colors.bgSurface,
+    color: colors.text2,
     cursor: 'pointer',
-    flexShrink: 0
+    flexShrink: 0,
+    transition: `border-color ${transitions.hover}, color ${transitions.hover}, background ${transitions.hover}`
   },
   grid: {
     display: 'grid',

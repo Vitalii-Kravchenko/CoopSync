@@ -15,22 +15,15 @@
 
 <p align="center">Free co-op save sync for games — no server of mine in the middle, just your own private GitHub repository.</p>
 
-## Screenshots
+## Why I built this
 
-<table>
-<tr>
-<td width="50%"><a href="docs/screenshots/games.png"><img src="docs/screenshots/games.png" width="100%"></a><br><sub>Your Steam library — synced games are marked, everything else is one click away</sub></td>
-<td width="50%"><a href="docs/screenshots/friends.png"><img src="docs/screenshots/friends.png" width="100%"></a><br><sub>Friends tab — invite by GitHub username, see who's synced and when</sub></td>
-</tr>
-<tr>
-<td width="50%"><a href="docs/screenshots/add-game.png"><img src="docs/screenshots/add-game.png" width="100%"></a><br><sub>Not in the catalog? Add any game manually — just point to its save folder</sub></td>
-<td width="50%"><a href="docs/screenshots/history.png"><img src="docs/screenshots/history.png" width="100%"></a><br><sub>Full sync history — every push, who did it, and when</sub></td>
-</tr>
-<tr>
-<td width="50%"><a href="docs/screenshots/settings.png"><img src="docs/screenshots/settings.png" width="100%"></a><br><sub>Your own private GitHub repo — no CoopSync servers involved, ever</sub></td>
-<td width="50%"></td>
-</tr>
-</table>
+My friend and I play the same games together — sometimes side by side, sometimes each
+on our own schedule — and kept losing progress or overwriting each other's saves.
+Steam Cloud wasn't built for that, and paying for a sync service felt silly for
+something this simple. So I built CoopSync: quit the game and your save gets pushed to
+your own private GitHub repo; launch it and the latest version gets pulled down first.
+No server of mine sitting in the middle, no subscription — just your GitHub account,
+doing what it's already good at.
 
 ## Requirements
 
@@ -45,16 +38,6 @@
 > **What do I actually need to install myself?** Just **[Git for Windows](https://git-scm.com/download/win)**, one time. Everything
 > else — Electron, Node.js, all app dependencies — is bundled inside the CoopSync installer, so
 > there's nothing else to set up. If `git --version` works in a terminal, you're covered.
-
-## Why I built this
-
-My friend and I play the same games together — sometimes side by side, sometimes each
-on our own schedule — and kept losing progress or overwriting each other's saves.
-Steam Cloud wasn't built for that, and paying for a sync service felt silly for
-something this simple. So I built CoopSync: quit the game and your save gets pushed to
-your own private GitHub repo; launch it and the latest version gets pulled down first.
-No server of mine sitting in the middle, no subscription — just your GitHub account,
-doing what it's already good at.
 
 ## Installation
 
@@ -120,6 +103,26 @@ npm run build      # build
 npm run typecheck  # type checking
 npm run dist       # build the .exe installer
 ```
+
+<details>
+<summary><h2 style="display:inline">📸 Screenshots</h2></summary>
+
+<table>
+<tr>
+<td width="50%"><a href="docs/screenshots/games.png"><img src="docs/screenshots/games.png" width="100%"></a><br><sub>Your Steam library — synced games are marked, everything else is one click away</sub></td>
+<td width="50%"><a href="docs/screenshots/friends.png"><img src="docs/screenshots/friends.png" width="100%"></a><br><sub>Friends tab — invite by GitHub username, see who's synced and when</sub></td>
+</tr>
+<tr>
+<td width="50%"><a href="docs/screenshots/add-game.png"><img src="docs/screenshots/add-game.png" width="100%"></a><br><sub>Not in the catalog? Add any game manually — just point to its save folder</sub></td>
+<td width="50%"><a href="docs/screenshots/history.png"><img src="docs/screenshots/history.png" width="100%"></a><br><sub>Full sync history — every push, who did it, and when</sub></td>
+</tr>
+<tr>
+<td width="50%"><a href="docs/screenshots/settings.png"><img src="docs/screenshots/settings.png" width="100%"></a><br><sub>Your own private GitHub repo — no CoopSync servers involved, ever</sub></td>
+<td width="50%"></td>
+</tr>
+</table>
+
+</details>
 
 ## Status
 

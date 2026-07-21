@@ -15,22 +15,14 @@
 
 <p align="center">Безкоштовний синхронізатор кооп-сейвів для ігор — без жодного мого сервера посередині, лише твій власний приватний GitHub-репозиторій.</p>
 
-## Скриншоти
+## Чому я це зробив
 
-<table>
-<tr>
-<td width="50%"><a href="docs/screenshots/games.png"><img src="docs/screenshots/games.png" width="100%"></a><br><sub>Твоя бібліотека Steam — синхронізовані ігри позначені, все інше додається в один клік</sub></td>
-<td width="50%"><a href="docs/screenshots/friends.png"><img src="docs/screenshots/friends.png" width="100%"></a><br><sub>Вкладка «Друзі» — запрошуй за ніком GitHub, бачиш хто синхронізувався і коли</sub></td>
-</tr>
-<tr>
-<td width="50%"><a href="docs/screenshots/add-game.png"><img src="docs/screenshots/add-game.png" width="100%"></a><br><sub>Немає в каталозі? Додай будь-яку гру вручну — просто вкажи папку сейвів</sub></td>
-<td width="50%"><a href="docs/screenshots/history.png"><img src="docs/screenshots/history.png" width="100%"></a><br><sub>Повна історія синхронізацій — кожен пуш, хто його зробив і коли</sub></td>
-</tr>
-<tr>
-<td width="50%"><a href="docs/screenshots/settings.png"><img src="docs/screenshots/settings.png" width="100%"></a><br><sub>Твій власний приватний GitHub-репозиторій — жодних моїх серверів, ніколи</sub></td>
-<td width="50%"></td>
-</tr>
-</table>
+Ми з другом граємо в одні й ті самі ігри — інколи разом, інколи кожен у свій час — і постійно
+губили прогрес або затирали сейви одне одного. Steam Cloud для цього не пристосований, а платити
+за сервіс синхронізації заради такої простої речі здавалось зайвим. Тож я зробив CoopSync: вийшов
+з гри — сейв пушиться в твій власний приватний репозиторій на GitHub; запускаєш гру — спершу
+підтягується найновіша версія. Жодного мого сервера посередині, жодної оплати — просто твій
+акаунт GitHub, який робить те, що й так вміє.
 
 ## Залежності
 
@@ -46,15 +38,6 @@
 > Electron, Node.js, всі залежності застосунку — вже вбудовано в інсталятор CoopSync, тож
 > більше нічого налаштовувати не треба. Якщо команда `git --version` працює в терміналі —
 > все гаразд.
-
-## Чому я це зробив
-
-Ми з другом граємо в одні й ті самі ігри — інколи разом, інколи кожен у свій час — і постійно
-губили прогрес або затирали сейви одне одного. Steam Cloud для цього не пристосований, а платити
-за сервіс синхронізації заради такої простої речі здавалось зайвим. Тож я зробив CoopSync: вийшов
-з гри — сейв пушиться в твій власний приватний репозиторій на GitHub; запускаєш гру — спершу
-підтягується найновіша версія. Жодного мого сервера посередині, жодної оплати — просто твій
-акаунт GitHub, який робить те, що й так вміє.
 
 ## Встановлення
 
@@ -121,6 +104,26 @@ npm run build      # збірка
 npm run typecheck  # перевірка типів
 npm run dist       # зібрати .exe інсталятор
 ```
+
+<details>
+<summary><h2 style="display:inline">📸 Скриншоти</h2></summary>
+
+<table>
+<tr>
+<td width="50%"><a href="docs/screenshots/games.png"><img src="docs/screenshots/games.png" width="100%"></a><br><sub>Твоя бібліотека Steam — синхронізовані ігри позначені, все інше додається в один клік</sub></td>
+<td width="50%"><a href="docs/screenshots/friends.png"><img src="docs/screenshots/friends.png" width="100%"></a><br><sub>Вкладка «Друзі» — запрошуй за ніком GitHub, бачиш хто синхронізувався і коли</sub></td>
+</tr>
+<tr>
+<td width="50%"><a href="docs/screenshots/add-game.png"><img src="docs/screenshots/add-game.png" width="100%"></a><br><sub>Немає в каталозі? Додай будь-яку гру вручну — просто вкажи папку сейвів</sub></td>
+<td width="50%"><a href="docs/screenshots/history.png"><img src="docs/screenshots/history.png" width="100%"></a><br><sub>Повна історія синхронізацій — кожен пуш, хто його зробив і коли</sub></td>
+</tr>
+<tr>
+<td width="50%"><a href="docs/screenshots/settings.png"><img src="docs/screenshots/settings.png" width="100%"></a><br><sub>Твій власний приватний GitHub-репозиторій — жодних моїх серверів, ніколи</sub></td>
+<td width="50%"></td>
+</tr>
+</table>
+
+</details>
 
 ## Статус
 

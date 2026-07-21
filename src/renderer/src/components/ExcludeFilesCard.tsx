@@ -56,7 +56,7 @@ function ExcludeFilesCard({ appId, onError }: Props): React.JSX.Element {
         </div>
         <Button variant="ghost" style={styles.retryBtn} onClick={load} disabled={loading}>
           <SyncIcon size={13} color={colors.text2} />
-          {t.main.retry}
+          {t.history.excludeFilesRefresh}
         </Button>
       </div>
       <div style={styles.hint}>{t.history.excludeFilesHint}</div>

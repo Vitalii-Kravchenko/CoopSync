@@ -149,7 +149,8 @@ export const en: Translation = {
     excludeFilesTitle: 'Exclude files from sync',
     excludeFilesHint:
       "Check any files here that shouldn't be synced — local settings, account data, anything that isn't actually save data. Only files directly in the save folder are listed (not subfolders). This choice only applies on this PC — it isn't shared with your co-op partner, since the exact file names can differ between installs. Your friend should exclude files separately, based on what they see in their own folder.",
-    excludeFilesEmpty: 'No files found in the save folder yet.'
+    excludeFilesEmpty: 'No files found in the save folder yet.',
+    excludeFilesRefresh: 'Refresh file list'
   },
   cloudWarning: {
     title: 'Turn off Steam Cloud for synced games',

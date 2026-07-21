@@ -151,7 +151,8 @@ export const es: Translation = {
     excludeFilesTitle: 'Excluir archivos de la sincronización',
     excludeFilesHint:
       'Marca aquí los archivos que no deberían sincronizarse — ajustes locales, datos de la cuenta, cualquier cosa que en realidad no sea un guardado. Solo se listan los archivos directamente en la carpeta de guardado (sin subcarpetas). Esta elección solo aplica en este PC — no se comparte con tu compañero, ya que los nombres exactos de archivo pueden diferir entre instalaciones. Tu amigo debe excluir archivos por su cuenta, según lo que vea en su propia carpeta.',
-    excludeFilesEmpty: 'Todavía no hay archivos en la carpeta de guardado.'
+    excludeFilesEmpty: 'Todavía no hay archivos en la carpeta de guardado.',
+    excludeFilesRefresh: 'Actualizar lista de archivos'
   },
   cloudWarning: {
     title: 'Desactiva Steam Cloud para los juegos sincronizados',

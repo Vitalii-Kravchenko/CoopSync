@@ -151,7 +151,8 @@ export const pl: Translation = {
     excludeFilesTitle: 'Wyklucz pliki z synchronizacji',
     excludeFilesHint:
       'Zaznacz tu pliki, które nie powinny być synchronizowane — lokalne ustawienia, dane konta, wszystko, co nie jest właściwym zapisem. Lista zawiera tylko pliki bezpośrednio w folderze zapisów (bez podfolderów). Ten wybór dotyczy tylko tego komputera — nie jest udostępniany znajomemu, bo dokładne nazwy plików mogą się różnić między instalacjami. Znajomy powinien wykluczyć pliki osobno, na podstawie tego, co widzi w swoim folderze.',
-    excludeFilesEmpty: 'W folderze zapisów nie ma jeszcze żadnych plików.'
+    excludeFilesEmpty: 'W folderze zapisów nie ma jeszcze żadnych plików.',
+    excludeFilesRefresh: 'Odśwież listę plików'
   },
   cloudWarning: {
     title: 'Wyłącz Steam Cloud dla synchronizowanych gier',

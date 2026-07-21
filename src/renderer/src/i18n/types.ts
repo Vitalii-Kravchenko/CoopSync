@@ -172,6 +172,7 @@ export interface Translation {
     excludeFilesTitle: string
     excludeFilesHint: string
     excludeFilesEmpty: string
+    excludeFilesRefresh: string
   }
   cloudWarning: {
     title: string

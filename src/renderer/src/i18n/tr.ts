@@ -152,7 +152,8 @@ export const tr: Translation = {
     excludeFilesTitle: 'Senkronizasyondan dosya hariç tut',
     excludeFilesHint:
       'Senkronize edilmemesi gereken dosyaları buradan işaretle — yerel ayarlar, hesap verileri, aslında kayıt olmayan her şey. Yalnızca kayıt klasöründeki doğrudan dosyalar listelenir (alt klasörler değil). Bu seçim yalnızca bu bilgisayar için geçerlidir — oyun arkadaşınla paylaşılmaz, çünkü tam dosya adları kurulumlar arasında farklılık gösterebilir. Arkadaşın, kendi klasöründe gördüklerine göre dosyaları ayrıca hariç tutmalı.',
-    excludeFilesEmpty: 'Kayıt klasöründe henüz dosya yok.'
+    excludeFilesEmpty: 'Kayıt klasöründe henüz dosya yok.',
+    excludeFilesRefresh: 'Dosya listesini yenile'
   },
   cloudWarning: {
     title: "Senkronize edilen oyunlar için Steam Cloud'u kapat",

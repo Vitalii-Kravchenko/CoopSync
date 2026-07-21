@@ -13,7 +13,24 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Noncommercial-79839A?style=flat-square&labelColor=10131C" alt="License"></a>
 </p>
 
-<p align="center">Free co-op save sync for games, through your own private GitHub repository.</p>
+<p align="center">Free co-op save sync for games — no server of mine in the middle, just your own private GitHub repository.</p>
+
+## Screenshots
+
+<table>
+<tr>
+<td width="50%"><a href="docs/screenshots/games.png"><img src="docs/screenshots/games.png" width="100%"></a><br><sub>Your Steam library — synced games are marked, everything else is one click away</sub></td>
+<td width="50%"><a href="docs/screenshots/friends.png"><img src="docs/screenshots/friends.png" width="100%"></a><br><sub>Friends tab — invite by GitHub username, see who's synced and when</sub></td>
+</tr>
+<tr>
+<td width="50%"><a href="docs/screenshots/add-game.png"><img src="docs/screenshots/add-game.png" width="100%"></a><br><sub>Not in the catalog? Add any game manually — just point to its save folder</sub></td>
+<td width="50%"><a href="docs/screenshots/history.png"><img src="docs/screenshots/history.png" width="100%"></a><br><sub>Full sync history — every push, who did it, and when</sub></td>
+</tr>
+<tr>
+<td width="50%"><a href="docs/screenshots/settings.png"><img src="docs/screenshots/settings.png" width="100%"></a><br><sub>Your own private GitHub repo — no CoopSync servers involved, ever</sub></td>
+<td width="50%"></td>
+</tr>
+</table>
 
 ## Requirements
 
@@ -29,13 +46,15 @@
 > else — Electron, Node.js, all app dependencies — is bundled inside the CoopSync installer, so
 > there's nothing else to set up. If `git --version` works in a terminal, you're covered.
 
-## Idea
+## Why I built this
 
-Two friends play the same game — together (host + client) or separately at different
-times — and always have **the same, latest saves**. Every time you quit the game, saves
-are automatically uploaded to GitHub; every time you launch it, the newest version is
-pulled down first. No Steam Cloud, no subscription: log in to GitHub once, and it just
-works.
+My friend and I play the same games together — sometimes side by side, sometimes each
+on our own schedule — and kept losing progress or overwriting each other's saves.
+Steam Cloud wasn't built for that, and paying for a sync service felt silly for
+something this simple. So I built CoopSync: quit the game and your save gets pushed to
+your own private GitHub repo; launch it and the latest version gets pulled down first.
+No server of mine sitting in the middle, no subscription — just your GitHub account,
+doing what it's already good at.
 
 ## Installation
 

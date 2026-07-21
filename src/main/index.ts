@@ -1,4 +1,5 @@
 import { app, BrowserWindow, shell, nativeTheme } from 'electron'
+import { execFileSync } from 'child_process'
 import { join } from 'path'
 import { registerIpcHandlers } from './ipc'
 import { createTray } from './trayIcon'
@@ -34,6 +35,28 @@ app.commandLine.appendSwitch('in-process-gpu')
 // already-running instance.
 if (process.platform === 'win32') {
   app.setAppUserModelId('com.coopsync.app')
+
+  // Before v0.9.13 (see the comment above), the app had no explicit App
+  // User Model ID, so Windows/Electron filed its autostart registry entry
+  // under a default-derived name instead — "electron.app.CoopSync". Every
+  // setLoginItemSettings call since v0.9.13 manages a DIFFERENT entry, keyed
+  // to 'com.coopsync.app' — it only ever touches that one, so the old entry
+  // was never removed and kept launching a second, redundant process on
+  // every login (immediately closed by the single-instance lock below, but
+  // still a real extra process + a duplicate line in Windows' startup apps
+  // list). One-time-per-launch best-effort cleanup: harmless no-op once
+  // it's gone, and installs that never had the old entry just fail quietly.
+  try {
+    execFileSync('reg', [
+      'delete',
+      'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run',
+      '/v',
+      'electron.app.CoopSync',
+      '/f'
+    ])
+  } catch {
+    // Already gone, or never existed — nothing to do.
+  }
 }
 
 // Single app instance: without this, manually launching the .exe a second

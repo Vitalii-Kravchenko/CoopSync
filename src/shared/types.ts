@@ -185,6 +185,7 @@ export type AppNotificationKind =
   | 'friend-declined' // params: { login }
   | 'sync-conflict-skipped' // params: { game }
   | 'access-revoked' // params: { host }
+  | 'game-removed' // params: { game }
 
 /** A single bell entry. main only knows kind+params (like AutoSyncEvent) —
  * the renderer localizes title/body from them. */

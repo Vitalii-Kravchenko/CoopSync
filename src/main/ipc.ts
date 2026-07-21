@@ -34,6 +34,7 @@ import {
   getAvatars,
   pushCustomGameToRegistry,
   removeCustomGameFromRegistry,
+  renameCustomGameInRegistry,
   pushCustomGameCover
 } from './services/sync'
 import { startWatcher, stopWatcher } from './services/watcher'
@@ -49,6 +50,8 @@ import {
   removeCustomGame,
   setCustomGameCover,
   setCustomGameCoverSyncFailed,
+  setCustomGameName,
+  hasInvalidGameNameChars,
   getCustomGameProcessNames,
   setCustomGameProcessNames,
   getCustomGameExcludedFiles,
@@ -420,6 +423,7 @@ export function registerIpcHandlers(): void {
     ): Promise<InstalledGame> => {
       const trimmedName = name.trim()
       if (!trimmedName || !savePath.trim()) throw makeAppError('CUSTOM_GAME_INVALID')
+      if (hasInvalidGameNameChars(trimmedName)) throw makeAppError('GAME_NAME_INVALID_CHARS')
       const game = addCustomGame(trimmedName, savePath.trim(), processNames, coverDataUrl ?? undefined)
       // Best-effort: let a co-op partner's app see this game exists too (see
       // pushCustomGameToRegistry). The local add above already succeeded —
@@ -502,6 +506,32 @@ export function registerIpcHandlers(): void {
     } catch {
       addPendingCustomGameRemoval(appId)
     }
+  })
+
+  // Rename a manually-added game. Unlike the cover (adopted best-effort in
+  // the background), a rename touches the shared repo's folder layout — see
+  // renameCustomGameInRegistry — so a failed push is surfaced to the
+  // renderer instead of swallowed, and the local name only changes once the
+  // remote side actually landed (avoids the registry-sync pass in
+  // getSyncStatuses reverting a rename that never made it to GitHub).
+  ipcMain.handle('games:rename-custom', async (_event, appId: string, name: string): Promise<void> => {
+    const trimmed = name.trim()
+    if (!trimmed) throw makeAppError('CUSTOM_GAME_INVALID')
+    if (hasInvalidGameNameChars(trimmed)) throw makeAppError('GAME_NAME_INVALID_CHARS')
+    const game = listCustomGames().find((g) => g.appId === appId)
+    if (!game || game.name === trimmed) return
+    if (!game.registryConfirmed) {
+      // Never actually seen registered yet (initial add push still pending
+      // or failed) — nothing shared to rename remotely. The existing
+      // self-heal retry in getSyncStatuses will push it under this new name
+      // once it lands.
+      setCustomGameName(appId, trimmed)
+      return
+    }
+    const { token, owner } = await syncTarget()
+    const { owner: actor } = await requireAuth()
+    await renameCustomGameInRegistry(token, owner, actor, appId, trimmed)
+    setCustomGameName(appId, trimmed)
   })
 
   // Open a file picker for a custom game's cover art (2:3 poster — no Steam

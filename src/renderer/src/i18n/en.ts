@@ -133,6 +133,7 @@ export const en: Translation = {
     savePathCancel: 'Cancel',
     savePathReset: 'Reset to default',
     savePathSaveError: "Couldn't save this location",
+    savePathNeedsSetupHint: "To start syncing, point this to where the game's saves live on this PC.",
     customGameWarning:
       "This game was added manually — the whole save folder syncs as-is (no file filtering), so local settings or account files in the same folder will sync too.",
     removeCustomGame: 'Remove game',
@@ -142,6 +143,8 @@ export const en: Translation = {
     removeCustomGameError: "Couldn't remove this game",
     removeCustomGameSuccess: (name) => `"${name}" removed.`,
     changeCover: 'Change cover',
+    renameGame: 'Rename',
+    renameGameError: "Couldn't rename the game",
     coverError: "Couldn't load the cover",
     coverUpdated: 'Cover updated',
     coverSyncFailedBanner: "The cover didn't sync to the cloud — your co-op partner can't see it yet.",
@@ -183,7 +186,9 @@ export const en: Translation = {
     friendDeclinedBody: (login) => `${login} didn't accept the invitation.`,
     syncConflictTitle: 'Sync skipped',
     accessRevokedTitle: 'Access revoked',
-    accessRevokedBody: (host) => `You no longer have access to ${host}'s shared storage.`
+    accessRevokedBody: (host) => `You no longer have access to ${host}'s shared storage.`,
+    gameRemovedTitle: 'Game removed',
+    gameRemovedBody: (game) => `"${game}" was removed from the co-op — your friend took it off the list.`
   },
   onboarding: {
     welcomeTitle: 'Welcome to CoopSync!',
@@ -325,6 +330,7 @@ export const en: Translation = {
     ENCRYPTION_UNAVAILABLE: () => "Encryption isn't available on this system — can't store the token safely",
     GAME_NOT_SUPPORTED: () => 'Game not supported',
     CUSTOM_GAME_INVALID: () => 'Enter a game name and save folder',
+    GAME_NAME_INVALID_CHARS: () => 'Game name can\'t contain \\ / : * ? " < > |',
     GAME_RUNNING: () => 'The game is still running — close it first, then try restoring the version again',
     SAVE_FOLDER_NOT_FOUND: () => 'Save folder not found',
     NO_CLOUD_SAVES: () => 'There are no saves for this game in storage yet',

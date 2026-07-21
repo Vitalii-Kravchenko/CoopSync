@@ -135,6 +135,7 @@ export const pl: Translation = {
     savePathCancel: 'Anuluj',
     savePathReset: 'Przywróć domyślną',
     savePathSaveError: 'Nie udało się zapisać lokalizacji',
+    savePathNeedsSetupHint: 'Aby synchronizacja zadziałała, wskaż, gdzie na tym komputerze znajdują się zapisy tej gry.',
     customGameWarning:
       'Ta gra została dodana ręcznie — cały folder zapisów synchronizuje się bez zmian (bez filtrowania plików), więc lokalne ustawienia lub pliki konta w tym samym folderze też się zsynchronizują.',
     removeCustomGame: 'Usuń grę',
@@ -144,6 +145,8 @@ export const pl: Translation = {
     removeCustomGameError: 'Nie udało się usunąć gry',
     removeCustomGameSuccess: (name) => `„${name}" usunięto.`,
     changeCover: 'Zmień okładkę',
+    renameGame: 'Zmień nazwę',
+    renameGameError: 'Nie udało się zmienić nazwy gry',
     coverError: 'Nie udało się wczytać okładki',
     coverUpdated: 'Zaktualizowano okładkę',
     coverSyncFailedBanner: 'Okładka nie zsynchronizowała się z chmurą — znajomy jeszcze jej nie widzi.',
@@ -185,7 +188,9 @@ export const pl: Translation = {
     friendDeclinedBody: (login) => `Zaproszenie dla ${login} nie zostało przyjęte.`,
     syncConflictTitle: 'Synchronizacja pominięta',
     accessRevokedTitle: 'Dostęp cofnięty',
-    accessRevokedBody: (host) => `Nie masz już dostępu do wspólnego magazynu ${host}.`
+    accessRevokedBody: (host) => `Nie masz już dostępu do wspólnego magazynu ${host}.`,
+    gameRemovedTitle: 'Gra usunięta',
+    gameRemovedBody: (game) => `„${game}" zostało usunięte z coopa — znajomy usunął ją z listy.`
   },
   onboarding: {
     welcomeTitle: 'Witamy w CoopSync!',
@@ -328,6 +333,7 @@ export const pl: Translation = {
       'Szyfrowanie jest niedostępne w systemie — nie można bezpiecznie zapisać tokenu',
     GAME_NOT_SUPPORTED: () => 'Gra nieobsługiwana',
     CUSTOM_GAME_INVALID: () => 'Podaj nazwę gry i folder zapisów',
+    GAME_NAME_INVALID_CHARS: () => 'Nazwa gry nie może zawierać znaków \\ / : * ? " < > |',
     GAME_RUNNING: () => 'Gra wciąż działa — zamknij ją najpierw, a potem spróbuj ponownie przywrócić wersję',
     SAVE_FOLDER_NOT_FOUND: () => 'Nie znaleziono folderu zapisów',
     NO_CLOUD_SAVES: () => 'W magazynie nie ma jeszcze zapisów tej gry',

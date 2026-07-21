@@ -136,6 +136,7 @@ export const fr: Translation = {
     savePathCancel: 'Annuler',
     savePathReset: 'Réinitialiser par défaut',
     savePathSaveError: "Impossible d'enregistrer cet emplacement",
+    savePathNeedsSetupHint: "Pour que la synchronisation fonctionne, indique où se trouvent les sauvegardes de ce jeu sur ce PC.",
     customGameWarning:
       "Ce jeu a été ajouté manuellement — tout le dossier de sauvegarde est synchronisé tel quel (sans filtrage des fichiers), donc les paramètres locaux ou fichiers de compte présents dans ce même dossier seront synchronisés aussi.",
     removeCustomGame: 'Supprimer le jeu',
@@ -145,6 +146,8 @@ export const fr: Translation = {
     removeCustomGameError: "Impossible de supprimer ce jeu",
     removeCustomGameSuccess: (name) => `« ${name} » supprimé.`,
     changeCover: 'Changer la jaquette',
+    renameGame: 'Renommer',
+    renameGameError: "Impossible de renommer le jeu",
     coverError: "Impossible de charger la jaquette",
     coverUpdated: 'Jaquette mise à jour',
     coverSyncFailedBanner: "La jaquette n'a pas été synchronisée avec le cloud — ton coéquipier ne la voit pas encore.",
@@ -186,7 +189,9 @@ export const fr: Translation = {
     friendDeclinedBody: (login) => `${login} n'a pas accepté l'invitation.`,
     syncConflictTitle: 'Synchronisation ignorée',
     accessRevokedTitle: 'Accès révoqué',
-    accessRevokedBody: (host) => `Tu n'as plus accès au stockage partagé de ${host}.`
+    accessRevokedBody: (host) => `Tu n'as plus accès au stockage partagé de ${host}.`,
+    gameRemovedTitle: 'Jeu supprimé',
+    gameRemovedBody: (game) => `« ${game} » a été retiré du coop — ton ami l'a enlevé de la liste.`
   },
   onboarding: {
     welcomeTitle: 'Bienvenue sur CoopSync !',
@@ -329,6 +334,7 @@ export const fr: Translation = {
       "Le chiffrement n'est pas disponible sur ce système — impossible de stocker le token en sécurité",
     GAME_NOT_SUPPORTED: () => 'Jeu non pris en charge',
     CUSTOM_GAME_INVALID: () => 'Indique un nom de jeu et un dossier de sauvegarde',
+    GAME_NAME_INVALID_CHARS: () => 'Le nom du jeu ne peut pas contenir \\ / : * ? " < > |',
     GAME_RUNNING: () => "Le jeu est encore en cours d'exécution — ferme-le d'abord, puis réessaie de restaurer la version",
     SAVE_FOLDER_NOT_FOUND: () => 'Dossier de sauvegarde introuvable',
     NO_CLOUD_SAVES: () => "Aucune sauvegarde de ce jeu dans le stockage pour l'instant",

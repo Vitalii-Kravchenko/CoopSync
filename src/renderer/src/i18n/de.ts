@@ -136,6 +136,7 @@ export const de: Translation = {
     savePathCancel: 'Abbrechen',
     savePathReset: 'Auf Standard zurücksetzen',
     savePathSaveError: 'Speicherort konnte nicht gespeichert werden',
+    savePathNeedsSetupHint: 'Damit die Synchronisierung funktioniert, gib an, wo die Spielstände dieses Spiels auf diesem PC liegen.',
     customGameWarning:
       'Dieses Spiel wurde manuell hinzugefügt — der gesamte Speicherordner wird unverändert synchronisiert (ohne Dateifilterung), daher werden lokale Einstellungen oder Kontodateien im selben Ordner ebenfalls synchronisiert.',
     removeCustomGame: 'Spiel entfernen',
@@ -145,6 +146,8 @@ export const de: Translation = {
     removeCustomGameError: 'Spiel konnte nicht entfernt werden',
     removeCustomGameSuccess: (name) => `„${name}" entfernt.`,
     changeCover: 'Cover ändern',
+    renameGame: 'Umbenennen',
+    renameGameError: 'Spiel konnte nicht umbenannt werden',
     coverError: 'Cover konnte nicht geladen werden',
     coverUpdated: 'Cover aktualisiert',
     coverSyncFailedBanner: 'Das Cover wurde nicht mit der Cloud synchronisiert — dein Mitspieler kann es noch nicht sehen.',
@@ -186,7 +189,9 @@ export const de: Translation = {
     friendDeclinedBody: (login) => `${login} hat die Einladung nicht angenommen.`,
     syncConflictTitle: 'Synchronisierung übersprungen',
     accessRevokedTitle: 'Zugriff entzogen',
-    accessRevokedBody: (host) => `Du hast keinen Zugriff mehr auf den gemeinsamen Speicher von ${host}.`
+    accessRevokedBody: (host) => `Du hast keinen Zugriff mehr auf den gemeinsamen Speicher von ${host}.`,
+    gameRemovedTitle: 'Spiel entfernt',
+    gameRemovedBody: (game) => `„${game}" wurde aus dem Koop entfernt — dein Freund hat es von der Liste genommen.`
   },
   onboarding: {
     welcomeTitle: 'Willkommen bei CoopSync!',
@@ -329,6 +334,7 @@ export const de: Translation = {
       'Verschlüsselung ist auf diesem System nicht verfügbar — Token kann nicht sicher gespeichert werden',
     GAME_NOT_SUPPORTED: () => 'Spiel nicht unterstützt',
     CUSTOM_GAME_INVALID: () => 'Gib einen Spielnamen und einen Speicherordner an',
+    GAME_NAME_INVALID_CHARS: () => 'Der Spielname darf nicht \\ / : * ? " < > | enthalten',
     GAME_RUNNING: () => 'Das Spiel läuft noch — schließe es zuerst und versuche dann erneut, die Version wiederherzustellen',
     SAVE_FOLDER_NOT_FOUND: () => 'Spielstand-Ordner nicht gefunden',
     NO_CLOUD_SAVES: () => 'Für dieses Spiel gibt es noch keine Spielstände im Speicher',

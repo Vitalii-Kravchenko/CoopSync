@@ -136,6 +136,7 @@ export const tr: Translation = {
     savePathCancel: 'İptal',
     savePathReset: 'Varsayılana sıfırla',
     savePathSaveError: 'Bu konum kaydedilemedi',
+    savePathNeedsSetupHint: 'Senkronizasyonun çalışması için bu oyunun kayıtlarının bu bilgisayarda nerede olduğunu belirt.',
     customGameWarning:
       'Bu oyun elle eklendi — tüm kayıt klasörü olduğu gibi senkronize edilir (dosya filtrelemesi olmadan), bu yüzden aynı klasördeki yerel ayarlar veya hesap dosyaları da senkronize edilir.',
     removeCustomGame: 'Oyunu kaldır',
@@ -145,6 +146,8 @@ export const tr: Translation = {
     removeCustomGameError: 'Oyun kaldırılamadı',
     removeCustomGameSuccess: (name) => `"${name}" kaldırıldı.`,
     changeCover: 'Kapağı değiştir',
+    renameGame: 'Yeniden adlandır',
+    renameGameError: 'Oyun yeniden adlandırılamadı',
     coverError: 'Kapak yüklenemedi',
     coverUpdated: 'Kapak güncellendi',
     coverSyncFailedBanner: 'Kapak buluta senkronize olmadı — arkadaşın henüz göremiyor.',
@@ -186,7 +189,9 @@ export const tr: Translation = {
     friendDeclinedBody: (login) => `${login} daveti kabul etmedi.`,
     syncConflictTitle: 'Senkronizasyon atlandı',
     accessRevokedTitle: 'Erişim iptal edildi',
-    accessRevokedBody: (host) => `Artık ${host} kullanıcısının paylaşılan deposuna erişimin yok.`
+    accessRevokedBody: (host) => `Artık ${host} kullanıcısının paylaşılan deposuna erişimin yok.`,
+    gameRemovedTitle: 'Oyun kaldırıldı',
+    gameRemovedBody: (game) => `"${game}" co-op'tan kaldırıldı — arkadaşın onu listeden çıkardı.`
   },
   onboarding: {
     welcomeTitle: "CoopSync'e hoş geldin!",
@@ -328,6 +333,7 @@ export const tr: Translation = {
     ENCRYPTION_UNAVAILABLE: () => 'Bu sistemde şifreleme kullanılamıyor — token güvenli şekilde saklanamıyor',
     GAME_NOT_SUPPORTED: () => 'Oyun desteklenmiyor',
     CUSTOM_GAME_INVALID: () => 'Bir oyun adı ve kayıt klasörü gir',
+    GAME_NAME_INVALID_CHARS: () => 'Oyun adı \\ / : * ? " < > | karakterlerini içeremez',
     GAME_RUNNING: () => 'Oyun hâlâ çalışıyor — önce onu kapat, sonra sürümü geri yüklemeyi tekrar dene',
     SAVE_FOLDER_NOT_FOUND: () => 'Kayıt klasörü bulunamadı',
     NO_CLOUD_SAVES: () => 'Depoda bu oyuna ait kayıt henüz yok',

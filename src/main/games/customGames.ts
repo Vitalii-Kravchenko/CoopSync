@@ -18,6 +18,24 @@ import type { CustomGame } from '../../shared/types'
 
 const CUSTOM_ID_PREFIX = 'custom:'
 
+// A custom game's NAME (not its appId) is used as a literal path segment
+// throughout sync.ts — the repo's save folder, .meta/<name>.json — with no
+// sanitization anywhere downstream. A colon is the dangerous one: NTFS
+// silently treats "name:rest" as an Alternate Data Stream, so every fs call
+// (existsSync/writeFile/readFile) reports success while git never sees the
+// real content — this is the exact bug that made custom-game covers never
+// reach a partner (see coverPath()'s appId.replace(/:/g, '_') in sync.ts;
+// that appId always contains "custom:" so it hit this on every single custom
+// game until fixed). Game names are free-text and easily collide with it too
+// ("Mass Effect: Andromeda"). Rejecting up front beats silently sanitizing —
+// with this class of bug, "no error anywhere" is exactly what made it invisible
+// for so long, so the user should see immediately if a name can't be used.
+const INVALID_GAME_NAME_CHARS = /[\\/:*?"<>|]/
+
+export function hasInvalidGameNameChars(name: string): boolean {
+  return INVALID_GAME_NAME_CHARS.test(name)
+}
+
 export function listCustomGames(): CustomGame[] {
   return readSettings().customGames ?? []
 }
@@ -68,6 +86,16 @@ export function markCustomGameRegistryConfirmed(appId: string): void {
     customGames: listCustomGames().map((g) =>
       g.appId === appId && !g.registryConfirmed ? { ...g, registryConfirmed: true } : g
     )
+  })
+}
+
+/** Rename a locally-known custom game. No-op if appId isn't one, or the name
+ *  is unchanged. The repo-side rename (folder + version meta + registry) is
+ *  handled separately by sync.ts's renameCustomGameInRegistry — this only
+ *  updates the local record. */
+export function setCustomGameName(appId: string, name: string): void {
+  writeSettings({
+    customGames: listCustomGames().map((g) => (g.appId === appId && g.name !== name ? { ...g, name } : g))
   })
 }
 

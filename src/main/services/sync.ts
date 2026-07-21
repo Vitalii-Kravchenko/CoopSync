@@ -12,11 +12,13 @@ import {
   materializeRemoteCustomGame,
   listCustomGames,
   setCustomGameCover,
+  setCustomGameName,
   removeCustomGame,
   getPendingCustomGameRemovals,
   clearPendingCustomGameRemoval,
   markCustomGameRegistryConfirmed
 } from '../games/customGames'
+import { addNotification } from './notificationStore'
 import { SAVES_REPO_NAME } from '../config'
 import { isGameCurrentlyRunning } from './processCheck'
 import { createSavesRepo, leaveSharedRepo } from './github'
@@ -577,6 +579,40 @@ export function pushCustomGameToRegistry(
   })
 }
 
+/** Rename a custom game — updates the registry entry, and moves its save
+ *  folder + version-meta file in the shared repo to match (both are keyed by
+ *  name, not appId — a registry-only rename would silently orphan this
+ *  game's existing history/version tracking). Best-effort, same as the other
+ *  registry writers (see ipc.ts's games:rename-custom). No-op if appId isn't
+ *  registered yet, or the name is unchanged. */
+export function renameCustomGameInRegistry(
+  token: string,
+  owner: string,
+  actor: string,
+  appId: string,
+  newName: string
+): Promise<void> {
+  return withCustomGameRepoLock(async () => {
+    await ensureRepo(token, owner)
+    const current = await readCustomGamesRegistry()
+    const entry = current.find((e) => e.appId === appId)
+    if (!entry || entry.name === newName) return
+    const oldName = entry.name
+    const next = current.map((e) => (e.appId === appId ? { ...e, name: newName } : e))
+    await mkdir(join(repoDir(), '.meta'), { recursive: true })
+    await writeFile(customGamesRegistryPath(), JSON.stringify(next, null, 2))
+    if (existsSync(join(repoDir(), oldName))) {
+      await git(['mv', oldName, newName])
+    }
+    if (existsSync(remoteMetaPath(oldName))) {
+      await git(['mv', `.meta/${oldName}.json`, `.meta/${newName}.json`])
+    }
+    await git(['add', '-A'])
+    await git([...identityFlags(actor), 'commit', '-m', `custom-game: rename ${oldName} -> ${newName}`])
+    await git(['push', 'origin', 'main'])
+  })
+}
+
 /** Remove a custom game from the shared registry (best-effort — see ipc.ts's
  *  games:remove-custom). Never touches anyone's already-materialized local
  *  entry — a partner who already set up their save folder keeps working. */
@@ -882,6 +918,7 @@ async function doGetSyncStatuses(token: string, owner: string, actor: string): P
   try {
     const registry = await readCustomGamesRegistry()
     const registered = new Set(registry.map((e) => e.appId))
+    const registeredNames = new Map(registry.map((e) => [e.appId, e.name]))
     // A removal we're still actively pushing (see the pending-removals retry
     // below) means the registry can be stale — it may still list an appId we
     // already dropped locally on purpose. Without this, materializing it
@@ -896,12 +933,20 @@ async function doGetSyncStatuses(token: string, owner: string, actor: string): P
     for (const g of listCustomGames()) {
       if (registered.has(g.appId)) {
         if (!g.registryConfirmed) markCustomGameRegistryConfirmed(g.appId)
+        // Someone renamed it (owner or not, same as a removal) — mirror the
+        // new name locally. Safe even mid-rename: the registry write lands
+        // before the folder/meta git-mv (renameCustomGameInRegistry), so at
+        // worst this picks up the new name a tick before the renamed folder
+        // is visible, which self-corrects next check either way.
+        const registeredName = registeredNames.get(g.appId)
+        if (registeredName && registeredName !== g.name) setCustomGameName(g.appId, registeredName)
         continue
       }
       if (g.registryConfirmed) {
         // Was registered before, isn't now -- somebody removed it on
         // purpose (whether or not it was "ours"). Converge, don't fight it.
         removeCustomGame(g.appId)
+        addNotification('game-removed', { game: g.name })
         continue
       }
       // Never confirmed registered yet -- this is a fresh local add whose

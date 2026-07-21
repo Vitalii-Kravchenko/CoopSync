@@ -135,6 +135,7 @@ export const ru: Translation = {
     savePathCancel: 'Отмена',
     savePathReset: 'Сбросить по умолчанию',
     savePathSaveError: 'Не удалось сохранить путь',
+    savePathNeedsSetupHint: 'Чтобы синхронизация заработала, укажи, где на этом ПК лежат сейвы этой игры.',
     customGameWarning:
       'Эта игра добавлена вручную — вся папка сохранений синхронизируется как есть (без фильтрации файлов), поэтому локальные настройки или файлы аккаунта в той же папке тоже будут синхронизироваться.',
     removeCustomGame: 'Удалить игру',
@@ -144,6 +145,8 @@ export const ru: Translation = {
     removeCustomGameError: 'Не удалось удалить игру',
     removeCustomGameSuccess: (name) => `«${name}» удалена.`,
     changeCover: 'Изменить обложку',
+    renameGame: 'Переименовать',
+    renameGameError: 'Не удалось переименовать игру',
     coverError: 'Не удалось загрузить обложку',
     coverUpdated: 'Обложка обновлена',
     coverSyncFailedBanner: 'Обложка не синхронизировалась с облаком — друг пока её не видит.',
@@ -185,7 +188,9 @@ export const ru: Translation = {
     friendDeclinedBody: (login) => `Приглашение для ${login} не принято.`,
     syncConflictTitle: 'Синхронизация пропущена',
     accessRevokedTitle: 'Доступ отозван',
-    accessRevokedBody: (host) => `У тебя больше нет доступа к общему хранилищу ${host}.`
+    accessRevokedBody: (host) => `У тебя больше нет доступа к общему хранилищу ${host}.`,
+    gameRemovedTitle: 'Игра удалена',
+    gameRemovedBody: (game) => `«${game}» удалена из коопа — друг убрал её из списка.`
   },
   onboarding: {
     welcomeTitle: 'Добро пожаловать в CoopSync!',
@@ -327,6 +332,7 @@ export const ru: Translation = {
     ENCRYPTION_UNAVAILABLE: () => 'Шифрование недоступно в системе — не могу безопасно сохранить токен',
     GAME_NOT_SUPPORTED: () => 'Игра не поддерживается',
     CUSTOM_GAME_INVALID: () => 'Укажи название игры и папку сохранений',
+    GAME_NAME_INVALID_CHARS: () => 'Название игры не может содержать символы \\ / : * ? " < > |',
     GAME_RUNNING: () => 'Игра всё ещё запущена — сначала закрой её, потом попробуй восстановить версию ещё раз',
     SAVE_FOLDER_NOT_FOUND: () => 'Папка сейвов не найдена',
     NO_CLOUD_SAVES: () => 'В хранилище пока нет сейвов этой игры',

@@ -8,6 +8,9 @@ import { DiskIcon, SyncIcon } from './icons'
 interface Props {
   appId: string
   onError?: (message: string) => void
+  /** Called after an exclusion actually saves — lets GameDetailScreen tell
+   *  MainScreen the Games tab's card (size) may now be stale. */
+  onChanged?: () => void
 }
 
 // Files sitting in the save folder's top level (not subfolders — see
@@ -15,7 +18,7 @@ interface Props {
 // Shared by GameDetailScreen (an existing custom game) and AddCustomGameModal
 // (right after a brand-new custom game's appId exists) — appId is the only
 // thing either caller needs to have ready.
-function ExcludeFilesCard({ appId, onError }: Props): React.JSX.Element {
+function ExcludeFilesCard({ appId, onError, onChanged }: Props): React.JSX.Element {
   const { t } = useI18n()
   const [saveFiles, setSaveFiles] = useState<string[]>([])
   const [excludedFiles, setExcludedFiles] = useState<string[]>([])
@@ -42,9 +45,12 @@ function ExcludeFilesCard({ appId, onError }: Props): React.JSX.Element {
       ? excludedFiles.filter((f) => f !== file)
       : [...excludedFiles, file]
     setExcludedFiles(next)
-    window.api.games.setExcludedFiles(appId, next).catch((e) => {
-      onError?.(describeError(e, t, t.history.savePathSaveError))
-    })
+    window.api.games
+      .setExcludedFiles(appId, next)
+      .then(() => onChanged?.())
+      .catch((e) => {
+        onError?.(describeError(e, t, t.history.savePathSaveError))
+      })
   }
 
   return (
@@ -82,8 +88,15 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '16px 18px',
     marginBottom: 20
   },
-  topRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 10 },
-  labelRow: { display: 'flex', alignItems: 'center', gap: 8 },
+  topRow: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '8px 12px',
+    marginBottom: 10
+  },
+  labelRow: { display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 },
   label: {
     fontFamily: fonts.display,
     fontSize: 13,
@@ -92,7 +105,7 @@ const styles: Record<string, React.CSSProperties> = {
     textTransform: 'uppercase',
     letterSpacing: '.04em'
   },
-  retryBtn: { height: 32, padding: '0 14px', fontSize: 12.5 },
+  retryBtn: { height: 32, padding: '0 14px', fontSize: 12.5, whiteSpace: 'nowrap', flexShrink: 0 },
   hint: { fontSize: 11.5, color: colors.text3, lineHeight: 1.5 },
   filesBox: {
     border: `1px solid ${colors.borderDefault}`,

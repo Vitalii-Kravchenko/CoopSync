@@ -47,9 +47,17 @@ interface Props {
   /** True if the last attempt to push the cover to the shared repo failed —
    *  shows a persistent retry banner instead of the failure just vanishing. */
   coverSyncFailed?: boolean
+  /** Opened via the "Set up" action on a needs-setup card (a co-op partner's
+   *  custom game with no local save folder yet) — highlights exactly what's
+   *  missing instead of leaving the user to hunt for it. Clears itself once
+   *  a save path is actually set, so it doesn't linger after the fix. */
+  needsSetup?: boolean
   /** A custom game's cover was just changed — lets MainScreen's game list
    *  pick up the new art (only relevant when isCustom is true). */
   onCoverChanged: (appId: string, dataUrl: string | null) => void
+  /** A custom game was just renamed — lets MainScreen's game list pick up
+   *  the new name (only relevant when isCustom is true). */
+  onNameChanged: (appId: string, name: string) => void
   /** Changes after every real push — a signal to reread this game's history. */
   syncVersion: number
   user: AuthUser
@@ -78,7 +86,9 @@ function GameDetailScreen({
   isCustom,
   coverDataUrl,
   coverSyncFailed: coverSyncFailedProp,
+  needsSetup,
   onCoverChanged,
+  onNameChanged,
   syncVersion,
   user,
   avatarDataUrl,
@@ -99,6 +109,38 @@ function GameDetailScreen({
   const [coverError, setCoverError] = useState<string | null>(null)
   const [coverSyncFailed, setCoverSyncFailed] = useState(!!coverSyncFailedProp)
   const [retryingCoverSync, setRetryingCoverSync] = useState(false)
+  const [displayName, setDisplayName] = useState(name)
+  const [editingName, setEditingName] = useState(false)
+  const [nameInput, setNameInput] = useState('')
+  const [savingName, setSavingName] = useState(false)
+  const [nameError, setNameError] = useState<string | null>(null)
+
+  function startEditName(): void {
+    setNameInput(displayName)
+    setNameError(null)
+    setEditingName(true)
+  }
+
+  async function handleSaveName(): Promise<void> {
+    const trimmed = nameInput.trim()
+    if (!trimmed || trimmed === displayName) {
+      setEditingName(false)
+      return
+    }
+    setSavingName(true)
+    setNameError(null)
+    try {
+      await window.api.games.renameCustom(appId, trimmed)
+      setDisplayName(trimmed)
+      onNameChanged(appId, trimmed)
+      setEditingName(false)
+      onSynced()
+    } catch (e) {
+      setNameError(describeError(e, t, t.history.renameGameError))
+    } finally {
+      setSavingName(false)
+    }
+  }
 
   async function handlePickCover(): Promise<void> {
     setCoverError(null)
@@ -169,6 +211,11 @@ function GameDetailScreen({
       .catch(() => setSavePathInfo(null))
   }, [appId])
 
+  // Opened via "Set up" on a needs-setup card — highlight the save-path field
+  // (the only thing actually blocking sync) until a path is set, then clear
+  // on its own instead of lingering after the fix.
+  const stillNeedsSetup = !!needsSetup && !savePathInfo?.path
+
   // .exe name(s) driving launch/exit auto-sync — only relevant for a custom
   // game. Loaded separately from the save path since a co-op partner setting
   // up a game they didn't add themselves needs to configure both.
@@ -184,9 +231,12 @@ function GameDetailScreen({
 
   function handleProcessNamesChange(names: string[]): void {
     setProcessNames(names)
-    window.api.games.setProcessNames(appId, names).catch((e) => {
-      onBanner({ text: describeError(e, t, t.history.savePathSaveError), kind: 'error' })
-    })
+    window.api.games
+      .setProcessNames(appId, names)
+      .then(onSynced)
+      .catch((e) => {
+        onBanner({ text: describeError(e, t, t.history.savePathSaveError), kind: 'error' })
+      })
   }
 
   function startEditPath(): void {
@@ -195,13 +245,8 @@ function GameDetailScreen({
     setEditingPath(true)
   }
 
-  async function handleBrowsePath(): Promise<void> {
-    const picked = await window.api.games.pickSaveFolder()
-    if (picked) setPathInput(picked)
-  }
-
-  async function handleSavePath(): Promise<void> {
-    const trimmed = pathInput.trim()
+  async function savePath(path: string): Promise<void> {
+    const trimmed = path.trim()
     if (!trimmed) return
     setSavingPath(true)
     setSavePathError(null)
@@ -209,6 +254,10 @@ function GameDetailScreen({
       const info = await window.api.games.setSavePath(appId, trimmed)
       setSavePathInfo(info)
       setEditingPath(false)
+      // The Games tab's card (size, last sync) reads from syncStatuses, which
+      // only reflects the save folder actually being pointed here — without
+      // this it stays stale until a manual refresh or a tab switch.
+      onSynced()
     } catch (e) {
       setSavePathError(describeError(e, t, t.history.savePathSaveError))
     } finally {
@@ -216,11 +265,25 @@ function GameDetailScreen({
     }
   }
 
+  // Picking a folder already IS the confirmation — auto-save right away
+  // instead of making the user click Save afterward as a separate step.
+  async function handleBrowsePath(): Promise<void> {
+    const picked = await window.api.games.pickSaveFolder()
+    if (!picked) return
+    setPathInput(picked)
+    await savePath(picked)
+  }
+
+  async function handleSavePath(): Promise<void> {
+    await savePath(pathInput)
+  }
+
   async function handleResetPath(): Promise<void> {
     setSavingPath(true)
     try {
       const info = await window.api.games.setSavePath(appId, null)
       setSavePathInfo(info)
+      onSynced()
     } catch (e) {
       onBanner({ text: describeError(e, t, t.history.savePathSaveError), kind: 'error' })
     } finally {
@@ -237,7 +300,7 @@ function GameDetailScreen({
     setRemoveError(null)
     try {
       await window.api.games.removeCustom(appId)
-      onBanner({ text: t.history.removeCustomGameSuccess(name), kind: 'success' })
+      onBanner({ text: t.history.removeCustomGameSuccess(displayName), kind: 'success' })
       onCustomGameRemoved()
     } catch (e) {
       const msg = describeError(e, t, t.history.removeCustomGameError)
@@ -313,7 +376,7 @@ function GameDetailScreen({
       <div style={styles.breadcrumbs}>
         <BreadcrumbLink label={t.sidebar.games} onClick={onBack} />
         <span style={styles.crumbSep}>/</span>
-        <span style={styles.crumbMuted}>{name}</span>
+        <span style={styles.crumbMuted}>{displayName}</span>
         <ChevronRightIcon size={14} color={colors.cy} />
         <span style={styles.crumbCurrent}>{t.history.title}</span>
       </div>
@@ -332,7 +395,57 @@ function GameDetailScreen({
           <div style={styles.posterFallback} />
         )}
         <div>
-          <div style={styles.h1}>{name}</div>
+          {editingName ? (
+            <div>
+              <div style={styles.editNameRow}>
+                <input
+                  className="input-field"
+                  style={styles.nameInput}
+                  value={nameInput}
+                  onChange={(e) => setNameInput(e.target.value)}
+                  autoFocus
+                  disabled={savingName}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') void handleSaveName()
+                    if (e.key === 'Escape') setEditingName(false)
+                  }}
+                />
+                <Button
+                  variant="primary"
+                  style={styles.smallBtn}
+                  onClick={handleSaveName}
+                  disabled={savingName || !nameInput.trim()}
+                >
+                  {savingName && <span className="spinner" />}
+                  {t.history.savePathSave}
+                </Button>
+                <Button
+                  variant="ghost"
+                  style={styles.smallBtn}
+                  onClick={() => setEditingName(false)}
+                  disabled={savingName}
+                >
+                  {t.history.savePathCancel}
+                </Button>
+              </div>
+              {nameError && <div style={styles.savePathErrorText}>{nameError}</div>}
+            </div>
+          ) : (
+            <div style={styles.nameRow}>
+              <div style={styles.h1}>{displayName}</div>
+              {isCustom && (
+                <Button
+                  variant="ghost"
+                  style={styles.editNameBtn}
+                  onClick={startEditName}
+                  title={t.history.renameGame}
+                  aria-label={t.history.renameGame}
+                >
+                  <EditIcon size={13} color={colors.text2} />
+                </Button>
+              )}
+            </div>
+          )}
           {isCustom && (
             <Button variant="ghost" style={styles.changeCoverBtn} onClick={handlePickCover}>
               <EditIcon size={12} color={colors.text2} />
@@ -381,7 +494,14 @@ function GameDetailScreen({
         </div>
       )}
 
-      <div style={styles.savePathCard}>
+      {stillNeedsSetup && (
+        <div style={styles.customWarning}>
+          <AlertTriangleIcon size={15} color={colors.warning} />
+          <span>{t.history.savePathNeedsSetupHint}</span>
+        </div>
+      )}
+
+      <div style={{ ...styles.savePathCard, ...(stillNeedsSetup ? styles.savePathCardHighlight : null) }}>
         <div style={styles.savePathTopRow}>
           <div style={styles.savePathLabelRow}>
             <FolderIcon size={14} color={colors.text3} />
@@ -459,7 +579,11 @@ function GameDetailScreen({
       {isCustom && <ExePicker selected={processNames} onSelectedChange={handleProcessNamesChange} />}
 
       {isCustom && (
-        <ExcludeFilesCard appId={appId} onError={(msg) => onBanner({ text: msg, kind: 'error' })} />
+        <ExcludeFilesCard
+          appId={appId}
+          onError={(msg) => onBanner({ text: msg, kind: 'error' })}
+          onChanged={onSynced}
+        />
       )}
 
       {showTable && (
@@ -523,7 +647,7 @@ function GameDetailScreen({
       {showRemoveConfirm && (
         <ConfirmModal
           title={t.history.removeCustomGameConfirmTitle}
-          description={t.history.removeCustomGameConfirmDesc(name)}
+          description={t.history.removeCustomGameConfirmDesc(displayName)}
           confirmLabel={t.history.removeCustomGame}
           cancelLabel={t.settings.cancel}
           busy={removing}
@@ -667,6 +791,22 @@ const styles: Record<string, React.CSSProperties> = {
     flexShrink: 0
   },
   h1: { fontFamily: fonts.display, fontSize: 22, fontWeight: 700, color: colors.text1 },
+  nameRow: { display: 'flex', alignItems: 'center', gap: 8 },
+  editNameBtn: { width: 28, height: 28, padding: 0, flexShrink: 0 },
+  editNameRow: { display: 'flex', alignItems: 'center', gap: 8 },
+  nameInput: {
+    height: 34,
+    padding: '0 10px',
+    border: `1px solid ${colors.borderDefault}`,
+    borderRadius: radii.md,
+    background: colors.bgInset,
+    color: colors.text1,
+    fontFamily: fonts.display,
+    fontSize: 16,
+    fontWeight: 700,
+    outline: 'none',
+    minWidth: 220
+  },
   changeCoverBtn: { height: 28, padding: '0 10px', fontSize: 11.5, marginTop: 8 },
   customWarning: {
     display: 'flex',
@@ -689,6 +829,10 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: radii.lg,
     padding: '16px 18px',
     marginBottom: 20
+  },
+  savePathCardHighlight: {
+    borderColor: colors.warningBd,
+    boxShadow: `0 0 0 1px ${colors.warningBd}`
   },
   savePathTopRow: {
     display: 'flex',

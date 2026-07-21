@@ -98,6 +98,9 @@ const api = {
       ipcRenderer.invoke('games:add-custom', name, savePath, processNames, coverDataUrl),
     /** Remove a manually-added game. */
     removeCustom: (appId: string): Promise<void> => ipcRenderer.invoke('games:remove-custom', appId),
+    /** Rename a manually-added game. */
+    renameCustom: (appId: string, name: string): Promise<void> =>
+      ipcRenderer.invoke('games:rename-custom', appId, name),
     /** Scan a folder for candidate game executables (install-folder picker). */
     scanExes: (folderPath: string): Promise<string[]> => ipcRenderer.invoke('games:scan-exes', folderPath),
     /** Manual fallback — pick a single .exe file directly. Returns its basename. */

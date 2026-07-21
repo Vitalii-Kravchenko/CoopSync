@@ -158,6 +158,7 @@ export interface Translation {
     savePathCancel: string
     savePathReset: string
     savePathSaveError: string
+    savePathNeedsSetupHint: string
     customGameWarning: string
     removeCustomGame: string
     removeCustomGameConfirmTitle: string
@@ -165,6 +166,8 @@ export interface Translation {
     removeCustomGameError: string
     removeCustomGameSuccess: (name: string) => string
     changeCover: string
+    renameGame: string
+    renameGameError: string
     coverError: string
     coverUpdated: string
     coverSyncFailedBanner: string
@@ -210,6 +213,8 @@ export interface Translation {
     syncConflictTitle: string
     accessRevokedTitle: string
     accessRevokedBody: (host: string) => string
+    gameRemovedTitle: string
+    gameRemovedBody: (game: string) => string
   }
   onboarding: {
     welcomeTitle: string

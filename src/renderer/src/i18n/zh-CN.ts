@@ -131,6 +131,7 @@ export const zhCN: Translation = {
     savePathCancel: '取消',
     savePathReset: '恢复默认',
     savePathSaveError: '无法保存该位置',
+    savePathNeedsSetupHint: '要开始同步，请指定这款游戏的存档在这台电脑上的位置。',
     customGameWarning: '这款游戏是手动添加的——整个存档文件夹会原样同步(不做文件过滤),因此同一文件夹中的本地设置或账号文件也会被同步。',
     removeCustomGame: '移除游戏',
     removeCustomGameConfirmTitle: '移除这款游戏?',
@@ -138,6 +139,8 @@ export const zhCN: Translation = {
     removeCustomGameError: '无法移除该游戏',
     removeCustomGameSuccess: (name) => `已移除"${name}"。`,
     changeCover: '更换封面',
+    renameGame: '重命名',
+    renameGameError: '无法重命名游戏',
     coverError: '无法加载封面',
     coverUpdated: '封面已更新',
     coverSyncFailedBanner: '封面未同步到云端——队友暂时还看不到。',
@@ -177,7 +180,9 @@ export const zhCN: Translation = {
     friendDeclinedBody: (login) => `${login} 未接受邀请。`,
     syncConflictTitle: '同步已跳过',
     accessRevokedTitle: '访问权限已被取消',
-    accessRevokedBody: (host) => `你已不再拥有 ${host} 共享存储的访问权限。`
+    accessRevokedBody: (host) => `你已不再拥有 ${host} 共享存储的访问权限。`,
+    gameRemovedTitle: '游戏已移除',
+    gameRemovedBody: (game) => `《${game}》已从联机列表中移除——好友把它从列表里删掉了。`
   },
   onboarding: {
     welcomeTitle: '欢迎使用 CoopSync！',
@@ -314,6 +319,7 @@ export const zhCN: Translation = {
     ENCRYPTION_UNAVAILABLE: () => '此系统上加密不可用 — 无法安全保存令牌',
     GAME_NOT_SUPPORTED: () => '该游戏不受支持',
     CUSTOM_GAME_INVALID: () => '请输入游戏名称和存档文件夹',
+    GAME_NAME_INVALID_CHARS: () => '游戏名称不能包含 \\ / : * ? " < > | 字符',
     GAME_RUNNING: () => '游戏仍在运行——请先关闭游戏，再重新尝试恢复该版本',
     SAVE_FOLDER_NOT_FOUND: () => '未找到存档文件夹',
     NO_CLOUD_SAVES: () => '存储中还没有这个游戏的存档',

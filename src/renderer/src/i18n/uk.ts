@@ -135,6 +135,7 @@ export const uk: Translation = {
     savePathCancel: 'Скасувати',
     savePathReset: 'Скинути до типового',
     savePathSaveError: 'Не вдалося зберегти шлях',
+    savePathNeedsSetupHint: 'Щоб синхронізація запрацювала, вкажи, де на цьому ПК лежать сейви цієї гри.',
     customGameWarning:
       'Ця гра додана вручну — вся папка сейвів синхронізується як є (без фільтрації файлів), тож локальні налаштування чи файли акаунту в тій самій папці теж синхронізуються.',
     removeCustomGame: 'Видалити гру',
@@ -144,6 +145,8 @@ export const uk: Translation = {
     removeCustomGameError: 'Не вдалося видалити гру',
     removeCustomGameSuccess: (name) => `«${name}» видалено.`,
     changeCover: 'Змінити обкладинку',
+    renameGame: 'Перейменувати',
+    renameGameError: 'Не вдалося перейменувати гру',
     coverError: 'Не вдалося завантажити обкладинку',
     coverUpdated: 'Обкладинку оновлено',
     coverSyncFailedBanner: 'Обкладинка не синхронізувалась у хмару — друг поки що її не бачить.',
@@ -185,7 +188,9 @@ export const uk: Translation = {
     friendDeclinedBody: (login) => `Запрошення для ${login} не прийнято.`,
     syncConflictTitle: 'Синк пропущено',
     accessRevokedTitle: 'Доступ відкликано',
-    accessRevokedBody: (host) => `У тебе більше немає доступу до сховища ${host}.`
+    accessRevokedBody: (host) => `У тебе більше немає доступу до сховища ${host}.`,
+    gameRemovedTitle: 'Гру видалено',
+    gameRemovedBody: (game) => `«${game}» видалено з коопу — друг прибрав її зі списку.`
   },
   onboarding: {
     welcomeTitle: 'Ласкаво просимо до CoopSync!',
@@ -327,6 +332,7 @@ export const uk: Translation = {
     ENCRYPTION_UNAVAILABLE: () => 'Шифрування недоступне в системі — не можу безпечно зберегти токен',
     GAME_NOT_SUPPORTED: () => 'Гра не підтримується',
     CUSTOM_GAME_INVALID: () => 'Вкажи назву гри та папку з сейвами',
+    GAME_NAME_INVALID_CHARS: () => 'Назва гри не може містити символи \\ / : * ? " < > |',
     GAME_RUNNING: () => 'Гра ще запущена — спершу закрий її, потім спробуй відновити версію ще раз',
     SAVE_FOLDER_NOT_FOUND: () => 'Папку сейвів не знайдено',
     NO_CLOUD_SAVES: () => 'У сховищі ще немає сейвів цієї гри',

@@ -61,9 +61,16 @@ function MainScreen({
   const [catalog, setCatalog] = useState<CatalogGame[]>([])
   const [query, setQuery] = useState('')
   // Selected game -> show GameDetailScreen (its own sync history) instead of the grid.
-  const [selectedGame, setSelectedGame] = useState<
-    { appId: string; name: string; isCustom?: boolean; coverDataUrl?: string; coverSyncFailed?: boolean } | null
-  >(null)
+  const [selectedGame, setSelectedGame] = useState<{
+    appId: string
+    name: string
+    isCustom?: boolean
+    coverDataUrl?: string
+    coverSyncFailed?: boolean
+    /** Opened via the "Set up" action on a needs-setup card — highlights the
+     *  save-path field instead of leaving the user to guess what's missing. */
+    needsSetup?: boolean
+  } | null>(null)
   const [showAddGame, setShowAddGame] = useState(false)
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState<string | null>(null)
@@ -258,8 +265,13 @@ function MainScreen({
         isCustom={selectedGame.isCustom}
         coverDataUrl={selectedGame.coverDataUrl}
         coverSyncFailed={selectedGame.coverSyncFailed}
+        needsSetup={selectedGame.needsSetup}
         onCoverChanged={(_appId, dataUrl) => {
           setSelectedGame((g) => (g ? { ...g, coverDataUrl: dataUrl ?? undefined } : g))
+          void loadGames()
+        }}
+        onNameChanged={(_appId, newName) => {
+          setSelectedGame((g) => (g ? { ...g, name: newName } : g))
           void loadGames()
         }}
         syncVersion={syncVersion}
@@ -386,7 +398,8 @@ function MainScreen({
                     name: g.name,
                     isCustom: g.isCustom,
                     coverDataUrl: g.coverDataUrl,
-                    coverSyncFailed: g.coverSyncFailed
+                    coverSyncFailed: g.coverSyncFailed,
+                    needsSetup: syncStatuses[g.appId]?.status === 'needs-setup'
                   })
                 }
               />

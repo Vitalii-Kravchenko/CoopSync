@@ -135,6 +135,7 @@ export const es: Translation = {
     savePathCancel: 'Cancelar',
     savePathReset: 'Restablecer predeterminada',
     savePathSaveError: 'No se pudo guardar la ubicación',
+    savePathNeedsSetupHint: 'Para que la sincronización funcione, indica dónde están las partidas de este juego en este PC.',
     customGameWarning:
       'Este juego se añadió manualmente — toda la carpeta de guardado se sincroniza tal cual (sin filtrar archivos), así que los ajustes locales o archivos de cuenta en esa misma carpeta también se sincronizarán.',
     removeCustomGame: 'Eliminar juego',
@@ -144,6 +145,8 @@ export const es: Translation = {
     removeCustomGameError: 'No se pudo eliminar el juego',
     removeCustomGameSuccess: (name) => `"${name}" eliminado.`,
     changeCover: 'Cambiar portada',
+    renameGame: 'Renombrar',
+    renameGameError: 'No se pudo renombrar el juego',
     coverError: 'No se pudo cargar la portada',
     coverUpdated: 'Portada actualizada',
     coverSyncFailedBanner: 'La carátula no se sincronizó con la nube — tu compañero aún no puede verla.',
@@ -185,7 +188,9 @@ export const es: Translation = {
     friendDeclinedBody: (login) => `${login} no aceptó la invitación.`,
     syncConflictTitle: 'Sincronización omitida',
     accessRevokedTitle: 'Acceso revocado',
-    accessRevokedBody: (host) => `Ya no tienes acceso al almacenamiento compartido de ${host}.`
+    accessRevokedBody: (host) => `Ya no tienes acceso al almacenamiento compartido de ${host}.`,
+    gameRemovedTitle: 'Juego eliminado',
+    gameRemovedBody: (game) => `"${game}" se eliminó del co-op — tu amigo lo quitó de la lista.`
   },
   onboarding: {
     welcomeTitle: '¡Bienvenido a CoopSync!',
@@ -328,6 +333,7 @@ export const es: Translation = {
       'El cifrado no está disponible en este sistema — no se puede guardar el token de forma segura',
     GAME_NOT_SUPPORTED: () => 'Juego no compatible',
     CUSTOM_GAME_INVALID: () => 'Indica un nombre de juego y una carpeta de guardado',
+    GAME_NAME_INVALID_CHARS: () => 'El nombre del juego no puede contener \\ / : * ? " < > |',
     GAME_RUNNING: () => 'El juego todavía está en ejecución — ciérralo primero y vuelve a intentar restaurar la versión',
     SAVE_FOLDER_NOT_FOUND: () => 'Carpeta de partidas guardadas no encontrada',
     NO_CLOUD_SAVES: () => 'Todavía no hay partidas guardadas de este juego en el almacenamiento',

@@ -1,5 +1,6 @@
 import { getSyncableGames } from '../games/customGames'
-import { uploadGame, downloadGame, getSyncStatuses, restoreMissingFiles } from './sync'
+import type { SupportedGame } from '../games/catalog'
+import { uploadGame, downloadGame, getSyncStatuses, restoreMissingFiles, localSaveFingerprint } from './sync'
 import { getRunningProcesses, isGameRunning } from './processCheck'
 import { getNotified, markNotified } from './notifyState'
 import { getSavesRepo, listInvitations, listCollaborators } from './github'
@@ -19,6 +20,18 @@ import type { AutoSyncEvent, FriendSaveUpdate } from '../../shared/types'
 let timer: NodeJS.Timeout | null = null
 let running: Record<string, boolean> = {}
 let busy = false
+
+// Mid-session auto-push (while the game is still running, not just at
+// exit): a cheap fingerprint of the save folder captured on every tick.
+// `lastSeenFingerprint` is what we saw last tick — comparing to the current
+// reading is how we tell "still being written" from "settled" (unchanged for
+// one full poll interval, ~5s, which comfortably outlasts how long a save
+// write actually takes). `lastHandledFingerprint` is the fingerprint we've
+// already acted on (pushed, or found nothing worth pushing for) — without it
+// we'd re-run a full status check (a real git pull) every single tick for as
+// long as a game with no new saves sits open.
+let lastSeenFingerprint: Record<string, string | null> = {}
+let lastHandledFingerprint: Record<string, string | null> = {}
 // So we don't spam a banner every tick (5s) if tasklist consistently fails
 // (e.g. no permissions) — notify once and stay quiet until it recovers.
 let processCheckFailing = false
@@ -210,79 +223,149 @@ async function tick(
         } catch (e) {
           onEvent({ appId: game.appId, name: game.name, action: 'pull', ok: false, ...errorCode(e) })
         }
-      } else if (was && !now) {
-        // The game closed → upload saves, BUT first check the status:
-        // - someone else (e.g. the host friend) already pushed a newer
-        //   version while we were playing — otherwise we'd silently overwrite
-        //   their progress with our save;
-        // - local content differs from the cloud, but not because we
-        //   actually played (no file changed since the last sync, e.g. saves
-        //   were swapped for an old backup) — otherwise stale data would
-        //   silently overwrite current cloud progress.
-        // Fire the "starting" marker before any of that work — GameDetailScreen
-        // uses it to block "Restore" for this game until the matching
-        // terminal event below, so a manual revert can't race the same
-        // underlying git clone against this background push.
-        onEvent({ appId: game.appId, name: game.name, action: 'push-start', ok: true, code: 'push-start' })
+        // Seed the mid-session baseline to whatever's on disk right after
+        // launch (including anything just pulled above) — a mid-session push
+        // should only fire for a change made DURING this session, not for
+        // content the game already had, and not for a pull we just did
+        // (pushing that straight back would be a pointless round trip: same
+        // content, wrong direction).
         try {
-          const statuses = await getSyncStatuses(token, owner, actor)
-          const st = statuses.find((s) => s.appId === game.appId)
-          // TODO(temporary): diagnostics for "saved in-game, exited — nothing got pushed".
-          console.log(
-            `[watcher] exit ${game.name}: status=${st?.status} localVer=${st?.localVersion} remoteVer=${st?.remoteVersion} lastSyncAt=${st?.lastSyncAt}`
-          )
-          if (st?.status === 'remote-newer' || st?.status === 'cloud-only') {
-            onEvent({
-              appId: game.appId,
-              name: game.name,
-              action: 'push-skipped',
-              ok: true,
-              code: 'push-skipped'
-            })
-            // A real conflict (not the more benign "local was just stale")
-            // — this session's progress genuinely wasn't uploaded, worth a
-            // persisted bell entry, not just a toast that vanishes in 5s.
-            addNotification('sync-conflict-skipped', { game: game.name })
-          } else if (st?.status === 'local-stale') {
-            onEvent({
-              appId: game.appId,
-              name: game.name,
-              action: 'push-skipped',
-              ok: true,
-              code: 'push-skipped-stale'
-            })
-          } else {
-            const result = await uploadGame(token, owner, game.appId, actor)
-            if (result.pushed === false) {
-              // The local and cloud content hashes matched — nothing was
-              // actually uploaded (we played, but didn't save/change the
-              // save). "Uploaded" would be a lie here, so a separate, honest code.
-              onEvent({
-                appId: game.appId,
-                name: game.name,
-                action: 'push-skipped',
-                ok: true,
-                code: 'push-skipped-nochange'
-              })
-            } else {
-              onEvent({
-                appId: game.appId,
-                name: game.name,
-                action: 'push',
-                ok: true,
-                code: 'upload-success',
-                params: { version: String(result.version) }
-              })
-            }
-          }
-        } catch (e) {
-          onEvent({ appId: game.appId, name: game.name, action: 'push', ok: false, ...errorCode(e) })
+          const fp = await localSaveFingerprint(game.appId)
+          lastSeenFingerprint[game.appId] = fp
+          lastHandledFingerprint[game.appId] = fp
+        } catch {
+          // Best-effort — checkMidSessionSave below just treats the first
+          // real reading as a fresh baseline instead.
         }
+      } else if (was && !now) {
+        // The game closed → the exit-time push is still the final catch-all,
+        // regardless of whatever the mid-session settle check below already
+        // did — it covers whatever changed in the gap since the last settled
+        // push, and uploadGame's own content-hash check (see pushGameSaves)
+        // makes a redundant push here a harmless no-op when there's nothing new.
+        await pushGameSaves(token, owner, actor, game, onEvent)
+        delete lastSeenFingerprint[game.appId]
+        delete lastHandledFingerprint[game.appId]
       }
+
+      if (now) await checkMidSessionSave(token, owner, actor, game, onEvent)
     }
   } finally {
     busy = false
   }
+}
+
+// Uploads a game's saves, BUT first checks the status:
+// - someone else (e.g. the host friend) already pushed a newer version while
+//   we were playing — otherwise we'd silently overwrite their progress;
+// - local content differs from the cloud, but not because we actually
+//   played (no file changed since the last sync, e.g. saves were swapped for
+//   an old backup) — otherwise stale data would silently overwrite current
+//   cloud progress.
+// Shared by the exit-time push and the mid-session settle check below —
+// same safety checks either way, only the trigger differs.
+async function pushGameSaves(
+  token: string,
+  owner: string,
+  actor: string,
+  game: SupportedGame,
+  onEvent: (e: AutoSyncEvent) => void
+): Promise<void> {
+  // GameDetailScreen uses this to block "Restore" for this game until the
+  // matching terminal event below, so a manual revert can't race the same
+  // underlying git clone against this background push.
+  onEvent({ appId: game.appId, name: game.name, action: 'push-start', ok: true, code: 'push-start' })
+  try {
+    const statuses = await getSyncStatuses(token, owner, actor)
+    const st = statuses.find((s) => s.appId === game.appId)
+    // TODO(temporary): diagnostics for "saved in-game, exited — nothing got pushed".
+    console.log(
+      `[watcher] push ${game.name}: status=${st?.status} localVer=${st?.localVersion} remoteVer=${st?.remoteVersion} lastSyncAt=${st?.lastSyncAt}`
+    )
+    if (st?.status === 'remote-newer' || st?.status === 'cloud-only') {
+      onEvent({ appId: game.appId, name: game.name, action: 'push-skipped', ok: true, code: 'push-skipped' })
+      // A real conflict (not the more benign "local was just stale") — this
+      // session's progress genuinely wasn't uploaded, worth a persisted bell
+      // entry, not just a toast that vanishes in 5s.
+      addNotification('sync-conflict-skipped', { game: game.name })
+    } else if (st?.status === 'local-stale') {
+      onEvent({
+        appId: game.appId,
+        name: game.name,
+        action: 'push-skipped',
+        ok: true,
+        code: 'push-skipped-stale'
+      })
+    } else {
+      const result = await uploadGame(token, owner, game.appId, actor)
+      if (result.pushed === false) {
+        // The local and cloud content hashes matched — nothing was actually
+        // uploaded (we played, but didn't save/change the save, or the
+        // mid-session check already pushed this exact state). "Uploaded"
+        // would be a lie here, so a separate, honest code.
+        onEvent({
+          appId: game.appId,
+          name: game.name,
+          action: 'push-skipped',
+          ok: true,
+          code: 'push-skipped-nochange'
+        })
+      } else {
+        onEvent({
+          appId: game.appId,
+          name: game.name,
+          action: 'push',
+          ok: true,
+          code: 'upload-success',
+          params: { version: String(result.version) }
+        })
+      }
+    }
+  } catch (e) {
+    onEvent({ appId: game.appId, name: game.name, action: 'push', ok: false, ...errorCode(e) })
+  }
+}
+
+// While a game is running (not just at exit): notices a save that's
+// finished writing and pushes it right away, so progress reaches the cloud
+// (and a co-op partner) within seconds of saving instead of only when the
+// player eventually quits.
+//
+// "Finished writing" is inferred, not signaled by the game — a save can
+// touch a file in more than one step, and reading it mid-write could push a
+// truncated one. The fingerprint is only stat-based (name+size+mtime, see
+// localSaveFingerprint), so a folder that's still being written shows up as
+// "changed" tick over tick; only once it reads back IDENTICAL to the
+// previous tick — unchanged for a full ~5s poll interval, comfortably
+// longer than an actual save write — do we treat it as settled and safe to
+// upload. This is the same reasoning as sync.ts's local-stale mtime check,
+// just applied while the game is still open rather than after it closes.
+async function checkMidSessionSave(
+  token: string,
+  owner: string,
+  actor: string,
+  game: SupportedGame,
+  onEvent: (e: AutoSyncEvent) => void
+): Promise<void> {
+  let fp: string | null
+  try {
+    fp = await localSaveFingerprint(game.appId)
+  } catch {
+    return // best-effort — try again next tick
+  }
+  const prev = lastSeenFingerprint[game.appId]
+  lastSeenFingerprint[game.appId] = fp
+
+  if (fp === null) return // no save folder yet
+  if (fp !== prev) return // still changing (or the first sighting this session) — wait
+  if (fp === lastHandledFingerprint[game.appId]) return // already pushed (or found nothing to push) for this exact state
+
+  await pushGameSaves(token, owner, actor, game, onEvent)
+  // Marked as handled regardless of outcome — including a failed push: it'll
+  // simply be caught by the exit-time push instead, and retrying an error
+  // every 5s for as long as the game stays open would just hammer git/GitHub
+  // for no benefit while whatever's actually wrong (offline, auth) persists.
+  lastHandledFingerprint[game.appId] = fp
 }
 
 export function startWatcher(
@@ -295,6 +378,8 @@ export function startWatcher(
 ): void {
   stopWatcher()
   running = {}
+  lastSeenFingerprint = {}
+  lastHandledFingerprint = {}
   friendCheckTicks = 0
   // Initialize state without taking action (in case a game is already running at startup).
   void tick(token, owner, actor, onEvent, onFriendUpdate, onBackgroundCheck, true)

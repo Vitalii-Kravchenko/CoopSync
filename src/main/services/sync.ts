@@ -813,6 +813,36 @@ async function folderHash(dir: string, pattern?: RegExp): Promise<string> {
   return createHash('sha1').update(parts.join('\n')).digest('hex')
 }
 
+// Cheap, content-free signature of a game's local save folder — file names +
+// sizes + mtimes, no reads. Unlike folderHash (which hashes every file's
+// actual bytes), this costs one stat() per file, so it's affordable to call
+// on every watcher tick (every 5s, for every running game) to notice "did
+// anything change" — folderHash's real cost is fine for the occasional
+// status check, not for continuous polling while a game is running.
+export async function localSaveFingerprint(appId: string): Promise<string | null> {
+  const { savePath, saveFilePattern } = findGame(appId)
+  if (!existsSync(savePath)) return null
+  const parts: string[] = []
+  async function walk(d: string, rel: string): Promise<void> {
+    const entries = (await readdir(d, { withFileTypes: true })).sort((a, b) =>
+      a.name.localeCompare(b.name)
+    )
+    for (const e of entries) {
+      if (e.name === '.git') continue
+      if (saveFilePattern && !e.isDirectory() && !saveFilePattern.test(e.name)) continue
+      const full = join(d, e.name)
+      const r = rel ? `${rel}/${e.name}` : e.name
+      if (e.isDirectory()) await walk(full, r)
+      else {
+        const st = statSync(full)
+        parts.push(`${r}:${st.size}:${st.mtimeMs}`)
+      }
+    }
+  }
+  await walk(savePath, '')
+  return parts.join('\n')
+}
+
 // Time of the last file change in the folder (freshest mtime, ms). 0 if there are no files.
 // Used to distinguish "local progress is genuinely newer" from "local
 // content just differs because it was swapped for an old backup".

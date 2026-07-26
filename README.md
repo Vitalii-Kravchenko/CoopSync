@@ -7,7 +7,7 @@
 <p align="center">🇺🇸 English · <a href="README.uk.md">🇺🇦 Українська</a></p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.9.36-8A6CFF?style=flat-square&labelColor=10131C" alt="Version">
+  <img src="https://img.shields.io/badge/version-0.9.37-8A6CFF?style=flat-square&labelColor=10131C" alt="Version">
   <img src="https://img.shields.io/badge/platform-Windows-36E2E8?style=flat-square&labelColor=10131C" alt="Platform">
   <img src="https://img.shields.io/badge/stack-Electron%20%2B%20TS-5AA9FF?style=flat-square&labelColor=10131C" alt="Stack">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Noncommercial-79839A?style=flat-square&labelColor=10131C" alt="License"></a>
@@ -20,8 +20,9 @@
 My friend and I play the same games together — sometimes side by side, sometimes each
 on our own schedule — and kept losing progress or overwriting each other's saves.
 Steam Cloud wasn't built for that, and paying for a sync service felt silly for
-something this simple. So I built CoopSync: quit the game and your save gets pushed to
-your own private GitHub repo; launch it and the latest version gets pulled down first.
+something this simple. So I built CoopSync: it pushes your save to your own private
+GitHub repo automatically while you play (and once more when you quit, just in case);
+launch the game and the latest version gets pulled down first.
 No server of mine sitting in the middle, no subscription — just your GitHub account,
 doing what it's already good at.
 

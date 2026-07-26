@@ -21,16 +21,25 @@ let timer: NodeJS.Timeout | null = null
 let running: Record<string, boolean> = {}
 let busy = false
 
-// Mid-session auto-push (while the game is still running, not just at
-// exit): a cheap fingerprint of the save folder captured on every tick.
-// `lastSeenFingerprint` is what we saw last tick — comparing to the current
-// reading is how we tell "still being written" from "settled" (unchanged for
-// one full poll interval, ~5s, which comfortably outlasts how long a save
-// write actually takes). `lastHandledFingerprint` is the fingerprint we've
+// Mid-session auto-push (while the game is still running, not just at exit)
+// runs on its OWN faster timer (fingerprintTimer, see below), separate from
+// the 5s process-launch/exit poll — checking the save folder is just a
+// handful of stat() calls (localSaveFingerprint), nowhere near tasklist's
+// cost of actually spawning a process, so there's no reason to tie it to the
+// same interval.
+//
+// `lastSeenFingerprint` is what the previous check saw — comparing to the
+// current reading is how a change is detected in the first place.
+// `lastChangedAt` is a real debounce timestamp: the moment a change was last
+// seen, reset every time the fingerprint moves again. A save is only pushed
+// once SETTLE_QUIET_MS has genuinely elapsed since that moment — an explicit
+// countdown from "the write stopped," not a coincidence of two fixed-grid
+// snapshots happening to match. `lastHandledFingerprint` is the fingerprint
 // already acted on (pushed, or found nothing worth pushing for) — without it
-// we'd re-run a full status check (a real git pull) every single tick for as
-// long as a game with no new saves sits open.
+// every settled tick would re-run a full status check (a real git pull) for
+// as long as a game with no NEW saves sits open.
 let lastSeenFingerprint: Record<string, string | null> = {}
+let lastChangedAt: Record<string, number> = {}
 let lastHandledFingerprint: Record<string, string | null> = {}
 // So we don't spam a banner every tick (5s) if tasklist consistently fails
 // (e.g. no permissions) — notify once and stay quiet until it recovers.
@@ -43,6 +52,18 @@ const POLL_MS = 5000
 // without hammering GitHub while the app just sits in the tray.
 const FRIEND_CHECK_EVERY_TICKS = 24
 let friendCheckTicks = 0
+
+let fingerprintTimer: NodeJS.Timeout | null = null
+// Only stat() calls (no process spawn, no disk read of file content) —
+// affordable to run several times a second, but once a second is already
+// far more responsive than the old design (which only sampled on the 5s
+// process poll) without doing meaningfully more work.
+const FINGERPRINT_POLL_MS = 1000
+// How long a save folder must sit completely untouched before we treat it as
+// finished writing and safe to upload. A real save is done well within this;
+// it's here specifically so a slow or multi-step write is never caught
+// mid-way and pushed truncated.
+const SETTLE_QUIET_MS = 3000
 
 // Decodes an AppError (the main process doesn't know the language — the
 // renderer localizes it later via describeError/describeSyncResult).
@@ -234,21 +255,20 @@ async function tick(
           lastSeenFingerprint[game.appId] = fp
           lastHandledFingerprint[game.appId] = fp
         } catch {
-          // Best-effort — checkMidSessionSave below just treats the first
-          // real reading as a fresh baseline instead.
+          // Best-effort — the fingerprint timer just treats the first real
+          // reading as a fresh baseline instead.
         }
       } else if (was && !now) {
         // The game closed → the exit-time push is still the final catch-all,
-        // regardless of whatever the mid-session settle check below already
-        // did — it covers whatever changed in the gap since the last settled
-        // push, and uploadGame's own content-hash check (see pushGameSaves)
-        // makes a redundant push here a harmless no-op when there's nothing new.
+        // regardless of whatever the mid-session settle check already did —
+        // it covers whatever changed in the gap since the last settled push,
+        // and uploadGame's own content-hash check (see pushGameSaves) makes
+        // a redundant push here a harmless no-op when there's nothing new.
         await pushGameSaves(token, owner, actor, game, onEvent)
         delete lastSeenFingerprint[game.appId]
+        delete lastChangedAt[game.appId]
         delete lastHandledFingerprint[game.appId]
       }
-
-      if (now) await checkMidSessionSave(token, owner, actor, game, onEvent)
     }
   } finally {
     busy = false
@@ -333,13 +353,13 @@ async function pushGameSaves(
 //
 // "Finished writing" is inferred, not signaled by the game — a save can
 // touch a file in more than one step, and reading it mid-write could push a
-// truncated one. The fingerprint is only stat-based (name+size+mtime, see
-// localSaveFingerprint), so a folder that's still being written shows up as
-// "changed" tick over tick; only once it reads back IDENTICAL to the
-// previous tick — unchanged for a full ~5s poll interval, comfortably
-// longer than an actual save write — do we treat it as settled and safe to
-// upload. This is the same reasoning as sync.ts's local-stale mtime check,
-// just applied while the game is still open rather than after it closes.
+// truncated one. Any change to the fingerprint (name+size+mtime, see
+// localSaveFingerprint — no file content read) resets a countdown; only once
+// SETTLE_QUIET_MS has passed with the fingerprint completely unchanged do we
+// treat the write as finished and safe to upload. Same reasoning as
+// sync.ts's local-stale mtime check, just applied while the game is still
+// open rather than after it closes, and as an explicit "quiet for N ms"
+// timer rather than "matched the previous sample."
 async function checkMidSessionSave(
   token: string,
   owner: string,
@@ -351,21 +371,49 @@ async function checkMidSessionSave(
   try {
     fp = await localSaveFingerprint(game.appId)
   } catch {
-    return // best-effort — try again next tick
+    return // best-effort — try again next check
   }
   const prev = lastSeenFingerprint[game.appId]
-  lastSeenFingerprint[game.appId] = fp
-
+  if (fp !== prev) {
+    // Changed since the last check (or this is the very first reading this
+    // session) — restart the quiet countdown and wait.
+    lastSeenFingerprint[game.appId] = fp
+    lastChangedAt[game.appId] = Date.now()
+    return
+  }
   if (fp === null) return // no save folder yet
-  if (fp !== prev) return // still changing (or the first sighting this session) — wait
   if (fp === lastHandledFingerprint[game.appId]) return // already pushed (or found nothing to push) for this exact state
+  if (Date.now() - (lastChangedAt[game.appId] ?? 0) < SETTLE_QUIET_MS) return // still within the quiet window
 
   await pushGameSaves(token, owner, actor, game, onEvent)
   // Marked as handled regardless of outcome — including a failed push: it'll
   // simply be caught by the exit-time push instead, and retrying an error
-  // every 5s for as long as the game stays open would just hammer git/GitHub
-  // for no benefit while whatever's actually wrong (offline, auth) persists.
+  // every second for as long as the game stays open would just hammer
+  // git/GitHub for no benefit while whatever's actually wrong (offline,
+  // auth) persists.
   lastHandledFingerprint[game.appId] = fp
+}
+
+// The fingerprint timer's own tick: checks every currently-running ready
+// game. Shares the same `busy` flag as the process-poll tick() — both touch
+// the same internal git clone, so they must never run at once.
+async function fingerprintTick(
+  token: string,
+  owner: string,
+  actor: string,
+  onEvent: (e: AutoSyncEvent) => void
+): Promise<void> {
+  if (busy) return // the process-poll tick (or another push) is already using the clone
+  const active = getSyncableGames().filter((g) => running[g.appId])
+  if (active.length === 0) return
+  busy = true
+  try {
+    for (const game of active) {
+      await checkMidSessionSave(token, owner, actor, game, onEvent)
+    }
+  } finally {
+    busy = false
+  }
 }
 
 export function startWatcher(
@@ -379,6 +427,7 @@ export function startWatcher(
   stopWatcher()
   running = {}
   lastSeenFingerprint = {}
+  lastChangedAt = {}
   lastHandledFingerprint = {}
   friendCheckTicks = 0
   // Initialize state without taking action (in case a game is already running at startup).
@@ -387,9 +436,12 @@ export function startWatcher(
     () => void tick(token, owner, actor, onEvent, onFriendUpdate, onBackgroundCheck, false),
     POLL_MS
   )
+  fingerprintTimer = setInterval(() => void fingerprintTick(token, owner, actor, onEvent), FINGERPRINT_POLL_MS)
 }
 
 export function stopWatcher(): void {
   if (timer) clearInterval(timer)
   timer = null
+  if (fingerprintTimer) clearInterval(fingerprintTimer)
+  fingerprintTimer = null
 }

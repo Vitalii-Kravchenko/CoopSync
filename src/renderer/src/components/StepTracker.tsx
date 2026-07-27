@@ -1,3 +1,4 @@
+import { Fragment } from 'react'
 import { colors, fonts, gradients } from '../theme'
 import { CheckIcon } from './icons'
 
@@ -20,7 +21,7 @@ function StepTracker({ steps, current }: Props): React.JSX.Element {
   return (
     <div style={styles.row}>
       {steps.map((step, i) => (
-        <div key={step.label} style={styles.stepGroup}>
+        <Fragment key={step.label}>
           {i > 0 && (
             <div
               style={{
@@ -43,7 +44,7 @@ function StepTracker({ steps, current }: Props): React.JSX.Element {
               {step.label}
             </span>
           </div>
-        </div>
+        </Fragment>
       ))}
     </div>
   )
@@ -64,8 +65,14 @@ const circleBase: React.CSSProperties = {
 
 const styles: Record<string, React.CSSProperties> = {
   row: { display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 },
-  stepGroup: { display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 },
-  connector: { flex: 1, height: 2, borderRadius: 2 },
+  // Only the connector grows — steps stay their natural width, so the line
+  // fills exactly the gap between them instead of each step (plus its own
+  // private stretch of connector) getting forced into an equal-width column.
+  // That equal-split version was the actual bug: step 1 got a wide phantom
+  // strip of empty space it never used, and the connector could only start
+  // filling color partway through, well past step 1, before hitting step 2 —
+  // reading as if the line and step 2's label had drifted off to the right.
+  connector: { flex: 1, minWidth: 24, height: 2, borderRadius: 2 },
   step: { display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 },
   doneCircle: { ...circleBase, background: colors.success },
   activeCircle: {

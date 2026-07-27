@@ -334,6 +334,11 @@ function ExtraFoldersSection({ appId, syncVersion, onBanner, onSynced, user }: P
 
             {f.savePath && (
               <ExcludeFilesCard
+                // Same fix as the main save-path field — remount on path
+                // change so it doesn't keep listing the previous folder's
+                // files (appId+folderId alone don't change when just the
+                // path does).
+                key={`${f.id}:${f.savePath}`}
                 appId={appId}
                 folderId={f.id}
                 onError={(msg) => onBanner({ text: msg, kind: 'error' })}
@@ -385,15 +390,6 @@ function SharedToggle({
     <div style={styles.toggleWrap}>
       <div style={styles.toggleRow}>
         <Button
-          variant={shared ? 'primary' : 'ghost'}
-          style={styles.toggleBtn}
-          onClick={() => !disabled && !shared && onChange(true)}
-          disabled={disabled}
-        >
-          {busy && !shared && <span className="spinner" />}
-          {t.history.extraFolderShared}
-        </Button>
-        <Button
           variant={!shared ? 'primary' : 'ghost'}
           style={styles.toggleBtn}
           onClick={() => !disabled && shared && onChange(false)}
@@ -401,6 +397,15 @@ function SharedToggle({
         >
           {busy && shared && <span className="spinner" />}
           {t.history.extraFolderPersonal}
+        </Button>
+        <Button
+          variant={shared ? 'primary' : 'ghost'}
+          style={styles.toggleBtn}
+          onClick={() => !disabled && !shared && onChange(true)}
+          disabled={disabled}
+        >
+          {busy && !shared && <span className="spinner" />}
+          {t.history.extraFolderShared}
         </Button>
       </div>
       <div style={styles.toggleHint}>
@@ -520,8 +525,8 @@ const styles: Record<string, React.CSSProperties> = {
     whiteSpace: 'nowrap'
   },
   toggleWrap: { marginBottom: 8 },
-  toggleRow: { display: 'flex', gap: 6 },
-  toggleBtn: { height: 28, padding: '0 12px', fontSize: 11.5, flex: 1 },
+  toggleRow: { display: 'flex', gap: 8 },
+  toggleBtn: { height: 30, padding: '0 16px', fontSize: 12 },
   toggleHint: { fontSize: 11, color: colors.text3, marginTop: 6, lineHeight: 1.5 },
   folderActions: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' },
   versions: { fontSize: 11, fontFamily: fonts.mono, color: colors.text3, marginLeft: 'auto' }

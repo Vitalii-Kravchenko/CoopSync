@@ -113,7 +113,7 @@ function AddCustomGameModal({ onAdded, onCancel, onBanner }: Props): React.JSX.E
               current={createdAppId ? 1 : 0}
             />
             <button
-              className="reset-btn"
+              className="icon-btn"
               style={styles.closeBtn}
               onClick={() => {
                 if (busy) return
@@ -121,9 +121,10 @@ function AddCustomGameModal({ onAdded, onCancel, onBanner }: Props): React.JSX.E
                 else onCancel()
               }}
               disabled={busy}
-              title={busy ? t.addGame.closeBlockedHint : undefined}
+              title={busy ? t.addGame.closeBlockedHint : t.windowControls.close}
+              aria-label={t.windowControls.close}
             >
-              <CloseIcon size={15} color={busy ? colors.textDisabled : colors.text3} />
+              <CloseIcon size={15} />
             </button>
           </div>
 
@@ -220,7 +221,11 @@ function AddCustomGameModal({ onAdded, onCancel, onBanner }: Props): React.JSX.E
                   </Button>
                 </div>
               ) : (
-                <button className="reset-btn" style={styles.coverDropzone} onClick={handlePickCover}>
+                <button
+                  className="reset-btn cover-dropzone"
+                  style={styles.coverDropzone}
+                  onClick={handlePickCover}
+                >
                   <span style={styles.coverDropzoneIcon}>
                     <ImageIcon size={16} color={colors.text3} />
                   </span>
@@ -283,15 +288,7 @@ const styles: Record<string, React.CSSProperties> = {
   topBar: { height: 2, background: gradients.energy },
   body: { padding: 22 },
   headerRow: { display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 },
-  closeBtn: {
-    width: 28,
-    height: 28,
-    flexShrink: 0,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radii.sm
-  },
+  closeBtn: { width: 32, height: 32, flexShrink: 0 },
   createdBanner: {
     display: 'flex',
     alignItems: 'center',
@@ -375,7 +372,8 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: radii.md,
     background: 'rgba(255,255,255,.02)',
     textAlign: 'left',
-    marginBottom: 22
+    marginBottom: 22,
+    cursor: 'pointer'
   },
   coverDropzoneIcon: {
     width: 38,

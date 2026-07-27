@@ -469,34 +469,39 @@ function GameDetailScreen({
           )}
           {coverError && <div style={styles.savePathErrorText}>{coverError}</div>}
         </div>
-        {!editingName && isCustom && (
-          <span
-            title={t.history.customGameWarning}
-            style={styles.customBadgeHeader}
-          >
-            {t.history.customGameBadge}
-          </span>
-        )}
-        {!editingName &&
-          (() => {
-            const syncing = autoPushPending
-            const display = syncDisplay(status, t)
-            return (
-              <span
-                style={{
-                  ...styles.statusPillHeader,
-                  color: syncing ? colors.info : display.color,
-                  background: syncing ? colors.infoBg : display.bg,
-                  borderColor: syncing ? colors.infoBd : display.bd
-                }}
-              >
-                <span
-                  style={{ ...styles.statusDot, background: syncing ? colors.info : display.color }}
-                />
-                {syncing ? t.gameCard.syncing : display.text}
+        {!editingName && (
+          // Grouped together (instead of two siblings directly in .header)
+          // so they center on each other regardless of their own height
+          // difference (22px badge vs 26px pill) — as two direct children of
+          // .header's alignItems:'flex-start', they both just sat at the top
+          // of the row instead, with the badge visibly higher than the pill.
+          <div style={styles.badgeGroup}>
+            {isCustom && (
+              <span title={t.history.customGameWarning} style={styles.customBadgeHeader}>
+                {t.history.customGameBadge}
               </span>
-            )
-          })()}
+            )}
+            {(() => {
+              const syncing = autoPushPending
+              const display = syncDisplay(status, t)
+              return (
+                <span
+                  style={{
+                    ...styles.statusPillHeader,
+                    color: syncing ? colors.info : display.color,
+                    background: syncing ? colors.infoBg : display.bg,
+                    borderColor: syncing ? colors.infoBd : display.bd
+                  }}
+                >
+                  <span
+                    style={{ ...styles.statusDot, background: syncing ? colors.info : display.color }}
+                  />
+                  {syncing ? t.gameCard.syncing : display.text}
+                </span>
+              )
+            })()}
+          </div>
+        )}
       </div>
 
       {coverSrc && (
@@ -667,6 +672,11 @@ function GameDetailScreen({
             </div>
 
             <ExcludeFilesCard
+              // Remounts (and re-fetches) whenever the save path actually
+              // changes — without this it kept showing the file list from
+              // whatever folder was set before, since appId/folderId alone
+              // don't change when just the path does.
+              key={`${appId}:${savePathInfo?.path ?? ''}`}
               appId={appId}
               onError={(msg) => onBanner({ text: msg, kind: 'error' })}
               onChanged={onSynced}
@@ -926,6 +936,7 @@ const styles: Record<string, React.CSSProperties> = {
     minWidth: 220
   },
   changeCoverBtn: { height: 28, padding: '0 10px', fontSize: 11.5, marginTop: 8 },
+  badgeGroup: { display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 },
   customBadgeHeader: {
     display: 'inline-flex',
     alignItems: 'center',

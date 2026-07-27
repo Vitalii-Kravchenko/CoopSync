@@ -292,6 +292,16 @@ function ExtraFoldersSection({ appId, syncVersion, onBanner, onSynced, user }: P
               />
             )
           })}
+          {/* Keeps the last row visually balanced instead of one lone card
+              stretched next to a dead gap, or a half-empty final row when
+              the count is odd — a quiet "there's room here" slot, not a
+              clickable action (that's still the "+ Додати папку" button
+              above). */}
+          {folders.length % 2 === 1 && (
+            <div style={styles.folderPlaceholder}>
+              <FolderIcon size={18} color={colors.textDisabled} />
+            </div>
+          )}
         </div>
       )}
 
@@ -659,9 +669,18 @@ const styles: Record<string, React.CSSProperties> = {
   toggleBtn: { height: 30, padding: '0 16px', fontSize: 12 },
   toggleHint: { fontSize: 11, color: colors.text3, marginTop: 6, lineHeight: 1.5 },
 
-  // One card per row, always full width — flex column's default
-  // align-items:'stretch' does that automatically, no explicit width needed.
-  folderGrid: { display: 'flex', flexDirection: 'column', gap: 14 },
+  // Fixed 2-up grid — always exactly two columns (each a fluid 1fr share of
+  // the container), not an auto-fill breakpoint that changes column count
+  // with window width.
+  folderGrid: { display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 14 },
+  folderPlaceholder: {
+    border: `1px dashed ${colors.borderDefault}`,
+    borderRadius: radii.lg,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 84
+  },
   folderCard: {
     border: `1px solid ${colors.borderDefault}`,
     borderRadius: radii.lg,

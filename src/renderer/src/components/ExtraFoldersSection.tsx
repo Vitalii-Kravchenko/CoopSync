@@ -669,15 +669,15 @@ const styles: Record<string, React.CSSProperties> = {
   toggleBtn: { height: 30, padding: '0 16px', fontSize: 12 },
   toggleHint: { fontSize: 11, color: colors.text3, marginTop: 6, lineHeight: 1.5 },
 
-  // Fixed 2-up on wide windows — each track's min (300px) forces auto-fit to
-  // collapse to a single full-width column once the window's too narrow for
-  // two side by side, instead of squeezing both thin.
-  folderGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit,minmax(300px,calc(50% - 7px)))',
-    gap: 14
-  },
+  // Flexbox, not grid — a grid track's minmax(x,calc(50%-gap)) still caps at
+  // "50% of container" even once there's only one card left on its row,
+  // leaving the other half empty instead of it filling the row. flex-grow
+  // on a flex-wrap row naturally fills whatever's left on its own line,
+  // whether that's one card alone or two sharing the row evenly.
+  folderGrid: { display: 'flex', flexWrap: 'wrap', gap: 14 },
   folderPlaceholder: {
+    flex: '1 1 300px',
+    minWidth: 300,
     border: `1px dashed ${colors.borderDefault}`,
     borderRadius: radii.lg,
     display: 'flex',
@@ -686,6 +686,8 @@ const styles: Record<string, React.CSSProperties> = {
     minHeight: 84
   },
   folderCard: {
+    flex: '1 1 300px',
+    minWidth: 300,
     border: `1px solid ${colors.borderDefault}`,
     borderRadius: radii.lg,
     background: colors.bgSurface,

@@ -671,16 +671,18 @@ function GameDetailScreen({
               )}
             </div>
 
-            <ExcludeFilesCard
-              // Remounts (and re-fetches) whenever the save path actually
-              // changes — without this it kept showing the file list from
-              // whatever folder was set before, since appId/folderId alone
-              // don't change when just the path does.
-              key={`${appId}:${savePathInfo?.path ?? ''}`}
-              appId={appId}
-              onError={(msg) => onBanner({ text: msg, kind: 'error' })}
-              onChanged={onSynced}
-            />
+            <div style={styles.syncBehaviorItem}>
+              <ExcludeFilesCard
+                // Remounts (and re-fetches) whenever the save path actually
+                // changes — without this it kept showing the file list from
+                // whatever folder was set before, since appId/folderId alone
+                // don't change when just the path does.
+                key={`${appId}:${savePathInfo?.path ?? ''}`}
+                appId={appId}
+                onError={(msg) => onBanner({ text: msg, kind: 'error' })}
+                onChanged={onSynced}
+              />
+            </div>
           </div>
 
           <ExtraFoldersSection
@@ -1015,17 +1017,16 @@ const styles: Record<string, React.CSSProperties> = {
     margin: '26px 0 10px'
   },
   lockedHint: { display: 'inline-flex', alignItems: 'center', padding: '0 4px', cursor: 'default' },
-  syncBehaviorGrid: {
-    // Fixed 2-up on wide windows, but each track's min (240px) forces auto-fit
-    // to drop to a single full-width column once the window's too narrow for
-    // both — not two panels squeezed thin side by side.
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit,minmax(240px,calc(50% - 8px)))',
-    gap: 16,
-    alignItems: 'start',
-    marginBottom: 20
-  },
+  // Flexbox, not grid — a grid track's minmax(x,calc(50%-gap)) still caps at
+  // "50% of container" even once auto-fit has dropped to a single column,
+  // leaving the other half empty instead of the lone item filling the row.
+  // flex-grow on a flex-wrap row naturally fills whatever's left on its own
+  // line, whether that's one item alone or two sharing the row evenly.
+  syncBehaviorGrid: { display: 'flex', flexWrap: 'wrap', gap: 16, marginBottom: 20 },
+  syncBehaviorItem: { flex: '1 1 240px', minWidth: 240 },
   exeCard: {
+    flex: '1 1 240px',
+    minWidth: 240,
     border: `1px solid ${colors.borderSubtle}`,
     borderRadius: radii.lg,
     padding: '16px 18px'

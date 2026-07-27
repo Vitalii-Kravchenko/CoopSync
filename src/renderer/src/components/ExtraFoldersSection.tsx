@@ -373,8 +373,8 @@ function FolderCard({
   return (
     <div style={styles.folderCard}>
       <div style={styles.faceRow}>
-        <button
-          className="reset-btn folder-chevron-btn"
+        <Button
+          variant="ghost"
           style={styles.chevronBtn}
           onClick={() => setExpanded((v) => !v)}
           aria-expanded={expanded}
@@ -389,7 +389,7 @@ function FolderCard({
           >
             <ChevronRightIcon size={12} color={expanded ? colors.cy : colors.text3} />
           </span>
-        </button>
+        </Button>
         <span style={styles.folderName}>{folder.label}</span>
         <span style={styles.ownerBadge}>
           {folder.shared ? (
@@ -659,13 +659,9 @@ const styles: Record<string, React.CSSProperties> = {
   toggleBtn: { height: 30, padding: '0 16px', fontSize: 12 },
   toggleHint: { fontSize: 11, color: colors.text3, marginTop: 6, lineHeight: 1.5 },
 
-  // Responsive folder grid — a wide window fits more cards side by side
-  // instead of stretching a single card thin with dead space in the middle.
-  folderGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill,minmax(340px,1fr))',
-    gap: 14
-  },
+  // One card per row, always full width — flex column's default
+  // align-items:'stretch' does that automatically, no explicit width needed.
+  folderGrid: { display: 'flex', flexDirection: 'column', gap: 14 },
   folderCard: {
     border: `1px solid ${colors.borderDefault}`,
     borderRadius: radii.lg,
@@ -676,16 +672,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 12
   },
   faceRow: { display: 'flex', alignItems: 'center', gap: 10 },
-  chevronBtn: {
-    width: 22,
-    height: 22,
-    flexShrink: 0,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radii.sm,
-    cursor: 'pointer'
-  },
+  chevronBtn: { width: 26, height: 26, padding: 0, flexShrink: 0 },
   folderName: {
     fontFamily: fonts.display,
     fontWeight: 600,

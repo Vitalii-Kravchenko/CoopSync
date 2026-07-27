@@ -211,13 +211,11 @@ body {
   border-color: rgba(54, 226, 232, 0.45) !important;
   background: rgba(54, 226, 232, 0.05) !important;
 }
-/* Extra-folder card (ExtraFoldersSection) — expand/collapse chevron, the
-   "Тільки я"/"Спільна" segmented option buttons, and the danger-zone
-   "Видалити папку" link. All plain reset-btn buttons with no inline
-   background/border of their own, so a plain CSS :hover works directly. */
-.folder-chevron-btn:hover {
-  background: rgba(54, 226, 232, 0.08);
-}
+/* Extra-folder card (ExtraFoldersSection) — the "Тільки я"/"Спільна"
+   segmented option buttons and the danger-zone "Видалити папку" link (the
+   expand/collapse chevron reuses the shared Button ghost style instead).
+   Plain reset-btn buttons with no inline background/border of their own,
+   so a plain CSS :hover works directly. */
 .segment-option-btn:hover:not(:disabled) {
   color: #edf1fa !important;
 }

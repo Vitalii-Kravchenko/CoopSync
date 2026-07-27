@@ -738,7 +738,7 @@ function GameDetailScreen({
         <>
           <div style={styles.dangerDivider} />
           <div style={styles.dangerZone}>
-            <div>
+            <div style={styles.dangerZoneText}>
               <div style={styles.dangerZoneTitle}>{t.history.dangerZoneTitle}</div>
               <div style={styles.dangerZoneDesc}>{t.history.dangerZoneDesc}</div>
             </div>
@@ -898,9 +898,16 @@ const styles: Record<string, React.CSSProperties> = {
   },
   crumbLink: { cursor: 'pointer', transition: `color ${transitions.fast}` },
   crumbSep: { color: colors.text3 },
-  crumbMuted: { color: colors.text3 },
+  crumbMuted: {
+    color: colors.text3,
+    minWidth: 0,
+    maxWidth: 260,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap'
+  },
   crumbCurrent: { color: colors.cy },
-  header: { display: 'flex', alignItems: 'flex-start', gap: 16, marginBottom: 18 },
+  header: { display: 'flex', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16, marginBottom: 18 },
   nameCol: { flex: 1, minWidth: 0 },
   poster: {
     width: 52,
@@ -986,6 +993,7 @@ const styles: Record<string, React.CSSProperties> = {
   coverSyncBanner: {
     display: 'flex',
     alignItems: 'center',
+    flexWrap: 'wrap',
     gap: 10,
     fontSize: 12,
     lineHeight: 1.5,
@@ -1008,8 +1016,11 @@ const styles: Record<string, React.CSSProperties> = {
   },
   lockedHint: { display: 'inline-flex', alignItems: 'center', padding: '0 4px', cursor: 'default' },
   syncBehaviorGrid: {
+    // Fixed 2-up on wide windows, but each track's min (240px) forces auto-fit
+    // to drop to a single full-width column once the window's too narrow for
+    // both — not two panels squeezed thin side by side.
     display: 'grid',
-    gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)',
+    gridTemplateColumns: 'repeat(auto-fit,minmax(240px,calc(50% - 8px)))',
     gap: 16,
     alignItems: 'start',
     marginBottom: 20
@@ -1024,12 +1035,14 @@ const styles: Record<string, React.CSSProperties> = {
   dangerZone: {
     display: 'flex',
     alignItems: 'center',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
     gap: 16,
     border: `1px solid ${colors.dangerBd}`,
     borderRadius: radii.lg,
     padding: '16px 18px'
   },
+  dangerZoneText: { flex: '1 1 240px', minWidth: 0 },
   dangerZoneTitle: { fontFamily: fonts.display, fontSize: 13, fontWeight: 600, color: colors.text1, marginBottom: 3 },
   dangerZoneDesc: { fontSize: 12, color: colors.text3, lineHeight: 1.5 },
   dangerZoneBtn: { height: 36, padding: '0 16px', fontSize: 12.5, flexShrink: 0, whiteSpace: 'nowrap' },
@@ -1046,6 +1059,7 @@ const styles: Record<string, React.CSSProperties> = {
   savePathTopRow: {
     display: 'flex',
     alignItems: 'center',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
     gap: 12,
     marginBottom: 10

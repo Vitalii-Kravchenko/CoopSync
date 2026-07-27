@@ -669,10 +669,14 @@ const styles: Record<string, React.CSSProperties> = {
   toggleBtn: { height: 30, padding: '0 16px', fontSize: 12 },
   toggleHint: { fontSize: 11, color: colors.text3, marginTop: 6, lineHeight: 1.5 },
 
-  // Fixed 2-up grid — always exactly two columns (each a fluid 1fr share of
-  // the container), not an auto-fill breakpoint that changes column count
-  // with window width.
-  folderGrid: { display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 14 },
+  // Fixed 2-up on wide windows — each track's min (300px) forces auto-fit to
+  // collapse to a single full-width column once the window's too narrow for
+  // two side by side, instead of squeezing both thin.
+  folderGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit,minmax(300px,calc(50% - 7px)))',
+    gap: 14
+  },
   folderPlaceholder: {
     border: `1px dashed ${colors.borderDefault}`,
     borderRadius: radii.lg,
@@ -690,13 +694,14 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: 'column',
     gap: 12
   },
-  faceRow: { display: 'flex', alignItems: 'center', gap: 10 },
+  faceRow: { display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 10 },
   chevronBtn: { width: 26, height: 26, padding: 0, flexShrink: 0 },
   folderName: {
     fontFamily: fonts.display,
     fontWeight: 600,
     fontSize: 13.5,
     color: colors.text1,
+    minWidth: 0,
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap'

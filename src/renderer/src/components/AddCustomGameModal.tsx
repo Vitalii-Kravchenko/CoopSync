@@ -8,7 +8,8 @@ import type { BannerState } from './Banner'
 import CoverCropModal from './CoverCropModal'
 import ExcludeFilesCard from './ExcludeFilesCard'
 import ExePicker from './ExePicker'
-import { CloseIcon } from './icons'
+import StepTracker from './StepTracker'
+import { CloseIcon, CheckIcon, ImageIcon } from './icons'
 
 interface Props {
   onAdded: () => void
@@ -106,8 +107,32 @@ function AddCustomGameModal({ onAdded, onCancel, onBanner }: Props): React.JSX.E
       <div ref={cardRef} style={styles.card} onClick={(e) => e.stopPropagation()}>
         <div style={styles.topBar} />
         <div style={styles.body}>
+          <div style={styles.headerRow}>
+            <StepTracker
+              steps={[{ label: t.addGame.stepSetupLabel }, { label: t.addGame.stepExcludeLabel }]}
+              current={createdAppId ? 1 : 0}
+            />
+            <button
+              className="reset-btn"
+              style={styles.closeBtn}
+              onClick={() => {
+                if (busy) return
+                if (createdAppId) onAdded()
+                else onCancel()
+              }}
+              disabled={busy}
+              title={busy ? t.addGame.closeBlockedHint : undefined}
+            >
+              <CloseIcon size={15} color={busy ? colors.textDisabled : colors.text3} />
+            </button>
+          </div>
+
           {createdAppId ? (
             <>
+              <div style={styles.createdBanner}>
+                <CheckIcon size={14} color={colors.success} />
+                {t.addGame.createdBanner(name.trim())}
+              </div>
               <div style={styles.title}>{t.addGame.excludeStepTitle}</div>
               <div style={styles.description}>{t.addGame.excludeStepDescription}</div>
 
@@ -174,11 +199,8 @@ function AddCustomGameModal({ onAdded, onCancel, onBanner }: Props): React.JSX.E
               <ExePicker selected={selectedExes} onSelectedChange={setSelectedExes} />
 
               <div style={styles.label}>{t.addGame.coverLabel}</div>
-              <div style={styles.coverRow}>
-                <Button variant="ghost" style={styles.manualExeBtn} onClick={handlePickCover}>
-                  {cover ? t.history.changeCover : t.addGame.addCover}
-                </Button>
-                {cover && (
+              {cover ? (
+                <div style={styles.coverPreviewRow}>
                   <div style={styles.coverPreviewWrap}>
                     <img src={cover} alt="" style={styles.coverPreview} />
                     <button
@@ -189,8 +211,26 @@ function AddCustomGameModal({ onAdded, onCancel, onBanner }: Props): React.JSX.E
                       <CloseIcon size={10} color={colors.text1} />
                     </button>
                   </div>
-                )}
-              </div>
+                  <div style={styles.coverPreviewText}>
+                    <div style={styles.coverPreviewTitle}>{t.addGame.addCover}</div>
+                    <div style={styles.coverPreviewHint}>{t.addGame.coverHint}</div>
+                  </div>
+                  <Button variant="ghost" style={styles.manualExeBtn} onClick={handlePickCover}>
+                    {t.history.changeCover}
+                  </Button>
+                </div>
+              ) : (
+                <button className="reset-btn" style={styles.coverDropzone} onClick={handlePickCover}>
+                  <span style={styles.coverDropzoneIcon}>
+                    <ImageIcon size={16} color={colors.text3} />
+                  </span>
+                  <span style={styles.coverDropzoneText}>
+                    <span style={styles.coverPreviewTitle}>{t.addGame.addCover}</span>
+                    <span style={styles.coverPreviewHint}>{t.addGame.coverHint}</span>
+                  </span>
+                  <span style={styles.dropzonePill}>{t.history.savePathBrowse}</span>
+                </button>
+              )}
 
               {coverSrc && (
                 <CoverCropModal src={coverSrc} onCancel={() => setCoverSrc(null)} onConfirm={handleCoverCropped} />
@@ -242,6 +282,28 @@ const styles: Record<string, React.CSSProperties> = {
   },
   topBar: { height: 2, background: gradients.energy },
   body: { padding: 22 },
+  headerRow: { display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 },
+  closeBtn: {
+    width: 28,
+    height: 28,
+    flexShrink: 0,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radii.sm
+  },
+  createdBanner: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    fontSize: 13,
+    color: colors.success,
+    background: colors.successBg,
+    border: `1px solid ${colors.successBd}`,
+    borderRadius: radii.md,
+    padding: '8px 12px',
+    marginBottom: 16
+  },
   title: { fontFamily: fonts.display, fontWeight: 600, fontSize: 17, color: colors.text1, marginBottom: 8 },
   description: { fontSize: 12.5, color: colors.text3, lineHeight: 1.55, marginBottom: 18 },
   coverWarning: {
@@ -281,14 +343,65 @@ const styles: Record<string, React.CSSProperties> = {
   },
   pathRow: { display: 'flex', gap: 8 },
   browseBtn: { height: 40, minWidth: 110, padding: '0 16px', fontSize: 13, whiteSpace: 'nowrap', flexShrink: 0 },
-  coverRow: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   manualExeBtn: {
-    height: 32,
+    height: 30,
     padding: '0 14px',
-    fontSize: 12.5,
+    fontSize: 12,
     whiteSpace: 'nowrap',
     flexShrink: 0
   },
+  dropzonePill: {
+    height: 30,
+    padding: '0 14px',
+    fontSize: 12,
+    fontFamily: fonts.display,
+    fontWeight: 600,
+    whiteSpace: 'nowrap',
+    flexShrink: 0,
+    display: 'inline-flex',
+    alignItems: 'center',
+    color: colors.text1,
+    background: colors.bgRaised,
+    border: `1px solid ${colors.borderStrong}`,
+    borderRadius: radii.sm
+  },
+  coverDropzone: {
+    width: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 14,
+    padding: '12px 14px',
+    border: `1px dashed ${colors.borderStrong}`,
+    borderRadius: radii.md,
+    background: 'rgba(255,255,255,.02)',
+    textAlign: 'left',
+    marginBottom: 22
+  },
+  coverDropzoneIcon: {
+    width: 38,
+    height: 38,
+    flexShrink: 0,
+    borderRadius: radii.sm,
+    background: colors.bgRaised,
+    border: `1px solid ${colors.borderDefault}`,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  coverDropzoneText: { flex: 1, minWidth: 0 },
+  coverPreviewRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 14,
+    padding: '10px 14px',
+    border: `1px solid ${colors.borderDefault}`,
+    borderRadius: radii.md,
+    background: colors.bgInset,
+    marginBottom: 22
+  },
+  coverPreviewText: { flex: 1, minWidth: 0 },
+  coverPreviewTitle: { display: 'block', fontFamily: fonts.display, fontSize: 12.5, fontWeight: 600, color: colors.text1 },
+  coverPreviewHint: { display: 'block', fontSize: 11, color: colors.text3, marginTop: 2 },
   coverPreviewWrap: { position: 'relative', flexShrink: 0 },
   coverPreview: {
     width: 32,

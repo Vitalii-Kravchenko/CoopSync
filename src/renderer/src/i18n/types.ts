@@ -38,6 +38,8 @@ export interface Translation {
     loadingGames: string
     installedGames: string
     refreshGames: string
+    refreshSuccess: string
+    refreshError: string
     allSupportedGames: string
     nothingFound: string
     alreadySynced: string
@@ -98,6 +100,11 @@ export interface Translation {
     excludeStepTitle: string
     excludeStepDescription: string
     done: string
+    stepSetupLabel: string
+    stepExcludeLabel: string
+    closeBlockedHint: string
+    createdBanner: (name: string) => string
+    coverHint: string
   }
   friends: {
     title: string
@@ -160,7 +167,18 @@ export interface Translation {
     savePathReset: string
     savePathSaveError: string
     savePathNeedsSetupHint: string
+    savePathLocked: string
     customGameWarning: string
+    customGameBadge: string
+    needsSetupTitle: string
+    jumpToIt: string
+    sectionWhereSavesLive: string
+    sectionSyncBehavior: string
+    dangerZoneTitle: string
+    dangerZoneDesc: string
+    autoSyncExeTitle: string
+    autoSyncExeHint: string
+    autoSyncNotSet: string
     removeCustomGame: string
     removeCustomGameConfirmTitle: string
     removeCustomGameConfirmDesc: (name: string) => string

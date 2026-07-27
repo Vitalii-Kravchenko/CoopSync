@@ -9,6 +9,8 @@ export const ptBR: Translation = {
     loadingGames: 'Procurando jogos…',
     installedGames: 'Jogos instalados',
     refreshGames: 'Atualizar',
+    refreshSuccess: 'Dados atualizados',
+    refreshError: 'Não foi possível atualizar os dados',
     allSupportedGames: 'Todos os jogos suportados',
     nothingFound: 'Nada encontrado',
     alreadySynced: 'As versões coincidem — não é necessário sincronizar',
@@ -73,7 +75,12 @@ export const ptBR: Translation = {
     excludeStepTitle: 'Algo para excluir da sincronização?',
     excludeStepDescription:
       'Opcional — escolha arquivos da pasta de save que não devem ser enviados (configurações locais, arquivos de conta, etc). Você pode mudar isso depois nos detalhes do jogo.',
-    done: 'Concluído'
+    done: 'Concluído',
+    stepSetupLabel: 'Configuração',
+    stepExcludeLabel: 'Excluir arquivos',
+    closeBlockedHint: 'Ainda adicionando o jogo…',
+    createdBanner: (name) => `"${name}" adicionado — falta mais uma coisa e pronto.`,
+    coverHint: 'Exibida como pôster 2:3 na sua biblioteca — PNG ou JPG'
   },
   friends: {
     title: 'Amigos',
@@ -137,6 +144,17 @@ export const ptBR: Translation = {
     savePathReset: 'Restaurar padrão',
     savePathSaveError: 'Não foi possível salvar este local',
     savePathNeedsSetupHint: 'Para a sincronização funcionar, indique onde ficam os saves deste jogo neste PC.',
+    savePathLocked: 'Pausado enquanto uma sincronização em segundo plano está em andamento',
+    customGameBadge: 'Jogo personalizado',
+    needsSetupTitle: 'Precisa de configuração',
+    jumpToIt: 'Ir até lá',
+    sectionWhereSavesLive: 'Onde ficam os saves',
+    sectionSyncBehavior: 'Comportamento de sincronização',
+    dangerZoneTitle: 'Zona de perigo',
+    dangerZoneDesc: 'Remove este jogo só do CoopSync — os saves locais continuam no lugar.',
+    autoSyncExeTitle: 'Sincronização automática .exe',
+    autoSyncExeHint: 'Sincroniza automaticamente ao iniciar e sair.',
+    autoSyncNotSet: 'Nenhum .exe definido — sincronize manualmente com Enviar/Baixar.',
     customGameWarning:
       'Este jogo foi adicionado manualmente — a pasta de saves inteira é sincronizada como está (sem filtrar arquivos), então configurações locais ou arquivos de conta na mesma pasta também serão sincronizados.',
     removeCustomGame: 'Remover jogo',

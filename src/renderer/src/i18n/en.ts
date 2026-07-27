@@ -9,6 +9,8 @@ export const en: Translation = {
     loadingGames: 'Looking for games…',
     installedGames: 'Installed games',
     refreshGames: 'Refresh',
+    refreshSuccess: 'Games updated',
+    refreshError: "Couldn't update games",
     allSupportedGames: 'All supported games',
     nothingFound: 'Nothing found',
     alreadySynced: 'Versions match — no need to sync',
@@ -71,7 +73,12 @@ export const en: Translation = {
     excludeStepTitle: 'Anything to leave out of sync?',
     excludeStepDescription:
       "Optional — pick any files in the save folder that shouldn't be uploaded, like local settings or account files. You can always change this later from the game's details.",
-    done: 'Done'
+    done: 'Done',
+    stepSetupLabel: 'Setup',
+    stepExcludeLabel: 'Exclude files',
+    closeBlockedHint: 'Still adding your game…',
+    createdBanner: (name) => `"${name}" added — one more thing, then you're set.`,
+    coverHint: 'Shown as a 2:3 poster in your library — PNG or JPG'
   },
   friends: {
     title: 'Friends',
@@ -135,8 +142,19 @@ export const en: Translation = {
     savePathReset: 'Reset to default',
     savePathSaveError: "Couldn't save this location",
     savePathNeedsSetupHint: "To start syncing, point this to where the game's saves live on this PC.",
+    savePathLocked: 'Paused while a background sync is running',
     customGameWarning:
       "This game was added manually — the whole save folder syncs as-is (no file filtering), so local settings or account files in the same folder will sync too.",
+    customGameBadge: 'Custom game',
+    needsSetupTitle: 'Needs setup',
+    jumpToIt: 'Jump to it',
+    sectionWhereSavesLive: 'Where saves live',
+    sectionSyncBehavior: 'Sync behavior',
+    dangerZoneTitle: 'Danger zone',
+    dangerZoneDesc: 'Removes this game from CoopSync only — local saves stay right where they are.',
+    autoSyncExeTitle: 'Auto-sync .exe',
+    autoSyncExeHint: 'Syncs automatically on launch and exit.',
+    autoSyncNotSet: 'No .exe set — sync manually with Upload/Download.',
     removeCustomGame: 'Remove game',
     removeCustomGameConfirmTitle: 'Remove this game?',
     removeCustomGameConfirmDesc: (name) =>

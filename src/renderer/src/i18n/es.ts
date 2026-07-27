@@ -9,6 +9,8 @@ export const es: Translation = {
     loadingGames: 'Buscando juegos…',
     installedGames: 'Juegos instalados',
     refreshGames: 'Actualizar',
+    refreshSuccess: 'Datos actualizados',
+    refreshError: 'No se pudieron actualizar los datos',
     allSupportedGames: 'Todos los juegos compatibles',
     nothingFound: 'No se encontró nada',
     alreadySynced: 'Las versiones coinciden — no es necesario sincronizar',
@@ -73,7 +75,12 @@ export const es: Translation = {
     excludeStepTitle: '¿Algo que excluir de la sincronización?',
     excludeStepDescription:
       'Opcional — elige archivos de la carpeta de guardado que no deban subirse (ajustes locales, archivos de cuenta, etc.). Siempre puedes cambiarlo luego en los detalles del juego.',
-    done: 'Listo'
+    done: 'Listo',
+    stepSetupLabel: 'Configuración',
+    stepExcludeLabel: 'Excluir archivos',
+    closeBlockedHint: 'Todavía añadiendo el juego…',
+    createdBanner: (name) => `«${name}» añadido — falta una cosa más y listo.`,
+    coverHint: 'Se muestra como póster 2:3 en tu biblioteca — PNG o JPG'
   },
   friends: {
     title: 'Amigos',
@@ -137,6 +144,17 @@ export const es: Translation = {
     savePathReset: 'Restablecer predeterminada',
     savePathSaveError: 'No se pudo guardar la ubicación',
     savePathNeedsSetupHint: 'Para que la sincronización funcione, indica dónde están las partidas de este juego en este PC.',
+    savePathLocked: 'En pausa mientras hay una sincronización en segundo plano',
+    customGameBadge: 'Juego personalizado',
+    needsSetupTitle: 'Necesita configuración',
+    jumpToIt: 'Ir allí',
+    sectionWhereSavesLive: 'Dónde están las partidas guardadas',
+    sectionSyncBehavior: 'Comportamiento de sincronización',
+    dangerZoneTitle: 'Zona de peligro',
+    dangerZoneDesc: 'Solo elimina este juego de CoopSync — las partidas guardadas locales no se tocan.',
+    autoSyncExeTitle: 'Sincronización automática .exe',
+    autoSyncExeHint: 'Se sincroniza automáticamente al iniciar y salir.',
+    autoSyncNotSet: 'No hay .exe configurado — sincroniza manualmente con Subir/Descargar.',
     customGameWarning:
       'Este juego se añadió manualmente — toda la carpeta de guardado se sincroniza tal cual (sin filtrar archivos), así que los ajustes locales o archivos de cuenta en esa misma carpeta también se sincronizarán.',
     removeCustomGame: 'Eliminar juego',

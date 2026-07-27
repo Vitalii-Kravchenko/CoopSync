@@ -9,6 +9,8 @@ export const ru: Translation = {
     loadingGames: 'Ищу игры…',
     installedGames: 'Установленные игры',
     refreshGames: 'Обновить',
+    refreshSuccess: 'Данные обновлены',
+    refreshError: 'Не удалось обновить данные',
     allSupportedGames: 'Все поддерживаемые игры',
     nothingFound: 'Ничего не найдено',
     alreadySynced: 'Версии совпадают — синхронизация не нужна',
@@ -73,7 +75,12 @@ export const ru: Translation = {
     excludeStepTitle: 'Есть что исключить из синхронизации?',
     excludeStepDescription:
       'Необязательно — отметь файлы в папке сохранений, которые не стоит загружать (локальные настройки, файлы аккаунта и т.д.). Это всегда можно изменить позже в деталях игры.',
-    done: 'Готово'
+    done: 'Готово',
+    stepSetupLabel: 'Настройка',
+    stepExcludeLabel: 'Исключить файлы',
+    closeBlockedHint: 'Всё ещё добавляю игру…',
+    createdBanner: (name) => `«${name}» добавлена — осталось ещё одно, и всё готово.`,
+    coverHint: 'Показывается как постер 2:3 в библиотеке — PNG или JPG'
   },
   friends: {
     title: 'Друзья',
@@ -137,6 +144,17 @@ export const ru: Translation = {
     savePathReset: 'Сбросить по умолчанию',
     savePathSaveError: 'Не удалось сохранить путь',
     savePathNeedsSetupHint: 'Чтобы синхронизация заработала, укажи, где на этом ПК лежат сейвы этой игры.',
+    savePathLocked: 'Приостановлено, идёт фоновая синхронизация',
+    customGameBadge: 'Пользовательская игра',
+    needsSetupTitle: 'Требуется настройка',
+    jumpToIt: 'Перейти',
+    sectionWhereSavesLive: 'Где лежат сохранения',
+    sectionSyncBehavior: 'Поведение синхронизации',
+    dangerZoneTitle: 'Опасная зона',
+    dangerZoneDesc: 'Убирает эту игру только из CoopSync — локальные сохранения остаются на месте.',
+    autoSyncExeTitle: 'Авто-синк .exe',
+    autoSyncExeHint: 'Синхронизируется автоматически при запуске и выходе.',
+    autoSyncNotSet: '.exe не указан — синхронизируй вручную через Upload/Download.',
     customGameWarning:
       'Эта игра добавлена вручную — вся папка сохранений синхронизируется как есть (без фильтрации файлов), поэтому локальные настройки или файлы аккаунта в той же папке тоже будут синхронизироваться.',
     removeCustomGame: 'Удалить игру',

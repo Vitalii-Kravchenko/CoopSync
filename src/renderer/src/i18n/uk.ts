@@ -9,6 +9,8 @@ export const uk: Translation = {
     loadingGames: 'Шукаю ігри…',
     installedGames: 'Встановлені ігри',
     refreshGames: 'Оновити',
+    refreshSuccess: 'Дані оновлено',
+    refreshError: 'Не вдалося оновити дані',
     allSupportedGames: 'Усі підтримувані ігри',
     nothingFound: 'Нічого не знайдено',
     alreadySynced: 'Версії збігаються — синхронізувати не потрібно',
@@ -73,7 +75,12 @@ export const uk: Translation = {
     excludeStepTitle: 'Є що виключити з синхронізації?',
     excludeStepDescription:
       'Необовʼязково — познач файли в папці сейвів, які не варто вивантажувати (локальні налаштування, файли акаунта тощо). Це завжди можна змінити пізніше в деталях гри.',
-    done: 'Готово'
+    done: 'Готово',
+    stepSetupLabel: 'Налаштування',
+    stepExcludeLabel: 'Виключити файли',
+    closeBlockedHint: 'Ще додаю гру…',
+    createdBanner: (name) => `«${name}» додано — залишилось ще одне, і все готово.`,
+    coverHint: 'Показується як постер 2:3 у бібліотеці — PNG або JPG'
   },
   friends: {
     title: 'Друзі',
@@ -137,6 +144,17 @@ export const uk: Translation = {
     savePathReset: 'Скинути до типового',
     savePathSaveError: 'Не вдалося зберегти шлях',
     savePathNeedsSetupHint: 'Щоб синхронізація запрацювала, вкажи, де на цьому ПК лежать сейви цієї гри.',
+    savePathLocked: 'Призупинено, поки триває фоновий синк',
+    customGameBadge: 'Кастомна гра',
+    needsSetupTitle: 'Потрібне налаштування',
+    jumpToIt: 'Перейти',
+    sectionWhereSavesLive: 'Де лежать сейви',
+    sectionSyncBehavior: 'Поведінка синку',
+    dangerZoneTitle: 'Небезпечна зона',
+    dangerZoneDesc: 'Прибирає цю гру тільки з CoopSync — локальні сейви лишаються на місці.',
+    autoSyncExeTitle: 'Авто-синк .exe',
+    autoSyncExeHint: 'Синкається автоматично при запуску і виході.',
+    autoSyncNotSet: '.exe не вказано — синкай вручну через Upload/Download.',
     customGameWarning:
       'Ця гра додана вручну — вся папка сейвів синхронізується як є (без фільтрації файлів), тож локальні налаштування чи файли акаунту в тій самій папці теж синхронізуються.',
     removeCustomGame: 'Видалити гру',

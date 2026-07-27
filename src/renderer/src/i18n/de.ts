@@ -9,6 +9,8 @@ export const de: Translation = {
     loadingGames: 'Suche nach Spielen…',
     installedGames: 'Installierte Spiele',
     refreshGames: 'Aktualisieren',
+    refreshSuccess: 'Daten aktualisiert',
+    refreshError: 'Daten konnten nicht aktualisiert werden',
     allSupportedGames: 'Alle unterstützten Spiele',
     nothingFound: 'Nichts gefunden',
     alreadySynced: 'Versionen stimmen überein — keine Synchronisierung nötig',
@@ -74,7 +76,12 @@ export const de: Translation = {
     excludeStepTitle: 'Etwas von der Synchronisierung ausschließen?',
     excludeStepDescription:
       'Optional — wähle Dateien im Speicherordner aus, die nicht hochgeladen werden sollen (z. B. lokale Einstellungen oder Kontodateien). Das lässt sich später jederzeit in den Spieldetails ändern.',
-    done: 'Fertig'
+    done: 'Fertig',
+    stepSetupLabel: 'Einrichtung',
+    stepExcludeLabel: 'Dateien ausschließen',
+    closeBlockedHint: 'Spiel wird noch hinzugefügt…',
+    createdBanner: (name) => `„${name}" hinzugefügt — noch eine Sache, dann bist du fertig.`,
+    coverHint: 'Wird als 2:3-Poster in deiner Bibliothek angezeigt — PNG oder JPG'
   },
   friends: {
     title: 'Freunde',
@@ -138,6 +145,17 @@ export const de: Translation = {
     savePathReset: 'Auf Standard zurücksetzen',
     savePathSaveError: 'Speicherort konnte nicht gespeichert werden',
     savePathNeedsSetupHint: 'Damit die Synchronisierung funktioniert, gib an, wo die Spielstände dieses Spiels auf diesem PC liegen.',
+    savePathLocked: 'Pausiert, während eine Hintergrundsynchronisierung läuft',
+    customGameBadge: 'Eigenes Spiel',
+    needsSetupTitle: 'Einrichtung erforderlich',
+    jumpToIt: 'Dorthin springen',
+    sectionWhereSavesLive: 'Wo die Spielstände liegen',
+    sectionSyncBehavior: 'Synchronisierungsverhalten',
+    dangerZoneTitle: 'Gefahrenzone',
+    dangerZoneDesc: 'Entfernt dieses Spiel nur aus CoopSync — lokale Spielstände bleiben erhalten.',
+    autoSyncExeTitle: 'Auto-Sync .exe',
+    autoSyncExeHint: 'Synchronisiert automatisch beim Start und Beenden.',
+    autoSyncNotSet: 'Keine .exe festgelegt — manuell über Upload/Download synchronisieren.',
     customGameWarning:
       'Dieses Spiel wurde manuell hinzugefügt — der gesamte Speicherordner wird unverändert synchronisiert (ohne Dateifilterung), daher werden lokale Einstellungen oder Kontodateien im selben Ordner ebenfalls synchronisiert.',
     removeCustomGame: 'Spiel entfernen',

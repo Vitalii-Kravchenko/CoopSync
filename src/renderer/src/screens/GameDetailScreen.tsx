@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { colors, fonts, radii, steamPoster, transitions } from '../theme'
 import { useI18n } from '../i18n'
 import { describeError, describeSyncResult } from '../errors'
@@ -9,7 +9,8 @@ import {
   FolderIcon,
   EditIcon,
   TrashIcon,
-  AlertTriangleIcon
+  AlertTriangleIcon,
+  LockIcon
 } from '../components/icons'
 import Avatar from '../components/Avatar'
 import Button from '../components/Button'
@@ -20,9 +21,10 @@ import ExtraFoldersSection from '../components/ExtraFoldersSection'
 import ExePicker from '../components/ExePicker'
 import Pagination from '../components/Pagination'
 import type { BannerState } from '../components/Banner'
+import { syncDisplay } from '../components/GameCard'
 import { useAvatars } from '../hooks/useAvatars'
 import { useRowCapacity } from '../hooks/useRowCapacity'
-import type { AuthUser, SyncHistoryEntry, GameSavePathInfo } from '../../../shared/types'
+import type { AuthUser, SyncHistoryEntry, GameSavePathInfo, SyncStatus } from '../../../shared/types'
 import { formatVersion as fmtVersion } from '../../../shared/format'
 import { devHistoryMock } from '../devHistoryMock'
 
@@ -75,6 +77,9 @@ interface Props {
   /** True while this game's background autopush (post game-exit) is still in
    *  flight — blocks "Restore" so it can't race the same git clone. */
   autoPushPending: boolean
+  /** Current sync status pill (mirrors the same field on its Games-tab card)
+   *  — undefined while still checking. */
+  status?: SyncStatus
 }
 
 // A single game's own sync history — reached from its card on the Games tab.
@@ -97,7 +102,8 @@ function GameDetailScreen({
   onBanner,
   onSynced,
   onCustomGameRemoved,
-  autoPushPending
+  autoPushPending,
+  status
 }: Props): React.JSX.Element {
   const { t } = useI18n()
   const [entries, setEntries] = useState<SyncHistoryEntry[]>([])
@@ -115,6 +121,14 @@ function GameDetailScreen({
   const [nameInput, setNameInput] = useState('')
   const [savingName, setSavingName] = useState(false)
   const [nameError, setNameError] = useState<string | null>(null)
+  // Anchor for the "Needs setup" banner's jump link — scrolls straight to the
+  // one field actually blocking sync instead of leaving the user to hunt for it.
+  const savePathRef = useRef<HTMLDivElement>(null)
+  // Compact summary vs. the full scan/candidates UI — collapses ExePicker to
+  // a one-line "already configured" state instead of always showing the full
+  // install-folder scanner (see design brief: purpose-grouped cards, not a
+  // flat stack of every control at once).
+  const [editingExe, setEditingExe] = useState(false)
 
   function startEditName(): void {
     setNameInput(displayName)
@@ -395,7 +409,7 @@ function GameDetailScreen({
         ) : (
           <div style={styles.posterFallback} />
         )}
-        <div>
+        <div style={styles.nameCol}>
           {editingName ? (
             <div>
               <div style={styles.editNameRow}>
@@ -455,12 +469,34 @@ function GameDetailScreen({
           )}
           {coverError && <div style={styles.savePathErrorText}>{coverError}</div>}
         </div>
-        {isCustom && (
-          <Button variant="danger" style={styles.removeBtn} onClick={() => setShowRemoveConfirm(true)}>
-            <TrashIcon size={14} color={colors.danger} />
-            {t.history.removeCustomGame}
-          </Button>
+        {!editingName && isCustom && (
+          <span
+            title={t.history.customGameWarning}
+            style={styles.customBadgeHeader}
+          >
+            {t.history.customGameBadge}
+          </span>
         )}
+        {!editingName &&
+          (() => {
+            const syncing = autoPushPending
+            const display = syncDisplay(status, t)
+            return (
+              <span
+                style={{
+                  ...styles.statusPillHeader,
+                  color: syncing ? colors.info : display.color,
+                  background: syncing ? colors.infoBg : display.bg,
+                  borderColor: syncing ? colors.infoBd : display.bd
+                }}
+              >
+                <span
+                  style={{ ...styles.statusDot, background: syncing ? colors.info : display.color }}
+                />
+                {syncing ? t.gameCard.syncing : display.text}
+              </span>
+            )
+          })()}
       </div>
 
       {coverSrc && (
@@ -472,16 +508,28 @@ function GameDetailScreen({
         />
       )}
 
-      {isCustom && (
-        <div style={styles.customWarning}>
-          <AlertTriangleIcon size={15} color={colors.warning} />
-          <span>{t.history.customGameWarning}</span>
+      {stillNeedsSetup && (
+        <div style={styles.needsSetupBanner}>
+          <AlertTriangleIcon size={16} color={colors.warning} />
+          <span>
+            <b style={styles.needsSetupBold}>{t.history.needsSetupTitle}</b> — {t.history.savePathNeedsSetupHint}{' '}
+            <a
+              href="#"
+              style={styles.jumpLink}
+              onClick={(e) => {
+                e.preventDefault()
+                savePathRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+              }}
+            >
+              {t.history.jumpToIt} ↓
+            </a>
+          </span>
         </div>
       )}
 
       {isCustom && coverSyncFailed && (
-        <div style={styles.customWarning}>
-          <AlertTriangleIcon size={15} color={colors.warning} />
+        <div style={styles.coverSyncBanner}>
+          <AlertTriangleIcon size={14} color={colors.text3} />
           <span style={styles.retryCoverText}>{t.history.coverSyncFailedBanner}</span>
           <Button
             variant="ghost"
@@ -495,14 +543,11 @@ function GameDetailScreen({
         </div>
       )}
 
-      {stillNeedsSetup && (
-        <div style={styles.customWarning}>
-          <AlertTriangleIcon size={15} color={colors.warning} />
-          <span>{t.history.savePathNeedsSetupHint}</span>
-        </div>
-      )}
-
-      <div style={{ ...styles.savePathCard, ...(stillNeedsSetup ? styles.savePathCardHighlight : null) }}>
+      <div style={styles.sectionLabel}>{t.history.sectionWhereSavesLive}</div>
+      <div
+        ref={savePathRef}
+        style={{ ...styles.savePathCard, ...(stillNeedsSetup ? styles.savePathCardHighlight : null) }}
+      >
         <div style={styles.savePathTopRow}>
           <div style={styles.savePathLabelRow}>
             <FolderIcon size={14} color={colors.text3} />
@@ -511,20 +556,28 @@ function GameDetailScreen({
           </div>
           {!editingPath && (
             <div style={{ display: 'flex', gap: 8 }}>
-              {savePathInfo?.isCustom && (
-                <Button
-                  variant="ghost"
-                  style={styles.smallBtn}
-                  onClick={handleResetPath}
-                  disabled={savingPath}
-                >
-                  {t.history.savePathReset}
-                </Button>
+              {autoPushPending ? (
+                <span title={t.history.savePathLocked} style={styles.lockedHint}>
+                  <LockIcon size={12} color={colors.text3} />
+                </span>
+              ) : (
+                <>
+                  {savePathInfo?.isCustom && (
+                    <Button
+                      variant="ghost"
+                      style={styles.smallBtn}
+                      onClick={handleResetPath}
+                      disabled={savingPath}
+                    >
+                      {t.history.savePathReset}
+                    </Button>
+                  )}
+                  <Button variant="ghost" style={styles.smallBtn} onClick={startEditPath}>
+                    <EditIcon size={13} color={colors.text2} />
+                    {t.history.savePathEdit}
+                  </Button>
+                </>
               )}
-              <Button variant="ghost" style={styles.smallBtn} onClick={startEditPath}>
-                <EditIcon size={13} color={colors.text2} />
-                {t.history.savePathEdit}
-              </Button>
             </div>
           )}
         </div>
@@ -577,25 +630,60 @@ function GameDetailScreen({
         )}
       </div>
 
-      {isCustom && <ExePicker selected={processNames} onSelectedChange={handleProcessNamesChange} />}
-
       {isCustom && (
-        <ExcludeFilesCard
-          appId={appId}
-          onError={(msg) => onBanner({ text: msg, kind: 'error' })}
-          onChanged={onSynced}
-        />
+        <>
+          <div style={styles.sectionLabel}>{t.history.sectionSyncBehavior}</div>
+          <div style={styles.syncBehaviorGrid}>
+            <div style={styles.exeCard}>
+              <div style={styles.savePathTopRow}>
+                <div style={styles.savePathLabelRow}>
+                  <LockIcon size={14} color={colors.text3} />
+                  <span style={styles.savePathLabel}>{t.history.autoSyncExeTitle}</span>
+                </div>
+                {!editingExe && (
+                  <Button variant="ghost" style={styles.smallBtn} onClick={() => setEditingExe(true)}>
+                    <EditIcon size={13} color={colors.text2} />
+                    {t.history.savePathEdit}
+                  </Button>
+                )}
+              </div>
+              {editingExe ? (
+                <>
+                  <ExePicker selected={processNames} onSelectedChange={handleProcessNamesChange} />
+                  <div style={styles.editActions}>
+                    <Button variant="primary" style={styles.smallBtn} onClick={() => setEditingExe(false)}>
+                      {t.addGame.done}
+                    </Button>
+                  </div>
+                </>
+              ) : processNames.length > 0 ? (
+                <>
+                  <div style={styles.savePathValue}>{processNames.join(', ')}</div>
+                  <div style={styles.exeHint}>{t.history.autoSyncExeHint}</div>
+                </>
+              ) : (
+                <div style={styles.exeHint}>{t.history.autoSyncNotSet}</div>
+              )}
+            </div>
+
+            <ExcludeFilesCard
+              appId={appId}
+              onError={(msg) => onBanner({ text: msg, kind: 'error' })}
+              onChanged={onSynced}
+            />
+          </div>
+
+          <ExtraFoldersSection
+            appId={appId}
+            syncVersion={syncVersion}
+            onBanner={onBanner}
+            onSynced={onSynced}
+            user={user}
+          />
+        </>
       )}
 
-      {isCustom && (
-        <ExtraFoldersSection
-          appId={appId}
-          syncVersion={syncVersion}
-          onBanner={onBanner}
-          onSynced={onSynced}
-          user={user}
-        />
-      )}
+      <div style={styles.sectionLabel}>{t.history.title}</div>
 
       {showTable && (
         <div style={styles.table}>
@@ -636,6 +724,22 @@ function GameDetailScreen({
         </div>
       )}
 
+      {isCustom && (
+        <>
+          <div style={styles.dangerDivider} />
+          <div style={styles.dangerZone}>
+            <div>
+              <div style={styles.dangerZoneTitle}>{t.history.dangerZoneTitle}</div>
+              <div style={styles.dangerZoneDesc}>{t.history.dangerZoneDesc}</div>
+            </div>
+            <Button variant="danger" style={styles.dangerZoneBtn} onClick={() => setShowRemoveConfirm(true)}>
+              <TrashIcon size={13} color={colors.danger} />
+              {t.history.removeCustomGame}
+            </Button>
+          </div>
+        </>
+      )}
+
       {restoreTarget && (
         <ConfirmModal
           title={t.history.restoreConfirmTitle}
@@ -645,6 +749,7 @@ function GameDetailScreen({
           )}
           confirmLabel={t.history.restore}
           cancelLabel={t.settings.cancel}
+          countdownSeconds={3}
           busy={restoring || autoPushPending}
           error={restoreError}
           onConfirm={handleRestore}
@@ -661,6 +766,7 @@ function GameDetailScreen({
           description={t.history.removeCustomGameConfirmDesc(displayName)}
           confirmLabel={t.history.removeCustomGame}
           cancelLabel={t.settings.cancel}
+          countdownSeconds={3}
           busy={removing}
           error={removeError}
           onConfirm={handleRemoveGame}
@@ -784,7 +890,8 @@ const styles: Record<string, React.CSSProperties> = {
   crumbSep: { color: colors.text3 },
   crumbMuted: { color: colors.text3 },
   crumbCurrent: { color: colors.cy },
-  header: { display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 },
+  header: { display: 'flex', alignItems: 'flex-start', gap: 16, marginBottom: 18 },
+  nameCol: { flex: 1, minWidth: 0 },
   poster: {
     width: 52,
     height: 78,
@@ -819,22 +926,102 @@ const styles: Record<string, React.CSSProperties> = {
     minWidth: 220
   },
   changeCoverBtn: { height: 28, padding: '0 10px', fontSize: 11.5, marginTop: 8 },
-  customWarning: {
-    display: 'flex',
+  customBadgeHeader: {
+    display: 'inline-flex',
     alignItems: 'center',
+    height: 22,
+    padding: '0 9px',
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    letterSpacing: '.04em',
+    color: colors.text3,
+    background: 'rgba(255,255,255,.04)',
+    border: `1px solid ${colors.borderDefault}`,
+    borderRadius: radii.pill,
+    flexShrink: 0,
+    cursor: 'default'
+  },
+  statusPillHeader: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 7,
+    height: 26,
+    padding: '0 11px',
+    fontFamily: fonts.display,
+    fontWeight: 600,
+    fontSize: 11.5,
+    letterSpacing: '.04em',
+    borderRadius: radii.pill,
+    border: '1px solid',
+    flexShrink: 0
+  },
+  statusDot: { width: 6, height: 6, borderRadius: '50%' },
+  needsSetupBanner: {
+    display: 'flex',
+    alignItems: 'flex-start',
     gap: 10,
     fontSize: 12.5,
     lineHeight: 1.5,
-    color: colors.text2,
+    color: colors.text1,
     background: colors.warningBg,
     border: `1px solid ${colors.warningBd}`,
+    borderLeft: `3px solid ${colors.warning}`,
     borderRadius: radii.md,
-    padding: '10px 14px',
+    padding: '12px 14px',
+    marginBottom: 12
+  },
+  needsSetupBold: { color: colors.text1 },
+  jumpLink: { color: colors.warning, textDecoration: 'underline', whiteSpace: 'nowrap' },
+  coverSyncBanner: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    fontSize: 12,
+    lineHeight: 1.5,
+    color: colors.text2,
+    background: 'rgba(255,255,255,.03)',
+    border: `1px solid ${colors.borderDefault}`,
+    borderRadius: radii.md,
+    padding: '9px 13px',
     marginBottom: 20
   },
   retryCoverText: { flex: 1, minWidth: 0 },
-  retryCoverBtn: { height: 28, padding: '0 12px', fontSize: 12, whiteSpace: 'nowrap', flexShrink: 0 },
-  removeBtn: { height: 34, padding: '0 14px', fontSize: 12.5, marginLeft: 'auto', flexShrink: 0 },
+  retryCoverBtn: { height: 26, padding: '0 12px', fontSize: 11.5, whiteSpace: 'nowrap', flexShrink: 0 },
+  sectionLabel: {
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    letterSpacing: '.14em',
+    textTransform: 'uppercase',
+    color: colors.cy,
+    margin: '26px 0 10px'
+  },
+  lockedHint: { display: 'inline-flex', alignItems: 'center', padding: '0 4px', cursor: 'default' },
+  syncBehaviorGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)',
+    gap: 16,
+    alignItems: 'start',
+    marginBottom: 20
+  },
+  exeCard: {
+    border: `1px solid ${colors.borderSubtle}`,
+    borderRadius: radii.lg,
+    padding: '16px 18px'
+  },
+  exeHint: { fontSize: 11, color: colors.text3, lineHeight: 1.5 },
+  dangerDivider: { height: 1, background: colors.borderSubtle, margin: '32px 0 20px' },
+  dangerZone: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 16,
+    border: `1px solid ${colors.dangerBd}`,
+    borderRadius: radii.lg,
+    padding: '16px 18px'
+  },
+  dangerZoneTitle: { fontFamily: fonts.display, fontSize: 13, fontWeight: 600, color: colors.text1, marginBottom: 3 },
+  dangerZoneDesc: { fontSize: 12, color: colors.text3, lineHeight: 1.5 },
+  dangerZoneBtn: { height: 36, padding: '0 16px', fontSize: 12.5, flexShrink: 0, whiteSpace: 'nowrap' },
   savePathCard: {
     border: `1px solid ${colors.borderSubtle}`,
     borderRadius: radii.lg,

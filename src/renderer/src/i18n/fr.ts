@@ -9,6 +9,8 @@ export const fr: Translation = {
     loadingGames: 'Recherche de jeux…',
     installedGames: 'Jeux installés',
     refreshGames: 'Actualiser',
+    refreshSuccess: 'Données mises à jour',
+    refreshError: 'Impossible de mettre à jour les données',
     allSupportedGames: 'Tous les jeux pris en charge',
     nothingFound: 'Aucun résultat',
     alreadySynced: 'Les versions correspondent — synchronisation inutile',
@@ -74,7 +76,12 @@ export const fr: Translation = {
     excludeStepTitle: 'Des fichiers à exclure de la synchronisation ?',
     excludeStepDescription:
       'Facultatif — sélectionne les fichiers du dossier de sauvegarde à ne pas envoyer (paramètres locaux, fichiers de compte, etc.). Modifiable à tout moment depuis les détails du jeu.',
-    done: 'Terminé'
+    done: 'Terminé',
+    stepSetupLabel: 'Configuration',
+    stepExcludeLabel: 'Exclure des fichiers',
+    closeBlockedHint: "Ajout du jeu en cours…",
+    createdBanner: (name) => `« ${name} » ajouté — encore une étape et c'est bon.`,
+    coverHint: 'Affichée comme affiche 2:3 dans votre bibliothèque — PNG ou JPG'
   },
   friends: {
     title: 'Amis',
@@ -138,6 +145,17 @@ export const fr: Translation = {
     savePathReset: 'Réinitialiser par défaut',
     savePathSaveError: "Impossible d'enregistrer cet emplacement",
     savePathNeedsSetupHint: "Pour que la synchronisation fonctionne, indique où se trouvent les sauvegardes de ce jeu sur ce PC.",
+    savePathLocked: 'En pause pendant une synchronisation en arrière-plan',
+    customGameBadge: 'Jeu personnalisé',
+    needsSetupTitle: 'Configuration requise',
+    jumpToIt: 'Y aller',
+    sectionWhereSavesLive: 'Où sont les sauvegardes',
+    sectionSyncBehavior: 'Comportement de synchronisation',
+    dangerZoneTitle: 'Zone dangereuse',
+    dangerZoneDesc: 'Retire ce jeu uniquement de CoopSync — les sauvegardes locales restent intactes.',
+    autoSyncExeTitle: 'Synchronisation auto .exe',
+    autoSyncExeHint: 'Se synchronise automatiquement au lancement et à la fermeture.',
+    autoSyncNotSet: 'Aucun .exe défini — synchronisez manuellement avec Envoyer/Télécharger.',
     customGameWarning:
       "Ce jeu a été ajouté manuellement — tout le dossier de sauvegarde est synchronisé tel quel (sans filtrage des fichiers), donc les paramètres locaux ou fichiers de compte présents dans ce même dossier seront synchronisés aussi.",
     removeCustomGame: 'Supprimer le jeu',

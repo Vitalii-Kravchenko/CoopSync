@@ -176,11 +176,15 @@ function MainScreen({
   // Same reasoning/guard as installedRequestIdRef above, for syncStatuses.
   const statusesRequestIdRef = useRef(0)
 
-  async function loadStatuses(): Promise<void> {
+  // Returns whether this call actually landed a result — used by
+  // handleManualRefresh to decide which toast to show. A stale call (superseded
+  // by a newer one before it resolved) reports true: it's not a real failure,
+  // and the newer call in flight will report its own outcome.
+  async function loadStatuses(): Promise<boolean> {
     const id = ++statusesRequestIdRef.current
     try {
       const list = await window.api.sync.statuses()
-      if (id !== statusesRequestIdRef.current) return
+      if (id !== statusesRequestIdRef.current) return true
       const map: Record<string, GameSyncStatus> = {}
       for (const s of list) map[s.appId] = s
       setSyncStatuses(map)
@@ -197,24 +201,33 @@ function MainScreen({
       // of which tab is open), and a badge the user never actually looked
       // at shouldn't clear itself.
       if (active) onGamesSeen(list.map((s) => ({ appId: s.appId, version: s.remoteVersion })))
+      return true
     } catch (e) {
-      if (id !== statusesRequestIdRef.current) return
+      if (id !== statusesRequestIdRef.current) return true
       // Don't leave stale statuses (e.g. from a deleted repo) alongside the
       // error — cards should fall back to "Checking...", not lie with old data.
       setSyncStatuses({})
       setStatusesError(describeError(e, t, t.main.statusesError))
+      return false
     }
   }
 
   async function handleManualRefresh(): Promise<void> {
     setManualRefreshing(true)
+    let gamesOk = true
     try {
-      await Promise.all([fetchGames(), loadStatuses()])
+      await fetchGames()
     } catch (e) {
+      gamesOk = false
       setGamesError(describeError(e, t, t.main.statusesError))
-    } finally {
-      setManualRefreshing(false)
     }
+    const statusesOk = await loadStatuses()
+    setManualRefreshing(false)
+    onBanner(
+      gamesOk && statusesOk
+        ? { text: t.main.refreshSuccess, kind: 'success' }
+        : { text: t.main.refreshError, kind: 'error' }
+    )
   }
 
   // Set of installed appIds — so the catalog cards below show the correct
@@ -301,6 +314,7 @@ function MainScreen({
           void loadStatuses()
         }}
         autoPushPending={autoPushPending.has(selectedGame.appId)}
+        status={syncStatuses[selectedGame.appId]?.status}
       />
     )
   }

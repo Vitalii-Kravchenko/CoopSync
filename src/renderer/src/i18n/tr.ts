@@ -9,6 +9,8 @@ export const tr: Translation = {
     loadingGames: 'Oyunlar aranıyor…',
     installedGames: 'Yüklü oyunlar',
     refreshGames: 'Yenile',
+    refreshSuccess: 'Veriler güncellendi',
+    refreshError: 'Veriler güncellenemedi',
     allSupportedGames: 'Desteklenen tüm oyunlar',
     nothingFound: 'Hiçbir şey bulunamadı',
     alreadySynced: 'Sürümler eşleşiyor — senkronizasyona gerek yok',
@@ -74,7 +76,12 @@ export const tr: Translation = {
     excludeStepTitle: 'Senkronizasyondan hariç tutulacak bir şey var mı?',
     excludeStepDescription:
       'İsteğe bağlı — kayıt klasöründe yüklenmemesi gereken dosyaları seç (yerel ayarlar, hesap dosyaları vb). Bunu daha sonra oyunun ayrıntılarından her zaman değiştirebilirsin.',
-    done: 'Tamam'
+    done: 'Tamam',
+    stepSetupLabel: 'Kurulum',
+    stepExcludeLabel: 'Dosyaları hariç tut',
+    closeBlockedHint: 'Oyun hâlâ ekleniyor…',
+    createdBanner: (name) => `"${name}" eklendi — bir adım kaldı, sonra tamamsın.`,
+    coverHint: 'Kütüphanende 2:3 poster olarak gösterilir — PNG veya JPG'
   },
   friends: {
     title: 'Arkadaşlar',
@@ -138,6 +145,17 @@ export const tr: Translation = {
     savePathReset: 'Varsayılana sıfırla',
     savePathSaveError: 'Bu konum kaydedilemedi',
     savePathNeedsSetupHint: 'Senkronizasyonun çalışması için bu oyunun kayıtlarının bu bilgisayarda nerede olduğunu belirt.',
+    savePathLocked: 'Arka planda senkronizasyon sürerken duraklatıldı',
+    customGameBadge: 'Özel oyun',
+    needsSetupTitle: 'Kurulum gerekli',
+    jumpToIt: 'Oraya git',
+    sectionWhereSavesLive: 'Kayıtlar nerede',
+    sectionSyncBehavior: 'Senkronizasyon davranışı',
+    dangerZoneTitle: 'Tehlikeli bölge',
+    dangerZoneDesc: "Bu oyunu yalnızca CoopSync'ten kaldırır — yerel kayıtlar olduğu yerde kalır.",
+    autoSyncExeTitle: 'Otomatik senk .exe',
+    autoSyncExeHint: 'Başlatma ve çıkışta otomatik senkronize olur.',
+    autoSyncNotSet: '.exe ayarlanmadı — Yükle/İndir ile elle senkronize et.',
     customGameWarning:
       'Bu oyun elle eklendi — tüm kayıt klasörü olduğu gibi senkronize edilir (dosya filtrelemesi olmadan), bu yüzden aynı klasördeki yerel ayarlar veya hesap dosyaları da senkronize edilir.',
     removeCustomGame: 'Oyunu kaldır',

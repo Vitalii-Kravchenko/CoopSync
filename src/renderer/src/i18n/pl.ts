@@ -9,6 +9,8 @@ export const pl: Translation = {
     loadingGames: 'Szukam gier…',
     installedGames: 'Zainstalowane gry',
     refreshGames: 'Odśwież',
+    refreshSuccess: 'Dane zaktualizowane',
+    refreshError: 'Nie udało się zaktualizować danych',
     allSupportedGames: 'Wszystkie obsługiwane gry',
     nothingFound: 'Nic nie znaleziono',
     alreadySynced: 'Wersje się zgadzają — synchronizacja niepotrzebna',
@@ -73,7 +75,12 @@ export const pl: Translation = {
     excludeStepTitle: 'Coś do wykluczenia z synchronizacji?',
     excludeStepDescription:
       'Opcjonalnie — zaznacz pliki w folderze zapisów, których nie chcesz wysyłać (lokalne ustawienia, pliki konta itp.). Zawsze możesz to zmienić później w szczegółach gry.',
-    done: 'Gotowe'
+    done: 'Gotowe',
+    stepSetupLabel: 'Konfiguracja',
+    stepExcludeLabel: 'Wyklucz pliki',
+    closeBlockedHint: 'Wciąż dodaję grę…',
+    createdBanner: (name) => `„${name}" dodano — zostało jeszcze jedno, i gotowe.`,
+    coverHint: 'Pokazywana jako plakat 2:3 w bibliotece — PNG lub JPG'
   },
   friends: {
     title: 'Znajomi',
@@ -137,6 +144,17 @@ export const pl: Translation = {
     savePathReset: 'Przywróć domyślną',
     savePathSaveError: 'Nie udało się zapisać lokalizacji',
     savePathNeedsSetupHint: 'Aby synchronizacja zadziałała, wskaż, gdzie na tym komputerze znajdują się zapisy tej gry.',
+    savePathLocked: 'Wstrzymane, trwa synchronizacja w tle',
+    customGameBadge: 'Gra niestandardowa',
+    needsSetupTitle: 'Wymaga konfiguracji',
+    jumpToIt: 'Przejdź',
+    sectionWhereSavesLive: 'Gdzie są zapisy',
+    sectionSyncBehavior: 'Zachowanie synchronizacji',
+    dangerZoneTitle: 'Strefa niebezpieczna',
+    dangerZoneDesc: 'Usuwa tę grę tylko z CoopSync — lokalne zapisy zostają na miejscu.',
+    autoSyncExeTitle: 'Auto-sync .exe',
+    autoSyncExeHint: 'Synchronizuje się automatycznie przy starcie i wyjściu.',
+    autoSyncNotSet: 'Nie wskazano .exe — synchronizuj ręcznie przez Upload/Download.',
     customGameWarning:
       'Ta gra została dodana ręcznie — cały folder zapisów synchronizuje się bez zmian (bez filtrowania plików), więc lokalne ustawienia lub pliki konta w tym samym folderze też się zsynchronizują.',
     removeCustomGame: 'Usuń grę',

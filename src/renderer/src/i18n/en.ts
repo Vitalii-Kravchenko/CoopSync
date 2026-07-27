@@ -186,6 +186,10 @@ export const en: Translation = {
     extraFolderSharedHint: "Synced the same way as the game's main folder — your partner sees it too.",
     extraFolderPersonalHint:
       'Still backed up to the cloud (with its own version history), but into a private space under your own account — your partner never sees it.',
+    extraFolderSettings: 'Folder settings',
+    extraFolderNameLabel: 'Name',
+    extraFolderPathLabel: 'Folder path',
+    extraFolderVisibilityLabel: 'Visibility',
     extraFolderAddSave: 'Add',
     extraFolderAddCancel: 'Cancel',
     extraFolderAddError: 'Could not add the folder',

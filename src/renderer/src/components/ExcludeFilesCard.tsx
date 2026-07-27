@@ -3,7 +3,7 @@ import { colors, fonts, radii } from '../theme'
 import { useI18n } from '../i18n'
 import { describeError } from '../errors'
 import Button from './Button'
-import { DiskIcon, SyncIcon } from './icons'
+import { ChevronRightIcon, DiskIcon, SyncIcon } from './icons'
 
 interface Props {
   appId: string
@@ -15,6 +15,12 @@ interface Props {
   /** Called after an exclusion actually saves — lets GameDetailScreen tell
    *  MainScreen the Games tab's card (size) may now be stale. */
   onChanged?: () => void
+  /** 'card' (default) — the full bordered header+hint+refresh version, used
+   *  in AddCustomGameModal and the main save-path settings. 'inline' — a
+   *  lightweight collapsible disclosure (chevron + label + excluded count),
+   *  for the extra-folders card where this is a rarely-touched setting that
+   *  shouldn't carry the same visual weight as the main content. */
+  variant?: 'card' | 'inline'
 }
 
 // Files sitting in the save folder's top level (not subfolders — see
@@ -23,11 +29,15 @@ interface Props {
 // folders via folderId) and AddCustomGameModal (right after a brand-new
 // custom game's appId exists) — appId is the only thing either caller needs
 // to have ready.
-function ExcludeFilesCard({ appId, folderId, onError, onChanged }: Props): React.JSX.Element {
+function ExcludeFilesCard({ appId, folderId, onError, onChanged, variant = 'card' }: Props): React.JSX.Element {
   const { t } = useI18n()
   const [saveFiles, setSaveFiles] = useState<string[]>([])
   const [excludedFiles, setExcludedFiles] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
+  // Inline variant only — fetches on mount regardless (so the excluded
+  // count next to the disclosure label is accurate before it's ever opened),
+  // but only shows the file list once actually expanded.
+  const [expanded, setExpanded] = useState(false)
 
   function load(): void {
     setLoading(true)
@@ -66,6 +76,50 @@ function ExcludeFilesCard({ appId, folderId, onError, onChanged }: Props): React
       })
   }
 
+  if (variant === 'inline') {
+    return (
+      <div>
+        <button
+          className="reset-btn inline-exclude-toggle"
+          style={styles.inlineToggle}
+          onClick={() => setExpanded((v) => !v)}
+          aria-expanded={expanded}
+        >
+          <span
+            style={{
+              display: 'flex',
+              transform: expanded ? 'rotate(90deg)' : undefined,
+              transition: 'transform var(--t-hover)'
+            }}
+          >
+            <ChevronRightIcon size={11} color={expanded ? colors.cy : colors.text3} />
+          </span>
+          <span style={styles.inlineToggleLabel}>{t.history.excludeFilesTitle}</span>
+          {excludedFiles.length > 0 && (
+            <span style={styles.inlineToggleCount}>({excludedFiles.length})</span>
+          )}
+        </button>
+        {expanded && (
+          <div style={styles.inlineBody}>
+            {!loading && saveFiles.length === 0 && <div style={styles.hint}>{t.history.excludeFilesEmpty}</div>}
+            {!loading &&
+              saveFiles.map((file) => (
+                <label key={file} style={styles.fileRow}>
+                  <input
+                    type="checkbox"
+                    checked={excludedFiles.includes(file)}
+                    onChange={() => toggle(file)}
+                    style={{ accentColor: colors.cy }}
+                  />
+                  <span style={styles.fileName}>{file}</span>
+                </label>
+              ))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div style={styles.card}>
       <div style={styles.topRow}>
@@ -84,7 +138,12 @@ function ExcludeFilesCard({ appId, folderId, onError, onChanged }: Props): React
         <div style={styles.filesBox}>
           {saveFiles.map((file) => (
             <label key={file} style={styles.fileRow}>
-              <input type="checkbox" checked={excludedFiles.includes(file)} onChange={() => toggle(file)} />
+              <input
+                type="checkbox"
+                checked={excludedFiles.includes(file)}
+                onChange={() => toggle(file)}
+                style={{ accentColor: colors.cy }}
+              />
               <span style={styles.fileName}>{file}</span>
             </label>
           ))}
@@ -130,7 +189,21 @@ const styles: Record<string, React.CSSProperties> = {
     overflowY: 'auto'
   },
   fileRow: { display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', cursor: 'pointer' },
-  fileName: { fontFamily: fonts.mono, fontSize: 12.5, color: colors.text1 }
+  fileName: { fontFamily: fonts.mono, fontSize: 12.5, color: colors.text1 },
+  inlineToggle: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    width: '100%',
+    padding: '6px 0',
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    textAlign: 'left'
+  },
+  inlineToggleLabel: { fontFamily: fonts.display, fontWeight: 600, fontSize: 11.5, color: colors.text2 },
+  inlineToggleCount: { fontFamily: fonts.mono, fontSize: 10, color: colors.text3 },
+  inlineBody: { background: colors.bgInset, borderRadius: radii.md, padding: '8px 12px', marginTop: 4 }
 }
 
 export default ExcludeFilesCard

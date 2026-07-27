@@ -188,6 +188,10 @@ export const ru: Translation = {
     extraFolderSharedHint: 'Синхронизируется так же, как основная папка игры — друг тоже её видит.',
     extraFolderPersonalHint:
       'Всё равно бэкапится в облако (со своей историей версий), но в личное пространство под твоим аккаунтом — друг его не видит.',
+    extraFolderSettings: 'Настройки папки',
+    extraFolderNameLabel: 'Название',
+    extraFolderPathLabel: 'Путь к папке',
+    extraFolderVisibilityLabel: 'Видимость',
     extraFolderAddSave: 'Добавить',
     extraFolderAddCancel: 'Отмена',
     extraFolderAddError: 'Не удалось добавить папку',

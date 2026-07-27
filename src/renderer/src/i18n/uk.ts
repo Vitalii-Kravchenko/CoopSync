@@ -188,6 +188,10 @@ export const uk: Translation = {
     extraFolderSharedHint: 'Синхронізується так само, як основна папка гри — друг теж її бачить.',
     extraFolderPersonalHint:
       'Все одно бекапиться в хмару (зі своєю історією версій), але в особистий простір під твоїм акаунтом — друг його не бачить.',
+    extraFolderSettings: 'Налаштування папки',
+    extraFolderNameLabel: 'Назва',
+    extraFolderPathLabel: 'Шлях до папки',
+    extraFolderVisibilityLabel: 'Видимість',
     extraFolderAddSave: 'Додати',
     extraFolderAddCancel: 'Скасувати',
     extraFolderAddError: 'Не вдалося додати папку',

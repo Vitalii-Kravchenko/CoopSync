@@ -189,6 +189,10 @@ export const fr: Translation = {
     extraFolderSharedHint: 'Synchronisé comme le dossier principal du jeu — votre partenaire le voit aussi.',
     extraFolderPersonalHint:
       "Toujours sauvegardé dans le cloud (avec son propre historique de versions), mais dans un espace privé sous votre propre compte — votre partenaire ne le voit jamais.",
+    extraFolderSettings: 'Paramètres du dossier',
+    extraFolderNameLabel: 'Nom',
+    extraFolderPathLabel: 'Chemin du dossier',
+    extraFolderVisibilityLabel: 'Visibilité',
     extraFolderAddSave: 'Ajouter',
     extraFolderAddCancel: 'Annuler',
     extraFolderAddError: "Impossible d'ajouter le dossier",

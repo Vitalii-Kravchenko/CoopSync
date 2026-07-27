@@ -188,6 +188,10 @@ export const pl: Translation = {
     extraFolderSharedHint: 'Synchronizowany tak samo jak główny folder gry — partner też go widzi.',
     extraFolderPersonalHint:
       'Nadal kopiowany do chmury (z własną historią wersji), ale do prywatnej przestrzeni na Twoim koncie — partner go nie widzi.',
+    extraFolderSettings: 'Ustawienia folderu',
+    extraFolderNameLabel: 'Nazwa',
+    extraFolderPathLabel: 'Ścieżka do folderu',
+    extraFolderVisibilityLabel: 'Widoczność',
     extraFolderAddSave: 'Dodaj',
     extraFolderAddCancel: 'Anuluj',
     extraFolderAddError: 'Nie udało się dodać folderu',

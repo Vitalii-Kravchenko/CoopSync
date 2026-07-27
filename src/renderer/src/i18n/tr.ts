@@ -189,6 +189,10 @@ export const tr: Translation = {
     extraFolderSharedHint: 'Oyunun ana klasörüyle aynı şekilde senkronize edilir — ortağın da görür.',
     extraFolderPersonalHint:
       'Yine de buluta yedeklenir (kendi sürüm geçmişiyle), ama kendi hesabın altındaki özel bir alana — ortağın hiçbir zaman göremez.',
+    extraFolderSettings: 'Klasör ayarları',
+    extraFolderNameLabel: 'Ad',
+    extraFolderPathLabel: 'Klasör yolu',
+    extraFolderVisibilityLabel: 'Görünürlük',
     extraFolderAddSave: 'Ekle',
     extraFolderAddCancel: 'İptal',
     extraFolderAddError: 'Klasör eklenemedi',

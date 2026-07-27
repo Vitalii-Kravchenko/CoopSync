@@ -189,6 +189,10 @@ export const de: Translation = {
     extraFolderSharedHint: 'Wird genauso synchronisiert wie der Hauptordner des Spiels — dein Mitspieler sieht ihn auch.',
     extraFolderPersonalHint:
       'Wird trotzdem in die Cloud gesichert (mit eigener Versionshistorie), aber in einen privaten Bereich unter deinem eigenen Konto — dein Mitspieler sieht ihn nie.',
+    extraFolderSettings: 'Ordnereinstellungen',
+    extraFolderNameLabel: 'Name',
+    extraFolderPathLabel: 'Ordnerpfad',
+    extraFolderVisibilityLabel: 'Sichtbarkeit',
     extraFolderAddSave: 'Hinzufügen',
     extraFolderAddCancel: 'Abbrechen',
     extraFolderAddError: 'Ordner konnte nicht hinzugefügt werden',

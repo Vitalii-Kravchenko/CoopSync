@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { colors, fonts, radii } from '../theme'
+import { colors, fonts, radii, shadows } from '../theme'
 import { useI18n } from '../i18n'
 import { describeError, describeSyncResult } from '../errors'
 import { formatVersion as fmtVersion } from '../../../shared/format'
@@ -9,7 +9,18 @@ import Button from './Button'
 import ConfirmModal from './ConfirmModal'
 import ExcludeFilesCard from './ExcludeFilesCard'
 import { syncDisplay } from './GameCard'
-import { FolderIcon, EditIcon, TrashIcon, PlusIcon, UploadIcon, DownloadIcon } from './icons'
+import {
+  FolderIcon,
+  EditIcon,
+  TrashIcon,
+  PlusIcon,
+  UploadIcon,
+  DownloadIcon,
+  ChevronRightIcon,
+  FriendsIcon,
+  InfoIcon,
+  LockIcon
+} from './icons'
 
 interface Props {
   appId: string
@@ -247,107 +258,42 @@ function ExtraFoldersSection({ appId, syncVersion, onBanner, onSynced, user }: P
 
       {folders.length === 0 && !showAdd && <div style={styles.empty}>{t.history.extraFoldersEmpty}</div>}
 
-      {folders.map((f) => {
-        const st = statuses.find((s) => s.folderId === f.id)
-        const display = f.savePath ? syncDisplay(st?.status, t) : null
-        const busy = busyId === f.id
-        return (
-          <div key={f.id} style={styles.folderCard}>
-            <div style={styles.folderTopRow}>
-              {editingId === f.id ? (
-                <input
-                  className="input-field"
-                  style={styles.renameInput}
-                  value={labelInput}
-                  onChange={(e) => setLabelInput(e.target.value)}
-                  autoFocus
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') void handleRename(f.id)
-                    if (e.key === 'Escape') setEditingId(null)
-                  }}
-                  onBlur={() => handleRename(f.id)}
-                />
-              ) : (
-                <div style={styles.folderNameRow}>
-                  <span style={styles.folderName}>{f.label}</span>
-                  <Button variant="ghost" style={styles.iconBtn} onClick={() => startRename(f)}>
-                    <EditIcon size={12} color={colors.text3} />
-                  </Button>
-                </div>
-              )}
-              {display && (
-                <span style={{ ...styles.statusPill, color: display.color, background: display.bg, borderColor: display.bd }}>
-                  {display.text}
-                </span>
-              )}
-              <Button variant="ghost" style={styles.iconBtn} onClick={() => setRemoveTarget(f)}>
-                <TrashIcon size={13} color={colors.danger} />
-              </Button>
-            </div>
-
-            <div style={styles.folderPathRow}>
-              <span style={styles.folderPath} title={f.savePath || undefined}>
-                {f.savePath || t.history.extraFolderNoPath}
-              </span>
-              <Button
-                variant="ghost"
-                style={styles.smallBtn}
-                onClick={() => handleBrowseExistingPath(f.id)}
-              >
-                {t.history.extraFolderBrowse}
-              </Button>
-            </div>
-
-            <SharedToggle
-              shared={f.shared}
-              onChange={() => handleToggleShared(f)}
-              t={t}
-              locked={!!f.addedBy && f.addedBy !== user.login}
-              busy={togglingId === f.id}
-            />
-
-            {f.savePath && (
-              <div style={styles.folderActions}>
-                <Button
-                  variant="secondary"
-                  style={styles.smallBtn}
-                  onClick={() => handleUpload(f.id)}
-                  disabled={busy}
-                >
-                  {busy ? <span className="spinner" /> : <UploadIcon size={13} color={colors.text1} />}
-                  {t.gameCard.upload}
-                </Button>
-                <Button
-                  variant="secondary"
-                  style={styles.smallBtn}
-                  onClick={() => handleDownload(f.id)}
-                  disabled={busy}
-                >
-                  {busy ? <span className="spinner" /> : <DownloadIcon size={13} color={colors.text1} />}
-                  {t.gameCard.download}
-                </Button>
-                {st && (
-                  <span style={styles.versions}>{t.gameCard.versions(fmtVersion(st.localVersion), fmtVersion(st.remoteVersion))}</span>
-                )}
-              </div>
-            )}
-
-            {f.savePath && (
-              <ExcludeFilesCard
-                // Same fix as the main save-path field — remount on path
-                // change so it doesn't keep listing the previous folder's
-                // files (appId+folderId alone don't change when just the
-                // path does).
-                key={`${f.id}:${f.savePath}`}
+      {folders.length > 0 && (
+        <div style={styles.folderGrid}>
+          {folders.map((f) => {
+            const st = statuses.find((s) => s.folderId === f.id)
+            const display = f.savePath ? syncDisplay(st?.status, t) : null
+            return (
+              <FolderCard
+                key={f.id}
                 appId={appId}
-                folderId={f.id}
-                onError={(msg) => onBanner({ text: msg, kind: 'error' })}
-                onChanged={onSynced}
+                folder={f}
+                display={display}
+                versions={
+                  st ? t.gameCard.versions(fmtVersion(st.localVersion), fmtVersion(st.remoteVersion)) : null
+                }
+                busy={busyId === f.id}
+                editing={editingId === f.id}
+                labelInput={labelInput}
+                onLabelInputChange={setLabelInput}
+                onStartRename={() => startRename(f)}
+                onCommitRename={() => handleRename(f.id)}
+                onCancelEditing={() => setEditingId(null)}
+                onBrowsePath={() => handleBrowseExistingPath(f.id)}
+                shareBusy={togglingId === f.id}
+                shareLocked={!!f.addedBy && f.addedBy !== user.login}
+                onToggleShared={() => handleToggleShared(f)}
+                onUpload={() => handleUpload(f.id)}
+                onDownload={() => handleDownload(f.id)}
+                onRequestRemove={() => setRemoveTarget(f)}
+                onBanner={onBanner}
+                onSynced={onSynced}
+                t={t}
               />
-            )}
-          </div>
-        )
-      })}
+            )
+          })}
+        </div>
+      )}
 
       {removeTarget && (
         <ConfirmModal
@@ -363,6 +309,238 @@ function ExtraFoldersSection({ appId, syncVersion, onBanner, onSynced, user }: P
             setRemoveError(null)
           }}
         />
+      )}
+    </div>
+  )
+}
+
+interface FolderCardProps {
+  appId: string
+  folder: CustomExtraFolder
+  display: { text: string; color: string; bg: string; bd: string } | null
+  versions: string | null
+  busy: boolean
+  editing: boolean
+  labelInput: string
+  onLabelInputChange: (v: string) => void
+  onStartRename: () => void
+  onCommitRename: () => void
+  onCancelEditing: () => void
+  onBrowsePath: () => void
+  shareBusy: boolean
+  /** True when the current user didn't add this folder — only its creator
+   *  may change this setting (see games:set-extra-folder-shared). */
+  shareLocked: boolean
+  onToggleShared: () => void
+  onUpload: () => void
+  onDownload: () => void
+  onRequestRemove: () => void
+  onBanner: (banner: BannerState) => void
+  onSynced: () => void
+  t: ReturnType<typeof useI18n>['t']
+}
+
+// One extra-folder card. Only name, ownership badge, status and
+// upload/download stay on the face (visible at a glance) — path, the
+// shared/personal switch and file exclusions live behind a "Settings"
+// disclosure, since they're set once and rarely touched again.
+function FolderCard({
+  appId,
+  folder,
+  display,
+  versions,
+  busy,
+  editing,
+  labelInput,
+  onLabelInputChange,
+  onStartRename,
+  onCommitRename,
+  onCancelEditing,
+  onBrowsePath,
+  shareBusy,
+  shareLocked,
+  onToggleShared,
+  onUpload,
+  onDownload,
+  onRequestRemove,
+  onBanner,
+  onSynced,
+  t
+}: FolderCardProps): React.JSX.Element {
+  const [expanded, setExpanded] = useState(false)
+  const [tipOpen, setTipOpen] = useState(false)
+
+  return (
+    <div style={styles.folderCard}>
+      <div style={styles.faceRow}>
+        <button
+          className="reset-btn folder-chevron-btn"
+          style={styles.chevronBtn}
+          onClick={() => setExpanded((v) => !v)}
+          aria-expanded={expanded}
+          aria-label={t.history.extraFolderSettings}
+        >
+          <span
+            style={{
+              display: 'flex',
+              transform: expanded ? 'rotate(90deg)' : undefined,
+              transition: 'transform var(--t-hover)'
+            }}
+          >
+            <ChevronRightIcon size={12} color={expanded ? colors.cy : colors.text3} />
+          </span>
+        </button>
+        <span style={styles.folderName}>{folder.label}</span>
+        <span style={styles.ownerBadge}>
+          {folder.shared ? (
+            <FriendsIcon size={10} color={colors.cy} />
+          ) : (
+            <LockIcon size={10} color={colors.text3} />
+          )}
+          {folder.shared ? t.history.extraFolderShared : t.history.extraFolderPersonal}
+        </span>
+        <div style={{ flex: 1 }} />
+        {display && (
+          <span
+            style={{
+              ...styles.faceStatusPill,
+              color: display.color,
+              background: display.bg,
+              borderColor: display.bd
+            }}
+          >
+            <span style={{ ...styles.faceStatusDot, background: display.color }} />
+            {display.text}
+          </span>
+        )}
+      </div>
+
+      {folder.savePath && (
+        <div style={styles.actionsRow}>
+          <div style={styles.actionBtns}>
+            <Button variant="secondary" style={styles.actionBtn} onClick={onUpload} disabled={busy}>
+              {busy ? <span className="spinner" /> : <UploadIcon size={13} color={colors.text1} />}
+              {t.gameCard.upload}
+            </Button>
+            <Button variant="secondary" style={styles.actionBtn} onClick={onDownload} disabled={busy}>
+              {busy ? <span className="spinner" /> : <DownloadIcon size={13} color={colors.text1} />}
+              {t.gameCard.download}
+            </Button>
+          </div>
+          {versions && <span style={styles.versionsText}>{versions}</span>}
+        </div>
+      )}
+
+      {expanded && (
+        <>
+          <div style={styles.divider} />
+          <div style={styles.settingsBody}>
+            <div>
+              <div style={styles.fieldLabelRow}>
+                <span style={styles.fieldLabel}>{t.history.extraFolderNameLabel}</span>
+              </div>
+              {editing ? (
+                <input
+                  className="input-field"
+                  style={styles.fieldInput}
+                  value={labelInput}
+                  onChange={(e) => onLabelInputChange(e.target.value)}
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') onCommitRename()
+                    if (e.key === 'Escape') onCancelEditing()
+                  }}
+                  onBlur={onCommitRename}
+                />
+              ) : (
+                <div style={styles.nameValueRow}>
+                  <span style={styles.pathValueBox}>{folder.label}</span>
+                  <Button variant="ghost" style={styles.fieldBrowseBtn} onClick={onStartRename}>
+                    <EditIcon size={12} color={colors.text2} />
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <div style={styles.fieldLabelRow}>
+                <span style={styles.fieldLabel}>{t.history.extraFolderPathLabel}</span>
+              </div>
+              <div style={styles.fieldRow}>
+                <span style={styles.pathValueBox} title={folder.savePath || undefined}>
+                  {folder.savePath || t.history.extraFolderNoPath}
+                </span>
+                <Button variant="secondary" style={styles.fieldBrowseBtn} onClick={onBrowsePath}>
+                  {t.history.extraFolderBrowse}
+                </Button>
+              </div>
+            </div>
+
+            <div>
+              <div style={styles.fieldLabelRow}>
+                <span style={styles.fieldLabel}>{t.history.extraFolderVisibilityLabel}</span>
+                <span
+                  style={styles.visibilityInfoBtn}
+                  onMouseEnter={() => setTipOpen(true)}
+                  onMouseLeave={() => setTipOpen(false)}
+                >
+                  <InfoIcon size={12} color={tipOpen ? colors.cy : colors.text3} />
+                  {tipOpen && (
+                    <div style={styles.visibilityTip}>
+                      {t.history.extraFolderShared}: {t.history.extraFolderSharedHint}{' '}
+                      {t.history.extraFolderPersonal}: {t.history.extraFolderPersonalHint}
+                    </div>
+                  )}
+                </span>
+              </div>
+              {shareLocked ? (
+                <div style={styles.fieldHintText}>{t.errors.NOT_FOLDER_OWNER({})}</div>
+              ) : (
+                <div style={styles.segmentGroup}>
+                  <button
+                    className="reset-btn segment-option-btn"
+                    style={{ ...styles.segmentBtn, ...(!folder.shared ? styles.segmentBtnActive : null) }}
+                    onClick={() => !shareBusy && folder.shared && onToggleShared()}
+                    disabled={shareBusy}
+                  >
+                    {shareBusy && folder.shared && <span className="spinner" />}
+                    {t.history.extraFolderPersonal}
+                  </button>
+                  <button
+                    className="reset-btn segment-option-btn"
+                    style={{ ...styles.segmentBtn, ...(folder.shared ? styles.segmentBtnActive : null) }}
+                    onClick={() => !shareBusy && !folder.shared && onToggleShared()}
+                    disabled={shareBusy}
+                  >
+                    {shareBusy && !folder.shared && <span className="spinner" />}
+                    {t.history.extraFolderShared}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {folder.savePath && (
+              <ExcludeFilesCard
+                // Remounts (and re-fetches) whenever the save path actually
+                // changes — appId+folderId alone don't change when just the
+                // path does.
+                key={`${folder.id}:${folder.savePath}`}
+                appId={appId}
+                folderId={folder.id}
+                variant="inline"
+                onError={(msg) => onBanner({ text: msg, kind: 'error' })}
+                onChanged={onSynced}
+              />
+            )}
+
+            <div style={styles.removeRow}>
+              <button className="reset-btn remove-folder-btn" style={styles.removeBtn} onClick={onRequestRemove}>
+                <TrashIcon size={12} color={colors.danger} />
+                {t.history.extraFolderRemove}
+              </button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   )
@@ -476,60 +654,175 @@ const styles: Record<string, React.CSSProperties> = {
   addActions: { display: 'flex', gap: 8, marginTop: 8 },
   errorText: { fontSize: 12, color: colors.danger, marginTop: 6 },
   smallBtn: { height: 30, padding: '0 12px', fontSize: 12, whiteSpace: 'nowrap' },
+  toggleWrap: { marginBottom: 8 },
+  toggleRow: { display: 'flex', gap: 8 },
+  toggleBtn: { height: 30, padding: '0 16px', fontSize: 12 },
+  toggleHint: { fontSize: 11, color: colors.text3, marginTop: 6, lineHeight: 1.5 },
+
+  // Responsive folder grid — a wide window fits more cards side by side
+  // instead of stretching a single card thin with dead space in the middle.
+  folderGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill,minmax(340px,1fr))',
+    gap: 14
+  },
   folderCard: {
     border: `1px solid ${colors.borderDefault}`,
-    borderRadius: radii.md,
-    padding: 12,
-    marginBottom: 10
+    borderRadius: radii.lg,
+    background: colors.bgSurface,
+    padding: '14px 16px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 12
   },
-  folderTopRow: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 },
-  folderNameRow: { display: 'flex', alignItems: 'center', gap: 4, flex: 1, minWidth: 0 },
+  faceRow: { display: 'flex', alignItems: 'center', gap: 10 },
+  chevronBtn: {
+    width: 22,
+    height: 22,
+    flexShrink: 0,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radii.sm,
+    cursor: 'pointer'
+  },
   folderName: {
-    fontSize: 13,
+    fontFamily: fonts.display,
     fontWeight: 600,
+    fontSize: 13.5,
     color: colors.text1,
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap'
   },
-  renameInput: {
-    flex: 1,
-    height: 30,
+  ownerBadge: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 5,
+    height: 20,
     padding: '0 8px',
+    fontFamily: fonts.mono,
+    fontSize: 9.5,
+    color: colors.text2,
+    background: 'rgba(255,255,255,.04)',
+    border: `1px solid ${colors.borderDefault}`,
+    borderRadius: radii.pill,
+    flexShrink: 0,
+    whiteSpace: 'nowrap'
+  },
+  faceStatusPill: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 6,
+    height: 22,
+    padding: '0 10px',
+    fontFamily: fonts.display,
+    fontWeight: 600,
+    fontSize: 11,
+    borderRadius: radii.pill,
+    border: '1px solid',
+    flexShrink: 0,
+    whiteSpace: 'nowrap'
+  },
+  faceStatusDot: { width: 6, height: 6, borderRadius: '50%', flexShrink: 0 },
+  actionsRow: { display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
+  actionBtns: { display: 'flex', gap: 8 },
+  actionBtn: { height: 30, padding: '0 12px', fontSize: 12, whiteSpace: 'nowrap' },
+  versionsText: { fontFamily: fonts.mono, fontSize: 10.5, color: colors.text3, whiteSpace: 'nowrap' },
+  divider: { height: 1, background: colors.borderSubtle },
+  settingsBody: { display: 'flex', flexDirection: 'column', gap: 14 },
+  fieldLabelRow: { display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 },
+  fieldLabel: {
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    letterSpacing: '.1em',
+    textTransform: 'uppercase',
+    color: colors.text3
+  },
+  fieldRow: { display: 'flex', gap: 8 },
+  nameValueRow: { display: 'flex', gap: 8 },
+  pathValueBox: {
+    flex: 1,
+    minWidth: 0,
+    height: 34,
+    display: 'flex',
+    alignItems: 'center',
+    padding: '0 12px',
+    fontFamily: fonts.mono,
+    fontSize: 11.5,
+    color: colors.text2,
+    background: colors.bgInset,
+    border: `1px solid ${colors.borderDefault}`,
+    borderRadius: radii.md,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap'
+  },
+  fieldBrowseBtn: { height: 34, padding: '0 12px', flexShrink: 0, fontSize: 11.5, whiteSpace: 'nowrap' },
+  fieldInput: {
+    width: '100%',
+    height: 34,
+    padding: '0 10px',
     border: `1px solid ${colors.borderAccent}`,
-    borderRadius: radii.sm,
+    borderRadius: radii.md,
     background: colors.bgInset,
     color: colors.text1,
     fontSize: 13,
     outline: 'none'
   },
-  iconBtn: { width: 26, height: 26, padding: 0, flexShrink: 0 },
-  statusPill: {
-    fontSize: 10.5,
-    fontWeight: 600,
-    padding: '3px 8px',
-    borderRadius: radii.pill,
-    border: '1px solid',
-    whiteSpace: 'nowrap',
-    flexShrink: 0
-  },
-  folderPathRow: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 },
-  folderPath: {
-    flex: 1,
-    minWidth: 0,
-    fontFamily: fonts.mono,
+  fieldHintText: { fontSize: 11, color: colors.text3, lineHeight: 1.5 },
+  visibilityInfoBtn: { position: 'relative', display: 'inline-flex', color: colors.text3, cursor: 'help' },
+  visibilityTip: {
+    position: 'absolute',
+    top: 'calc(100% + 8px)',
+    left: 0,
+    width: 260,
+    zIndex: 5,
+    padding: '10px 12px',
     fontSize: 11.5,
-    color: colors.text3,
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap'
+    lineHeight: 1.5,
+    color: colors.text2,
+    background: colors.bgOverlay,
+    border: `1px solid ${colors.borderStrong}`,
+    borderRadius: radii.md,
+    boxShadow: shadows.sh3
   },
-  toggleWrap: { marginBottom: 8 },
-  toggleRow: { display: 'flex', gap: 8 },
-  toggleBtn: { height: 30, padding: '0 16px', fontSize: 12 },
-  toggleHint: { fontSize: 11, color: colors.text3, marginTop: 6, lineHeight: 1.5 },
-  folderActions: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' },
-  versions: { fontSize: 11, fontFamily: fonts.mono, color: colors.text3, marginLeft: 'auto' }
+  segmentGroup: {
+    display: 'inline-flex',
+    padding: 3,
+    borderRadius: radii.pill,
+    background: colors.bgInset,
+    border: `1px solid ${colors.borderDefault}`,
+    gap: 2
+  },
+  segmentBtn: {
+    height: 26,
+    padding: '0 12px',
+    fontFamily: fonts.display,
+    fontWeight: 600,
+    fontSize: 11,
+    border: 'none',
+    borderRadius: radii.pill,
+    background: 'transparent',
+    color: colors.text3,
+    cursor: 'pointer'
+  },
+  segmentBtnActive: { background: colors.bgHover, color: colors.text1 },
+  removeRow: { display: 'flex', justifyContent: 'flex-end' },
+  removeBtn: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 6,
+    height: 26,
+    padding: '0 10px',
+    fontFamily: fonts.display,
+    fontWeight: 600,
+    fontSize: 11,
+    color: colors.danger,
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer'
+  }
 }
 
 export default ExtraFoldersSection

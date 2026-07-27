@@ -188,6 +188,10 @@ export const es: Translation = {
     extraFolderSharedHint: 'Se sincroniza igual que la carpeta principal del juego — tu compañero también la ve.',
     extraFolderPersonalHint:
       'Igual se respalda en la nube (con su propio historial de versiones), pero en un espacio privado de tu propia cuenta — tu compañero nunca lo ve.',
+    extraFolderSettings: 'Ajustes de la carpeta',
+    extraFolderNameLabel: 'Nombre',
+    extraFolderPathLabel: 'Ruta de la carpeta',
+    extraFolderVisibilityLabel: 'Visibilidad',
     extraFolderAddSave: 'Añadir',
     extraFolderAddCancel: 'Cancelar',
     extraFolderAddError: 'No se pudo añadir la carpeta',

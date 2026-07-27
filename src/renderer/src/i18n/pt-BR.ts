@@ -188,6 +188,10 @@ export const ptBR: Translation = {
     extraFolderSharedHint: 'Sincronizada da mesma forma que a pasta principal do jogo — seu parceiro também a vê.',
     extraFolderPersonalHint:
       'Ainda é salva na nuvem (com seu próprio histórico de versões), mas em um espaço privado na sua própria conta — seu parceiro nunca a vê.',
+    extraFolderSettings: 'Configurações da pasta',
+    extraFolderNameLabel: 'Nome',
+    extraFolderPathLabel: 'Caminho da pasta',
+    extraFolderVisibilityLabel: 'Visibilidade',
     extraFolderAddSave: 'Adicionar',
     extraFolderAddCancel: 'Cancelar',
     extraFolderAddError: 'Não foi possível adicionar a pasta',

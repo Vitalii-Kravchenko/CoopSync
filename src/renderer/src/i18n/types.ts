@@ -206,6 +206,10 @@ export interface Translation {
     extraFolderPersonal: string
     extraFolderSharedHint: string
     extraFolderPersonalHint: string
+    extraFolderSettings: string
+    extraFolderNameLabel: string
+    extraFolderPathLabel: string
+    extraFolderVisibilityLabel: string
     extraFolderAddSave: string
     extraFolderAddCancel: string
     extraFolderAddError: string

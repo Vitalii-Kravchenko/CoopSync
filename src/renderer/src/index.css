@@ -211,6 +211,25 @@ body {
   border-color: rgba(54, 226, 232, 0.45) !important;
   background: rgba(54, 226, 232, 0.05) !important;
 }
+/* Extra-folder card (ExtraFoldersSection) — expand/collapse chevron, the
+   "Тільки я"/"Спільна" segmented option buttons, and the danger-zone
+   "Видалити папку" link. All plain reset-btn buttons with no inline
+   background/border of their own, so a plain CSS :hover works directly. */
+.folder-chevron-btn:hover {
+  background: rgba(54, 226, 232, 0.08);
+}
+.segment-option-btn:hover:not(:disabled) {
+  color: #edf1fa !important;
+}
+.remove-folder-btn:hover:not(:disabled) {
+  color: #ff9aa6 !important;
+  background: rgba(255, 107, 124, 0.08) !important;
+}
+/* Exclude-files inline disclosure toggle (ExcludeFilesCard, variant="inline") —
+   brightens its label on hover so it doesn't look like static text. */
+.inline-exclude-toggle:hover span {
+  color: #edf1fa !important;
+}
 .btn-primary {
   position: relative;
   z-index: 0;

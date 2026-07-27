@@ -1031,7 +1031,12 @@ const styles: Record<string, React.CSSProperties> = {
   // but only because each IS the actual bordered card (ExcludeFilesCard
   // takes this as its own root's style instead of being wrapped in an
   // extra div, which stretch can't see through to size correctly).
-  syncBehaviorItem: { flex: '1 1 320px', minWidth: 320 },
+  // marginBottom:0 cancels ExcludeFilesCard's own default spacing (meant for
+  // when it sits stacked above other content) — align-items:'stretch' grows
+  // an item's border box to fill the line height MINUS its own margin, so
+  // that unrelated 20px margin was quietly shrinking its visible border box
+  // 20px shorter than exeCard's right next to it.
+  syncBehaviorItem: { flex: '1 1 320px', minWidth: 320, marginBottom: 0 },
   exeCard: {
     flex: '1 1 320px',
     minWidth: 320,

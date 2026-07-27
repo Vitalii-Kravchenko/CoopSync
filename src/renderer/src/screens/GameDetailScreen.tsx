@@ -671,18 +671,17 @@ function GameDetailScreen({
               )}
             </div>
 
-            <div style={styles.syncBehaviorItem}>
-              <ExcludeFilesCard
-                // Remounts (and re-fetches) whenever the save path actually
-                // changes — without this it kept showing the file list from
-                // whatever folder was set before, since appId/folderId alone
-                // don't change when just the path does.
-                key={`${appId}:${savePathInfo?.path ?? ''}`}
-                appId={appId}
-                onError={(msg) => onBanner({ text: msg, kind: 'error' })}
-                onChanged={onSynced}
-              />
-            </div>
+            <ExcludeFilesCard
+              // Remounts (and re-fetches) whenever the save path actually
+              // changes — without this it kept showing the file list from
+              // whatever folder was set before, since appId/folderId alone
+              // don't change when just the path does.
+              key={`${appId}:${savePathInfo?.path ?? ''}`}
+              appId={appId}
+              onError={(msg) => onBanner({ text: msg, kind: 'error' })}
+              onChanged={onSynced}
+              style={styles.syncBehaviorItem}
+            />
           </div>
 
           <ExtraFoldersSection
@@ -1022,11 +1021,20 @@ const styles: Record<string, React.CSSProperties> = {
   // leaving the other half empty instead of the lone item filling the row.
   // flex-grow on a flex-wrap row naturally fills whatever's left on its own
   // line, whether that's one item alone or two sharing the row evenly.
+  // minWidth 320 (not a smaller number) is deliberate: the window's own
+  // hard floor (880px, main/index.ts) leaves ~610px for this content area
+  // at minimum size — anything much under 320 each never actually reaches
+  // the width where wrapping would trigger, so the "collapses to one
+  // column" behavior would exist in code but be unreachable in practice.
   syncBehaviorGrid: { display: 'flex', flexWrap: 'wrap', gap: 16, marginBottom: 20 },
-  syncBehaviorItem: { flex: '1 1 240px', minWidth: 240 },
+  // Default align-items:'stretch' matches this row's two items' heights —
+  // but only because each IS the actual bordered card (ExcludeFilesCard
+  // takes this as its own root's style instead of being wrapped in an
+  // extra div, which stretch can't see through to size correctly).
+  syncBehaviorItem: { flex: '1 1 320px', minWidth: 320 },
   exeCard: {
-    flex: '1 1 240px',
-    minWidth: 240,
+    flex: '1 1 320px',
+    minWidth: 320,
     border: `1px solid ${colors.borderSubtle}`,
     borderRadius: radii.lg,
     padding: '16px 18px'

@@ -21,6 +21,10 @@ interface Props {
    *  for the extra-folders card where this is a rarely-touched setting that
    *  shouldn't carry the same visual weight as the main content. */
   variant?: 'card' | 'inline'
+  /** Extra styles merged onto the root ('card' variant only) — lets a
+   *  caller make it a flex item alongside a sibling card so both stretch
+   *  to the same height, instead of each sitting at its own content height. */
+  style?: React.CSSProperties
 }
 
 // Files sitting in the save folder's top level (not subfolders — see
@@ -29,7 +33,14 @@ interface Props {
 // folders via folderId) and AddCustomGameModal (right after a brand-new
 // custom game's appId exists) — appId is the only thing either caller needs
 // to have ready.
-function ExcludeFilesCard({ appId, folderId, onError, onChanged, variant = 'card' }: Props): React.JSX.Element {
+function ExcludeFilesCard({
+  appId,
+  folderId,
+  onError,
+  onChanged,
+  variant = 'card',
+  style
+}: Props): React.JSX.Element {
   const { t } = useI18n()
   const [saveFiles, setSaveFiles] = useState<string[]>([])
   const [excludedFiles, setExcludedFiles] = useState<string[]>([])
@@ -121,7 +132,7 @@ function ExcludeFilesCard({ appId, folderId, onError, onChanged, variant = 'card
   }
 
   return (
-    <div style={styles.card}>
+    <div style={{ ...styles.card, ...style }}>
       <div style={styles.topRow}>
         <div style={styles.labelRow}>
           <DiskIcon size={14} color={colors.text3} />

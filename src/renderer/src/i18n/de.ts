@@ -23,6 +23,7 @@ export const de: Translation = {
     pushSkippedStale:
       'Der lokale Spielstand wirkt veraltet (seit dem letzten Cloud-Sync unverändert) — automatischer Upload übersprungen, um die Cloud nicht zu überschreiben. Lade bei Bedarf die Cloud-Version manuell herunter.',
     pushSkippedNoChange: 'Keine Änderungen — nichts hochzuladen',
+    pushSkippedNoChangeExit: 'Beim Beenden geprüft — nichts hochzuladen, alles war schon synchronisiert',
     statusesError: 'Synchronisierungsstatus konnte nicht geprüft werden',
     retry: 'Erneut versuchen',
     addGameCard: 'Spiel hinzufügen'
@@ -156,7 +157,33 @@ export const de: Translation = {
     excludeFilesHint:
       'Markiere hier Dateien, die nicht synchronisiert werden sollen — lokale Einstellungen, Kontodaten, alles, was eigentlich kein Spielstand ist. Aufgelistet werden nur Dateien direkt im Speicherordner (keine Unterordner). Diese Auswahl gilt nur auf diesem PC — sie wird nicht mit deinem Mitspieler geteilt, da sich die genauen Dateinamen zwischen Installationen unterscheiden können. Dein Freund sollte Dateien separat ausschließen, basierend darauf, was in seinem eigenen Ordner liegt.',
     excludeFilesEmpty: 'Im Speicherordner sind noch keine Dateien vorhanden.',
-    excludeFilesRefresh: 'Dateiliste aktualisieren'
+    excludeFilesRefresh: 'Dateiliste aktualisieren',
+    extraFoldersTitle: 'Zusätzliche Speicherordner',
+    extraFoldersHint:
+      'Synchronisiere für dieses Spiel einen weiteren Ordner separat — z. B. Charakterspielstände getrennt von Weltspielständen. Markiere einen Ordner als „Nur ich" — er wird trotzdem in die Cloud gesichert, nur in deinen eigenen privaten Bereich, den dein Mitspieler nie sieht.',
+    extraFoldersEmpty: 'Noch keine zusätzlichen Ordner',
+    extraFoldersAdd: 'Ordner hinzufügen',
+    extraFolderLabelPlaceholder: 'Name (z. B. Charaktere)',
+    extraFolderPathPlaceholder: 'Ordnerpfad',
+    extraFolderBrowse: 'Durchsuchen',
+    extraFolderShared: 'Mit meinem Mitspieler geteilt',
+    extraFolderPersonal: 'Nur ich',
+    extraFolderSharedHint: 'Wird genauso synchronisiert wie der Hauptordner des Spiels — dein Mitspieler sieht ihn auch.',
+    extraFolderPersonalHint:
+      'Wird trotzdem in die Cloud gesichert (mit eigener Versionshistorie), aber in einen privaten Bereich unter deinem eigenen Konto — dein Mitspieler sieht ihn nie.',
+    extraFolderAddSave: 'Hinzufügen',
+    extraFolderAddCancel: 'Abbrechen',
+    extraFolderAddError: 'Ordner konnte nicht hinzugefügt werden',
+    extraFolderNoPath: 'Kein Ordner festgelegt',
+    extraFolderRemove: 'Ordner entfernen',
+    extraFolderRemoveConfirmTitle: 'Diesen Ordner entfernen?',
+    extraFolderRemoveConfirmDesc: (label) =>
+      `Synchronisierung von „${label}" beenden? Bereits in der Cloud vorhandene Daten werden nicht gelöscht.`,
+    extraFolderRemoveError: 'Ordner konnte nicht entfernt werden',
+    extraFolderRenameError: 'Ordner konnte nicht umbenannt werden',
+    extraFolderShareToggleError: 'Freigabeeinstellung konnte nicht geändert werden',
+    extraFolderShareToggleSuccess: 'Freigabeeinstellung aktualisiert',
+    extraFolderShareToggleBusy: 'Wird gespeichert…'
   },
   cloudWarning: {
     title: 'Steam Cloud für synchronisierte Spiele deaktivieren',
@@ -191,7 +218,10 @@ export const de: Translation = {
     accessRevokedTitle: 'Zugriff entzogen',
     accessRevokedBody: (host) => `Du hast keinen Zugriff mehr auf den gemeinsamen Speicher von ${host}.`,
     gameRemovedTitle: 'Spiel entfernt',
-    gameRemovedBody: (game) => `„${game}" wurde aus dem Koop entfernt — dein Freund hat es von der Liste genommen.`
+    gameRemovedBody: (game) => `„${game}" wurde aus dem Koop entfernt — dein Freund hat es von der Liste genommen.`,
+    folderRemovedTitle: 'Ordner nicht mehr geteilt',
+    folderRemovedBody: (game, folder) =>
+      `„${game} / ${folder}" wird nicht mehr geteilt — entweder entfernt, oder dein Freund hat ihn auf privat gestellt.`
   },
   onboarding: {
     welcomeTitle: 'Willkommen bei CoopSync!',
@@ -335,6 +365,7 @@ export const de: Translation = {
     GAME_NOT_SUPPORTED: () => 'Spiel nicht unterstützt',
     CUSTOM_GAME_INVALID: () => 'Gib einen Spielnamen und einen Speicherordner an',
     GAME_NAME_INVALID_CHARS: () => 'Der Spielname darf nicht \\ / : * ? " < > | enthalten',
+    GAME_NAME_TAKEN: () => 'Ein Spiel mit diesem Namen gibt es schon — wähle einen anderen Namen',
     GAME_RUNNING: () => 'Das Spiel läuft noch — schließe es zuerst und versuche dann erneut, die Version wiederherzustellen',
     SAVE_FOLDER_NOT_FOUND: () => 'Spielstand-Ordner nicht gefunden',
     NO_CLOUD_SAVES: () => 'Für dieses Spiel gibt es noch keine Spielstände im Speicher',
@@ -345,6 +376,10 @@ export const de: Translation = {
       p.time ? `GitHub-Anfragelimit erreicht — versuche es gegen ${p.time} erneut.` : 'GitHub-Anfragelimit erreicht — warte kurz und versuche es erneut.',
     SUPPORT_SEND_FAILED: () => 'Senden fehlgeschlagen. Versuche es gleich noch einmal.',
     SUPPORT_RATE_LIMITED: (p) =>
-      p.time ? `Zu viele Versuche — versuche es gegen ${p.time} erneut.` : 'Zu viele Versuche — warte kurz und versuche es erneut.'
+      p.time ? `Zu viele Versuche — versuche es gegen ${p.time} erneut.` : 'Zu viele Versuche — warte kurz und versuche es erneut.',
+    NOT_FOLDER_OWNER: () => 'Nur wer diesen Ordner hinzugefügt hat, kann seine Freigabe ändern',
+    FOLDER_NAME_TAKEN: () => 'Für dieses Spiel gibt es bereits einen Ordner mit diesem Namen — wähle einen anderen',
+    FOLDER_PATH_OVERLAPS: (p) =>
+      `Dieser Ordner (oder ein Ordner darin/darüber) wird bereits als Teil von „${p.with}" synchronisiert — wähle einen noch nicht verwendeten Ordner`
   }
 }

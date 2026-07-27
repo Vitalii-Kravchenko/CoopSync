@@ -23,6 +23,7 @@ export const tr: Translation = {
     pushSkippedStale:
       "Yerel kayıt eski görünüyor (son bulut senkronizasyonundan beri değişmemiş) — bulutun üzerine yazmamak için otomatik yükleme atlandı. Gerekirse bulut sürümünü elle indir.",
     pushSkippedNoChange: 'Değişiklik yok — yüklenecek bir şey yoktu',
+    pushSkippedNoChangeExit: 'Çıkışta kontrol edildi — yüklenecek bir şey yok, her şey zaten senkronizeydi',
     statusesError: 'Senkronizasyon durumu kontrol edilemedi',
     retry: 'Tekrar dene',
     addGameCard: 'Oyun ekle'
@@ -156,7 +157,33 @@ export const tr: Translation = {
     excludeFilesHint:
       'Senkronize edilmemesi gereken dosyaları buradan işaretle — yerel ayarlar, hesap verileri, aslında kayıt olmayan her şey. Yalnızca kayıt klasöründeki doğrudan dosyalar listelenir (alt klasörler değil). Bu seçim yalnızca bu bilgisayar için geçerlidir — oyun arkadaşınla paylaşılmaz, çünkü tam dosya adları kurulumlar arasında farklılık gösterebilir. Arkadaşın, kendi klasöründe gördüklerine göre dosyaları ayrıca hariç tutmalı.',
     excludeFilesEmpty: 'Kayıt klasöründe henüz dosya yok.',
-    excludeFilesRefresh: 'Dosya listesini yenile'
+    excludeFilesRefresh: 'Dosya listesini yenile',
+    extraFoldersTitle: 'Ek kayıt klasörleri',
+    extraFoldersHint:
+      'Bu oyun için ayrı bir klasörü daha senkronize et — örneğin karakter kayıtlarını dünya kayıtlarından ayrı tutarak. Bir klasörü "Sadece ben" olarak işaretle — yine de buluta yedeklenir, ama ortağının asla göremeyeceği kendi özel alanına.',
+    extraFoldersEmpty: 'Henüz ek klasör yok',
+    extraFoldersAdd: 'Klasör ekle',
+    extraFolderLabelPlaceholder: 'Ad (örn. Karakterler)',
+    extraFolderPathPlaceholder: 'Klasör yolu',
+    extraFolderBrowse: 'Gözat',
+    extraFolderShared: 'Ortağımla paylaşılıyor',
+    extraFolderPersonal: 'Sadece ben',
+    extraFolderSharedHint: 'Oyunun ana klasörüyle aynı şekilde senkronize edilir — ortağın da görür.',
+    extraFolderPersonalHint:
+      'Yine de buluta yedeklenir (kendi sürüm geçmişiyle), ama kendi hesabın altındaki özel bir alana — ortağın hiçbir zaman göremez.',
+    extraFolderAddSave: 'Ekle',
+    extraFolderAddCancel: 'İptal',
+    extraFolderAddError: 'Klasör eklenemedi',
+    extraFolderNoPath: 'Klasör ayarlanmadı',
+    extraFolderRemove: 'Klasörü kaldır',
+    extraFolderRemoveConfirmTitle: 'Bu klasör kaldırılsın mı?',
+    extraFolderRemoveConfirmDesc: (label) =>
+      `"${label}" senkronizasyonu durdurulsun mu? Bulutta zaten olan hiçbir şey silinmez.`,
+    extraFolderRemoveError: 'Klasör kaldırılamadı',
+    extraFolderRenameError: 'Klasör yeniden adlandırılamadı',
+    extraFolderShareToggleError: 'Paylaşım ayarı değiştirilemedi',
+    extraFolderShareToggleSuccess: 'Paylaşım ayarı güncellendi',
+    extraFolderShareToggleBusy: 'Kaydediliyor…'
   },
   cloudWarning: {
     title: "Senkronize edilen oyunlar için Steam Cloud'u kapat",
@@ -191,7 +218,10 @@ export const tr: Translation = {
     accessRevokedTitle: 'Erişim iptal edildi',
     accessRevokedBody: (host) => `Artık ${host} kullanıcısının paylaşılan deposuna erişimin yok.`,
     gameRemovedTitle: 'Oyun kaldırıldı',
-    gameRemovedBody: (game) => `"${game}" co-op'tan kaldırıldı — arkadaşın onu listeden çıkardı.`
+    gameRemovedBody: (game) => `"${game}" co-op'tan kaldırıldı — arkadaşın onu listeden çıkardı.`,
+    folderRemovedTitle: 'Klasör artık paylaşılmıyor',
+    folderRemovedBody: (game, folder) =>
+      `"${game} / ${folder}" artık paylaşılmıyor — ya kaldırıldı, ya da arkadaşın onu kişisel yaptı.`
   },
   onboarding: {
     welcomeTitle: "CoopSync'e hoş geldin!",
@@ -334,6 +364,7 @@ export const tr: Translation = {
     GAME_NOT_SUPPORTED: () => 'Oyun desteklenmiyor',
     CUSTOM_GAME_INVALID: () => 'Bir oyun adı ve kayıt klasörü gir',
     GAME_NAME_INVALID_CHARS: () => 'Oyun adı \\ / : * ? " < > | karakterlerini içeremez',
+    GAME_NAME_TAKEN: () => 'Bu isimde bir oyun zaten var — başka bir isim seç',
     GAME_RUNNING: () => 'Oyun hâlâ çalışıyor — önce onu kapat, sonra sürümü geri yüklemeyi tekrar dene',
     SAVE_FOLDER_NOT_FOUND: () => 'Kayıt klasörü bulunamadı',
     NO_CLOUD_SAVES: () => 'Depoda bu oyuna ait kayıt henüz yok',
@@ -344,6 +375,10 @@ export const tr: Translation = {
       p.time ? `GitHub istek limiti doldu — saat ${p.time} civarında tekrar dene.` : 'GitHub istek limiti doldu — biraz bekleyip tekrar dene.',
     SUPPORT_SEND_FAILED: () => 'Gönderilemedi. Birazdan tekrar dene.',
     SUPPORT_RATE_LIMITED: (p) =>
-      p.time ? `Çok fazla deneme — saat ${p.time} civarında tekrar dene.` : 'Çok fazla deneme — biraz bekleyip tekrar dene.'
+      p.time ? `Çok fazla deneme — saat ${p.time} civarında tekrar dene.` : 'Çok fazla deneme — biraz bekleyip tekrar dene.',
+    NOT_FOLDER_OWNER: () => 'Bu klasörün paylaşım ayarını yalnızca ekleyen kişi değiştirebilir',
+    FOLDER_NAME_TAKEN: () => 'Bu oyun için bu isimde bir klasör zaten var — başka bir isim seç',
+    FOLDER_PATH_OVERLAPS: (p) =>
+      `Bu klasör (veya içindeki/üstündeki bir klasör) zaten "${p.with}" için senkronize ediliyor — henüz kullanılmayan bir klasör seç`
   }
 }

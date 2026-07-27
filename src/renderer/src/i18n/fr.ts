@@ -23,6 +23,7 @@ export const fr: Translation = {
     pushSkippedStale:
       "La sauvegarde locale semble obsolète (inchangée depuis la dernière synchro cloud) — envoi automatique ignoré pour ne pas écraser le cloud. Télécharge la version cloud manuellement si besoin.",
     pushSkippedNoChange: 'Aucun changement — rien à envoyer',
+    pushSkippedNoChangeExit: 'Vérifié à la sortie — rien à envoyer, tout était déjà synchronisé',
     statusesError: 'Impossible de vérifier le statut de synchronisation',
     retry: 'Réessayer',
     addGameCard: 'Ajouter un jeu'
@@ -156,7 +157,33 @@ export const fr: Translation = {
     excludeFilesHint:
       "Coche ici les fichiers qui ne doivent pas être synchronisés — paramètres locaux, données de compte, tout ce qui n'est pas vraiment une sauvegarde. Seuls les fichiers directement dans le dossier de sauvegarde sont listés (pas les sous-dossiers). Ce choix ne s'applique qu'à ce PC — il n'est pas partagé avec ton coéquipier, car les noms de fichiers exacts peuvent différer d'une installation à l'autre. Ton ami doit exclure ses fichiers séparément, selon ce qu'il voit dans son propre dossier.",
     excludeFilesEmpty: "Il n'y a pas encore de fichiers dans le dossier de sauvegarde.",
-    excludeFilesRefresh: 'Actualiser la liste des fichiers'
+    excludeFilesRefresh: 'Actualiser la liste des fichiers',
+    extraFoldersTitle: 'Dossiers de sauvegarde supplémentaires',
+    extraFoldersHint:
+      "Synchronisez un autre dossier pour ce jeu séparément — par exemple les sauvegardes de personnages séparées des sauvegardes de mondes. Marquez un dossier « Moi seulement » : il est quand même sauvegardé dans le cloud, mais dans votre propre espace privé que votre partenaire ne voit jamais.",
+    extraFoldersEmpty: 'Aucun dossier supplémentaire pour le moment',
+    extraFoldersAdd: 'Ajouter un dossier',
+    extraFolderLabelPlaceholder: 'Nom (ex. Personnages)',
+    extraFolderPathPlaceholder: 'Chemin du dossier',
+    extraFolderBrowse: 'Parcourir',
+    extraFolderShared: 'Partagé avec mon partenaire',
+    extraFolderPersonal: 'Moi seulement',
+    extraFolderSharedHint: 'Synchronisé comme le dossier principal du jeu — votre partenaire le voit aussi.',
+    extraFolderPersonalHint:
+      "Toujours sauvegardé dans le cloud (avec son propre historique de versions), mais dans un espace privé sous votre propre compte — votre partenaire ne le voit jamais.",
+    extraFolderAddSave: 'Ajouter',
+    extraFolderAddCancel: 'Annuler',
+    extraFolderAddError: "Impossible d'ajouter le dossier",
+    extraFolderNoPath: 'Aucun dossier défini',
+    extraFolderRemove: 'Supprimer le dossier',
+    extraFolderRemoveConfirmTitle: 'Supprimer ce dossier ?',
+    extraFolderRemoveConfirmDesc: (label) =>
+      `Arrêter de synchroniser « ${label} » ? Rien de ce qui est déjà dans le cloud n'est supprimé.`,
+    extraFolderRemoveError: 'Impossible de supprimer le dossier',
+    extraFolderRenameError: 'Impossible de renommer le dossier',
+    extraFolderShareToggleError: 'Impossible de modifier le partage',
+    extraFolderShareToggleSuccess: 'Partage mis à jour',
+    extraFolderShareToggleBusy: 'Mise à jour…'
   },
   cloudWarning: {
     title: 'Désactive Steam Cloud pour les jeux synchronisés',
@@ -191,7 +218,10 @@ export const fr: Translation = {
     accessRevokedTitle: 'Accès révoqué',
     accessRevokedBody: (host) => `Tu n'as plus accès au stockage partagé de ${host}.`,
     gameRemovedTitle: 'Jeu supprimé',
-    gameRemovedBody: (game) => `« ${game} » a été retiré du coop — ton ami l'a enlevé de la liste.`
+    gameRemovedBody: (game) => `« ${game} » a été retiré du coop — ton ami l'a enlevé de la liste.`,
+    folderRemovedTitle: "Dossier plus partagé",
+    folderRemovedBody: (game, folder) =>
+      `« ${game} / ${folder} » n'est plus partagé — soit supprimé, soit ton ami l'a rendu personnel.`
   },
   onboarding: {
     welcomeTitle: 'Bienvenue sur CoopSync !',
@@ -335,6 +365,7 @@ export const fr: Translation = {
     GAME_NOT_SUPPORTED: () => 'Jeu non pris en charge',
     CUSTOM_GAME_INVALID: () => 'Indique un nom de jeu et un dossier de sauvegarde',
     GAME_NAME_INVALID_CHARS: () => 'Le nom du jeu ne peut pas contenir \\ / : * ? " < > |',
+    GAME_NAME_TAKEN: () => 'Un jeu avec ce nom existe déjà — choisis un autre nom',
     GAME_RUNNING: () => "Le jeu est encore en cours d'exécution — ferme-le d'abord, puis réessaie de restaurer la version",
     SAVE_FOLDER_NOT_FOUND: () => 'Dossier de sauvegarde introuvable',
     NO_CLOUD_SAVES: () => "Aucune sauvegarde de ce jeu dans le stockage pour l'instant",
@@ -345,6 +376,10 @@ export const fr: Translation = {
       p.time ? `Limite de requêtes GitHub atteinte — réessaie vers ${p.time}.` : 'Limite de requêtes GitHub atteinte — attends un peu et réessaie.',
     SUPPORT_SEND_FAILED: () => "Échec de l'envoi. Réessaie dans un instant.",
     SUPPORT_RATE_LIMITED: (p) =>
-      p.time ? `Trop de tentatives — réessaie vers ${p.time}.` : 'Trop de tentatives — attends un peu et réessaie.'
+      p.time ? `Trop de tentatives — réessaie vers ${p.time}.` : 'Trop de tentatives — attends un peu et réessaie.',
+    NOT_FOLDER_OWNER: () => "Seul celui qui a ajouté ce dossier peut changer son partage",
+    FOLDER_NAME_TAKEN: () => 'Un dossier avec ce nom existe déjà pour ce jeu — choisis un autre nom',
+    FOLDER_PATH_OVERLAPS: (p) =>
+      `Ce dossier (ou un dossier à l'intérieur/au-dessus) est déjà synchronisé dans le cadre de « ${p.with} » — choisis un dossier pas encore utilisé`
   }
 }

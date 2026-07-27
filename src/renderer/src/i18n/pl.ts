@@ -23,6 +23,7 @@ export const pl: Translation = {
     pushSkippedStale:
       'Lokalny zapis wygląda na nieaktualny (bez zmian od ostatniej synchronizacji z chmurą) — automatyczne wysyłanie pominięte, by nie nadpisać chmury. W razie potrzeby pobierz wersję z chmury ręcznie.',
     pushSkippedNoChange: 'Bez zmian — nie było czego wysyłać',
+    pushSkippedNoChangeExit: 'Sprawdzono przy wyjściu — nie było czego wysyłać, wszystko już było zsynchronizowane',
     statusesError: 'Nie udało się sprawdzić statusu synchronizacji',
     retry: 'Spróbuj ponownie',
     addGameCard: 'Dodaj grę'
@@ -155,7 +156,33 @@ export const pl: Translation = {
     excludeFilesHint:
       'Zaznacz tu pliki, które nie powinny być synchronizowane — lokalne ustawienia, dane konta, wszystko, co nie jest właściwym zapisem. Lista zawiera tylko pliki bezpośrednio w folderze zapisów (bez podfolderów). Ten wybór dotyczy tylko tego komputera — nie jest udostępniany znajomemu, bo dokładne nazwy plików mogą się różnić między instalacjami. Znajomy powinien wykluczyć pliki osobno, na podstawie tego, co widzi w swoim folderze.',
     excludeFilesEmpty: 'W folderze zapisów nie ma jeszcze żadnych plików.',
-    excludeFilesRefresh: 'Odśwież listę plików'
+    excludeFilesRefresh: 'Odśwież listę plików',
+    extraFoldersTitle: 'Dodatkowe foldery zapisów',
+    extraFoldersHint:
+      'Synchronizuj dla tej gry jeszcze jeden folder osobno — np. zapisy postaci oddzielnie od zapisów światów. Oznacz folder jako „Tylko ja" — nadal będzie kopiowany do chmury, ale do Twojej własnej prywatnej przestrzeni, której partner nigdy nie zobaczy.',
+    extraFoldersEmpty: 'Brak dodatkowych folderów',
+    extraFoldersAdd: 'Dodaj folder',
+    extraFolderLabelPlaceholder: 'Nazwa (np. Postacie)',
+    extraFolderPathPlaceholder: 'Ścieżka do folderu',
+    extraFolderBrowse: 'Przeglądaj',
+    extraFolderShared: 'Współdzielony z partnerem',
+    extraFolderPersonal: 'Tylko ja',
+    extraFolderSharedHint: 'Synchronizowany tak samo jak główny folder gry — partner też go widzi.',
+    extraFolderPersonalHint:
+      'Nadal kopiowany do chmury (z własną historią wersji), ale do prywatnej przestrzeni na Twoim koncie — partner go nie widzi.',
+    extraFolderAddSave: 'Dodaj',
+    extraFolderAddCancel: 'Anuluj',
+    extraFolderAddError: 'Nie udało się dodać folderu',
+    extraFolderNoPath: 'Nie wybrano folderu',
+    extraFolderRemove: 'Usuń folder',
+    extraFolderRemoveConfirmTitle: 'Usunąć ten folder?',
+    extraFolderRemoveConfirmDesc: (label) =>
+      `Przestać synchronizować „${label}"? Dane już zapisane w chmurze nie zostaną usunięte.`,
+    extraFolderRemoveError: 'Nie udało się usunąć folderu',
+    extraFolderRenameError: 'Nie udało się zmienić nazwy folderu',
+    extraFolderShareToggleError: 'Nie udało się zmienić ustawienia udostępniania',
+    extraFolderShareToggleSuccess: 'Zaktualizowano ustawienie udostępniania',
+    extraFolderShareToggleBusy: 'Zapisywanie…'
   },
   cloudWarning: {
     title: 'Wyłącz Steam Cloud dla synchronizowanych gier',
@@ -190,7 +217,10 @@ export const pl: Translation = {
     accessRevokedTitle: 'Dostęp cofnięty',
     accessRevokedBody: (host) => `Nie masz już dostępu do wspólnego magazynu ${host}.`,
     gameRemovedTitle: 'Gra usunięta',
-    gameRemovedBody: (game) => `„${game}" zostało usunięte z coopa — znajomy usunął ją z listy.`
+    gameRemovedBody: (game) => `„${game}" zostało usunięte z coopa — znajomy usunął ją z listy.`,
+    folderRemovedTitle: 'Folder już nie współdzielony',
+    folderRemovedBody: (game, folder) =>
+      `„${game} / ${folder}" nie jest już współdzielony — albo usunięty, albo znajomy zmienił go na osobisty.`
   },
   onboarding: {
     welcomeTitle: 'Witamy w CoopSync!',
@@ -334,6 +364,7 @@ export const pl: Translation = {
     GAME_NOT_SUPPORTED: () => 'Gra nieobsługiwana',
     CUSTOM_GAME_INVALID: () => 'Podaj nazwę gry i folder zapisów',
     GAME_NAME_INVALID_CHARS: () => 'Nazwa gry nie może zawierać znaków \\ / : * ? " < > |',
+    GAME_NAME_TAKEN: () => 'Gra o tej nazwie już istnieje — wybierz inną nazwę',
     GAME_RUNNING: () => 'Gra wciąż działa — zamknij ją najpierw, a potem spróbuj ponownie przywrócić wersję',
     SAVE_FOLDER_NOT_FOUND: () => 'Nie znaleziono folderu zapisów',
     NO_CLOUD_SAVES: () => 'W magazynie nie ma jeszcze zapisów tej gry',
@@ -344,6 +375,10 @@ export const pl: Translation = {
       p.time ? `Osiągnięto limit żądań GitHub — spróbuj ponownie około ${p.time}.` : 'Osiągnięto limit żądań GitHub — poczekaj chwilę i spróbuj ponownie.',
     SUPPORT_SEND_FAILED: () => 'Nie udało się wysłać. Spróbuj ponownie za chwilę.',
     SUPPORT_RATE_LIMITED: (p) =>
-      p.time ? `Zbyt wiele prób — spróbuj ponownie około ${p.time}.` : 'Zbyt wiele prób — poczekaj chwilę i spróbuj ponownie.'
+      p.time ? `Zbyt wiele prób — spróbuj ponownie około ${p.time}.` : 'Zbyt wiele prób — poczekaj chwilę i spróbuj ponownie.',
+    NOT_FOLDER_OWNER: () => 'Tylko osoba, która dodała ten folder, może zmienić jego udostępnianie',
+    FOLDER_NAME_TAKEN: () => 'Folder o tej nazwie już istnieje dla tej gry — wybierz inną nazwę',
+    FOLDER_PATH_OVERLAPS: (p) =>
+      `Ten folder (lub folder wewnątrz/nad nim) jest już synchronizowany jako część „${p.with}" — wybierz jeszcze nieużywany folder`
   }
 }

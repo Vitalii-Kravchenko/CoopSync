@@ -120,14 +120,27 @@ function MainScreen({
     }
   }
 
-  async function loadGames(): Promise<void> {
+  // The actual fetch, with no opinion on the full-screen `loading` state —
+  // loadGames() (below) is for the initial mount, where there's nothing on
+  // screen yet so showing "Loading…" is correct. A manual refresh
+  // (handleManualRefresh) already has a full grid on screen and its own
+  // spinning icon on the refresh button — routing it through `loading` too
+  // used to unmount that entire grid (button included) and replace it with
+  // the plain loading text for the duration, then swap back once done: a
+  // visible flash on every click, not the quiet in-place spin it was meant
+  // to be.
+  async function fetchGames(): Promise<void> {
     const id = ++installedRequestIdRef.current
+    const [list, cat] = await Promise.all([window.api.games.allInstalled(), window.api.games.catalog()])
+    if (id === installedRequestIdRef.current) setInstalled(list)
+    setCatalog(cat)
+    setGamesError(null)
+  }
+
+  async function loadGames(): Promise<void> {
     setLoading(true)
     try {
-      const [list, cat] = await Promise.all([window.api.games.allInstalled(), window.api.games.catalog()])
-      if (id === installedRequestIdRef.current) setInstalled(list)
-      setCatalog(cat)
-      setGamesError(null)
+      await fetchGames()
     } catch (e) {
       setGamesError(describeError(e, t, t.main.statusesError))
     } finally {
@@ -196,7 +209,9 @@ function MainScreen({
   async function handleManualRefresh(): Promise<void> {
     setManualRefreshing(true)
     try {
-      await Promise.all([loadGames(), loadStatuses()])
+      await Promise.all([fetchGames(), loadStatuses()])
+    } catch (e) {
+      setGamesError(describeError(e, t, t.main.statusesError))
     } finally {
       setManualRefreshing(false)
     }

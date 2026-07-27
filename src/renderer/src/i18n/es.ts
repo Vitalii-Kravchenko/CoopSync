@@ -23,6 +23,7 @@ export const es: Translation = {
     pushSkippedStale:
       'La partida local parece desactualizada (sin cambios desde la última sincronización con la nube) — subida automática omitida para no sobrescribir la nube. Descarga la versión de la nube manualmente si es necesario.',
     pushSkippedNoChange: 'Sin cambios — nada que subir',
+    pushSkippedNoChangeExit: 'Comprobado al salir — nada que subir, todo ya estaba sincronizado',
     statusesError: 'No se pudo comprobar el estado de sincronización',
     retry: 'Reintentar',
     addGameCard: 'Añadir juego'
@@ -155,7 +156,33 @@ export const es: Translation = {
     excludeFilesHint:
       'Marca aquí los archivos que no deberían sincronizarse — ajustes locales, datos de la cuenta, cualquier cosa que en realidad no sea un guardado. Solo se listan los archivos directamente en la carpeta de guardado (sin subcarpetas). Esta elección solo aplica en este PC — no se comparte con tu compañero, ya que los nombres exactos de archivo pueden diferir entre instalaciones. Tu amigo debe excluir archivos por su cuenta, según lo que vea en su propia carpeta.',
     excludeFilesEmpty: 'Todavía no hay archivos en la carpeta de guardado.',
-    excludeFilesRefresh: 'Actualizar lista de archivos'
+    excludeFilesRefresh: 'Actualizar lista de archivos',
+    extraFoldersTitle: 'Carpetas de guardado adicionales',
+    extraFoldersHint:
+      'Sincroniza otra carpeta para este juego por separado — por ejemplo, partidas de personajes separadas de las de mundos. Marca una carpeta como "Solo yo": igual se respalda en la nube, pero en tu propio espacio privado que tu compañero nunca ve.',
+    extraFoldersEmpty: 'Aún no hay carpetas adicionales',
+    extraFoldersAdd: 'Añadir carpeta',
+    extraFolderLabelPlaceholder: 'Nombre (ej. Personajes)',
+    extraFolderPathPlaceholder: 'Ruta de la carpeta',
+    extraFolderBrowse: 'Examinar',
+    extraFolderShared: 'Compartida con mi compañero',
+    extraFolderPersonal: 'Solo yo',
+    extraFolderSharedHint: 'Se sincroniza igual que la carpeta principal del juego — tu compañero también la ve.',
+    extraFolderPersonalHint:
+      'Igual se respalda en la nube (con su propio historial de versiones), pero en un espacio privado de tu propia cuenta — tu compañero nunca lo ve.',
+    extraFolderAddSave: 'Añadir',
+    extraFolderAddCancel: 'Cancelar',
+    extraFolderAddError: 'No se pudo añadir la carpeta',
+    extraFolderNoPath: 'No se estableció ninguna carpeta',
+    extraFolderRemove: 'Quitar carpeta',
+    extraFolderRemoveConfirmTitle: '¿Quitar esta carpeta?',
+    extraFolderRemoveConfirmDesc: (label) =>
+      `¿Dejar de sincronizar "${label}"? Nada de lo que ya está en la nube se elimina.`,
+    extraFolderRemoveError: 'No se pudo quitar la carpeta',
+    extraFolderRenameError: 'No se pudo renombrar la carpeta',
+    extraFolderShareToggleError: 'No se pudo cambiar el ajuste de compartición',
+    extraFolderShareToggleSuccess: 'Configuración actualizada',
+    extraFolderShareToggleBusy: 'Guardando…'
   },
   cloudWarning: {
     title: 'Desactiva Steam Cloud para los juegos sincronizados',
@@ -190,7 +217,10 @@ export const es: Translation = {
     accessRevokedTitle: 'Acceso revocado',
     accessRevokedBody: (host) => `Ya no tienes acceso al almacenamiento compartido de ${host}.`,
     gameRemovedTitle: 'Juego eliminado',
-    gameRemovedBody: (game) => `"${game}" se eliminó del co-op — tu amigo lo quitó de la lista.`
+    gameRemovedBody: (game) => `"${game}" se eliminó del co-op — tu amigo lo quitó de la lista.`,
+    folderRemovedTitle: 'La carpeta ya no se comparte',
+    folderRemovedBody: (game, folder) =>
+      `"${game} / ${folder}" ya no se comparte — se eliminó, o tu amigo la puso como solo personal.`
   },
   onboarding: {
     welcomeTitle: '¡Bienvenido a CoopSync!',
@@ -334,6 +364,7 @@ export const es: Translation = {
     GAME_NOT_SUPPORTED: () => 'Juego no compatible',
     CUSTOM_GAME_INVALID: () => 'Indica un nombre de juego y una carpeta de guardado',
     GAME_NAME_INVALID_CHARS: () => 'El nombre del juego no puede contener \\ / : * ? " < > |',
+    GAME_NAME_TAKEN: () => 'Ya existe un juego con ese nombre — elige otro nombre',
     GAME_RUNNING: () => 'El juego todavía está en ejecución — ciérralo primero y vuelve a intentar restaurar la versión',
     SAVE_FOLDER_NOT_FOUND: () => 'Carpeta de partidas guardadas no encontrada',
     NO_CLOUD_SAVES: () => 'Todavía no hay partidas guardadas de este juego en el almacenamiento',
@@ -344,6 +375,10 @@ export const es: Translation = {
       p.time ? `Límite de solicitudes de GitHub alcanzado — inténtalo de nuevo alrededor de las ${p.time}.` : 'Límite de solicitudes de GitHub alcanzado — espera un poco e inténtalo de nuevo.',
     SUPPORT_SEND_FAILED: () => 'No se pudo enviar. Inténtalo de nuevo en un momento.',
     SUPPORT_RATE_LIMITED: (p) =>
-      p.time ? `Demasiados intentos — inténtalo de nuevo alrededor de las ${p.time}.` : 'Demasiados intentos — espera un poco e inténtalo de nuevo.'
+      p.time ? `Demasiados intentos — inténtalo de nuevo alrededor de las ${p.time}.` : 'Demasiados intentos — espera un poco e inténtalo de nuevo.',
+    NOT_FOLDER_OWNER: () => 'Solo quien añadió esta carpeta puede cambiar su configuración de uso compartido',
+    FOLDER_NAME_TAKEN: () => 'Ya existe una carpeta con ese nombre para este juego — elige otro nombre',
+    FOLDER_PATH_OVERLAPS: (p) =>
+      `Esta carpeta (o una carpeta dentro/encima de ella) ya se está sincronizando como parte de "${p.with}" — elige una carpeta que no esté en uso`
   }
 }

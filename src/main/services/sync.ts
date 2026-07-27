@@ -16,7 +16,14 @@ import {
   removeCustomGame,
   getPendingCustomGameRemovals,
   clearPendingCustomGameRemoval,
-  markCustomGameRegistryConfirmed
+  markCustomGameRegistryConfirmed,
+  buildExcludePattern,
+  materializeRemoteExtraFolder,
+  markExtraFolderRegistryConfirmed,
+  setExtraFolderLabel,
+  removeExtraFolder,
+  getPendingFolderRemovals,
+  clearPendingFolderRemoval
 } from '../games/customGames'
 import { addNotification } from './notificationStore'
 import { SAVES_REPO_NAME } from '../config'
@@ -24,7 +31,15 @@ import { isGameCurrentlyRunning } from './processCheck'
 import { createSavesRepo, leaveSharedRepo } from './github'
 import { makeAppError, parseAppError } from '../../shared/errors'
 import { formatVersion } from '../../shared/format'
-import type { SyncStatus, GameSyncStatus, SyncHistoryEntry, SyncResult } from '../../shared/types'
+import type {
+  SyncStatus,
+  GameSyncStatus,
+  SyncHistoryEntry,
+  SyncResult,
+  CustomGame,
+  CustomExtraFolder,
+  FolderSyncStatus
+} from '../../shared/types'
 
 const exec = promisify(execFile)
 const BIG_BUFFER = 64 * 1024 * 1024 // headroom for large saves
@@ -32,6 +47,20 @@ const BIG_BUFFER = 64 * 1024 * 1024 // headroom for large saves
 // Local folder we clone the shared repo into.
 function repoDir(): string {
   return join(app.getPath('userData'), 'saves-repo')
+}
+
+// A game's main save content lives at <gameName>/main/ in the repo — a
+// specific subdirectory, not the whole <gameName>/ folder — so it never
+// overlaps with <gameName>/extra/<folderId>/... (see extraFolderContentDir
+// further down): every content-touching op (rm, copyFiltered, folderHash)
+// only ever reaches into its OWN folder's subtree, this one included, no
+// matter how many extra folders a game ends up with. This is deliberately
+// NOT the whole-directory path uploadGame/downloadGame/etc. used before
+// 2026-07-27 — see extraFolderContentDir's doc comment for the exact
+// feedback-loop bug that caused (main folder's rm+recopy wiping an extra
+// folder that lived inside it, and vice versa for its hash).
+function mainContentDir(gameName: string): string {
+  return join(repoDir(), gameName, 'main')
 }
 
 // Repo URL with the token for private access (push/pull without a separate git login).
@@ -160,10 +189,22 @@ async function doEnsureRepo(token: string, owner: string, retried = false): Prom
       })
     } catch (e) {
       const raw = e instanceof Error ? e.message : String(e)
-      if (!retried && /refusing to merge unrelated histories/i.test(raw)) {
-        // The local clone is stale relative to a recreated GitHub repo (e.g.
-        // someone deleted and recreated the repo) — recreate the clone from
-        // scratch ourselves instead of failing forever with a confusing git error.
+      // Two different reasons the local clone can become unusable, both
+      // fixed the same way (it's a disposable working copy, not a source of
+      // truth — see the big comment above): (1) it's stale relative to a
+      // recreated GitHub repo, or (2) its own .git data got corrupted —
+      // seen in practice as "fatal: bad object HEAD" after the app process
+      // was killed mid git-operation (e.g. an installer force-closing a
+      // still-running CoopSync while a push was in flight). Either way,
+      // every retryable git call from here on would just keep failing with
+      // a confusing raw error forever without this — recreate from scratch
+      // instead.
+      if (
+        !retried &&
+        /refusing to merge unrelated histories|bad object|fatal: not a git repository|unable to read|is corrupt|does not point to a valid object/i.test(
+          raw
+        )
+      ) {
         await rm(dir, { recursive: true, force: true })
         return doEnsureRepo(token, owner, true)
       }
@@ -254,6 +295,51 @@ async function writeRemoteMeta(name: string, version: number, owner: string): Pr
   await writeFile(remoteMetaPath(name), JSON.stringify(meta, null, 2))
 }
 
+// The version number to use for a game's NEXT push, from ANY of its
+// folders (the main one, or any extra folder — shared or personal). One
+// shared counter per game instead of each folder counting independently —
+// otherwise a game's main folder and an extra folder (e.g. world vs.
+// characters) drift apart into unrelated-looking numbers purely because one
+// happened to get pushed more often than the other, which reads as "why do
+// our versions differ?" even though nothing is actually wrong. Folders that
+// weren't touched in a given push simply keep their own last version
+// (falling behind is honest — it really hasn't changed since then) — this
+// only affects what number a NEW push claims.
+// Real gap found 2026-07-27: this used to scan EVERY meta file under a
+// folder, personal-<login>.json included — meaning ONE person's private
+// folder (invisible to their co-op partner, by design — see
+// CustomExtraFolder's doc comment) could inflate the version number the
+// OTHER person sees for the world/shared folders. E.g. if a friend plays
+// solo for a while (only their own personal folder changing, no world
+// activity), the world's version would later jump by however much their
+// invisible personal activity added, the moment you next save it — "why did
+// my world jump from v5 to v9, I only saved once?" with no visible cause.
+// Only shared.json entries (main + shared extra folders — visible to and
+// meaningful for BOTH people) feed this counter now. A personal folder still
+// happily ADOPTS whatever this returns when it's cascaded together with a
+// world save (see watcher.ts) — that's the whole point, staying coordinated
+// with the world when it participates — it just never feeds back into it.
+export async function nextGameVersion(gameName: string): Promise<number> {
+  let max = await readRemoteVersion(gameName)
+  const foldersDir = join(repoDir(), '.meta', 'folders', gameName)
+  if (existsSync(foldersDir)) {
+    for (const folderId of await readdir(foldersDir)) {
+      const folderMetaDir = join(foldersDir, folderId)
+      if (!statSync(folderMetaDir).isDirectory()) continue
+      const sharedMetaPath = join(folderMetaDir, 'shared.json')
+      if (!existsSync(sharedMetaPath)) continue
+      try {
+        const raw = (await readFile(sharedMetaPath, 'utf8')).replace(/^﻿/, '')
+        const meta = JSON.parse(raw) as RemoteMeta
+        if (meta.version > max) max = meta.version
+      } catch {
+        // Corrupt/unreadable entry — ignore it, doesn't block versioning.
+      }
+    }
+  }
+  return max + 1
+}
+
 // --- Sync history ---
 // A log of push events shared between host and join (lives in the repo
 // itself, so it syncs along with the saves). Push only — download is local
@@ -281,6 +367,26 @@ async function appendHistory(entry: SyncHistoryEntry): Promise<void> {
   const next = [entry, ...current]
   await mkdir(join(repoDir(), '.meta'), { recursive: true })
   await writeFile(historyPath(), JSON.stringify(next, null, 2))
+}
+
+/** Drop every history entry for a game (matched by appId — covers both its
+ *  main folder AND any extra folder, since those log under the same appId
+ *  with just a "Game / Folder" label) — called right after a deliberate
+ *  removal (see ipc.ts's games:remove-custom). Best-effort, same as the
+ *  cover cleanup right next to it: a failure here just leaves stale rows in
+ *  the History screen, not worth its own retry-tracking. */
+export function purgeGameHistory(token: string, owner: string, actor: string, appId: string): Promise<void> {
+  return withCustomGameRepoLock(async () => {
+    await ensureRepo(token, owner)
+    const current = await readHistory()
+    const next = current.filter((e) => e.appId !== appId)
+    if (next.length === current.length) return
+    await mkdir(join(repoDir(), '.meta'), { recursive: true })
+    await writeFile(historyPath(), JSON.stringify(next, null, 2))
+    await git(['add', '-A'])
+    await git([...identityFlags(actor), 'commit', '-m', `history: purge entries for removed game ${appId}`])
+    await git(['push', 'origin', 'main'])
+  })
 }
 
 /** Push event history, newest first. */
@@ -324,19 +430,27 @@ async function setLocalVersion(appId: string, version: number): Promise<void> {
  * — who's actually pressing the button right now (for join this is NOT
  * owner) — it's actor that goes into the history/commit. `restoredFrom` —
  * set only by revertToVersion below, when this push's content came from an
- * older version rather than the live save folder. */
+ * older version rather than the live save folder. `explicitVersion` — the
+ * caller (watcher.ts) always passes nextGameVersion's own result explicitly,
+ * rather than this function calling it internally — a single shared
+ * per-game counter (see nextGameVersion) means the main folder and its extra
+ * folders never drift into unrelated-looking numbers, but each ACTUAL push
+ * still claims its own fresh, unique number: two different pushes (e.g. a
+ * mid-session save and a later exit save) must never share one version
+ * number, or "revert to vX" would stop meaning one specific state. */
 export async function uploadGame(
   token: string,
   owner: string,
   appId: string,
   actor: string,
-  restoredFrom?: number
+  restoredFrom?: number,
+  explicitVersion?: number
 ): Promise<SyncResult> {
   await ensureRepo(token, owner)
   const game = findGame(appId)
   if (!existsSync(game.savePath)) throw makeAppError('SAVE_FOLDER_NOT_FOUND')
 
-  const dest = join(repoDir(), game.name)
+  const dest = mainContentDir(game.name)
 
   // If a cloud copy already exists and its content matches the local one
   // (no real changes — typical case: local version tracking got reset, but
@@ -358,7 +472,7 @@ export async function uploadGame(
   await rm(dest, { recursive: true, force: true })
   await copyFiltered(game.savePath, dest, game.saveFilePattern)
 
-  const newVersion = (await readRemoteVersion(game.name)) + 1
+  const newVersion = explicitVersion ?? (await nextGameVersion(game.name))
   await writeRemoteMeta(game.name, newVersion, actor)
   await appendHistory({
     appId,
@@ -405,6 +519,51 @@ async function findCommitForVersion(gameName: string, targetVersion: number): Pr
   throw makeAppError('GIT_GENERIC', { detail: `No commit found for version ${targetVersion}` })
 }
 
+// Same idea as findCommitForVersion, one level down for an extra folder —
+// but a LOOSER match: an extra folder only gets a new meta entry when its
+// OWN content actually changed (see uploadExtraFolder's no-op shortcut), so
+// it doesn't necessarily have an entry at the exact world version being
+// reverted to. The latest entry at or BEFORE that version is the honest
+// answer for "what did this folder look like at that point in time" — if
+// nothing changed between v1 and v3, v1's snapshot IS what v2 and v3 looked
+// like too. Returns null if the folder didn't exist yet at or before the
+// target (nothing to restore, not an error).
+async function findNearestCommitForVersion(metaRelPath: string, targetVersion: number): Promise<string | null> {
+  const log = await git(['log', '--format=%H', '--', metaRelPath])
+  const shas = log
+    .split('\n')
+    .map((s) => s.trim())
+    .filter(Boolean)
+  for (const sha of shas) {
+    try {
+      const raw = await git(['show', `${sha}:${metaRelPath}`])
+      const meta = JSON.parse(raw.replace(/^﻿/, '')) as RemoteMeta
+      // git log is newest-first, so the FIRST entry at or below target is
+      // the nearest one before/at it.
+      if (meta.version <= targetVersion) return sha
+    } catch {
+      // Meta file didn't exist yet at this commit, or isn't parseable — skip it.
+    }
+  }
+  return null
+}
+
+// Relative (git-command) path for an extra folder's meta file and content —
+// mirrors extraFolderMetaPath/extraFolderContentDir, which return absolute
+// filesystem paths (fine for fs calls, but git commands need paths relative
+// to the repo root).
+function extraFolderMetaRelPath(gameName: string, folder: CustomExtraFolder, actor: string): string {
+  return folder.shared
+    ? `.meta/folders/${gameName}/${folder.id}/shared.json`
+    : `.meta/folders/${gameName}/${folder.id}/personal-${actor}.json`
+}
+
+function extraFolderContentRelPath(gameName: string, folder: CustomExtraFolder, actor: string): string {
+  return folder.shared
+    ? `${gameName}/extra/${folder.id}/shared`
+    : `${gameName}/extra/${folder.id}/personal/${actor}`
+}
+
 /** Revert a game's saves to an older version. Not a branch — the old
  *  snapshot is pushed back as a brand new version at the top of history, so
  *  the existing sync flow (auto-pull on a newer remote version) picks it up
@@ -442,12 +601,46 @@ export async function revertToVersion(
   // saves). A plain rm(savePath) wiped those too, forcing a full game
   // re-setup after every revert — clearFiltered only removes what
   // saveFilePattern actually syncs, same scope copyFiltered uses right after.
-  await git(['checkout', sha, '--', game.name])
+  await git(['checkout', sha, '--', `${game.name}/main`])
   await clearFiltered(game.savePath, game.saveFilePattern)
-  await copyFiltered(join(repoDir(), game.name), game.savePath, game.saveFilePattern)
-  await git(['checkout', 'HEAD', '--', game.name])
+  await copyFiltered(mainContentDir(game.name), game.savePath, game.saveFilePattern)
+  await git(['checkout', 'HEAD', '--', `${game.name}/main`])
 
-  return uploadGame(token, owner, appId, actor, targetVersion)
+  const result = await uploadGame(token, owner, appId, actor, targetVersion)
+
+  // Cascade the same revert to this game's own extra folders (both shared
+  // and this user's personal ones — a partner's personal folder was never
+  // materialized on this client at all, so listCustomGames() here can only
+  // ever contain the ones actually relevant to whoever's calling this).
+  // Each one restores to its OWN nearest state at-or-before targetVersion
+  // (see findNearestCommitForVersion's doc comment for why "nearest", not
+  // "exact") and re-uploads sharing result.version, so after a revert the
+  // world and every folder that had anything to restore land on the exact
+  // same number again — same reasoning as the world-save cascade in
+  // watcher.ts, just triggered by a revert instead of a live save.
+  const customGame = listCustomGames().find((g) => g.appId === appId)
+  for (const folder of customGame?.extraFolders ?? []) {
+    if (!folder.savePath) continue
+    try {
+      const metaRelPath = extraFolderMetaRelPath(game.name, folder, actor)
+      const folderSha = await findNearestCommitForVersion(metaRelPath, targetVersion)
+      if (!folderSha) continue // this folder didn't exist yet at/before that point — nothing to restore
+
+      const contentRelPath = extraFolderContentRelPath(game.name, folder, actor)
+      const pattern = buildExcludePattern(folder.excludedFiles)
+      await git(['checkout', folderSha, '--', contentRelPath])
+      await clearFiltered(folder.savePath, pattern)
+      await copyFiltered(join(repoDir(), contentRelPath), folder.savePath, pattern)
+      await git(['checkout', 'HEAD', '--', contentRelPath])
+
+      await uploadExtraFolder(token, owner, appId, folder.id, actor, result.version)
+    } catch {
+      // Best-effort — one folder failing to restore shouldn't fail the
+      // whole revert; the world itself already succeeded above regardless.
+    }
+  }
+
+  return result
 }
 
 // --- Member avatars ---
@@ -516,23 +709,47 @@ export async function getAvatars(
 // savePath (materializeRemoteCustomGame) — shown as 'needs-setup' below
 // until they point it at their own save folder via the game's detail screen.
 
+interface RemoteFolderEntry {
+  id: string
+  label: string
+  /** GitHub login of whoever added this folder — see CustomExtraFolder.addedBy. */
+  addedBy?: string
+}
+
 interface RemoteCustomGameEntry {
   appId: string
   name: string
+  /** Extra shared folders registered on top of this game's main one (see
+   *  the "Extra save folders" section below) — a personal folder is never
+   *  listed here (see CustomExtraFolder's doc comment). */
+  folders?: RemoteFolderEntry[]
 }
 
 function customGamesRegistryPath(): string {
   return join(repoDir(), '.meta', 'custom-games.json')
 }
 
-async function readCustomGamesRegistry(): Promise<RemoteCustomGameEntry[]> {
+// null specifically means "couldn't tell" (the file exists but failed to
+// read/parse — a corrupt or mid-write local clone, e.g. a previous run got
+// killed mid git-operation) — NOT "the registry is genuinely empty". This
+// distinction matters a lot: every writer below reads the current list
+// before modifying it, and the self-heal pass in getSyncStatuses treats a
+// game/folder that's locally known but absent from this list as "someone
+// removed it on purpose" and deletes the local copy to match. Collapsing a
+// read failure into an empty array would make that self-heal logic
+// misread "I couldn't check" as "everything was deleted" and wipe every
+// locally-known custom game/folder — a real data-loss bug, not hypothetical
+// (this is exactly what happened once, see project notes). An absent FILE
+// (never existed) is the one case that's unambiguous, so that alone still
+// returns [].
+async function readCustomGamesRegistry(): Promise<RemoteCustomGameEntry[] | null> {
   const p = customGamesRegistryPath()
   if (!existsSync(p)) return []
   try {
     const raw = (await readFile(p, 'utf8')).replace(/^﻿/, '')
     return JSON.parse(raw) as RemoteCustomGameEntry[]
   } catch {
-    return []
+    return null
   }
 }
 
@@ -546,6 +763,7 @@ async function readCustomGamesRegistry(): Promise<RemoteCustomGameEntry[]> {
 // can genuinely corrupt each other's commit, not just redundantly repeat
 // work. Serializing all three against each other here is what makes every
 // caller's use of them safe without each one needing its own locking.
+
 let customGameRepoLock: Promise<unknown> = Promise.resolve()
 
 function withCustomGameRepoLock<T>(fn: () => Promise<T>): Promise<T> {
@@ -570,6 +788,7 @@ export function pushCustomGameToRegistry(
   return withCustomGameRepoLock(async () => {
     await ensureRepo(token, owner)
     const current = await readCustomGamesRegistry()
+    if (current === null) throw makeAppError('GIT_GENERIC', { detail: 'registry unreadable' })
     if (current.some((e) => e.appId === appId)) return
     await mkdir(join(repoDir(), '.meta'), { recursive: true })
     await writeFile(customGamesRegistryPath(), JSON.stringify([...current, { appId, name }], null, 2))
@@ -595,6 +814,7 @@ export function renameCustomGameInRegistry(
   return withCustomGameRepoLock(async () => {
     await ensureRepo(token, owner)
     const current = await readCustomGamesRegistry()
+    if (current === null) throw makeAppError('GIT_GENERIC', { detail: 'registry unreadable' })
     const entry = current.find((e) => e.appId === appId)
     if (!entry || entry.name === newName) return
     const oldName = entry.name
@@ -625,6 +845,7 @@ export function removeCustomGameFromRegistry(
   return withCustomGameRepoLock(async () => {
     await ensureRepo(token, owner)
     const current = await readCustomGamesRegistry()
+    if (current === null) throw makeAppError('GIT_GENERIC', { detail: 'registry unreadable' })
     const next = current.filter((e) => e.appId !== appId)
     if (next.length === current.length) return
     await mkdir(join(repoDir(), '.meta'), { recursive: true })
@@ -692,6 +913,303 @@ async function readRemoteCover(appId: string): Promise<string | null> {
   }
 }
 
+// --- Extra save folders (CustomGame.extraFolders) ---
+// A second (or third...) independently-synced folder on a custom game, on
+// top of its main one (game.savePath, handled entirely by the functions
+// above, untouched by any of this) — see CustomExtraFolder's doc comment in
+// shared/types.ts for the shared/personal split this section implements.
+//
+// Repo layout — nested under the game's own top-level folder, alongside its
+// main save (see mainContentDir near repoDir()), for a tidy repo (one folder
+// per game, everything about it inside) instead of a flat pile of unrelated
+// top-level entries:
+//   shared:   <gameName>/extra/<folderId>/shared/...
+//             .meta/folders/<gameName>/<folderId>/shared.json
+//   personal: <gameName>/extra/<folderId>/personal/<login>/...
+//             .meta/folders/<gameName>/<folderId>/personal-<login>.json
+// `actor` is always the right login for a personal folder's path: a
+// personal folder is never pushed to the registry below, so it only ever
+// exists in the extraFolders of whoever added it — nobody else's client
+// ever computes a path for it.
+//
+// **Real bug found 2026-07-26**: an EARLIER version of this put a folder's
+// content at `<gameName>/_folders/<folderId>/...` too, and that caused a
+// genuine feedback loop — uploadGame's `rm(dest, {recursive:true})` used
+// `dest = <gameName>/` (the WHOLE game folder) back then, so every
+// main-folder push wiped out any extra folder living inside it, and
+// folderHash(dest) for the main folder's own status check walked that same
+// subtree, so every EXTRA folder push made the main folder look "newer" too
+// and trigger a pointless real push (which then wiped the extra folder right
+// back out). The actual fix isn't "never nest" — it's that `dest` for the
+// main folder is now mainContentDir() = `<gameName>/main/`, a specific leaf
+// subdirectory, never the shared `<gameName>/` parent — so rm/copyFiltered/
+// folderHash for EITHER the main folder or an extra folder only ever touches
+// its own leaf subtree, no matter how many folders share the same
+// `<gameName>/` parent above them.
+
+function findExtraFolder(appId: string, folderId: string): { game: CustomGame; folder: CustomExtraFolder } {
+  const game = listCustomGames().find((g) => g.appId === appId)
+  const folder = game?.extraFolders?.find((f) => f.id === folderId)
+  if (!game || !folder) throw makeAppError('GAME_NOT_SUPPORTED')
+  return { game, folder }
+}
+
+function extraFolderContentDir(gameName: string, folder: CustomExtraFolder, actor: string): string {
+  const base = join(repoDir(), gameName, 'extra', folder.id)
+  return folder.shared ? join(base, 'shared') : join(base, 'personal', actor)
+}
+
+function extraFolderMetaDir(gameName: string, folderId: string): string {
+  return join(repoDir(), '.meta', 'folders', gameName, folderId)
+}
+
+function extraFolderMetaPath(gameName: string, folder: CustomExtraFolder, actor: string): string {
+  return folder.shared
+    ? join(extraFolderMetaDir(gameName, folder.id), 'shared.json')
+    : join(extraFolderMetaDir(gameName, folder.id), `personal-${actor}.json`)
+}
+
+async function readExtraFolderMeta(
+  gameName: string,
+  folder: CustomExtraFolder,
+  actor: string
+): Promise<RemoteMeta | null> {
+  const p = extraFolderMetaPath(gameName, folder, actor)
+  if (!existsSync(p)) return null
+  try {
+    const raw = (await readFile(p, 'utf8')).replace(/^﻿/, '')
+    return JSON.parse(raw) as RemoteMeta
+  } catch {
+    return null
+  }
+}
+
+async function writeExtraFolderMeta(
+  gameName: string,
+  folder: CustomExtraFolder,
+  actor: string,
+  version: number,
+  owner: string
+): Promise<void> {
+  await mkdir(extraFolderMetaDir(gameName, folder.id), { recursive: true })
+  const meta = { version, updatedAt: new Date().toISOString(), updatedBy: owner }
+  await writeFile(extraFolderMetaPath(gameName, folder, actor), JSON.stringify(meta, null, 2))
+}
+
+// Local version tracking reuses the same flat coopsync-versions.json as the
+// main folder (readLocalVersions/setLocalVersion) — just under a composite
+// "appId:folderId" key instead of appId alone, so both live in the same file
+// with no risk of collision (a bare appId never contains this folder's uuid).
+function folderVersionKey(appId: string, folderId: string): string {
+  return `${appId}:${folderId}`
+}
+
+/** Upload an extra folder's saves to GitHub (push). Mirrors uploadGame one
+ *  level down — see this section's own layout comment for where a shared vs
+ *  a personal folder's content actually lands. `explicitVersion` — see
+ *  uploadGame's own doc comment, same reasoning (shared per-game counter,
+ *  each push still claims its own unique number). */
+export async function uploadExtraFolder(
+  token: string,
+  owner: string,
+  appId: string,
+  folderId: string,
+  actor: string,
+  explicitVersion?: number
+): Promise<SyncResult> {
+  await ensureRepo(token, owner)
+  const { game, folder } = findExtraFolder(appId, folderId)
+  if (!folder.savePath || !existsSync(folder.savePath)) throw makeAppError('SAVE_FOLDER_NOT_FOUND')
+
+  const pattern = buildExcludePattern(folder.excludedFiles)
+  const dest = extraFolderContentDir(game.name, folder, actor)
+
+  if (existsSync(dest)) {
+    const [localHash, remoteHash] = await Promise.all([
+      folderHash(folder.savePath, pattern),
+      folderHash(dest, pattern)
+    ])
+    if (localHash === remoteHash) {
+      const remoteVersion = (await readExtraFolderMeta(game.name, folder, actor))?.version ?? 0
+      await setLocalVersion(folderVersionKey(appId, folderId), remoteVersion)
+      return { version: remoteVersion, pushed: false }
+    }
+  }
+
+  await rm(dest, { recursive: true, force: true })
+  await copyFiltered(folder.savePath, dest, pattern)
+
+  const newVersion = explicitVersion ?? (await nextGameVersion(game.name))
+  await writeExtraFolderMeta(game.name, folder, actor, newVersion, actor)
+  // Shared folder pushes join the same shared history log the main folder
+  // already uses — a partner sees them the same way. A personal folder's
+  // push is never logged there (or anywhere shared) — see this section's own
+  // top comment: nobody else's client ever even learns it exists.
+  if (folder.shared) {
+    await appendHistory({
+      appId,
+      gameName: `${game.name} / ${folder.label}`,
+      version: newVersion,
+      updatedBy: actor,
+      updatedAt: new Date().toISOString()
+    })
+  }
+
+  await git(['add', '-A'])
+  await git([
+    ...identityFlags(actor),
+    'commit',
+    '-m',
+    `sync: ${game.name} / ${folder.label} ${formatVersion(newVersion)} (${actor})`
+  ])
+  await git(['push', 'origin', 'main'])
+  await setLocalVersion(folderVersionKey(appId, folderId), newVersion)
+  return { version: newVersion, pushed: true }
+}
+
+/** Download an extra folder's saves from GitHub into its local folder (pull). */
+export async function downloadExtraFolder(
+  token: string,
+  owner: string,
+  appId: string,
+  folderId: string,
+  actor: string
+): Promise<SyncResult> {
+  await ensureRepo(token, owner)
+  const { game, folder } = findExtraFolder(appId, folderId)
+  if (!folder.savePath) throw makeAppError('SAVE_FOLDER_NOT_FOUND')
+
+  const pattern = buildExcludePattern(folder.excludedFiles)
+  const src = extraFolderContentDir(game.name, folder, actor)
+  if (!existsSync(src)) throw makeAppError('NO_CLOUD_SAVES')
+
+  await mkdir(folder.savePath, { recursive: true })
+  await copyFiltered(src, folder.savePath, pattern)
+
+  const remoteVersion = (await readExtraFolderMeta(game.name, folder, actor))?.version ?? 0
+  await setLocalVersion(folderVersionKey(appId, folderId), remoteVersion)
+  return { version: remoteVersion }
+}
+
+/** Same as restoreMissingFiles, one level down — files missing locally are
+ *  copied in without touching what's already there, never overwriting. */
+export async function restoreExtraFolderMissingFiles(
+  token: string,
+  owner: string,
+  appId: string,
+  folderId: string,
+  actor: string
+): Promise<number> {
+  await ensureRepo(token, owner)
+  const { game, folder } = findExtraFolder(appId, folderId)
+  if (!folder.savePath) return 0
+  const pattern = buildExcludePattern(folder.excludedFiles)
+  const repoPath = extraFolderContentDir(game.name, folder, actor)
+  if (!existsSync(repoPath)) return 0
+
+  let restored = 0
+  async function walk(remoteDir: string, localDir: string): Promise<void> {
+    const entries = await readdir(remoteDir, { withFileTypes: true })
+    for (const e of entries) {
+      if (e.name === '.git') continue
+      if (pattern && !e.isDirectory() && !pattern.test(e.name)) continue
+      const remoteFull = join(remoteDir, e.name)
+      const localFull = join(localDir, e.name)
+      if (e.isDirectory()) {
+        await walk(remoteFull, localFull)
+      } else if (!existsSync(localFull)) {
+        await mkdir(localDir, { recursive: true })
+        await cp(remoteFull, localFull)
+        restored++
+      }
+    }
+  }
+  await walk(repoPath, folder.savePath)
+  return restored
+}
+
+/** Add a just-added SHARED extra folder to the shared registry, nested under
+ *  its game's existing entry, so a co-op partner's app can see it exists
+ *  (best-effort, same pattern as pushCustomGameToRegistry — see ipc.ts's
+ *  games:add-extra-folder). A no-op (silently) if the game itself isn't
+ *  registered yet — the game-level self-heal in getSyncStatuses will push
+ *  this folder once it is, the same way it retries the game itself. */
+/** Labels of a custom game's currently-registered SHARED extra folders —
+ *  used only to check for a name collision before adding a new one (see
+ *  ipc.ts's games:add-extra-folder). A personal folder is never in the
+ *  registry, so this can't catch a collision with one of those — by design,
+ *  nobody else's client ever knows a personal folder's name to collide with. */
+export async function getRegisteredFolderLabels(
+  token: string,
+  owner: string,
+  appId: string
+): Promise<string[]> {
+  await ensureRepo(token, owner)
+  const registry = await readCustomGamesRegistry()
+  // null (unreadable registry) just means we can't check — non-destructive
+  // either way, so fail open (no collision detected) rather than blocking
+  // the add over a transient read glitch.
+  return (registry?.find((e) => e.appId === appId)?.folders ?? []).map((f) => f.label)
+}
+
+export function pushFolderToRegistry(
+  token: string,
+  owner: string,
+  actor: string,
+  appId: string,
+  folderId: string,
+  label: string,
+  addedBy: string
+): Promise<void> {
+  return withCustomGameRepoLock(async () => {
+    await ensureRepo(token, owner)
+    const current = await readCustomGamesRegistry()
+    if (current === null) throw makeAppError('GIT_GENERIC', { detail: 'registry unreadable' })
+    const idx = current.findIndex((e) => e.appId === appId)
+    if (idx === -1) return
+    const entry = current[idx]
+    if ((entry.folders ?? []).some((f) => f.id === folderId)) return
+    const next = [...current]
+    next[idx] = { ...entry, folders: [...(entry.folders ?? []), { id: folderId, label, addedBy }] }
+    await mkdir(join(repoDir(), '.meta'), { recursive: true })
+    await writeFile(customGamesRegistryPath(), JSON.stringify(next, null, 2))
+    await git(['add', '-A'])
+    await git([...identityFlags(actor), 'commit', '-m', `custom-game-folder: add ${entry.name} / ${label}`])
+    await git(['push', 'origin', 'main'])
+  })
+}
+
+/** Remove an extra folder from the shared registry (best-effort — see
+ *  ipc.ts's games:remove-extra-folder). Never touches a partner's own
+ *  already-materialized local folder entry, same as removeCustomGameFromRegistry. */
+export function removeFolderFromRegistry(
+  token: string,
+  owner: string,
+  actor: string,
+  appId: string,
+  folderId: string
+): Promise<void> {
+  return withCustomGameRepoLock(async () => {
+    await ensureRepo(token, owner)
+    const current = await readCustomGamesRegistry()
+    if (current === null) throw makeAppError('GIT_GENERIC', { detail: 'registry unreadable' })
+    const idx = current.findIndex((e) => e.appId === appId)
+    if (idx === -1) return
+    const entry = current[idx]
+    const folders = entry.folders ?? []
+    const nextFolders = folders.filter((f) => f.id !== folderId)
+    if (nextFolders.length === folders.length) return
+    const next = [...current]
+    next[idx] = { ...entry, folders: nextFolders }
+    await mkdir(join(repoDir(), '.meta'), { recursive: true })
+    await writeFile(customGamesRegistryPath(), JSON.stringify(next, null, 2))
+    await git(['add', '-A'])
+    const label = folders.find((f) => f.id === folderId)?.label ?? folderId
+    await git([...identityFlags(actor), 'commit', '-m', `custom-game-folder: remove ${entry.name} / ${label}`])
+    await git(['push', 'origin', 'main'])
+  })
+}
+
 /**
  * Download files from the cloud that are missing locally — without touching
  * existing local files (git-like behavior: add what's missing, don't
@@ -705,7 +1223,7 @@ async function readRemoteCover(appId: string): Promise<string | null> {
 export async function restoreMissingFiles(token: string, owner: string, appId: string): Promise<number> {
   await ensureRepo(token, owner)
   const game = findGame(appId)
-  const repoPath = join(repoDir(), game.name)
+  const repoPath = mainContentDir(game.name)
   if (!existsSync(repoPath)) return 0
 
   let restored = 0
@@ -734,7 +1252,7 @@ export async function downloadGame(token: string, owner: string, appId: string):
   await ensureRepo(token, owner)
   const game = findGame(appId)
 
-  const src = join(repoDir(), game.name)
+  const src = mainContentDir(game.name)
   if (!existsSync(src)) throw makeAppError('NO_CLOUD_SAVES')
 
   await mkdir(game.savePath, { recursive: true })
@@ -791,7 +1309,7 @@ export async function adoptLocalHistoryAsOwnRepo(
 
 // A fingerprint of a folder's content: a sorted list of "path:hash" → a
 // single hash. Same fingerprint = same content.
-async function folderHash(dir: string, pattern?: RegExp): Promise<string> {
+export async function folderHash(dir: string, pattern?: RegExp): Promise<string> {
   const parts: string[] = []
   async function walk(d: string, rel: string): Promise<void> {
     const entries = (await readdir(d, { withFileTypes: true })).sort((a, b) =>
@@ -819,9 +1337,8 @@ async function folderHash(dir: string, pattern?: RegExp): Promise<string> {
 // on every watcher tick (every 5s, for every running game) to notice "did
 // anything change" — folderHash's real cost is fine for the occasional
 // status check, not for continuous polling while a game is running.
-export async function localSaveFingerprint(appId: string): Promise<string | null> {
-  const { savePath, saveFilePattern } = findGame(appId)
-  if (!existsSync(savePath)) return null
+async function folderFingerprint(dir: string, pattern?: RegExp): Promise<string | null> {
+  if (!existsSync(dir)) return null
   const parts: string[] = []
   async function walk(d: string, rel: string): Promise<void> {
     const entries = (await readdir(d, { withFileTypes: true })).sort((a, b) =>
@@ -829,7 +1346,7 @@ export async function localSaveFingerprint(appId: string): Promise<string | null
     )
     for (const e of entries) {
       if (e.name === '.git') continue
-      if (saveFilePattern && !e.isDirectory() && !saveFilePattern.test(e.name)) continue
+      if (pattern && !e.isDirectory() && !pattern.test(e.name)) continue
       const full = join(d, e.name)
       const r = rel ? `${rel}/${e.name}` : e.name
       if (e.isDirectory()) await walk(full, r)
@@ -839,8 +1356,20 @@ export async function localSaveFingerprint(appId: string): Promise<string | null
       }
     }
   }
-  await walk(savePath, '')
+  await walk(dir, '')
   return parts.join('\n')
+}
+
+export async function localSaveFingerprint(appId: string): Promise<string | null> {
+  const { savePath, saveFilePattern } = findGame(appId)
+  return folderFingerprint(savePath, saveFilePattern)
+}
+
+/** Same as localSaveFingerprint, one level down for an extra folder. */
+export async function localExtraFolderFingerprint(appId: string, folderId: string): Promise<string | null> {
+  const { folder } = findExtraFolder(appId, folderId)
+  if (!folder.savePath) return null
+  return folderFingerprint(folder.savePath, buildExcludePattern(folder.excludedFiles))
 }
 
 // Time of the last file change in the folder (freshest mtime, ms). 0 if there are no files.
@@ -947,6 +1476,15 @@ async function doGetSyncStatuses(token: string, owner: string, actor: string): P
   // purpose, and every client (owner or not) should just drop it locally.
   try {
     const registry = await readCustomGamesRegistry()
+    // null = couldn't actually read the registry (see readCustomGamesRegistry's
+    // own doc comment) — must NOT fall through to the reconciliation below,
+    // which would misread "couldn't check" as "registry is empty" and delete
+    // every locally-known custom game/folder as if someone removed them all
+    // on purpose. Throwing (not returning) routes this into the catch right
+    // below, same "try again next time" handling as any other failure here —
+    // a bare return would exit doGetSyncStatuses entirely and skip building
+    // the actual status list further down.
+    if (registry === null) throw new Error('registry unreadable')
     const registered = new Set(registry.map((e) => e.appId))
     const registeredNames = new Map(registry.map((e) => [e.appId, e.name]))
     // A removal we're still actively pushing (see the pending-removals retry
@@ -970,6 +1508,41 @@ async function doGetSyncStatuses(token: string, owner: string, actor: string): P
         // is visible, which self-corrects next check either way.
         const registeredName = registeredNames.get(g.appId)
         if (registeredName && registeredName !== g.name) setCustomGameName(g.appId, registeredName)
+
+        // Reconcile this game's extra SHARED folders the exact same
+        // converge-don't-fight way, one level down — a personal folder is
+        // never in this registry entry at all (see CustomExtraFolder's doc
+        // comment), so it never appears on either side of this comparison.
+        const entry = registry.find((e) => e.appId === g.appId)
+        const remoteFolders = entry?.folders ?? []
+        const remoteFolderIds = new Set(remoteFolders.map((f) => f.id))
+        const pendingFolderRemovals = new Set(getPendingFolderRemovals())
+        for (const rf of remoteFolders) {
+          if (pendingFolderRemovals.has(`${g.appId}:${rf.id}`)) continue
+          materializeRemoteExtraFolder(g.appId, rf.id, rf.label, rf.addedBy)
+        }
+        for (const f of g.extraFolders ?? []) {
+          if (!f.shared) continue
+          if (remoteFolderIds.has(f.id)) {
+            if (!f.registryConfirmed) markExtraFolderRegistryConfirmed(g.appId, f.id)
+            const rLabel = remoteFolders.find((rf) => rf.id === f.id)?.label
+            if (rLabel && rLabel !== f.label) setExtraFolderLabel(g.appId, f.id, rLabel)
+            continue
+          }
+          if (f.registryConfirmed) {
+            removeExtraFolder(g.appId, f.id)
+            addNotification('folder-removed', { game: g.name, folder: f.label })
+            continue
+          }
+          try {
+            // Folders that predate the addedBy field fall back to actor —
+            // it's this exact device pushing it for the first time, the
+            // closest thing to a real answer for "who added this".
+            await pushFolderToRegistry(token, owner, actor, g.appId, f.id, f.label, f.addedBy ?? actor)
+          } catch {
+            // Try again next check.
+          }
+        }
         continue
       }
       if (g.registryConfirmed) {
@@ -999,6 +1572,22 @@ async function doGetSyncStatuses(token: string, owner: string, actor: string): P
     try {
       await removeCustomGameFromRegistry(token, owner, actor, appId)
       clearPendingCustomGameRemoval(appId)
+    } catch {
+      // Try again next check.
+    }
+  }
+
+  // Same retry, one level down, for an extra folder's registry-removal push
+  // (games:remove-extra-folder) — the composite key's LAST ':' is always the
+  // appId/folderId boundary: a custom game's appId is itself "custom:<uuid>"
+  // (so it already contains a ':'), but folderId (also a uuid) never does.
+  for (const key of getPendingFolderRemovals()) {
+    const sep = key.lastIndexOf(':')
+    const appId = key.slice(0, sep)
+    const folderId = key.slice(sep + 1)
+    try {
+      await removeFolderFromRegistry(token, owner, actor, appId, folderId)
+      clearPendingFolderRemoval(appId, folderId)
     } catch {
       // Try again next check.
     }
@@ -1037,7 +1626,7 @@ async function doGetSyncStatuses(token: string, owner: string, actor: string): P
       continue
     }
 
-    const repoPath = join(repoDir(), g.name)
+    const repoPath = mainContentDir(g.name)
     const localExists = existsSync(savePath)
     const remoteExists = existsSync(repoPath)
 
@@ -1061,21 +1650,19 @@ async function doGetSyncStatuses(token: string, owner: string, actor: string): P
         folderHash(savePath, g.saveFilePattern),
         folderHash(repoPath, g.saveFilePattern)
       ])
-      if (localHash === remoteHash) {
-        status = 'synced'
-      } else if (
-        remoteMeta &&
-        (await maxMtime(savePath, g.saveFilePattern)) <= new Date(remoteMeta.updatedAt).getTime()
-      ) {
-        // Local content differs from the cloud, but no local file was
-        // modified AFTER the last known cloud sync — this isn't new
-        // progress, it's stale data (e.g. an old save backup was restored).
-        // Can't treat this as "locally newer" — otherwise stale data would
-        // silently overwrite cloud progress on auto-push.
-        status = 'local-stale'
-      } else {
-        status = 'local-newer'
-      }
+      // 'local-stale' (content differs, but no local file's mtime is newer
+      // than the last known cloud sync — e.g. an old backup was restored
+      // while nobody was watching) used to be a separate status here, and
+      // used to block auto-push. It no longer does (see watcher.ts's
+      // pushGameSaves/pushFolderSaves) — everywhere it could actually get
+      // acted on is preceded by this exact folder being continuously
+      // watched, so "swapped in unwatched" structurally can't apply there.
+      // Keeping it as a SEPARATE status here just showed a confusing
+      // "outdated" label moments before a real, successful push — so
+      // hash-differs now always reads as 'local-newer', full stop. (The
+      // 'local-stale' SyncStatus value/UI strings are left in place,
+      // unused, rather than ripped out — no functional difference either way.)
+      status = localHash === remoteHash ? 'synced' : 'local-newer'
     }
 
     // Show time/size from the shared (cloud) copy when it exists — that's
@@ -1097,5 +1684,78 @@ async function doGetSyncStatuses(token: string, owner: string, actor: string): P
       sizeBytes
     })
   }
+
+  // Extra folders (custom games only) — attached onto each game's own entry
+  // above, computed the same way one level down. A catalog game, or a custom
+  // game with none added, just keeps extraFolders unset.
+  for (const cg of listCustomGames()) {
+    const folders = cg.extraFolders ?? []
+    if (folders.length === 0) continue
+    const gameEntry = result.find((r) => r.appId === cg.appId)
+    if (!gameEntry) continue
+
+    const folderStatuses: FolderSyncStatus[] = []
+    for (const f of folders) {
+      if (!f.savePath) {
+        folderStatuses.push({
+          folderId: f.id,
+          label: f.label,
+          shared: f.shared,
+          status: 'needs-setup',
+          localVersion: 0,
+          remoteVersion: 0
+        })
+        continue
+      }
+
+      const pattern = buildExcludePattern(f.excludedFiles)
+      const repoPath = extraFolderContentDir(cg.name, f, actor)
+      const localExists = existsSync(f.savePath)
+      const remoteExists = existsSync(repoPath)
+
+      const localVer = localVersions[folderVersionKey(cg.appId, f.id)] ?? 0
+      const remoteMeta = await readExtraFolderMeta(cg.name, f, actor)
+      const remoteVer = remoteMeta?.version ?? 0
+
+      let status: SyncStatus
+      if (!localExists && !remoteExists) {
+        status = 'no-saves'
+      } else if (localExists && !remoteExists) {
+        status = 'not-uploaded'
+      } else if (!localExists && remoteExists) {
+        status = 'cloud-only'
+      } else if (remoteVer > localVer) {
+        status = 'remote-newer'
+      } else {
+        // See the main-folder status logic above for why 'local-stale' is no
+        // longer a separate outcome here either — same reasoning.
+        const [localHash, remoteHash] = await Promise.all([
+          folderHash(f.savePath, pattern),
+          folderHash(repoPath, pattern)
+        ])
+        status = localHash === remoteHash ? 'synced' : 'local-newer'
+      }
+
+      const sizeBytes = remoteExists
+        ? await folderSize(repoPath, pattern)
+        : localExists
+          ? await folderSize(f.savePath, pattern)
+          : undefined
+
+      folderStatuses.push({
+        folderId: f.id,
+        label: f.label,
+        shared: f.shared,
+        status,
+        localVersion: localVer,
+        remoteVersion: remoteVer,
+        lastSyncAt: remoteMeta?.updatedAt,
+        remoteUpdatedBy: remoteMeta?.updatedBy,
+        sizeBytes
+      })
+    }
+    gameEntry.extraFolders = folderStatuses
+  }
+
   return result
 }

@@ -21,6 +21,7 @@ export const en: Translation = {
     pushSkipped: "The cloud already has a newer version (someone else uploaded theirs) — auto-sync skipped. Update manually on the games screen.",
     pushSkippedStale: "Local save looks outdated (unchanged since the last cloud sync) — auto-upload skipped so it doesn't overwrite the cloud. Download the cloud version manually if needed.",
     pushSkippedNoChange: 'No changes — nothing to upload',
+    pushSkippedNoChangeExit: 'Checked on exit — nothing to upload, everything was already synced',
     statusesError: "Couldn't check sync status",
     retry: 'Try again',
     addGameCard: 'Add a game'
@@ -153,7 +154,33 @@ export const en: Translation = {
     excludeFilesHint:
       "Check any files here that shouldn't be synced — local settings, account data, anything that isn't actually save data. Only files directly in the save folder are listed (not subfolders). This choice only applies on this PC — it isn't shared with your co-op partner, since the exact file names can differ between installs. Your friend should exclude files separately, based on what they see in their own folder.",
     excludeFilesEmpty: 'No files found in the save folder yet.',
-    excludeFilesRefresh: 'Refresh file list'
+    excludeFilesRefresh: 'Refresh file list',
+    extraFoldersTitle: 'Extra save folders',
+    extraFoldersHint:
+      'Sync another folder for this game separately — e.g. character saves kept apart from world saves. Mark a folder "Only me" and it still backs up to the cloud, just into your own private space your co-op partner never sees.',
+    extraFoldersEmpty: 'No extra folders yet',
+    extraFoldersAdd: 'Add folder',
+    extraFolderLabelPlaceholder: 'Name (e.g. Characters)',
+    extraFolderPathPlaceholder: 'Folder path',
+    extraFolderBrowse: 'Browse',
+    extraFolderShared: 'Shared with my co-op partner',
+    extraFolderPersonal: 'Only me',
+    extraFolderSharedHint: "Synced the same way as the game's main folder — your partner sees it too.",
+    extraFolderPersonalHint:
+      'Still backed up to the cloud (with its own version history), but into a private space under your own account — your partner never sees it.',
+    extraFolderAddSave: 'Add',
+    extraFolderAddCancel: 'Cancel',
+    extraFolderAddError: 'Could not add the folder',
+    extraFolderNoPath: 'No folder set',
+    extraFolderRemove: 'Remove folder',
+    extraFolderRemoveConfirmTitle: 'Remove this folder?',
+    extraFolderRemoveConfirmDesc: (label) =>
+      `Stop syncing "${label}"? Nothing already in the cloud gets deleted.`,
+    extraFolderRemoveError: 'Could not remove the folder',
+    extraFolderRenameError: 'Could not rename the folder',
+    extraFolderShareToggleError: 'Could not change the sharing setting',
+    extraFolderShareToggleSuccess: 'Sharing setting updated',
+    extraFolderShareToggleBusy: 'Updating…'
   },
   cloudWarning: {
     title: 'Turn off Steam Cloud for synced games',
@@ -188,7 +215,10 @@ export const en: Translation = {
     accessRevokedTitle: 'Access revoked',
     accessRevokedBody: (host) => `You no longer have access to ${host}'s shared storage.`,
     gameRemovedTitle: 'Game removed',
-    gameRemovedBody: (game) => `"${game}" was removed from the co-op — your friend took it off the list.`
+    gameRemovedBody: (game) => `"${game}" was removed from the co-op — your friend took it off the list.`,
+    folderRemovedTitle: 'Folder no longer shared',
+    folderRemovedBody: (game, folder) =>
+      `"${game} / ${folder}" is no longer shared — either removed, or your friend made it personal-only.`
   },
   onboarding: {
     welcomeTitle: 'Welcome to CoopSync!',
@@ -331,6 +361,7 @@ export const en: Translation = {
     GAME_NOT_SUPPORTED: () => 'Game not supported',
     CUSTOM_GAME_INVALID: () => 'Enter a game name and save folder',
     GAME_NAME_INVALID_CHARS: () => 'Game name can\'t contain \\ / : * ? " < > |',
+    GAME_NAME_TAKEN: () => 'A game with this name already exists — pick a different name',
     GAME_RUNNING: () => 'The game is still running — close it first, then try restoring the version again',
     SAVE_FOLDER_NOT_FOUND: () => 'Save folder not found',
     NO_CLOUD_SAVES: () => 'There are no saves for this game in storage yet',
@@ -341,6 +372,10 @@ export const en: Translation = {
       p.time ? `GitHub API request limit reached — try again around ${p.time}.` : 'GitHub API request limit reached — wait a bit and try again.',
     SUPPORT_SEND_FAILED: () => "Couldn't send. Try again in a moment.",
     SUPPORT_RATE_LIMITED: (p) =>
-      p.time ? `Too many requests right now — try again around ${p.time}.` : 'Too many requests right now — wait a bit and try again.'
+      p.time ? `Too many requests right now — try again around ${p.time}.` : 'Too many requests right now — wait a bit and try again.',
+    NOT_FOLDER_OWNER: () => 'Only whoever added this folder can change its sharing setting',
+    FOLDER_NAME_TAKEN: () => 'A folder with this name already exists for this game — pick a different name',
+    FOLDER_PATH_OVERLAPS: (p) =>
+      `This folder (or a folder inside/containing it) is already being synced as part of "${p.with}" — pick a folder that isn't already in use`
   }
 }

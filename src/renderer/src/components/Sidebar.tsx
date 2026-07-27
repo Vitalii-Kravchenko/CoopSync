@@ -178,7 +178,9 @@ const styles: Record<string, React.CSSProperties> = {
   },
   countBadge: {
     marginLeft: 'auto',
-    minWidth: 19,
+    // 17x17 — matches the bell badge's own standard circle (NotificationBell.tsx),
+    // the same "1"-style count shown while on History/Friends/Games.
+    minWidth: 17,
     height: 17,
     padding: '0 5px',
     display: 'flex',

@@ -20,7 +20,8 @@ import type {
   SteamSearchResult,
   UpdateStatus,
   AppNotification,
-  GameSavePathInfo
+  GameSavePathInfo,
+  CustomExtraFolder
 } from '../shared/types'
 
 // API exposed to the renderer as window.api.
@@ -131,7 +132,29 @@ const api = {
       ipcRenderer.invoke('games:get-excluded-files', appId),
     /** Set which file names to leave out of sync for a custom game. */
     setExcludedFiles: (appId: string, files: string[]): Promise<void> =>
-      ipcRenderer.invoke('games:set-excluded-files', appId, files)
+      ipcRenderer.invoke('games:set-excluded-files', appId, files),
+
+    // --- Extra save folders (custom games only) ---
+    listExtraFolders: (appId: string): Promise<CustomExtraFolder[]> =>
+      ipcRenderer.invoke('games:list-extra-folders', appId),
+    addExtraFolder: (appId: string, label: string, savePath: string, shared: boolean): Promise<CustomExtraFolder> =>
+      ipcRenderer.invoke('games:add-extra-folder', appId, label, savePath, shared),
+    removeExtraFolder: (appId: string, folderId: string): Promise<void> =>
+      ipcRenderer.invoke('games:remove-extra-folder', appId, folderId),
+    renameExtraFolder: (appId: string, folderId: string, label: string): Promise<void> =>
+      ipcRenderer.invoke('games:rename-extra-folder', appId, folderId, label),
+    pickExtraFolderSaveFolder: (): Promise<string | null> =>
+      ipcRenderer.invoke('games:pick-extra-folder-save-folder'),
+    setExtraFolderSavePath: (appId: string, folderId: string, path: string): Promise<void> =>
+      ipcRenderer.invoke('games:set-extra-folder-save-path', appId, folderId, path),
+    setExtraFolderShared: (appId: string, folderId: string, shared: boolean): Promise<void> =>
+      ipcRenderer.invoke('games:set-extra-folder-shared', appId, folderId, shared),
+    listExtraFolderSaveFiles: (appId: string, folderId: string): Promise<string[]> =>
+      ipcRenderer.invoke('games:list-extra-folder-save-files', appId, folderId),
+    getExtraFolderExcludedFiles: (appId: string, folderId: string): Promise<string[]> =>
+      ipcRenderer.invoke('games:get-extra-folder-excluded-files', appId, folderId),
+    setExtraFolderExcludedFiles: (appId: string, folderId: string, files: string[]): Promise<void> =>
+      ipcRenderer.invoke('games:set-extra-folder-excluded-files', appId, folderId, files)
   },
   sync: {
     /** Upload the game's saves to GitHub. */
@@ -147,7 +170,12 @@ const api = {
       ipcRenderer.invoke('sync:revert', appId, version),
     /** Mark game/version pairs as seen (clears the Games nav badge for them). */
     markSeen: (entries: Array<{ appId: string; version: number }>): Promise<void> =>
-      ipcRenderer.invoke('sync:mark-seen', entries)
+      ipcRenderer.invoke('sync:mark-seen', entries),
+    /** Upload/download an extra folder's saves (see games.listExtraFolders). */
+    uploadExtraFolder: (appId: string, folderId: string): Promise<SyncResult> =>
+      ipcRenderer.invoke('sync:upload-extra-folder', appId, folderId),
+    downloadExtraFolder: (appId: string, folderId: string): Promise<SyncResult> =>
+      ipcRenderer.invoke('sync:download-extra-folder', appId, folderId)
   },
   watcher: {
     /** Start auto-sync (watching game processes). */

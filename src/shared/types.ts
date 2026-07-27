@@ -137,6 +137,58 @@ export interface CustomGame {
    *  side a missing registry entry looked identical to their own initial
    *  push having failed. */
   registryConfirmed?: boolean
+  /** Additional save folders beyond the one above (e.g. a folder for
+   *  character saves kept separate from world saves, Terraria-style) — each
+   *  is independently synced. Optional/undefined = none added. */
+  extraFolders?: CustomExtraFolder[]
+}
+
+/** An additional save folder attached to a CustomGame (see
+ *  CustomGame.extraFolders). Unlike the game's main save folder, this is
+ *  fully user-defined: label, location, exclusions, and whether it's shared
+ *  with a co-op partner or private to whoever added it.
+ *  `shared: true` — synced into the common bucket both players read/write,
+ *  same as the game's main folder always has been (a co-op partner's client
+ *  materializes it — see registryConfirmed below — and points it at their
+ *  own local path).
+ *  `shared: false` ("тільки для мене") — still backed up to the cloud (so it
+ *  gets real version history, not just a local copy), but into a bucket
+ *  namespaced by the pusher's own GitHub login — a co-op partner's client
+ *  never even learns this folder exists (never registered, see sync.ts). */
+export interface CustomExtraFolder {
+  id: string
+  label: string
+  savePath: string
+  excludedFiles?: string[]
+  shared: boolean
+  /** Only meaningful for shared=true — same self-heal reasoning as
+   *  CustomGame.registryConfirmed, one level down (per folder instead of per
+   *  game): true once this folder has actually been observed in the shared
+   *  registry, so a later disappearance means someone removed it on purpose
+   *  rather than "our own initial push is still in flight". */
+  registryConfirmed?: boolean
+  /** GitHub login of whoever added this folder — only they may change its
+   *  shared/personal setting (ipc.ts's games:set-extra-folder-shared
+   *  enforces this). Undefined for a folder added before this field existed
+   *  — treated permissively (anyone may still change it) rather than
+   *  locking out folders that predate the restriction. */
+  addedBy?: string
+}
+
+/** Sync status of one CustomGame.extraFolders entry — mirrors GameSyncStatus
+ *  one level down. Personal (shared:false) folders always show their own
+ *  pusher's version as both local and remote (nobody else's data is ever in
+ *  the comparison). */
+export interface FolderSyncStatus {
+  folderId: string
+  label: string
+  shared: boolean
+  status: SyncStatus
+  localVersion: number
+  remoteVersion: number
+  lastSyncAt?: string
+  remoteUpdatedBy?: string
+  sizeBytes?: number
 }
 
 /** Sync status of a game's saves (comparing local against GitHub). */
@@ -164,6 +216,8 @@ export interface GameSyncStatus {
   remoteUpdatedBy?: string
   /** Saves size in bytes — of the cloud copy if it exists, otherwise the local one. */
   sizeBytes?: number
+  /** Status of each of this game's extra folders (see CustomGame.extraFolders) — empty/undefined for a catalog game or a custom game with none added. */
+  extraFolders?: FolderSyncStatus[]
 }
 
 /** A cloud save version the local user hasn't seen yet (someone else pushed
@@ -186,6 +240,7 @@ export type AppNotificationKind =
   | 'sync-conflict-skipped' // params: { game }
   | 'access-revoked' // params: { host }
   | 'game-removed' // params: { game }
+  | 'folder-removed' // params: { game, folder } — an extra folder (see CustomGame.extraFolders), not the whole game
 
 /** A single bell entry. main only knows kind+params (like AutoSyncEvent) —
  * the renderer localizes title/body from them. */
@@ -216,6 +271,12 @@ export interface SyncResult {
  * 'push-skipped-nochange' — we played, but the save content didn't change
  * (hash matched the cloud) — a push wouldn't have made sense, so we don't
  * show this as "uploaded".
+ * 'push-skipped-nochange-exit' — same "nothing to upload" outcome as
+ * 'push-skipped-nochange', but specifically the check that runs right when
+ * the game closes — worded as its own confirmation ("checked on exit,
+ * already synced") rather than the generic mid-session wording, since this
+ * is the one moment the user is actually watching for confirmation that
+ * everything made it up before walking away.
  * 'restore-success' — files missing locally were downloaded (without a full pull).
  * 'revert-success' — an older save version was pushed back as a new version
  * (not to be confused with 'restore-success', a different feature). */
@@ -225,6 +286,7 @@ export type SyncResultCode =
   | 'push-skipped'
   | 'push-skipped-stale'
   | 'push-skipped-nochange'
+  | 'push-skipped-nochange-exit'
   | 'restore-success'
   | 'revert-success'
 
@@ -244,6 +306,17 @@ export interface AutoSyncEvent {
    * ErrorCode from shared/errors.ts, encoded the same way as app-error (via describeError). */
   code: string
   params?: Record<string, string>
+  /** True for a "played, but nothing actually changed" result from an
+   *  AUTOMATIC background check (mid-session, the world-save cascade, or the
+   *  exit-time catch-all) — never from a manual Upload click. The app still
+   *  needs to know this happened (clears the "Restore" pending-block same as
+   *  any other terminal push event), but with several independent checks
+   *  now able to land on the same "nothing new" answer for the same
+   *  save within seconds of each other (e.g. a folder's own settle check
+   *  right after the world-save cascade already covered it), showing a
+   *  banner for every single one is just noise — the renderer skips
+   *  queuing one when this is set. */
+  silent?: boolean
 }
 
 /** Startup settings. */

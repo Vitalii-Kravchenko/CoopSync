@@ -35,7 +35,13 @@ import {
   pushCustomGameToRegistry,
   removeCustomGameFromRegistry,
   renameCustomGameInRegistry,
-  pushCustomGameCover
+  pushCustomGameCover,
+  purgeGameHistory,
+  uploadExtraFolder,
+  downloadExtraFolder,
+  pushFolderToRegistry,
+  removeFolderFromRegistry,
+  getRegisteredFolderLabels
 } from './services/sync'
 import { startWatcher, stopWatcher } from './services/watcher'
 import { markSeen } from './services/notifyState'
@@ -52,11 +58,22 @@ import {
   setCustomGameCoverSyncFailed,
   setCustomGameName,
   hasInvalidGameNameChars,
+  isGameNameTaken,
   getCustomGameProcessNames,
   setCustomGameProcessNames,
   getCustomGameExcludedFiles,
   setCustomGameExcludedFiles,
-  addPendingCustomGameRemoval
+  addPendingCustomGameRemoval,
+  getExtraFolders,
+  addExtraFolder,
+  removeExtraFolder,
+  setExtraFolderLabel,
+  setExtraFolderSavePath,
+  setExtraFolderExcludedFiles,
+  setExtraFolderShared,
+  addPendingFolderRemoval,
+  hasExtraFolderLabel,
+  extraFolderPathConflict
 } from './games/customGames'
 import { scanForExecutables } from './games/exeScan'
 import { saveToken, loadToken, clearToken } from './services/tokenStore'
@@ -80,7 +97,8 @@ import type {
   SteamSearchResult,
   FriendSaveUpdate,
   AppNotification,
-  GameSavePathInfo
+  GameSavePathInfo,
+  CustomExtraFolder
 } from '../shared/types'
 
 // Max picked image file size (avatar or game cover) — to keep settings.json
@@ -424,6 +442,10 @@ export function registerIpcHandlers(): void {
       const trimmedName = name.trim()
       if (!trimmedName || !savePath.trim()) throw makeAppError('CUSTOM_GAME_INVALID')
       if (hasInvalidGameNameChars(trimmedName)) throw makeAppError('GAME_NAME_INVALID_CHARS')
+      // A game's name is a literal shared-repo path segment — two games
+      // (custom or built-in) with the same name would overwrite each
+      // other's saves. Reject the collision instead of letting it happen.
+      if (isGameNameTaken(trimmedName)) throw makeAppError('GAME_NAME_TAKEN')
       const game = addCustomGame(trimmedName, savePath.trim(), processNames, coverDataUrl ?? undefined)
       // Best-effort: let a co-op partner's app see this game exists too (see
       // pushCustomGameToRegistry). The local add above already succeeded —
@@ -506,6 +528,29 @@ export function registerIpcHandlers(): void {
     } catch {
       addPendingCustomGameRemoval(appId)
     }
+    // The cover is small, purely cosmetic, and — unlike the save data itself
+    // — has no "history" a co-op partner would ever want preserved after a
+    // deliberate removal, so (unlike the save folder) it's cleaned up right
+    // away rather than left orphaned in .meta/covers forever. Best-effort:
+    // a failure here just leaves one stale cover file behind, not worth its
+    // own retry-tracking the way the registry entry above needs.
+    try {
+      const { token, owner } = await syncTarget()
+      const { owner: actor } = await requireAuth()
+      await pushCustomGameCover(token, owner, actor, appId, null)
+    } catch {
+      // Not retried — see comment above.
+    }
+    // Same reasoning as the cover cleanup right above — a deleted game's
+    // sync history is just clutter in the History screen from then on, not
+    // something worth preserving indefinitely.
+    try {
+      const { token, owner } = await syncTarget()
+      const { owner: actor } = await requireAuth()
+      await purgeGameHistory(token, owner, actor, appId)
+    } catch {
+      // Not retried — see comment above.
+    }
   })
 
   // Rename a manually-added game. Unlike the cover (adopted best-effort in
@@ -520,6 +565,7 @@ export function registerIpcHandlers(): void {
     if (hasInvalidGameNameChars(trimmed)) throw makeAppError('GAME_NAME_INVALID_CHARS')
     const game = listCustomGames().find((g) => g.appId === appId)
     if (!game || game.name === trimmed) return
+    if (isGameNameTaken(trimmed, appId)) throw makeAppError('GAME_NAME_TAKEN')
     if (!game.registryConfirmed) {
       // Never actually seen registered yet (initial add push still pending
       // or failed) — nothing shared to rename remotely. The existing
@@ -621,6 +667,187 @@ export function registerIpcHandlers(): void {
     setCustomGameExcludedFiles(appId, files)
   })
 
+  // --- Extra save folders (custom games only, see CustomGame.extraFolders) ---
+
+  ipcMain.handle('games:list-extra-folders', (_event, appId: string): CustomExtraFolder[] =>
+    getExtraFolders(appId)
+  )
+
+  // Add a folder — shared:true best-effort registers it right away (same
+  // reasoning as games:add-custom's registry push: a failed push here
+  // doesn't block using it on this PC, self-heal in getSyncStatuses retries
+  // it). shared:false is never registered at all — see CustomExtraFolder's
+  // doc comment, nobody else's client ever needs to know it exists.
+  ipcMain.handle(
+    'games:add-extra-folder',
+    async (_event, appId: string, label: string, savePath: string, shared: boolean): Promise<CustomExtraFolder> => {
+      const trimmed = label.trim()
+      if (!trimmed || !savePath.trim()) throw makeAppError('CUSTOM_GAME_INVALID')
+      // Two folders with the same label on the same game is confusing (which
+      // is which?) even though it's technically harmless (folder identity is
+      // the id, not the label — see CustomExtraFolder). Reject up front
+      // rather than let it happen silently. Checked locally first (cheap,
+      // always available); the registry check below is best-effort on top —
+      // it catches "my co-op partner already used this name", but only if
+      // we can actually reach GitHub right now.
+      if (hasExtraFolderLabel(appId, trimmed)) throw makeAppError('FOLDER_NAME_TAKEN')
+      // A folder is synced as a whole-folder copy — if its path is the same
+      // as, inside, or a parent of the main save path or another extra
+      // folder, syncing one folder physically writes into the other's own
+      // path, which then looks like "new content" to THAT folder too. A
+      // real bug found 2026-07-26 this exact way (an extra folder pointed at
+      // a subfolder of the main save path) caused a runaway feedback loop of
+      // duplicate pushes — reject the setup outright instead.
+      const conflict = extraFolderPathConflict(appId, savePath.trim())
+      if (conflict) throw makeAppError('FOLDER_PATH_OVERLAPS', { with: conflict })
+      const { owner: actor } = await requireAuth()
+      try {
+        const { token, owner } = await syncTarget()
+        const registered = await getRegisteredFolderLabels(token, owner, appId)
+        if (registered.some((l) => l.trim().toLowerCase() === trimmed.toLowerCase())) {
+          throw makeAppError('FOLDER_NAME_TAKEN')
+        }
+      } catch (e) {
+        if (parseAppError(e instanceof Error ? e.message : String(e))?.code === 'FOLDER_NAME_TAKEN') throw e
+        // Couldn't reach the registry (offline, no repo yet) — not a reason
+        // to block adding the folder locally, same reasoning as the
+        // best-effort registry push right below.
+      }
+      const folder = addExtraFolder(appId, trimmed, savePath.trim(), shared, actor)
+      if (shared) {
+        try {
+          const { token, owner } = await syncTarget()
+          await pushFolderToRegistry(token, owner, actor, appId, folder.id, folder.label, actor)
+        } catch {
+          // silently ignore — see games:add-custom's identical reasoning
+        }
+      }
+      return folder
+    }
+  )
+
+  // Remove a folder — stops syncing it, doesn't touch already-pushed cloud
+  // data or local files. If it was registered (shared), the registry removal
+  // is retried until it lands (games:remove-custom's exact reasoning,
+  // one level down) since nothing local still references this folder to
+  // retry from once removeExtraFolder below has already run.
+  ipcMain.handle('games:remove-extra-folder', async (_event, appId: string, folderId: string): Promise<void> => {
+    const wasShared = getExtraFolders(appId).find((f) => f.id === folderId)?.shared ?? false
+    removeExtraFolder(appId, folderId)
+    if (!wasShared) return
+    try {
+      const { token, owner } = await syncTarget()
+      const { owner: actor } = await requireAuth()
+      await removeFolderFromRegistry(token, owner, actor, appId, folderId)
+    } catch {
+      addPendingFolderRemoval(appId, folderId)
+    }
+  })
+
+  // A folder's label is never a repo path segment (folder.id — a uuid — is),
+  // so unlike a game rename this never touches the shared repo's file
+  // layout — just the registry entry, if it's shared.
+  ipcMain.handle(
+    'games:rename-extra-folder',
+    async (_event, appId: string, folderId: string, label: string): Promise<void> => {
+      const trimmed = label.trim()
+      if (!trimmed) throw makeAppError('CUSTOM_GAME_INVALID')
+      const folder = getExtraFolders(appId).find((f) => f.id === folderId)
+      if (!folder || folder.label === trimmed) return
+      setExtraFolderLabel(appId, folderId, trimmed)
+      if (folder.shared && folder.registryConfirmed) {
+        try {
+          const { token, owner } = await syncTarget()
+          const { owner: actor } = await requireAuth()
+          await pushFolderToRegistry(token, owner, actor, appId, folderId, trimmed, folder.addedBy ?? actor)
+        } catch {
+          // Best-effort — the registry self-heal in getSyncStatuses will
+          // pick up the mismatch and push the new label again next check.
+        }
+      }
+    }
+  )
+
+  ipcMain.handle('games:pick-extra-folder-save-folder', async (event): Promise<string | null> => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    const options: Electron.OpenDialogOptions = { properties: ['openDirectory'] }
+    const result = await (win ? dialog.showOpenDialog(win, options) : dialog.showOpenDialog(options))
+    if (result.canceled || result.filePaths.length === 0) return null
+    return result.filePaths[0]
+  })
+
+  ipcMain.handle(
+    'games:set-extra-folder-save-path',
+    (_event, appId: string, folderId: string, path: string): void => {
+      // Same overlap guard as games:add-extra-folder — excludes this
+      // folder's OWN previous path from the comparison (editing it back to
+      // where it already is isn't a conflict with itself).
+      const conflict = extraFolderPathConflict(appId, path, folderId)
+      if (conflict) throw makeAppError('FOLDER_PATH_OVERLAPS', { with: conflict })
+      setExtraFolderSavePath(appId, folderId, path)
+    }
+  )
+
+  // Switching shared<->personal — see CustomExtraFolder's doc comment. Going
+  // personal→shared registers it (same best-effort reasoning as adding one);
+  // shared→personal unregisters it, so a partner who already saw it drops it
+  // too (same as removing it, without touching the local folder or its
+  // already-pushed shared-bucket history).
+  // Only whoever added the folder may flip this — otherwise the co-op
+  // partner it was materialized for (who has zero stake in the decision,
+  // they don't even control where its content ends up) could silently
+  // change how the actual owner's data is being backed up. A folder from
+  // before addedBy existed has no recorded owner — permissive by default,
+  // see the field's own doc comment.
+  ipcMain.handle(
+    'games:set-extra-folder-shared',
+    async (_event, appId: string, folderId: string, shared: boolean): Promise<void> => {
+      const folder = getExtraFolders(appId).find((f) => f.id === folderId)
+      if (!folder || folder.shared === shared) return
+      const { owner: actor } = await requireAuth()
+      if (folder.addedBy && folder.addedBy !== actor) throw makeAppError('NOT_FOLDER_OWNER')
+      setExtraFolderShared(appId, folderId, shared)
+      try {
+        const { token, owner } = await syncTarget()
+        if (shared) {
+          await pushFolderToRegistry(token, owner, actor, appId, folderId, folder.label, actor)
+        } else if (folder.registryConfirmed) {
+          await removeFolderFromRegistry(token, owner, actor, appId, folderId)
+        }
+      } catch {
+        if (shared) {
+          // Self-heal in getSyncStatuses retries the registry push once the
+          // folder's own registryConfirmed flag reflects it's not there yet.
+        } else {
+          addPendingFolderRemoval(appId, folderId)
+        }
+      }
+    }
+  )
+
+  ipcMain.handle('games:list-extra-folder-save-files', (_event, appId: string, folderId: string): string[] => {
+    const savePath = getExtraFolders(appId).find((f) => f.id === folderId)?.savePath
+    if (!savePath || !existsSync(savePath)) return []
+    try {
+      return readdirSync(savePath, { withFileTypes: true })
+        .filter((e) => e.isFile())
+        .map((e) => e.name)
+    } catch {
+      return []
+    }
+  })
+
+  ipcMain.handle('games:get-extra-folder-excluded-files', (_event, appId: string, folderId: string): string[] =>
+    getExtraFolders(appId).find((f) => f.id === folderId)?.excludedFiles ?? []
+  )
+
+  ipcMain.handle(
+    'games:set-extra-folder-excluded-files',
+    (_event, appId: string, folderId: string, files: string[]): void => {
+      setExtraFolderExcludedFiles(appId, folderId, files)
+    }
+  )
+
   // --- Save sync ---
 
   // Upload the game's saves to GitHub (into the host's repo). owner — whose
@@ -638,6 +865,26 @@ export function registerIpcHandlers(): void {
     const { token, owner } = await syncTarget()
     return downloadGame(token, owner, appId)
   })
+
+  // Upload/download an extra folder's saves — same as sync:upload/download,
+  // one level down (see games:list-extra-folders).
+  ipcMain.handle(
+    'sync:upload-extra-folder',
+    async (_event, appId: string, folderId: string): Promise<SyncResult> => {
+      const { token, owner } = await syncTarget()
+      const { owner: actorLogin } = await requireAuth()
+      return uploadExtraFolder(token, owner, appId, folderId, actorLogin)
+    }
+  )
+
+  ipcMain.handle(
+    'sync:download-extra-folder',
+    async (_event, appId: string, folderId: string): Promise<SyncResult> => {
+      const { token, owner } = await syncTarget()
+      const { owner: actorLogin } = await requireAuth()
+      return downloadExtraFolder(token, owner, appId, folderId, actorLogin)
+    }
+  )
 
   // Sync status for all games (comparing local against the host's repo).
   ipcMain.handle('sync:statuses', async (): Promise<GameSyncStatus[]> => {

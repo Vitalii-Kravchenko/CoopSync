@@ -10,6 +10,11 @@ export interface BannerState {
 
 interface Props {
   banner: BannerState | null
+  /** False during the fade-out + gap window before the next queued banner
+   *  takes over (see App.tsx) — kept mounted with the same text so the CSS
+   *  opacity transition can actually play instead of the element just
+   *  vanishing outright. */
+  visible?: boolean
 }
 
 const TONE: Record<BannerState['kind'], { color: string; bg: string; bd: string }> = {
@@ -21,13 +26,20 @@ const TONE: Record<BannerState['kind'], { color: string; bg: string; bd: string 
 
 // Global sync toast — rendered at the App level, outside the tabs,
 // so it stays visible regardless of which tab is currently open.
-function Banner({ banner }: Props): React.JSX.Element | null {
+function Banner({ banner, visible = true }: Props): React.JSX.Element | null {
   if (!banner) return null
 
   const tone = TONE[banner.kind]
 
   return (
-    <div style={{ ...styles.banner, borderColor: tone.bd }}>
+    <div
+      style={{
+        ...styles.banner,
+        borderColor: tone.bd,
+        opacity: visible ? 1 : 0,
+        transform: `translateX(-50%) translateY(${visible ? 0 : 6}px)`
+      }}
+    >
       <span style={{ ...styles.iconChip, background: tone.bg }}>
         {banner.icon === 'upload' ? (
           <UploadIcon size={14} color={tone.color} />
@@ -49,7 +61,6 @@ const styles: Record<string, React.CSSProperties> = {
     position: 'fixed',
     bottom: 22,
     left: '50%',
-    transform: 'translateX(-50%)',
     display: 'flex',
     alignItems: 'center',
     gap: 12,
@@ -59,7 +70,8 @@ const styles: Record<string, React.CSSProperties> = {
     background: colors.bgOverlay,
     color: colors.text1,
     boxShadow: `${shadows.sh3}, ${shadows.sheen}`,
-    zIndex: 100
+    zIndex: 100,
+    transition: 'opacity 280ms ease, transform 280ms ease'
   },
   iconChip: {
     width: 32,

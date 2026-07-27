@@ -1,9 +1,10 @@
 import { randomUUID } from 'crypto'
+import { resolve, sep } from 'path'
 import { readSettings, writeSettings } from '../services/settingsStore'
 import { setSavePathOverride } from './savePath'
 import { READY_GAMES } from './catalog'
 import type { SupportedGame } from './catalog'
-import type { CustomGame } from '../../shared/types'
+import type { CustomGame, CustomExtraFolder } from '../../shared/types'
 
 // User-added games (not in the built-in catalog). processNames comes from
 // scanning an install folder the user points at (see exeScan.ts) — if empty,
@@ -42,6 +43,22 @@ export function listCustomGames(): CustomGame[] {
 
 export function isCustomGameId(appId: string): boolean {
   return appId.startsWith(CUSTOM_ID_PREFIX)
+}
+
+// A game's name is a literal repo path segment (see the comment above) —
+// two DIFFERENT games (different appIds) sharing one name would collide in
+// the shared repo, each one's push overwriting what the other just pushed.
+// Checked against BOTH other custom games and the built-in catalog (a custom
+// game named e.g. "Subnautica 2" would collide with that catalog entry's own
+// folder). Case-insensitive, trimmed. `excludeAppId` — the game being
+// renamed, so renaming it back to its own current name isn't a false conflict.
+export function isGameNameTaken(name: string, excludeAppId?: string): boolean {
+  const norm = name.trim().toLowerCase()
+  const customTaken = listCustomGames().some(
+    (g) => g.appId !== excludeAppId && g.name.trim().toLowerCase() === norm
+  )
+  if (customTaken) return true
+  return READY_GAMES.some((g) => g.name.trim().toLowerCase() === norm)
 }
 
 export function addCustomGame(
@@ -193,7 +210,7 @@ function escapeRegExp(s: string): string {
 // name that ISN'T exactly one of the excluded ones, so copyFiltered/
 // clearFiltered (which already apply this exact field for catalog games)
 // need no changes at all to also support exclusion for a custom game.
-function buildExcludePattern(excludedFiles?: string[]): RegExp | undefined {
+export function buildExcludePattern(excludedFiles?: string[]): RegExp | undefined {
   if (!excludedFiles || excludedFiles.length === 0) return undefined
   const alternation = excludedFiles.map(escapeRegExp).join('|')
   return new RegExp(`^(?!(?:${alternation})$).*$`)
@@ -216,4 +233,163 @@ function asSupportedGame(g: CustomGame): SupportedGame {
 // directly, so a custom game gets the exact same treatment.
 export function getSyncableGames(): SupportedGame[] {
   return [...READY_GAMES, ...listCustomGames().map(asSupportedGame)]
+}
+
+// --- Extra save folders (CustomGame.extraFolders) ---
+// A second (or third...) independently-synced folder on top of a custom
+// game's main one — e.g. character saves kept apart from world saves. See
+// CustomExtraFolder's doc comment (shared/types.ts) for the shared/personal
+// split; sync.ts is what actually acts on the `shared` flag when pushing/
+// pulling (repo layout, registry) — everything here is just local bookkeeping.
+
+function updateGame(appId: string, fn: (g: CustomGame) => CustomGame): void {
+  writeSettings({ customGames: listCustomGames().map((g) => (g.appId === appId ? fn(g) : g)) })
+}
+
+function updateFolder(
+  appId: string,
+  folderId: string,
+  fn: (f: CustomExtraFolder) => CustomExtraFolder
+): void {
+  updateGame(appId, (g) => ({
+    ...g,
+    extraFolders: (g.extraFolders ?? []).map((f) => (f.id === folderId ? fn(f) : f))
+  }))
+}
+
+export function getExtraFolders(appId: string): CustomExtraFolder[] {
+  return listCustomGames().find((g) => g.appId === appId)?.extraFolders ?? []
+}
+
+export function addExtraFolder(
+  appId: string,
+  label: string,
+  savePath: string,
+  shared: boolean,
+  addedBy: string
+): CustomExtraFolder {
+  const folder: CustomExtraFolder = { id: randomUUID(), label, savePath, shared, addedBy }
+  updateGame(appId, (g) => ({ ...g, extraFolders: [...(g.extraFolders ?? []), folder] }))
+  return folder
+}
+
+// Case-insensitive, trimmed — matches how the UI shows labels, so "Персонажі"
+// and "персонажі " are treated as the same name for collision purposes.
+export function hasExtraFolderLabel(appId: string, label: string): boolean {
+  const norm = label.trim().toLowerCase()
+  return getExtraFolders(appId).some((f) => f.label.trim().toLowerCase() === norm)
+}
+
+// A real bug found 2026-07-26: an extra folder's save path was accidentally
+// set to the SAME folder (or a subfolder) already used by the game's main
+// save path or another extra folder. Since every folder is synced as a
+// whole-folder copy, this creates a feedback loop — folder A's synced
+// content physically sits inside folder B's own save path, so every push of
+// A looks like new content to B and vice versa, forever. Reject this up
+// front instead of letting it happen silently again.
+function normalizePath(p: string): string {
+  return resolve(p).toLowerCase().replace(/[\\/]+$/, '')
+}
+
+function pathsOverlap(a: string, b: string): boolean {
+  if (!a || !b) return false
+  const na = normalizePath(a)
+  const nb = normalizePath(b)
+  if (na === nb) return true
+  return na.startsWith(nb + sep) || nb.startsWith(na + sep)
+}
+
+/** Checks `candidatePath` against the game's main save path and its other
+ *  extra folders (skipping `excludeFolderId` — the folder being edited, if
+ *  any). Returns a human-readable label for whatever it conflicts with, or
+ *  null if there's no overlap. */
+export function extraFolderPathConflict(
+  appId: string,
+  candidatePath: string,
+  excludeFolderId?: string
+): string | null {
+  const game = listCustomGames().find((g) => g.appId === appId)
+  if (!game) return null
+  const mainPath = readSettings().savePathOverrides?.[appId] || game.savePath
+  if (mainPath && pathsOverlap(candidatePath, mainPath)) return game.name
+  for (const f of game.extraFolders ?? []) {
+    if (f.id === excludeFolderId || !f.savePath) continue
+    if (pathsOverlap(candidatePath, f.savePath)) return f.label
+  }
+  return null
+}
+
+export function removeExtraFolder(appId: string, folderId: string): void {
+  updateGame(appId, (g) => ({
+    ...g,
+    extraFolders: (g.extraFolders ?? []).filter((f) => f.id !== folderId)
+  }))
+}
+
+export function setExtraFolderLabel(appId: string, folderId: string, label: string): void {
+  updateFolder(appId, folderId, (f) => ({ ...f, label }))
+}
+
+export function setExtraFolderSavePath(appId: string, folderId: string, savePath: string): void {
+  updateFolder(appId, folderId, (f) => ({ ...f, savePath }))
+}
+
+export function setExtraFolderExcludedFiles(appId: string, folderId: string, excludedFiles: string[]): void {
+  updateFolder(appId, folderId, (f) => ({ ...f, excludedFiles }))
+}
+
+// Switching shared<->personal doesn't move any already-pushed data (see
+// sync.ts's folder path helpers — each state has its own repo location) —
+// it only changes where FUTURE pushes/pulls for this folder go. The caller
+// (ipc.ts) is responsible for registering/unregistering the folder in the
+// shared repo to match.
+export function setExtraFolderShared(appId: string, folderId: string, shared: boolean): void {
+  updateFolder(appId, folderId, (f) => ({ ...f, shared, ...(shared ? {} : { registryConfirmed: undefined }) }))
+}
+
+export function markExtraFolderRegistryConfirmed(appId: string, folderId: string): void {
+  updateFolder(appId, folderId, (f) => (f.registryConfirmed ? f : { ...f, registryConfirmed: true }))
+}
+
+// A co-op partner added a SHARED extra folder and pushed it to the registry
+// (sync.ts) — materialize it locally with an empty savePath (shows as
+// 'needs-setup' until they point it at their own local folder), the same
+// pattern materializeRemoteCustomGame uses for a whole game.
+export function materializeRemoteExtraFolder(
+  appId: string,
+  folderId: string,
+  label: string,
+  addedBy?: string
+): void {
+  const existing = getExtraFolders(appId)
+  if (existing.some((f) => f.id === folderId)) return
+  const folder: CustomExtraFolder = {
+    id: folderId,
+    label,
+    savePath: '',
+    shared: true,
+    registryConfirmed: true,
+    ...(addedBy ? { addedBy } : {})
+  }
+  updateGame(appId, (g) => ({ ...g, extraFolders: [...(g.extraFolders ?? []), folder] }))
+}
+
+function folderKey(appId: string, folderId: string): string {
+  return `${appId}:${folderId}`
+}
+
+export function getPendingFolderRemovals(): string[] {
+  return readSettings().pendingFolderRemovals ?? []
+}
+
+export function addPendingFolderRemoval(appId: string, folderId: string): void {
+  const key = folderKey(appId, folderId)
+  const pending = getPendingFolderRemovals()
+  if (pending.includes(key)) return
+  writeSettings({ pendingFolderRemovals: [...pending, key] })
+}
+
+export function clearPendingFolderRemoval(appId: string, folderId: string): void {
+  const key = folderKey(appId, folderId)
+  writeSettings({ pendingFolderRemovals: getPendingFolderRemovals().filter((k) => k !== key) })
 }

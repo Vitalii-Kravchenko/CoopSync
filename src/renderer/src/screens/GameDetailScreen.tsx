@@ -16,6 +16,7 @@ import Button from '../components/Button'
 import ConfirmModal from '../components/ConfirmModal'
 import CoverCropModal from '../components/CoverCropModal'
 import ExcludeFilesCard from '../components/ExcludeFilesCard'
+import ExtraFoldersSection from '../components/ExtraFoldersSection'
 import ExePicker from '../components/ExePicker'
 import Pagination from '../components/Pagination'
 import type { BannerState } from '../components/Banner'
@@ -583,6 +584,16 @@ function GameDetailScreen({
           appId={appId}
           onError={(msg) => onBanner({ text: msg, kind: 'error' })}
           onChanged={onSynced}
+        />
+      )}
+
+      {isCustom && (
+        <ExtraFoldersSection
+          appId={appId}
+          syncVersion={syncVersion}
+          onBanner={onBanner}
+          onSynced={onSynced}
+          user={user}
         />
       )}
 

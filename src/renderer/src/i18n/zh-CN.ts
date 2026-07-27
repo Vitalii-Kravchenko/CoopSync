@@ -21,6 +21,7 @@ export const zhCN: Translation = {
     pushSkipped: '云端已经有更新的版本（其他人已上传）——已跳过自动同步。请在游戏界面手动更新。',
     pushSkippedStale: '本地存档看起来已过时（自上次云同步以来未变化）——已跳过自动上传，以免覆盖云端。如有需要，请手动下载云端版本。',
     pushSkippedNoChange: '无变化 — 没有需要上传的内容',
+    pushSkippedNoChangeExit: '退出时已检查 — 没有需要上传的内容，一切早已同步',
     statusesError: '无法检查同步状态',
     retry: '重试',
     addGameCard: '添加游戏'
@@ -149,7 +150,31 @@ export const zhCN: Translation = {
     excludeFilesHint:
       '在这里勾选不应该同步的文件——本地设置、账号数据，任何实际上不是存档的内容。这里只列出存档文件夹中直接包含的文件（不包括子文件夹）。这个选择只对这台电脑生效——不会分享给队友，因为不同安装的具体文件名可能不一样。队友应该根据自己文件夹里看到的内容，单独排除文件。',
     excludeFilesEmpty: '存档文件夹中还没有文件。',
-    excludeFilesRefresh: '刷新文件列表'
+    excludeFilesRefresh: '刷新文件列表',
+    extraFoldersTitle: '额外的存档文件夹',
+    extraFoldersHint:
+      '为这个游戏单独同步另一个文件夹——例如把角色存档和世界存档分开。把某个文件夹标记为"仅我"，它依然会备份到云端，只是存放在只有你自己能看到的私人空间里，搭档永远看不到。',
+    extraFoldersEmpty: '还没有额外的文件夹',
+    extraFoldersAdd: '添加文件夹',
+    extraFolderLabelPlaceholder: '名称（例如：角色）',
+    extraFolderPathPlaceholder: '文件夹路径',
+    extraFolderBrowse: '浏览',
+    extraFolderShared: '与搭档共享',
+    extraFolderPersonal: '仅我',
+    extraFolderSharedHint: '和游戏的主文件夹一样同步——搭档也能看到。',
+    extraFolderPersonalHint: '依然会备份到云端（有自己的版本历史），但存放在你自己账号下的私人空间——搭档永远看不到。',
+    extraFolderAddSave: '添加',
+    extraFolderAddCancel: '取消',
+    extraFolderAddError: '无法添加文件夹',
+    extraFolderNoPath: '未设置文件夹',
+    extraFolderRemove: '移除文件夹',
+    extraFolderRemoveConfirmTitle: '移除此文件夹？',
+    extraFolderRemoveConfirmDesc: (label) => `停止同步"${label}"？云端已有的数据不会被删除。`,
+    extraFolderRemoveError: '无法移除文件夹',
+    extraFolderRenameError: '无法重命名文件夹',
+    extraFolderShareToggleError: '无法更改共享设置',
+    extraFolderShareToggleSuccess: '共享设置已更新',
+    extraFolderShareToggleBusy: '正在保存…'
   },
   cloudWarning: {
     title: '为已同步的游戏关闭 Steam 云存储',
@@ -182,7 +207,9 @@ export const zhCN: Translation = {
     accessRevokedTitle: '访问权限已被取消',
     accessRevokedBody: (host) => `你已不再拥有 ${host} 共享存储的访问权限。`,
     gameRemovedTitle: '游戏已移除',
-    gameRemovedBody: (game) => `《${game}》已从联机列表中移除——好友把它从列表里删掉了。`
+    gameRemovedBody: (game) => `《${game}》已从联机列表中移除——好友把它从列表里删掉了。`,
+    folderRemovedTitle: '文件夹不再共享',
+    folderRemovedBody: (game, folder) => `"${game} / ${folder}" 不再共享——已被移除，或好友把它设为了仅个人。`
   },
   onboarding: {
     welcomeTitle: '欢迎使用 CoopSync！',
@@ -320,6 +347,7 @@ export const zhCN: Translation = {
     GAME_NOT_SUPPORTED: () => '该游戏不受支持',
     CUSTOM_GAME_INVALID: () => '请输入游戏名称和存档文件夹',
     GAME_NAME_INVALID_CHARS: () => '游戏名称不能包含 \\ / : * ? " < > | 字符',
+    GAME_NAME_TAKEN: () => '已经有同名的游戏了 — 换一个名字吧',
     GAME_RUNNING: () => '游戏仍在运行——请先关闭游戏，再重新尝试恢复该版本',
     SAVE_FOLDER_NOT_FOUND: () => '未找到存档文件夹',
     NO_CLOUD_SAVES: () => '存储中还没有这个游戏的存档',
@@ -328,6 +356,9 @@ export const zhCN: Translation = {
     GIT_GENERIC: (p) => `同步错误：${p.detail}`,
     GITHUB_RATE_LIMITED: (p) => (p.time ? `已达到 GitHub 请求限制，请在 ${p.time} 左右重试。` : '已达到 GitHub 请求限制，请稍等片刻后重试。'),
     SUPPORT_SEND_FAILED: () => '发送失败，请稍后重试。',
-    SUPPORT_RATE_LIMITED: (p) => (p.time ? `请求过多，请在 ${p.time} 左右重试。` : '请求过多，请稍等片刻后重试。')
+    SUPPORT_RATE_LIMITED: (p) => (p.time ? `请求过多，请在 ${p.time} 左右重试。` : '请求过多，请稍等片刻后重试。'),
+    NOT_FOLDER_OWNER: () => '只有添加此文件夹的人才能更改其共享设置',
+    FOLDER_NAME_TAKEN: () => '这个游戏已经有同名的文件夹了 — 换一个名字吧',
+    FOLDER_PATH_OVERLAPS: (p) => `这个文件夹（或它内部/外部的文件夹）已经作为"${p.with}"的一部分在同步了 — 请选一个还没被占用的文件夹`
   }
 }

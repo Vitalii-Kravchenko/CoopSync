@@ -23,6 +23,7 @@ export const uk: Translation = {
     pushSkippedStale:
       'Локальний сейв виглядає застарілим (не змінювався після останнього синку) — автовивантаження пропущено, щоб не затерти хмару. За потреби завантаж хмарну версію вручну.',
     pushSkippedNoChange: 'Без змін — нічого вивантажувати',
+    pushSkippedNoChangeExit: 'Перевірено на виході — вивантажувати нічого, все вже було синхронізовано',
     statusesError: 'Не вдалося перевірити статус синку',
     retry: 'Спробувати ще раз',
     addGameCard: 'Додати гру'
@@ -155,7 +156,33 @@ export const uk: Translation = {
     excludeFilesHint:
       'Познач тут файли, які не повинні синхронізуватися — локальні налаштування, дані акаунту, усе, що насправді не є сейвом. У списку лише файли безпосередньо в папці сейвів (без підпапок). Цей вибір діє лише на цьому ПК — він не передається другу, бо точні назви файлів можуть відрізнятися між установками. Друг має виключити файли окремо, орієнтуючись на те, що бачить у своїй папці.',
     excludeFilesEmpty: 'У папці сейвів поки немає файлів.',
-    excludeFilesRefresh: 'Оновити список файлів'
+    excludeFilesRefresh: 'Оновити список файлів',
+    extraFoldersTitle: 'Додаткові папки сейвів',
+    extraFoldersHint:
+      'Синхронізуй ще одну папку для цієї гри окремо — наприклад, збереження персонажів окремо від світів. Познач папку «Тільки я» — вона все одно бекапиться в хмару, просто в окремий особистий простір, який друг не бачить.',
+    extraFoldersEmpty: 'Додаткових папок ще нема',
+    extraFoldersAdd: 'Додати папку',
+    extraFolderLabelPlaceholder: 'Назва (напр. Персонажі)',
+    extraFolderPathPlaceholder: 'Шлях до папки',
+    extraFolderBrowse: 'Огляд',
+    extraFolderShared: 'Спільна з другом',
+    extraFolderPersonal: 'Тільки я',
+    extraFolderSharedHint: 'Синхронізується так само, як основна папка гри — друг теж її бачить.',
+    extraFolderPersonalHint:
+      'Все одно бекапиться в хмару (зі своєю історією версій), але в особистий простір під твоїм акаунтом — друг його не бачить.',
+    extraFolderAddSave: 'Додати',
+    extraFolderAddCancel: 'Скасувати',
+    extraFolderAddError: 'Не вдалося додати папку',
+    extraFolderNoPath: 'Папку не вказано',
+    extraFolderRemove: 'Видалити папку',
+    extraFolderRemoveConfirmTitle: 'Видалити цю папку?',
+    extraFolderRemoveConfirmDesc: (label) =>
+      `Припинити синхронізацію «${label}»? Те, що вже в хмарі, не видаляється.`,
+    extraFolderRemoveError: 'Не вдалося видалити папку',
+    extraFolderRenameError: 'Не вдалося перейменувати папку',
+    extraFolderShareToggleError: 'Не вдалося змінити налаштування спільного доступу',
+    extraFolderShareToggleSuccess: 'Налаштування збережено',
+    extraFolderShareToggleBusy: 'Зберігаю…'
   },
   cloudWarning: {
     title: 'Вимкни Steam Cloud для ігор, які синкає CoopSync',
@@ -190,7 +217,10 @@ export const uk: Translation = {
     accessRevokedTitle: 'Доступ відкликано',
     accessRevokedBody: (host) => `У тебе більше немає доступу до сховища ${host}.`,
     gameRemovedTitle: 'Гру видалено',
-    gameRemovedBody: (game) => `«${game}» видалено з коопу — друг прибрав її зі списку.`
+    gameRemovedBody: (game) => `«${game}» видалено з коопу — друг прибрав її зі списку.`,
+    folderRemovedTitle: 'Папку більше не видно',
+    folderRemovedBody: (game, folder) =>
+      `«${game} / ${folder}» більше не спільна — або видалена, або друг зробив її особистою.`
   },
   onboarding: {
     welcomeTitle: 'Ласкаво просимо до CoopSync!',
@@ -333,6 +363,7 @@ export const uk: Translation = {
     GAME_NOT_SUPPORTED: () => 'Гра не підтримується',
     CUSTOM_GAME_INVALID: () => 'Вкажи назву гри та папку з сейвами',
     GAME_NAME_INVALID_CHARS: () => 'Назва гри не може містити символи \\ / : * ? " < > |',
+    GAME_NAME_TAKEN: () => 'Гра з такою назвою вже є — обери іншу назву',
     GAME_RUNNING: () => 'Гра ще запущена — спершу закрий її, потім спробуй відновити версію ще раз',
     SAVE_FOLDER_NOT_FOUND: () => 'Папку сейвів не знайдено',
     NO_CLOUD_SAVES: () => 'У сховищі ще немає сейвів цієї гри',
@@ -343,6 +374,10 @@ export const uk: Translation = {
       p.time ? `Вичерпано ліміт запитів до GitHub — спробуй знову приблизно о ${p.time}.` : 'Вичерпано ліміт запитів до GitHub — зачекай трохи і спробуй ще раз.',
     SUPPORT_SEND_FAILED: () => 'Не вдалося надіслати. Спробуй ще раз трохи пізніше.',
     SUPPORT_RATE_LIMITED: (p) =>
-      p.time ? `Забагато спроб — спробуй знову приблизно о ${p.time}.` : 'Забагато спроб — зачекай трохи і спробуй ще раз.'
+      p.time ? `Забагато спроб — спробуй знову приблизно о ${p.time}.` : 'Забагато спроб — зачекай трохи і спробуй ще раз.',
+    NOT_FOLDER_OWNER: () => 'Змінити спільний доступ може тільки той, хто додав цю папку',
+    FOLDER_NAME_TAKEN: () => 'Папка з такою назвою для цієї гри вже є — обери іншу назву',
+    FOLDER_PATH_OVERLAPS: (p) =>
+      `Ця папка (або та, що всередині чи над нею) вже бере участь у синхронізації як частина «${p.with}» — вибери папку, яка ще не використовується`
   }
 }

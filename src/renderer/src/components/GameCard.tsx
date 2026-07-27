@@ -74,8 +74,9 @@ function formatBytes(bytes: number): string {
   return `${value.toFixed(value < 10 ? 1 : 0)} ${units[unitIndex]}`
 }
 
-// How to display the sync status: color, dot, text (badge pill).
-function syncDisplay(
+// How to display the sync status: color, dot, text (badge pill). Exported —
+// reused as-is by ExtraFoldersSection for a folder's own status badge.
+export function syncDisplay(
   s: SyncStatus | undefined,
   t: Translation
 ): { color: string; bg: string; bd: string; text: string } {

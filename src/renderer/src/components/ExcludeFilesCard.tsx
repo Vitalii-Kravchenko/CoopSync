@@ -7,6 +7,10 @@ import { DiskIcon, SyncIcon } from './icons'
 
 interface Props {
   appId: string
+  /** Set when this card is scoped to one of the game's extra folders (see
+   *  CustomGame.extraFolders) instead of its main save folder — routes to
+   *  the folder-scoped IPC calls instead of the game-level ones. */
+  folderId?: string
   onError?: (message: string) => void
   /** Called after an exclusion actually saves — lets GameDetailScreen tell
    *  MainScreen the Games tab's card (size) may now be stale. */
@@ -15,10 +19,11 @@ interface Props {
 
 // Files sitting in the save folder's top level (not subfolders — see
 // games:list-save-files), for excluding local/settings files from sync.
-// Shared by GameDetailScreen (an existing custom game) and AddCustomGameModal
-// (right after a brand-new custom game's appId exists) — appId is the only
-// thing either caller needs to have ready.
-function ExcludeFilesCard({ appId, onError, onChanged }: Props): React.JSX.Element {
+// Shared by GameDetailScreen (an existing custom game, or one of its extra
+// folders via folderId) and AddCustomGameModal (right after a brand-new
+// custom game's appId exists) — appId is the only thing either caller needs
+// to have ready.
+function ExcludeFilesCard({ appId, folderId, onError, onChanged }: Props): React.JSX.Element {
   const { t } = useI18n()
   const [saveFiles, setSaveFiles] = useState<string[]>([])
   const [excludedFiles, setExcludedFiles] = useState<string[]>([])
@@ -26,7 +31,13 @@ function ExcludeFilesCard({ appId, onError, onChanged }: Props): React.JSX.Eleme
 
   function load(): void {
     setLoading(true)
-    Promise.all([window.api.games.listSaveFiles(appId), window.api.games.getExcludedFiles(appId)])
+    const filesP = folderId
+      ? window.api.games.listExtraFolderSaveFiles(appId, folderId)
+      : window.api.games.listSaveFiles(appId)
+    const excludedP = folderId
+      ? window.api.games.getExtraFolderExcludedFiles(appId, folderId)
+      : window.api.games.getExcludedFiles(appId)
+    Promise.all([filesP, excludedP])
       .then(([files, excluded]) => {
         setSaveFiles(files)
         setExcludedFiles(excluded)
@@ -38,15 +49,17 @@ function ExcludeFilesCard({ appId, onError, onChanged }: Props): React.JSX.Eleme
   useEffect(() => {
     load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appId])
+  }, [appId, folderId])
 
   function toggle(file: string): void {
     const next = excludedFiles.includes(file)
       ? excludedFiles.filter((f) => f !== file)
       : [...excludedFiles, file]
     setExcludedFiles(next)
-    window.api.games
-      .setExcludedFiles(appId, next)
+    const saveP = folderId
+      ? window.api.games.setExtraFolderExcludedFiles(appId, folderId, next)
+      : window.api.games.setExcludedFiles(appId, next)
+    saveP
       .then(() => onChanged?.())
       .catch((e) => {
         onError?.(describeError(e, t, t.history.savePathSaveError))

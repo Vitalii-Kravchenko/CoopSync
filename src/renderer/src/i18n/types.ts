@@ -50,6 +50,7 @@ export interface Translation {
     pushSkipped: string
     pushSkippedStale: string
     pushSkippedNoChange: string
+    pushSkippedNoChangeExit: string
     statusesError: string
     retry: string
     addGameCard: string
@@ -176,6 +177,29 @@ export interface Translation {
     excludeFilesHint: string
     excludeFilesEmpty: string
     excludeFilesRefresh: string
+    extraFoldersTitle: string
+    extraFoldersHint: string
+    extraFoldersEmpty: string
+    extraFoldersAdd: string
+    extraFolderLabelPlaceholder: string
+    extraFolderPathPlaceholder: string
+    extraFolderBrowse: string
+    extraFolderShared: string
+    extraFolderPersonal: string
+    extraFolderSharedHint: string
+    extraFolderPersonalHint: string
+    extraFolderAddSave: string
+    extraFolderAddCancel: string
+    extraFolderAddError: string
+    extraFolderNoPath: string
+    extraFolderRemove: string
+    extraFolderRemoveConfirmTitle: string
+    extraFolderRemoveConfirmDesc: (label: string) => string
+    extraFolderRemoveError: string
+    extraFolderRenameError: string
+    extraFolderShareToggleError: string
+    extraFolderShareToggleSuccess: string
+    extraFolderShareToggleBusy: string
   }
   cloudWarning: {
     title: string
@@ -215,6 +239,8 @@ export interface Translation {
     accessRevokedBody: (host: string) => string
     gameRemovedTitle: string
     gameRemovedBody: (game: string) => string
+    folderRemovedTitle: string
+    folderRemovedBody: (game: string, folder: string) => string
   }
   onboarding: {
     welcomeTitle: string

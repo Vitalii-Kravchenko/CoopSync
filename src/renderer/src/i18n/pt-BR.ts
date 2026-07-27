@@ -23,6 +23,7 @@ export const ptBR: Translation = {
     pushSkippedStale:
       'O save local parece desatualizado (sem mudanças desde a última sincronização com a nuvem) — envio automático ignorado para não sobrescrever a nuvem. Baixe a versão da nuvem manualmente se necessário.',
     pushSkippedNoChange: 'Sem alterações — nada para enviar',
+    pushSkippedNoChangeExit: 'Verificado na saída — nada para enviar, tudo já estava sincronizado',
     statusesError: 'Não foi possível verificar o status de sincronização',
     retry: 'Tentar novamente',
     addGameCard: 'Adicionar jogo'
@@ -155,7 +156,33 @@ export const ptBR: Translation = {
     excludeFilesHint:
       'Marque aqui os arquivos que não devem ser sincronizados — configurações locais, dados de conta, qualquer coisa que não seja realmente um save. Só os arquivos diretamente na pasta de save são listados (sem subpastas). Essa escolha vale só neste PC — não é compartilhada com seu parceiro, já que os nomes exatos dos arquivos podem variar entre instalações. Seu amigo deve excluir arquivos separadamente, com base no que ele vê na própria pasta.',
     excludeFilesEmpty: 'Ainda não há arquivos na pasta de save.',
-    excludeFilesRefresh: 'Atualizar lista de arquivos'
+    excludeFilesRefresh: 'Atualizar lista de arquivos',
+    extraFoldersTitle: 'Pastas de salvamento extras',
+    extraFoldersHint:
+      'Sincronize outra pasta para este jogo separadamente — por exemplo, saves de personagens separados dos saves de mundos. Marque uma pasta como "Só eu": ela ainda é salva na nuvem, mas no seu próprio espaço privado que seu parceiro nunca vê.',
+    extraFoldersEmpty: 'Ainda não há pastas extras',
+    extraFoldersAdd: 'Adicionar pasta',
+    extraFolderLabelPlaceholder: 'Nome (ex. Personagens)',
+    extraFolderPathPlaceholder: 'Caminho da pasta',
+    extraFolderBrowse: 'Procurar',
+    extraFolderShared: 'Compartilhada com meu parceiro',
+    extraFolderPersonal: 'Só eu',
+    extraFolderSharedHint: 'Sincronizada da mesma forma que a pasta principal do jogo — seu parceiro também a vê.',
+    extraFolderPersonalHint:
+      'Ainda é salva na nuvem (com seu próprio histórico de versões), mas em um espaço privado na sua própria conta — seu parceiro nunca a vê.',
+    extraFolderAddSave: 'Adicionar',
+    extraFolderAddCancel: 'Cancelar',
+    extraFolderAddError: 'Não foi possível adicionar a pasta',
+    extraFolderNoPath: 'Nenhuma pasta definida',
+    extraFolderRemove: 'Remover pasta',
+    extraFolderRemoveConfirmTitle: 'Remover esta pasta?',
+    extraFolderRemoveConfirmDesc: (label) =>
+      `Parar de sincronizar "${label}"? Nada do que já está na nuvem é excluído.`,
+    extraFolderRemoveError: 'Não foi possível remover a pasta',
+    extraFolderRenameError: 'Não foi possível renomear a pasta',
+    extraFolderShareToggleError: 'Não foi possível alterar a configuração de compartilhamento',
+    extraFolderShareToggleSuccess: 'Configuração atualizada',
+    extraFolderShareToggleBusy: 'Salvando…'
   },
   cloudWarning: {
     title: 'Desative o Steam Cloud para os jogos sincronizados',
@@ -190,7 +217,10 @@ export const ptBR: Translation = {
     accessRevokedTitle: 'Acesso revogado',
     accessRevokedBody: (host) => `Você não tem mais acesso ao armazenamento compartilhado de ${host}.`,
     gameRemovedTitle: 'Jogo removido',
-    gameRemovedBody: (game) => `"${game}" foi removido do co-op — seu amigo tirou da lista.`
+    gameRemovedBody: (game) => `"${game}" foi removido do co-op — seu amigo tirou da lista.`,
+    folderRemovedTitle: 'Pasta não é mais compartilhada',
+    folderRemovedBody: (game, folder) =>
+      `"${game} / ${folder}" não é mais compartilhada — foi removida, ou seu amigo tornou pessoal.`
   },
   onboarding: {
     welcomeTitle: 'Bem-vindo ao CoopSync!',
@@ -334,6 +364,7 @@ export const ptBR: Translation = {
     GAME_NOT_SUPPORTED: () => 'Jogo não suportado',
     CUSTOM_GAME_INVALID: () => 'Informe um nome de jogo e uma pasta de saves',
     GAME_NAME_INVALID_CHARS: () => 'O nome do jogo não pode conter \\ / : * ? " < > |',
+    GAME_NAME_TAKEN: () => 'Já existe um jogo com esse nome — escolha outro nome',
     GAME_RUNNING: () => 'O jogo ainda está em execução — feche-o primeiro e tente restaurar a versão novamente',
     SAVE_FOLDER_NOT_FOUND: () => 'Pasta de saves não encontrada',
     NO_CLOUD_SAVES: () => 'Ainda não há saves deste jogo no armazenamento',
@@ -344,6 +375,10 @@ export const ptBR: Translation = {
       p.time ? `Limite de requisições do GitHub atingido — tente novamente por volta das ${p.time}.` : 'Limite de requisições do GitHub atingido — espere um pouco e tente novamente.',
     SUPPORT_SEND_FAILED: () => 'Não foi possível enviar. Tente novamente em instantes.',
     SUPPORT_RATE_LIMITED: (p) =>
-      p.time ? `Muitas tentativas — tente novamente por volta das ${p.time}.` : 'Muitas tentativas — espere um pouco e tente novamente.'
+      p.time ? `Muitas tentativas — tente novamente por volta das ${p.time}.` : 'Muitas tentativas — espere um pouco e tente novamente.',
+    NOT_FOLDER_OWNER: () => 'Só quem adicionou esta pasta pode mudar seu compartilhamento',
+    FOLDER_NAME_TAKEN: () => 'Já existe uma pasta com esse nome para este jogo — escolha outro nome',
+    FOLDER_PATH_OVERLAPS: (p) =>
+      `Esta pasta (ou uma pasta dentro/acima dela) já está sendo sincronizada como parte de "${p.with}" — escolha uma pasta que ainda não esteja em uso`
   }
 }

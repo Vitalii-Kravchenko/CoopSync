@@ -55,6 +55,11 @@ function describe(n: AppNotification, t: Translation): { title: string; body: st
         title: t.notifications.gameRemovedTitle,
         body: t.notifications.gameRemovedBody(n.params.game)
       }
+    case 'folder-removed':
+      return {
+        title: t.notifications.folderRemovedTitle,
+        body: t.notifications.folderRemovedBody(n.params.game, n.params.folder)
+      }
   }
 }
 
@@ -71,7 +76,8 @@ const KIND_STYLE: Record<
   'friend-declined': { Icon: CloseIcon, color: colors.warning, bg: colors.warningBg },
   'sync-conflict-skipped': { Icon: AlertTriangleIcon, color: colors.warning, bg: colors.warningBg },
   'access-revoked': { Icon: AlertCircleIcon, color: colors.danger, bg: colors.dangerBg },
-  'game-removed': { Icon: TrashIcon, color: colors.warning, bg: colors.warningBg }
+  'game-removed': { Icon: TrashIcon, color: colors.warning, bg: colors.warningBg },
+  'folder-removed': { Icon: TrashIcon, color: colors.warning, bg: colors.warningBg }
 }
 
 // Bell icon + dropdown panel (titlebar, next to Support) — the persisted

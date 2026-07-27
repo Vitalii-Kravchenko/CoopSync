@@ -1,6 +1,20 @@
-import { getSyncableGames } from '../games/customGames'
+import { getSyncableGames, listCustomGames, isCustomGameId, buildExcludePattern } from '../games/customGames'
+import { resolveSavePath } from '../games/savePath'
 import type { SupportedGame } from '../games/catalog'
-import { uploadGame, downloadGame, getSyncStatuses, restoreMissingFiles, localSaveFingerprint } from './sync'
+import type { CustomExtraFolder } from '../../shared/types'
+import {
+  uploadGame,
+  downloadGame,
+  getSyncStatuses,
+  restoreMissingFiles,
+  localSaveFingerprint,
+  uploadExtraFolder,
+  downloadExtraFolder,
+  restoreExtraFolderMissingFiles,
+  localExtraFolderFingerprint,
+  nextGameVersion,
+  folderHash
+} from './sync'
 import { getRunningProcesses, isGameRunning } from './processCheck'
 import { getNotified, markNotified } from './notifyState'
 import { getSavesRepo, listInvitations, listCollaborators } from './github'
@@ -12,6 +26,7 @@ import {
   setHadAccess
 } from './backgroundState'
 import { addNotification } from './notificationStore'
+import { log } from './logger'
 import { parseAppError } from '../../shared/errors'
 import type { AutoSyncEvent, FriendSaveUpdate } from '../../shared/types'
 
@@ -38,9 +53,25 @@ let busy = false
 // already acted on (pushed, or found nothing worth pushing for) — without it
 // every settled tick would re-run a full status check (a real git pull) for
 // as long as a game with no NEW saves sits open.
+// Keyed by appId for the game's main folder, or "appId:folderId" for an
+// extra folder (see folderKey below) — sharing one flat map for both is safe
+// since a bare appId never collides with a composite key built from it.
 let lastSeenFingerprint: Record<string, string | null> = {}
 let lastChangedAt: Record<string, number> = {}
 let lastHandledFingerprint: Record<string, string | null> = {}
+
+function folderKey(appId: string, folderId: string): string {
+  return `${appId}:${folderId}`
+}
+
+// Custom games' extra folders configured with a local save path (see
+// CustomGame.extraFolders) — a partner-added shared folder not yet pointed
+// at a local path here is skipped, same as a 'needs-setup' whole game.
+function extraFoldersOf(appId: string): CustomExtraFolder[] {
+  if (!isCustomGameId(appId)) return []
+  const cg = listCustomGames().find((c) => c.appId === appId)
+  return (cg?.extraFolders ?? []).filter((f) => f.savePath)
+}
 // So we don't spam a banner every tick (5s) if tasklist consistently fails
 // (e.g. no permissions) — notify once and stay quiet until it recovers.
 let processCheckFailing = false
@@ -98,6 +129,10 @@ async function checkFriendUpdates(
     const updates: FriendSaveUpdate[] = []
     for (const s of statuses) {
       if (!s.remoteUpdatedBy || s.remoteVersion <= 0 || s.remoteUpdatedBy === actor) continue
+      // 'cloud-only' — this device has never had local saves for this game
+      // (never installed, or installed but never actually played/synced) —
+      // a friend playing a game we don't even have is noise, not signal.
+      if (s.status === 'cloud-only') continue
       if (s.remoteVersion <= getNotified(s.appId)) continue
       const game = getSyncableGames().find((g) => g.appId === s.appId)
       updates.push({
@@ -213,9 +248,10 @@ async function tick(
         // (e.g. a deleted world), without touching existing local files —
         // this is always safe, regardless of versions. Then a full pull,
         // BUT only if the cloud is newer. Otherwise we'd overwrite newer local progress.
+        let statuses: Awaited<ReturnType<typeof getSyncStatuses>> | null = null
         try {
           const restored = await restoreMissingFiles(token, owner, game.appId)
-          const statuses = await getSyncStatuses(token, owner, actor)
+          statuses = await getSyncStatuses(token, owner, actor)
           const st = statuses.find((s) => s.appId === game.appId)
           if (
             st &&
@@ -258,16 +294,81 @@ async function tick(
           // Best-effort — the fingerprint timer just treats the first real
           // reading as a fresh baseline instead.
         }
+
+        // Same launch-time restore/pull, one level down, for each of this
+        // game's configured extra folders (see CustomGame.extraFolders) —
+        // reuses the `statuses` fetched above (each entry's extraFolders)
+        // instead of pulling again per folder.
+        for (const f of extraFoldersOf(game.appId)) {
+          const label = `${game.name} / ${f.label}`
+          try {
+            const restored = await restoreExtraFolderMissingFiles(token, owner, game.appId, f.id, actor)
+            const fst = statuses
+              ?.find((s) => s.appId === game.appId)
+              ?.extraFolders?.find((x) => x.folderId === f.id)
+            if (
+              fst &&
+              (fst.status === 'remote-newer' || fst.status === 'cloud-only' || fst.status === 'local-stale')
+            ) {
+              const result = await downloadExtraFolder(token, owner, game.appId, f.id, actor)
+              onEvent({
+                appId: game.appId,
+                name: label,
+                action: 'pull',
+                ok: true,
+                code: 'download-success',
+                params: { version: String(result.version) }
+              })
+            } else if (restored > 0) {
+              onEvent({
+                appId: game.appId,
+                name: label,
+                action: 'pull',
+                ok: true,
+                code: 'restore-success',
+                params: { count: String(restored) }
+              })
+            }
+          } catch (e) {
+            onEvent({ appId: game.appId, name: label, action: 'pull', ok: false, ...errorCode(e) })
+          }
+          try {
+            const fp = await localExtraFolderFingerprint(game.appId, f.id)
+            const key = folderKey(game.appId, f.id)
+            lastSeenFingerprint[key] = fp
+            lastHandledFingerprint[key] = fp
+          } catch {
+            // Best-effort, same reasoning as the main folder's seed above.
+          }
+        }
       } else if (was && !now) {
         // The game closed → the exit-time push is still the final catch-all,
         // regardless of whatever the mid-session settle check already did —
         // it covers whatever changed in the gap since the last settled push,
         // and uploadGame's own content-hash check (see pushGameSaves) makes
         // a redundant push here a harmless no-op when there's nothing new.
-        await pushGameSaves(token, owner, actor, game, onEvent)
+        //
+        // The version pushed here (if any) is reused for every extra folder
+        // pushed right below — these all happen in this one synchronous exit
+        // sequence, a genuine single batch (unlike a mid-session push, which
+        // can settle minutes apart for different folders — those still each
+        // claim their own fresh number, see pushGameSaves/pushFolderSaves).
+        // Without this, the main save and an extra folder that BOTH have new
+        // content at the exact same exit would get two different numbers for
+        // what's really one coherent "closed the game" moment.
+        let batchVersion = await pushGameSaves(token, owner, actor, game, onEvent)
         delete lastSeenFingerprint[game.appId]
         delete lastChangedAt[game.appId]
         delete lastHandledFingerprint[game.appId]
+
+        for (const f of extraFoldersOf(game.appId)) {
+          const pushed = await pushFolderSaves(token, owner, actor, game, f, onEvent, false, batchVersion)
+          if (pushed !== undefined) batchVersion = pushed
+          const key = folderKey(game.appId, f.id)
+          delete lastSeenFingerprint[key]
+          delete lastChangedAt[key]
+          delete lastHandledFingerprint[key]
+        }
       }
     }
   } finally {
@@ -281,16 +382,36 @@ async function tick(
 // - local content differs from the cloud, but not because we actually
 //   played (no file changed since the last sync, e.g. saves were swapped for
 //   an old backup) — otherwise stale data would silently overwrite current
-//   cloud progress.
+//   cloud progress. This specific check only makes sense for the EXIT/launch
+//   path, though — see midSession below.
 // Shared by the exit-time push and the mid-session settle check below —
 // same safety checks either way, only the trigger differs.
+//
+// `midSession` — true when called from checkMidSessionSave (the game is
+// CONFIRMED still running right now, via the process poll). The
+// "local-stale" verdict exists to catch one specific scenario: a file was
+// swapped in from an old backup while nobody — neither the game nor this
+// app — was touching the save folder. That scenario is structurally
+// impossible while the game is actively running and being watched every
+// second by the fingerprint timer; any hash difference caught here is real
+// new progress, full stop. Treating it as "stale" here was a genuine bug —
+// found via coopsync.log on 2026-07-26: a mid-session push for an extra
+// folder got skipped as "stale" seconds after a normal push, even though
+// nothing but active gameplay had happened in between (some games — Terraria
+// included — don't always bump a save file's mtime on every rewrite the way
+// this heuristic assumes, e.g. a temp-file-then-rename write pattern can
+// leave the visible mtime looking older than the actual last write).
+// Returns the version number actually pushed (undefined if skipped, no-op,
+// or errored).
 async function pushGameSaves(
   token: string,
   owner: string,
   actor: string,
   game: SupportedGame,
-  onEvent: (e: AutoSyncEvent) => void
-): Promise<void> {
+  onEvent: (e: AutoSyncEvent) => void,
+  midSession = false,
+  explicitVersion?: number
+): Promise<number | undefined> {
   // GameDetailScreen uses this to block "Restore" for this game until the
   // matching terminal event below, so a manual revert can't race the same
   // underlying git clone against this background push.
@@ -298,9 +419,12 @@ async function pushGameSaves(
   try {
     const statuses = await getSyncStatuses(token, owner, actor)
     const st = statuses.find((s) => s.appId === game.appId)
-    // TODO(temporary): diagnostics for "saved in-game, exited — nothing got pushed".
-    console.log(
-      `[watcher] push ${game.name}: status=${st?.status} localVer=${st?.localVersion} remoteVer=${st?.remoteVersion} lastSyncAt=${st?.lastSyncAt}`
+    // Short content-hash prefix, not just size/mtime — lets a log reader
+    // tell definitively whether the actual save bytes changed between two
+    // pushes, or the exact same content just got claimed again.
+    const localHash = await folderHash(resolveSavePath(game), game.saveFilePattern).catch(() => 'ERR')
+    log(
+      `push ${game.name}: status=${st?.status} localVer=${st?.localVersion} remoteVer=${st?.remoteVersion} lastSyncAt=${st?.lastSyncAt} midSession=${midSession} localHash=${localHash.slice(0, 10)}`
     )
     if (st?.status === 'remote-newer' || st?.status === 'cloud-only') {
       onEvent({ appId: game.appId, name: game.name, action: 'push-skipped', ok: true, code: 'push-skipped' })
@@ -308,27 +432,50 @@ async function pushGameSaves(
       // session's progress genuinely wasn't uploaded, worth a persisted bell
       // entry, not just a toast that vanishes in 5s.
       addNotification('sync-conflict-skipped', { game: game.name })
-    } else if (st?.status === 'local-stale') {
-      onEvent({
-        appId: game.appId,
-        name: game.name,
-        action: 'push-skipped',
-        ok: true,
-        code: 'push-skipped-stale'
-      })
     } else {
-      const result = await uploadGame(token, owner, game.appId, actor)
+      // 'local-stale' (content differs, but no local file changed after the
+      // last known cloud sync) used to also skip here — right, but ONLY the
+      // very first time this game's status is ever checked after CoopSync
+      // itself (re)starts, when there's a real gap where an old backup could
+      // have been swapped in without us watching. pushGameSaves is never
+      // called in that position — it only ever runs after this game was
+      // already confirmed running (mid-session, or here at exit, always
+      // preceded by 'was' being true in tick()) — i.e. our own 1s fingerprint
+      // monitor was continuously watching this exact folder the whole time,
+      // so "an old backup got silently swapped in" simply cannot have
+      // happened in that window. Treating it as newer here is safe; the
+      // status label itself (still computed, still shown in the UI) is
+      // unaffected — only this push/skip decision changed.
+      //
+      // The version number itself is always freshly claimed per actual push
+      // (not cached across a play session) — a mid-session push and a later
+      // exit push are genuinely different content snapshots, and giving them
+      // the same version number would make that number stop uniquely
+      // identifying one specific state (which one would "revert to vX" even
+      // mean?). Main and an extra folder's numbers stay close (one shared
+      // growing sequence, see nextGameVersion) without being forced equal —
+      // EXCEPT when the caller passes explicitVersion, meaning this push is
+      // part of the same synchronous exit-time batch as another folder's
+      // push (see tick()'s exit branch) — then it reuses that number instead.
+      const version = explicitVersion ?? (await nextGameVersion(game.name))
+      const result = await uploadGame(token, owner, game.appId, actor, undefined, version)
       if (result.pushed === false) {
         // The local and cloud content hashes matched — nothing was actually
         // uploaded (we played, but didn't save/change the save, or the
         // mid-session check already pushed this exact state). "Uploaded"
-        // would be a lie here, so a separate, honest code.
+        // would be a lie here, so a separate, honest code. Silent only while
+        // still mid-session (the world-save cascade firing several of these
+        // in quick succession IS just noise) — at exit this is the one
+        // confirmation the user actually watches for: "did my last save make
+        // it up, or was there really nothing left to do" — silencing THAT
+        // one reads as "did it even check?", not "all good".
         onEvent({
           appId: game.appId,
           name: game.name,
           action: 'push-skipped',
           ok: true,
-          code: 'push-skipped-nochange'
+          code: midSession ? 'push-skipped-nochange' : 'push-skipped-nochange-exit',
+          silent: midSession
         })
       } else {
         onEvent({
@@ -339,11 +486,77 @@ async function pushGameSaves(
           code: 'upload-success',
           params: { version: String(result.version) }
         })
+        return result.version
       }
     }
   } catch (e) {
     onEvent({ appId: game.appId, name: game.name, action: 'push', ok: false, ...errorCode(e) })
   }
+  return undefined
+}
+
+// Same safety-checked upload as pushGameSaves, one level down for an extra
+// folder — shares the exact same reasoning (don't overwrite a newer cloud
+// push, don't push stale local data), just reading a FolderSyncStatus
+// instead of a GameSyncStatus.
+async function pushFolderSaves(
+  token: string,
+  owner: string,
+  actor: string,
+  game: SupportedGame,
+  folder: CustomExtraFolder,
+  onEvent: (e: AutoSyncEvent) => void,
+  midSession = false,
+  explicitVersion?: number
+): Promise<number | undefined> {
+  const label = `${game.name} / ${folder.label}`
+  onEvent({ appId: game.appId, name: label, action: 'push-start', ok: true, code: 'push-start' })
+  try {
+    const statuses = await getSyncStatuses(token, owner, actor)
+    const fst = statuses.find((s) => s.appId === game.appId)?.extraFolders?.find((x) => x.folderId === folder.id)
+    const localHash = await folderHash(folder.savePath, buildExcludePattern(folder.excludedFiles)).catch(
+      () => 'ERR'
+    )
+    log(
+      `push ${label}: status=${fst?.status} localVer=${fst?.localVersion} remoteVer=${fst?.remoteVersion} lastSyncAt=${fst?.lastSyncAt} midSession=${midSession} localHash=${localHash.slice(0, 10)}`
+    )
+    if (fst?.status === 'remote-newer' || fst?.status === 'cloud-only') {
+      onEvent({ appId: game.appId, name: label, action: 'push-skipped', ok: true, code: 'push-skipped' })
+      addNotification('sync-conflict-skipped', { game: label })
+    } else {
+      // Same reasoning as pushGameSaves — this only ever runs after the
+      // folder's game was already confirmed running, so 'local-stale' can't
+      // mean "an old backup was swapped in unwatched" here either. Version
+      // freshly claimed per push unless explicitVersion carries one forward
+      // from the same exit-time batch — same reasoning as pushGameSaves above.
+      const version = explicitVersion ?? (await nextGameVersion(game.name))
+      const result = await uploadExtraFolder(token, owner, game.appId, folder.id, actor, version)
+      if (result.pushed === false) {
+        // Silent only mid-session — see pushGameSaves's identical reasoning.
+        onEvent({
+          appId: game.appId,
+          name: label,
+          action: 'push-skipped',
+          ok: true,
+          code: midSession ? 'push-skipped-nochange' : 'push-skipped-nochange-exit',
+          silent: midSession
+        })
+      } else {
+        onEvent({
+          appId: game.appId,
+          name: label,
+          action: 'push',
+          ok: true,
+          code: 'upload-success',
+          params: { version: String(result.version) }
+        })
+        return result.version
+      }
+    }
+  } catch (e) {
+    onEvent({ appId: game.appId, name: label, action: 'push', ok: false, ...errorCode(e) })
+  }
+  return undefined
 }
 
 // While a game is running (not just at exit): notices a save that's
@@ -366,12 +579,12 @@ async function checkMidSessionSave(
   actor: string,
   game: SupportedGame,
   onEvent: (e: AutoSyncEvent) => void
-): Promise<void> {
+): Promise<number | undefined> {
   let fp: string | null
   try {
     fp = await localSaveFingerprint(game.appId)
   } catch {
-    return // best-effort — try again next check
+    return undefined // best-effort — try again next check
   }
   const prev = lastSeenFingerprint[game.appId]
   if (fp !== prev) {
@@ -379,19 +592,20 @@ async function checkMidSessionSave(
     // session) — restart the quiet countdown and wait.
     lastSeenFingerprint[game.appId] = fp
     lastChangedAt[game.appId] = Date.now()
-    return
+    return undefined
   }
-  if (fp === null) return // no save folder yet
-  if (fp === lastHandledFingerprint[game.appId]) return // already pushed (or found nothing to push) for this exact state
-  if (Date.now() - (lastChangedAt[game.appId] ?? 0) < SETTLE_QUIET_MS) return // still within the quiet window
+  if (fp === null) return undefined // no save folder yet
+  if (fp === lastHandledFingerprint[game.appId]) return undefined // already pushed (or found nothing to push) for this exact state
+  if (Date.now() - (lastChangedAt[game.appId] ?? 0) < SETTLE_QUIET_MS) return undefined // still within the quiet window
 
-  await pushGameSaves(token, owner, actor, game, onEvent)
+  const pushed = await pushGameSaves(token, owner, actor, game, onEvent, true)
   // Marked as handled regardless of outcome — including a failed push: it'll
   // simply be caught by the exit-time push instead, and retrying an error
   // every second for as long as the game stays open would just hammer
   // git/GitHub for no benefit while whatever's actually wrong (offline,
   // auth) persists.
   lastHandledFingerprint[game.appId] = fp
+  return pushed
 }
 
 // The fingerprint timer's own tick: checks every currently-running ready
@@ -409,7 +623,18 @@ async function fingerprintTick(
   busy = true
   try {
     for (const game of active) {
-      await checkMidSessionSave(token, owner, actor, game, onEvent)
+      const mainVersion = await checkMidSessionSave(token, owner, actor, game, onEvent)
+      // By design, an extra folder is never watched on its own — a world
+      // save IS the save event, full stop, and every extra folder rides
+      // along with it as one unit, one shared version, whether or not that
+      // specific folder's own content happened to change. No independent
+      // per-folder settle timer, no folder ever "catching up" on its own
+      // between world saves.
+      if (mainVersion !== undefined) {
+        for (const f of extraFoldersOf(game.appId)) {
+          await pushFolderSaves(token, owner, actor, game, f, onEvent, true, mainVersion)
+        }
+      }
     }
   } finally {
     busy = false

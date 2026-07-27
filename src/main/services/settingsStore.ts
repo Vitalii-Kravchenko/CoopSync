@@ -29,6 +29,12 @@ interface AppSettings {
    *  partner who already knows about the game never finds out it was
    *  removed. Retried on every getSyncStatuses check until it succeeds. */
   pendingCustomGameRemovals?: string[]
+  /** "appId:folderId" pairs for an extra folder removed locally
+   *  (games:remove-extra-folder) whose matching push to drop it from the
+   *  shared registry failed — same reasoning as pendingCustomGameRemovals,
+   *  one level down. Only ever holds folders that were shared (a personal
+   *  folder was never registered, so there's nothing to retract). */
+  pendingFolderRemovals?: string[]
 }
 
 // English — universal fallback if the installer's language couldn't be determined.

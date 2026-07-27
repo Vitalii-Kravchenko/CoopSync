@@ -38,7 +38,16 @@ function App(): React.JSX.Element {
   }
   // Global sync toast — rendered outside the tabs (styles.appBody),
   // so it stays visible regardless of which tab is currently open.
-  const [banner, setBanner] = useState<BannerState | null>(null)
+  // A queue, not a single slot — when a game syncs several folders in one
+  // go (main + extra folders), each fires its own banner in quick
+  // succession; overwriting one with the next mid-display never let you
+  // actually read any of them. Each queued banner gets its own full 5s once
+  // it reaches the front (see the dismiss effect below), instead of the
+  // whole queue racing a single shared timer.
+  const [bannerQueue, setBannerQueue] = useState<BannerState[]>([])
+  const [bannerVisible, setBannerVisible] = useState(false)
+  const banner = bannerQueue[0] ?? null
+  const enqueueBanner = (b: BannerState): void => setBannerQueue((q) => [...q, b])
   // appIds whose background autopush (post game-exit) is currently in
   // flight — GameDetailScreen uses this to block "Restore" for that game
   // until the push actually lands, so it can't race the same git clone.
@@ -224,19 +233,24 @@ function App(): React.JSX.Element {
         e.action === 'watcher-error'
           ? describeSyncResult(e.code, e.params, t)
           : `${e.name}: ${describeSyncResult(e.code, e.params, t)}`
-      if (e.code === 'push-skipped-nochange') {
-        // Played, but the save didn't change — not a problem or cause for alarm
-        // (same as manual "already synced"), so info tone, not warning.
-        setBanner({ text, kind: 'info' })
+      if (e.code === 'push-skipped-nochange' || e.code === 'push-skipped-nochange-exit') {
+        // Played, but the save didn't change — not a problem or cause for
+        // alarm (same as manual "already synced"), so info tone, not
+        // warning — UNLESS it's silent (see AutoSyncEvent's own doc comment):
+        // an automatic background check (not something the user directly
+        // clicked) landing on "nothing new" is routine, not worth a banner —
+        // several independent checks can land on that exact same answer
+        // within seconds of each other for one save.
+        if (!e.silent) enqueueBanner({ text, kind: 'info' })
       } else if (e.action === 'push-skipped') {
         // Deliberately skipped auto-push (version conflict) — not an error,
         // but we shouldn't stay silent either: the user could lose a friend's progress here.
-        setBanner({ text, kind: 'warning' })
+        enqueueBanner({ text, kind: 'warning' })
       } else if (e.ok) {
-        setBanner({ text, kind: 'success', icon: e.action === 'pull' ? 'download' : 'upload' })
+        enqueueBanner({ text, kind: 'success', icon: e.action === 'pull' ? 'download' : 'upload' })
       } else {
         // Previously auto-sync errors were silently swallowed — now we show them too.
-        setBanner({ text, kind: 'error' })
+        enqueueBanner({ text, kind: 'error' })
       }
       // Any real sync (push ADDS an entry; pull MAY have pulled in
       // someone else's new entry via git that wasn't visible locally yet) — except
@@ -289,12 +303,31 @@ function App(): React.JSX.Element {
   // which may be sitting hidden/backgrounded for a long stretch (tray) and
   // isn't a reliable place to depend on for handling the click.
 
-  // The banner dismisses itself after 5 seconds.
+  // Each queued banner gets its own full cycle: fade in (this effect fires
+  // the instant it reaches the front — see bannerVisible=false's initial
+  // value, which is what actually triggers the CSS opacity transition to 1),
+  // stay up 5s, then the effect below fades it out and, only once that's
+  // fully finished, waits before the next one takes over — never an instant
+  // swap. Keyed on the front item's identity (not the whole queue), so
+  // appending a new banner to the tail while one is already showing doesn't
+  // reset or cut short its timer.
   useEffect(() => {
     if (!banner) return
-    const timer = setTimeout(() => setBanner(null), 5000)
-    return () => clearTimeout(timer)
+    setBannerVisible(true)
+    const showTimer = setTimeout(() => setBannerVisible(false), 5000)
+    return () => clearTimeout(showTimer)
   }, [banner])
+
+  // Fires once bannerVisible flips to false (fade-out started, see above) —
+  // waits for the CSS transition (280ms, matches Banner.tsx) plus a genuine
+  // empty gap (1.5s) before advancing to the next queued banner, so there's
+  // real breathing room between one message fully disappearing and the next
+  // one appearing, not an abrupt swap.
+  useEffect(() => {
+    if (!banner || bannerVisible) return
+    const advanceTimer = setTimeout(() => setBannerQueue((q) => q.slice(1)), 280 + 1500)
+    return () => clearTimeout(advanceTimer)
+  }, [banner, bannerVisible])
 
   return (
     <div style={styles.root}>
@@ -335,7 +368,7 @@ function App(): React.JSX.Element {
               syncVersion={syncVersion}
               resetSignal={mainResetSignal}
               onSynced={bumpSyncVersion}
-              onBanner={setBanner}
+              onBanner={enqueueBanner}
               onGamesSeen={markGamesSeen}
               user={user}
               avatarDataUrl={avatarDataUrl}
@@ -375,7 +408,7 @@ function App(): React.JSX.Element {
               onRepoChanged={bumpSyncVersion}
               onLeftRepo={handleLeftSharedRepo}
               onAdoptedOwnStorage={handleAdoptedOwnStorage}
-              onBanner={setBanner}
+              onBanner={enqueueBanner}
             />
           </div>
 
@@ -385,7 +418,7 @@ function App(): React.JSX.Element {
             historyBadge={unseenHistory.size}
             settingsAlert={settingsAlert}
           />
-          <Banner banner={banner} />
+          <Banner banner={banner} visible={bannerVisible} />
         </div>
       )}
 

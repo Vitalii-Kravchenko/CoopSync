@@ -8,6 +8,7 @@ import { scheduleStartupCheck, setShowWindowCallback } from './services/updater'
 import { READY_GAMES } from './games/catalog'
 import { getKnownGameIds, setKnownGameIds } from './services/backgroundState'
 import { addNotification, markObsoleteUpdateNotificationsRead } from './services/notificationStore'
+import { log } from './services/logger'
 
 // On some older GPUs (especially AMD) the Electron/Chromium GPU process
 // crashes on startup and the app doesn't open at all. The UI is simple
@@ -164,6 +165,8 @@ if (!gotSingleInstanceLock) {
   })
 
   app.whenReady().then(() => {
+    log(`=== CoopSync ${app.getVersion()} starting, argv=${JSON.stringify(process.argv.slice(1))} ===`)
+
     // Render the window in dark mode — otherwise on Windows light theme the
     // system window border is light (white stripes along the edges).
     nativeTheme.themeSource = 'dark'

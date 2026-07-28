@@ -1,0 +1,187 @@
+import { SIGNALING_URL } from '../config'
+import { log } from './logger'
+import type { PresenceConnectionState } from '../../shared/types'
+
+// Thin WebSocket client for coopsync-server (D:\Projects\CoopSync-Server,
+// see its protocol.ts). A progressive enhancement (ROADMAP.md §1) — the app
+// works fully without ever connecting here. Runs entirely in the MAIN
+// process (never renderer — a minimized/backgrounded renderer throttles
+// timers, which would silently kill the heartbeat and reconnect logic).
+//
+// Uses the global WebSocket built into Node (stable since Node 22, which
+// Electron 42 bundles) — deliberately not the 'ws' package, to avoid adding
+// a runtime dependency to the client just for this.
+
+interface Callbacks {
+  onConnectionChange: (state: PresenceConnectionState) => void
+  onPresence: (id: number, online: boolean) => void
+  onSavePushed: (fromId: number, fromLogin: string, gameId: string) => void
+  /** Called periodically (and once right after auth) to get the current
+   *  mutual-friend id list — covers invite accepted/kicked/role changed
+   *  without every one of those call sites needing to remember to push an
+   *  update here itself. */
+  getFriendIds: () => Promise<number[]>
+}
+
+const HEARTBEAT_MS = 30_000 // must stay well under Cloudflare's ~100s idle timeout
+const FRIENDS_REFRESH_MS = 2 * 60_000 // matches watcher.ts's own background-check cadence
+const MAX_BACKOFF_MS = 30_000
+
+let ws: WebSocket | null = null
+let callbacks: Callbacks | null = null
+let currentToken: string | null = null
+let stopped = true
+let reconnectAttempt = 0
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null
+let heartbeatTimer: ReturnType<typeof setInterval> | null = null
+let friendsRefreshTimer: ReturnType<typeof setInterval> | null = null
+// Last known online/offline per friend id — lets a screen that mounts AFTER
+// presence already connected (and already got its one-time snapshot via the
+// 'friends' declare, see coopsync-server's hub.ts setFriends) ask for the
+// current picture instead of waiting up to FRIENDS_REFRESH_MS for the next one.
+const knownPresence = new Map<number, boolean>()
+
+/** Current known online/offline per friend id. */
+export function getPresenceSnapshot(): Record<number, boolean> {
+  return Object.fromEntries(knownPresence)
+}
+
+export function startPresence(token: string, cb: Callbacks): void {
+  stopPresence() // clears any previous connection/timers first
+  stopped = false
+  currentToken = token
+  callbacks = cb
+  reconnectAttempt = 0
+  connect()
+}
+
+export function stopPresence(): void {
+  stopped = true
+  currentToken = null
+  callbacks = null
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer)
+    reconnectTimer = null
+  }
+  stopHeartbeat()
+  stopFriendsRefresh()
+  ws?.close()
+  ws = null
+  knownPresence.clear()
+}
+
+/** Tell the server we just pushed a save — a no-op if presence isn't connected. */
+export function notifySavePushed(gameId: string): void {
+  send({ t: 'save:pushed', gameId })
+}
+
+function send(msg: Record<string, unknown>): void {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify(msg))
+  }
+}
+
+function connect(): void {
+  if (stopped || !currentToken) return
+  callbacks?.onConnectionChange('connecting')
+  try {
+    ws = new WebSocket(SIGNALING_URL)
+  } catch (e) {
+    log(`presence: failed to open socket: ${e instanceof Error ? e.message : String(e)}`)
+    scheduleReconnect()
+    return
+  }
+
+  ws.addEventListener('open', () => {
+    send({ t: 'auth', token: currentToken })
+  })
+
+  ws.addEventListener('message', (event) => {
+    let msg: Record<string, unknown>
+    try {
+      msg = JSON.parse(String(event.data))
+    } catch {
+      return
+    }
+    switch (msg['t']) {
+      case 'auth:ok':
+        reconnectAttempt = 0
+        callbacks?.onConnectionChange('online')
+        void refreshFriends()
+        startHeartbeat()
+        startFriendsRefresh()
+        break
+      case 'presence':
+        if (typeof msg['id'] === 'number' && typeof msg['online'] === 'boolean') {
+          knownPresence.set(msg['id'], msg['online'])
+          callbacks?.onPresence(msg['id'], msg['online'])
+        }
+        break
+      case 'save:pushed':
+        if (typeof msg['from'] === 'number' && typeof msg['gameId'] === 'string') {
+          callbacks?.onSavePushed(msg['from'], String(msg['fromLogin'] ?? ''), msg['gameId'])
+        }
+        break
+      case 'error':
+        log(`presence: server error ${JSON.stringify(msg['code'])}`)
+        break
+      // 'pong' — nothing to do, its arrival alone confirms the connection is alive.
+    }
+  })
+
+  ws.addEventListener('close', (event) => {
+    log(`presence: connection closed (code=${event.code})`)
+    stopHeartbeat()
+    stopFriendsRefresh()
+    callbacks?.onConnectionChange(stopped ? 'off' : 'error')
+    scheduleReconnect()
+  })
+
+  // 'close' always follows 'error' for a WebSocket — no separate handling needed here.
+  ws.addEventListener('error', () => {})
+}
+
+async function refreshFriends(): Promise<void> {
+  if (!callbacks) return
+  try {
+    const ids = await callbacks.getFriendIds()
+    send({ t: 'friends', ids })
+  } catch {
+    // Best-effort — try again on the next refresh tick.
+  }
+}
+
+function startHeartbeat(): void {
+  stopHeartbeat()
+  heartbeatTimer = setInterval(() => send({ t: 'ping' }), HEARTBEAT_MS)
+}
+
+function stopHeartbeat(): void {
+  if (heartbeatTimer) {
+    clearInterval(heartbeatTimer)
+    heartbeatTimer = null
+  }
+}
+
+function startFriendsRefresh(): void {
+  stopFriendsRefresh()
+  friendsRefreshTimer = setInterval(() => void refreshFriends(), FRIENDS_REFRESH_MS)
+}
+
+function stopFriendsRefresh(): void {
+  if (friendsRefreshTimer) {
+    clearInterval(friendsRefreshTimer)
+    friendsRefreshTimer = null
+  }
+}
+
+// Exponential backoff WITH jitter (ROADMAP.md §1.4) — without the jitter, a
+// server restart would make every connected client reconnect in perfect
+// lockstep, hammering it the instant it comes back up.
+function scheduleReconnect(): void {
+  if (stopped) return
+  reconnectAttempt++
+  const base = Math.min(MAX_BACKOFF_MS, 1000 * 2 ** Math.min(reconnectAttempt, 5))
+  const delay = base / 2 + Math.random() * (base / 2)
+  reconnectTimer = setTimeout(connect, delay)
+}

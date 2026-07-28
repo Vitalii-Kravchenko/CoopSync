@@ -340,6 +340,17 @@ export const de: Translation = {
     restartToInstall: 'Neu starten & installieren',
     updateCheckError: 'Update-Suche fehlgeschlagen'
   },
+  presence: {
+    title: 'Präsenz',
+    description:
+      'Sieh sofort, wenn dein Koop-Partner online ist, und erhalte eine Benachrichtigung, sobald er einen Spielstand hochlädt — statt auf die regelmäßige Prüfung zu warten. Optional, standardmäßig deaktiviert.',
+    enable: 'Präsenz aktivieren',
+    disable: 'Deaktivieren',
+    statusOff: 'Aus',
+    statusConnecting: 'Verbinde…',
+    statusOnline: 'Verbunden',
+    statusReconnecting: 'Verbinde erneut…'
+  },
   support: {
     tooltip: 'Support',
     title: 'Support kontaktieren',

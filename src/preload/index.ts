@@ -21,7 +21,9 @@ import type {
   UpdateStatus,
   AppNotification,
   GameSavePathInfo,
-  CustomExtraFolder
+  CustomExtraFolder,
+  PresenceConnectionState,
+  FriendPushedEvent
 } from '../shared/types'
 
 // API exposed to the renderer as window.api.
@@ -255,6 +257,44 @@ const api = {
     join: (hostLogin: string): Promise<RoleConfig> => ipcRenderer.invoke('role:join', hostLogin),
     /** Logins of everyone who's invited us to their saves repo but we haven't joined yet. */
     pendingInvites: (): Promise<string[]> => ipcRenderer.invoke('role:pending-invites')
+  },
+  presence: {
+    /** Current connection state ('off' if never enabled). */
+    getStatus: (): Promise<PresenceConnectionState> => ipcRenderer.invoke('presence:get-status'),
+    /** Currently-known friend online/offline state, keyed by numeric GitHub
+     *  id — for a screen that mounts after presence already connected. */
+    getSnapshot: (): Promise<Record<number, boolean>> => ipcRenderer.invoke('presence:get-snapshot'),
+    /** Start the second, zero-scope device flow login used only for
+     *  presence. Resolves once the user confirms (subscribe to
+     *  onDeviceCode first to show the code). */
+    enable: (): Promise<void> => ipcRenderer.invoke('presence:enable'),
+    /** Disconnect and forget the presence token. */
+    disable: (): Promise<void> => ipcRenderer.invoke('presence:disable'),
+    /** Subscribe to the presence device flow code (separate from auth's). */
+    onDeviceCode: (callback: (info: DeviceCodeInfo) => void): (() => void) => {
+      const listener = (_event: unknown, info: DeviceCodeInfo): void => callback(info)
+      ipcRenderer.on('presence:device-code', listener)
+      return () => ipcRenderer.removeListener('presence:device-code', listener)
+    },
+    /** Subscribe to presence connection state changes. */
+    onConnectionChange: (callback: (state: PresenceConnectionState) => void): (() => void) => {
+      const listener = (_event: unknown, state: PresenceConnectionState): void => callback(state)
+      ipcRenderer.on('presence:connection', listener)
+      return () => ipcRenderer.removeListener('presence:connection', listener)
+    },
+    /** Subscribe to a single friend's online/offline change (numeric GitHub id). */
+    onPresenceChanged: (callback: (id: number, online: boolean) => void): (() => void) => {
+      const listener = (_event: unknown, id: number, online: boolean): void => callback(id, online)
+      ipcRenderer.on('presence:changed', listener)
+      return () => ipcRenderer.removeListener('presence:changed', listener)
+    },
+    /** Subscribe to a friend pushing a save right now (instant — the ~2min
+     *  background poll stays as a fallback for when presence isn't connected). */
+    onFriendPushed: (callback: (event: FriendPushedEvent) => void): (() => void) => {
+      const listener = (_event: unknown, payload: FriendPushedEvent): void => callback(payload)
+      ipcRenderer.on('presence:friend-pushed', listener)
+      return () => ipcRenderer.removeListener('presence:friend-pushed', listener)
+    }
   },
   support: {
     /** Send a message (bug / game request / other) to my email. */

@@ -339,6 +339,17 @@ export const pl: Translation = {
     restartToInstall: 'Zrestartuj i zainstaluj',
     updateCheckError: 'Nie udało się sprawdzić aktualizacji'
   },
+  presence: {
+    title: 'Obecność',
+    description:
+      'Zobacz od razu, kiedy twój kumpel z coopa jest online, i dostawaj powiadomienie natychmiast, gdy wyśle zapis — zamiast czekać na okresowe sprawdzanie. Opcjonalne, domyślnie wyłączone.',
+    enable: 'Włącz obecność',
+    disable: 'Wyłącz',
+    statusOff: 'Wyłączone',
+    statusConnecting: 'Łączenie…',
+    statusOnline: 'Połączono',
+    statusReconnecting: 'Ponowne łączenie…'
+  },
   support: {
     tooltip: 'Wsparcie',
     title: 'Skontaktuj się ze wsparciem',

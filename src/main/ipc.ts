@@ -43,7 +43,7 @@ import {
   removeFolderFromRegistry,
   getRegisteredFolderLabels
 } from './services/sync'
-import { startWatcher, stopWatcher } from './services/watcher'
+import { startWatcher, stopWatcher, triggerFriendCheck } from './services/watcher'
 import { markSeen } from './services/notifyState'
 import { forgetPending } from './services/backgroundState'
 import { getNotifications, markRead, markAllRead, clearAll } from './services/notificationStore'
@@ -77,6 +77,9 @@ import {
 } from './games/customGames'
 import { scanForExecutables } from './games/exeScan'
 import { saveToken, loadToken, clearToken } from './services/tokenStore'
+import { savePresenceToken, loadPresenceToken, clearPresenceToken } from './services/presenceTokenStore'
+import { startPresence, stopPresence, notifySavePushed, getPresenceSnapshot } from './services/presenceService'
+import { PRESENCE_GITHUB_SCOPE } from './config'
 import { sendSupportMessage } from './services/support'
 import { checkForUpdates, downloadUpdate, quitAndInstall } from './services/updater'
 import type {
@@ -98,7 +101,8 @@ import type {
   FriendSaveUpdate,
   AppNotification,
   GameSavePathInfo,
-  CustomExtraFolder
+  CustomExtraFolder,
+  PresenceConnectionState
 } from '../shared/types'
 
 // Max picked image file size (avatar or game cover) — to keep settings.json
@@ -147,6 +151,66 @@ async function requireOwner(): Promise<{ token: string; owner: string }> {
   const settings = readSettings()
   if (settings.role === 'join') throw makeAppError('NOT_REPO_OWNER')
   return requireAuth()
+}
+
+// --- Presence (see presenceService.ts / ROADMAP.md §1) ---
+
+let presenceWindow: BrowserWindow | null = null
+let presenceStarted = false
+let presenceState: PresenceConnectionState = 'off'
+
+function sendPresenceState(state: PresenceConnectionState): void {
+  presenceState = state
+  presenceWindow?.webContents.send('presence:connection', state)
+}
+
+// Everyone sharing our repo (owner + collaborators), by numeric GitHub id,
+// excluding ourselves — the "mutual friends" list the presence server needs
+// (see coopsync-server's hub.ts). Same regardless of role: for 'join' this
+// naturally includes the host (repo.ownerId) plus anyone else who joined the
+// same repo; for 'host' it's just our own collaborators. Swallows errors
+// (no login/repo/internet yet) — presenceService retries on its own timer.
+async function computeFriendIds(): Promise<number[]> {
+  try {
+    const { token, owner } = await syncTarget()
+    const repo = await getSavesRepo(token, owner)
+    if (!repo) return []
+    const { owner: selfLogin } = await requireAuth()
+    const ids: number[] = []
+    if (owner !== selfLogin) ids.push(repo.ownerId)
+    const collabs = await listCollaborators(token, owner)
+    for (const c of collabs) {
+      if (c.login !== selfLogin) ids.push(c.id)
+    }
+    return ids
+  } catch {
+    return []
+  }
+}
+
+// Starts the presence connection if a zero-scope presence token already
+// exists (from a previous presence:enable) and it isn't already running.
+// Called both right after presence:enable and on every watcher:start (i.e.
+// whenever the app has a logged-in, role-configured session) so a restart
+// reconnects automatically without needing its own separate bootstrapping
+// in main/index.ts, which runs before any of that is known.
+function startPresenceIfConfigured(win: BrowserWindow): void {
+  if (presenceStarted) return
+  const token = loadPresenceToken()
+  if (!token) return
+  presenceStarted = true
+  presenceWindow = win
+  startPresence(token, {
+    onConnectionChange: sendPresenceState,
+    onPresence: (id, online) => win.webContents.send('presence:changed', id, online),
+    onSavePushed: (fromId, fromLogin, gameId) => {
+      // Reuses the exact same check/toast the ~2min background poll would
+      // eventually run on its own — just triggered right now instead of waited for.
+      triggerFriendCheck()
+      win.webContents.send('presence:friend-pushed', { fromId, fromLogin, gameId })
+    },
+    getFriendIds: computeFriendIds
+  })
 }
 
 // Minimal separate i18n for this native OS dialog — same reasoning as
@@ -239,6 +303,14 @@ export function registerIpcHandlers(): void {
     clearToken()
     cachedOwner = null
     writeSettings({ role: undefined, hostOwner: undefined })
+    // Presence's friend list depends on this session's repo membership — once
+    // that's gone, disconnect rather than keep reporting a stale/empty one.
+    // The zero-scope presence token itself is untouched (a separate
+    // credential, see config.ts) — logging back in and finishing onboarding
+    // reconnects automatically via watcher:start.
+    presenceStarted = false
+    stopPresence()
+    sendPresenceState('off')
     return { state: 'logged-out' }
   })
 
@@ -857,7 +929,9 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('sync:upload', async (_event, appId: string): Promise<SyncResult> => {
     const { token, owner } = await syncTarget()
     const { owner: actorLogin } = await requireAuth()
-    return uploadGame(token, owner, appId, actorLogin)
+    const result = await uploadGame(token, owner, appId, actorLogin)
+    if (result.pushed) notifySavePushed(appId)
+    return result
   })
 
   // Download the game's saves from GitHub (from the host's repo).
@@ -873,7 +947,9 @@ export function registerIpcHandlers(): void {
     async (_event, appId: string, folderId: string): Promise<SyncResult> => {
       const { token, owner } = await syncTarget()
       const { owner: actorLogin } = await requireAuth()
-      return uploadExtraFolder(token, owner, appId, folderId, actorLogin)
+      const result = await uploadExtraFolder(token, owner, appId, folderId, actorLogin)
+      if (result.pushed) notifySavePushed(appId)
+      return result
     }
   )
 
@@ -906,7 +982,9 @@ export function registerIpcHandlers(): void {
     async (_event, appId: string, version: number): Promise<SyncResult> => {
       const { token, owner } = await syncTarget()
       const { owner: actorLogin } = await requireAuth()
-      return revertToVersion(token, owner, appId, actorLogin, version)
+      const result = await revertToVersion(token, owner, appId, actorLogin, version)
+      notifySavePushed(appId)
+      return result
     }
   )
 
@@ -940,10 +1018,50 @@ export function registerIpcHandlers(): void {
       (updates: FriendSaveUpdate[]) => event.sender.send('sync:friend-update', updates),
       () => event.sender.send('sync:background-check')
     )
+    // Reconnect presence here too — covers an app restart while already
+    // logged in and role-configured (main/index.ts's startup runs before any
+    // of that is known, so it can't bootstrap this itself). A no-op if
+    // presence was never enabled (no token) or is already connected.
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (win) startPresenceIfConfigured(win)
   })
 
   ipcMain.handle('watcher:stop', (): void => {
     stopWatcher()
+  })
+
+  // --- Presence (online status + instant "friend pushed" notice) ---
+
+  ipcMain.handle('presence:get-status', (): PresenceConnectionState =>
+    loadPresenceToken() ? presenceState : 'off'
+  )
+
+  // Snapshot of currently-known friend online/offline state — for a screen
+  // (Friends tab) that mounts after presence already connected and already
+  // got its one-time push from the server (see presenceService.ts's
+  // getPresenceSnapshot doc comment).
+  ipcMain.handle('presence:get-snapshot', (): Record<number, boolean> => getPresenceSnapshot())
+
+  // Second, separate device flow login (empty scope — see config.ts's
+  // PRESENCE_GITHUB_SCOPE and ROADMAP.md §1.3) purely to prove identity to
+  // the presence server. Mirrors auth:login's shape (device-code event, then
+  // resolves once the user confirms) but on its own channel, since a user
+  // enabling presence is already logged in with the main (repo-scoped) token.
+  ipcMain.handle('presence:enable', async (event): Promise<void> => {
+    const { deviceCode, info } = await requestDeviceCode(PRESENCE_GITHUB_SCOPE)
+    event.sender.send('presence:device-code', info)
+    const token = await pollForToken(deviceCode, info.interval)
+    savePresenceToken(token)
+    presenceStarted = false // in case a previous, now-stale connection was left marked started
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (win) startPresenceIfConfigured(win)
+  })
+
+  ipcMain.handle('presence:disable', (): void => {
+    presenceStarted = false
+    stopPresence()
+    clearPresenceToken()
+    sendPresenceState('off')
   })
 
   // --- Window controls (for the custom titlebar) ---

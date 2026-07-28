@@ -15,6 +15,10 @@ export interface DeviceCodeInfo {
 
 /** Info about the logged-in GitHub user. */
 export interface AuthUser {
+  /** Numeric GitHub id — the stable identity used for presence/signaling
+   *  (logins can be renamed and even re-registered by someone else, see
+   *  ROADMAP.md §1.3). */
+  id: number
   login: string
   /** Public name from the GitHub profile, if the user set one. */
   name?: string
@@ -34,6 +38,9 @@ export interface SavesRepo {
   fullName: string
   /** Link to the repo on github.com. */
   url: string
+  /** Numeric GitHub id of the repo owner — for a 'join' member this is the
+   *  host's stable identity, used for presence/signaling (see AuthUser.id). */
+  ownerId: number
 }
 
 /** State of the shared repo. */
@@ -53,6 +60,8 @@ export interface PendingInvite {
 /** A collaborator who has already accepted the invitation and has access. */
 export interface Collaborator {
   login: string
+  /** Numeric GitHub id — used for presence/signaling (see AuthUser.id). */
+  id: number
 }
 
 /** A detected installed game supported by CoopSync. */
@@ -387,6 +396,27 @@ export interface SupportRequest {
   message: string
   /** Games chosen from Steam search — only for the 'game-request' category, up to MAX_GAME_REQUESTS. */
   games?: SteamSearchResult[]
+}
+
+/** Presence server connection state (see ROADMAP.md §1 — a progressive
+ *  enhancement over the polling-based friend/sync checks, the app works
+ *  fully without it). 'off' — no presence token set up yet, or disabled by
+ *  the user. 'connecting' covers both the initial handshake and any
+ *  reconnect attempt after a drop. */
+export type PresenceConnectionState = 'off' | 'connecting' | 'online' | 'error'
+
+/** A friend's live online/offline status, keyed by their numeric GitHub id —
+ *  only present for mutually-declared friends the signaling server actually
+ *  reports on (see coopsync-server's hub.ts). */
+export type PresenceMap = Record<number, boolean>
+
+/** A friend just pushed a save while we're connected to the presence server
+ *  — used to trigger an instant check/toast instead of waiting for the
+ *  regular ~2min background poll (which stays as a fallback). */
+export interface FriendPushedEvent {
+  fromId: number
+  fromLogin: string
+  gameId: string
 }
 
 /** Auto-update state, pushed from main (electron-updater) to the renderer. */

@@ -354,6 +354,19 @@ export interface Translation {
     restartToInstall: string
     updateCheckError: string
   }
+  /** Optional presence feature (see ROADMAP.md §1) — reuses
+   *  onboarding.copy/copied/openGithub/pasteCodeHint/genericError for the
+   *  device-code box and error banner instead of duplicating them. */
+  presence: {
+    title: string
+    description: string
+    enable: string
+    disable: string
+    statusOff: string
+    statusConnecting: string
+    statusOnline: string
+    statusReconnecting: string
+  }
   support: {
     tooltip: string
     title: string

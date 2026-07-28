@@ -106,6 +106,19 @@ function FriendsScreen({ user, avatarDataUrl, active, onRepoChanged }: Props): R
     return () => clearInterval(timer)
   }, [active, invites.length])
 
+    // Live online/offline dots (see presenceService.ts) — optional and off by
+  // default (ROADMAP.md §1): presenceMap simply stays empty for anyone we
+  // don't have a known state for, which renders as no dot rather than a
+  // false "offline".
+  const [presenceMap, setPresenceMap] = useState<Record<number, boolean>>({})
+
+  useEffect(() => {
+    window.api.presence.getSnapshot().then(setPresenceMap)
+    return window.api.presence.onPresenceChanged((id, online) => {
+      setPresenceMap((prev) => ({ ...prev, [id]: online }))
+    })
+  }, [])
+
   async function load(): Promise<void> {
     window.api.role.pendingInvites().then(setMyPendingInvites).catch(() => {})
     try {
@@ -212,6 +225,7 @@ function FriendsScreen({ user, avatarDataUrl, active, onRepoChanged }: Props): R
   // The repo owner isn't always the logged-in user: in the "join" role it's
   // the friend acting as host. fullName looks like "owner/coopsync-saves".
   const ownerLogin = repo?.state === 'ready' ? repo.repo.fullName.split('/')[0] : user.login
+  const ownerId = repo?.state === 'ready' ? repo.repo.ownerId : null
   // Only the owner manages membership (invite/kick) — a 'join' member has
   // push access on GitHub but must not be able to touch the group itself.
   const isOwner = ownerLogin === user.login
@@ -379,9 +393,12 @@ function FriendsScreen({ user, avatarDataUrl, active, onRepoChanged }: Props): R
             <div style={styles.memberGrid}>
               <div style={styles.memberCard}>
                 <div style={styles.memberHead}>
-                  <Avatar
+                  <AvatarWithDot
                     src={ownerLogin === user.login ? avatarDataUrl : avatars[ownerLogin]}
                     size={AVATAR_SIZE}
+                    online={
+                      ownerLogin !== user.login && ownerId !== null ? presenceMap[ownerId] : undefined
+                    }
                   />
                   <div style={{ minWidth: 0 }}>
                     <div style={styles.memberName}>{ownerLogin}</div>
@@ -413,9 +430,10 @@ function FriendsScreen({ user, avatarDataUrl, active, onRepoChanged }: Props): R
                     </button>
                   )}
                   <div style={styles.memberHead}>
-                    <Avatar
+                    <AvatarWithDot
                       src={c.login === user.login ? avatarDataUrl : avatars[c.login]}
                       size={AVATAR_SIZE}
+                      online={c.login !== user.login ? presenceMap[c.id] : undefined}
                     />
                     <div style={{ minWidth: 0 }}>
                       <div style={styles.memberName}>{c.login}</div>
@@ -484,10 +502,42 @@ function FriendsScreen({ user, avatarDataUrl, active, onRepoChanged }: Props): R
   )
 }
 
-// We deliberately do NOT add an online/away dot on avatars: CoopSync has no
-// real presence tracking (Collaborator/PendingInvite only carry a
-// login), and drawing a made-up dot would mean faking a status. Sync stats
-// from the push history are the honest replacement — they show real activity.
+// Avatar + an online dot, driven by presence (see presenceService.ts) —
+// optional and off by default (ROADMAP.md §1). online=undefined (no known
+// state yet, or presence isn't connected, or this is the user's own avatar)
+// renders no dot at all rather than a false "offline" — sync stats from the
+// push history (renderStats below) stay the always-available, honest signal
+// of real activity regardless of whether presence is enabled.
+function AvatarWithDot({
+  src,
+  size,
+  online
+}: {
+  src?: string | null
+  size: number
+  online?: boolean
+}): React.JSX.Element {
+  return (
+    <div style={{ position: 'relative', flexShrink: 0 }}>
+      <Avatar src={src} size={size} />
+      {online !== undefined && (
+        <span
+          style={{
+            position: 'absolute',
+            bottom: -1,
+            right: -1,
+            width: 12,
+            height: 12,
+            borderRadius: '50%',
+            background: online ? colors.success : colors.text3,
+            border: `2px solid ${colors.bgSurface}`
+          }}
+        />
+      )}
+    </div>
+  )
+}
+
 const AVATAR_SIZE = 44
 
 const COLUMN_WIDTH = 640

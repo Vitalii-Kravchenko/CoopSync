@@ -340,6 +340,17 @@ export const tr: Translation = {
     restartToInstall: 'Yeniden başlat ve yükle',
     updateCheckError: 'Güncellemeler denetlenemedi'
   },
+  presence: {
+    title: 'Çevrimiçi durumu',
+    description:
+      'Koop arkadaşının ne zaman çevrimiçi olduğunu anında gör ve bir kayıt yüklediği an bildirim al — periyodik kontrolü beklemek yerine. İsteğe bağlı, varsayılan olarak kapalı.',
+    enable: 'Çevrimiçi durumunu etkinleştir',
+    disable: 'Devre dışı bırak',
+    statusOff: 'Kapalı',
+    statusConnecting: 'Bağlanıyor…',
+    statusOnline: 'Bağlandı',
+    statusReconnecting: 'Yeniden bağlanıyor…'
+  },
   support: {
     tooltip: 'Destek',
     title: 'Destekle iletişime geç',

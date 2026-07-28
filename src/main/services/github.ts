@@ -73,15 +73,17 @@ function formatResetTime(epochMs: number): string {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
-/** Step 1: get the device code + the code shown to the user. */
-export async function requestDeviceCode(): Promise<{
+/** Step 1: get the device code + the code shown to the user.
+ *  scope defaults to the main sync scope — the presence login (see
+ *  config.ts's PRESENCE_GITHUB_SCOPE) passes an empty one instead. */
+export async function requestDeviceCode(scope: string = GITHUB_SCOPE): Promise<{
   deviceCode: string
   info: DeviceCodeInfo
 }> {
   const res = await githubFetch('https://github.com/login/device/code', {
     method: 'POST',
     headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-    body: JSON.stringify({ client_id: GITHUB_CLIENT_ID, scope: GITHUB_SCOPE })
+    body: JSON.stringify({ client_id: GITHUB_CLIENT_ID, scope })
   })
   if (!res.ok) {
     throw makeAppError('DEVICE_CODE_FAILED', { status: String(res.status) })
@@ -154,8 +156,8 @@ export async function fetchUser(token: string): Promise<AuthUser> {
   if (!res.ok) {
     throw makeAppError('USER_FETCH_FAILED', { status: String(res.status) })
   }
-  const data = (await res.json()) as { login: string; name: string | null }
-  return { login: data.login, name: data.name ?? undefined }
+  const data = (await res.json()) as { id: number; login: string; name: string | null }
+  return { id: data.id, login: data.login, name: data.name ?? undefined }
 }
 
 // --- Shared saves repo ---
@@ -163,6 +165,7 @@ export async function fetchUser(token: string): Promise<AuthUser> {
 interface RepoResponse {
   full_name: string
   html_url: string
+  owner: { id: number; login: string }
 }
 
 /** Check whether the saves repo exists. Returns its data or null. */
@@ -174,7 +177,7 @@ export async function getSavesRepo(token: string, owner: string): Promise<SavesR
   checkAuthAndRateLimit(res)
   if (!res.ok) throw makeAppError('REPO_CHECK_FAILED', { status: String(res.status) })
   const data = (await res.json()) as RepoResponse
-  return { fullName: data.full_name, url: data.html_url }
+  return { fullName: data.full_name, url: data.html_url, ownerId: data.owner.id }
 }
 
 async function createRepoOnGitHub(token: string): Promise<SavesRepo> {
@@ -191,7 +194,7 @@ async function createRepoOnGitHub(token: string): Promise<SavesRepo> {
   checkAuthAndRateLimit(res)
   if (!res.ok) throw makeAppError('REPO_CREATE_FAILED', { status: String(res.status) })
   const data = (await res.json()) as RepoResponse
-  return { fullName: data.full_name, url: data.html_url }
+  return { fullName: data.full_name, url: data.html_url, ownerId: data.owner.id }
 }
 
 /** Create a private saves repo. If it already exists — return the existing one. */
@@ -303,10 +306,10 @@ export async function listCollaborators(token: string, owner: string): Promise<C
     headers: authHeaders(token)
   })
   if (!res.ok) return []
-  const data = (await res.json()) as Array<{ login: string }>
+  const data = (await res.json()) as Array<{ id: number; login: string }>
   return data
     .filter((c) => c.login.toLowerCase() !== owner.toLowerCase())
-    .map((c) => ({ login: c.login }))
+    .map((c) => ({ login: c.login, id: c.id }))
 }
 
 /** Owner removes a friend's access to the shared repo (kick). */

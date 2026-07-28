@@ -18,6 +18,7 @@ import {
 import { getRunningProcesses, isGameRunning } from './processCheck'
 import { getNotified, markNotified } from './notifyState'
 import { getSavesRepo, listInvitations, listCollaborators } from './github'
+import { notifySavePushed } from './presenceService'
 import {
   getKnownPending,
   getKnownCollaborators,
@@ -486,6 +487,7 @@ async function pushGameSaves(
           code: 'upload-success',
           params: { version: String(result.version) }
         })
+        notifySavePushed(game.appId)
         return result.version
       }
     }
@@ -550,6 +552,7 @@ async function pushFolderSaves(
           code: 'upload-success',
           params: { version: String(result.version) }
         })
+        notifySavePushed(game.appId)
         return result.version
       }
     }
@@ -641,6 +644,18 @@ async function fingerprintTick(
   }
 }
 
+// Captured on startWatcher so triggerFriendCheck (below) can re-run
+// checkFriendUpdates on demand, without every caller having to carry these
+// around separately.
+interface WatcherContext {
+  token: string
+  owner: string
+  actor: string
+  onFriendUpdate: (updates: FriendSaveUpdate[]) => void
+  onBackgroundCheck: () => void
+}
+let currentContext: WatcherContext | null = null
+
 export function startWatcher(
   token: string,
   owner: string,
@@ -650,6 +665,7 @@ export function startWatcher(
   onBackgroundCheck: () => void
 ): void {
   stopWatcher()
+  currentContext = { token, owner, actor, onFriendUpdate, onBackgroundCheck }
   running = {}
   lastSeenFingerprint = {}
   lastChangedAt = {}
@@ -669,4 +685,22 @@ export function stopWatcher(): void {
   timer = null
   if (fingerprintTimer) clearInterval(fingerprintTimer)
   fingerprintTimer = null
+  currentContext = null
+}
+
+// An instant presence 'save:pushed' notice (see presenceService.ts) arrived
+// — re-runs the same friend-update check checkFriendUpdates would do on its
+// next ~2min tick anyway, just right now, so the toast/bell shows up within
+// moments of a friend's push instead of waiting for the regular poll (which
+// stays as the fallback for whenever presence isn't connected). A no-op if
+// the watcher isn't running.
+export function triggerFriendCheck(): void {
+  if (!currentContext) return
+  void checkFriendUpdates(
+    currentContext.token,
+    currentContext.owner,
+    currentContext.actor,
+    currentContext.onFriendUpdate,
+    currentContext.onBackgroundCheck
+  )
 }

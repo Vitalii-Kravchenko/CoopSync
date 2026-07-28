@@ -10,7 +10,14 @@ import ConfirmModal from '../components/ConfirmModal'
 import AdoptStorageModal from '../components/AdoptStorageModal'
 import Select from '../components/Select'
 import type { BannerState } from '../components/Banner'
-import type { AuthUser, SavesRepoStatus, StartupSettings, UpdateStatus } from '../../../shared/types'
+import type {
+  AuthUser,
+  SavesRepoStatus,
+  StartupSettings,
+  UpdateStatus,
+  DeviceCodeInfo,
+  PresenceConnectionState
+} from '../../../shared/types'
 
 interface Props {
   user: AuthUser
@@ -84,6 +91,11 @@ function SettingsScreen({
   const [showAdoptChoice, setShowAdoptChoice] = useState(false)
   const [adoptingRepo, setAdoptingRepo] = useState(false)
   const [adoptRepoError, setAdoptRepoError] = useState<string | null>(null)
+  const [presenceStatus, setPresenceStatus] = useState<PresenceConnectionState>('off')
+  const [presenceDeviceCode, setPresenceDeviceCode] = useState<DeviceCodeInfo | null>(null)
+  const [presenceBusy, setPresenceBusy] = useState(false)
+  const [presenceError, setPresenceError] = useState<string | null>(null)
+  const [presenceCopied, setPresenceCopied] = useState(false)
 
   useEffect(() => {
     void loadRepo()
@@ -93,7 +105,15 @@ function SettingsScreen({
       setAutoCheckUpdates(s.autoCheckUpdates)
     })
     window.api.getAppVersion().then(setAppVersion)
-    return window.api.updater.onStatus(setUpdateStatus)
+    window.api.presence.getStatus().then(setPresenceStatus)
+    const offUpdater = window.api.updater.onStatus(setUpdateStatus)
+    const offPresenceConn = window.api.presence.onConnectionChange(setPresenceStatus)
+    const offPresenceCode = window.api.presence.onDeviceCode(setPresenceDeviceCode)
+    return () => {
+      offUpdater()
+      offPresenceConn()
+      offPresenceCode()
+    }
   }, [])
 
   // On returning to the "Settings" tab, reread the repo/host status — a
@@ -158,6 +178,31 @@ function SettingsScreen({
     } catch (e) {
       setShowCloudWarning(previous)
       setToggleError(describeError(e, t, t.settings.saveError))
+    }
+  }
+
+  async function handleEnablePresence(): Promise<void> {
+    setPresenceBusy(true)
+    setPresenceError(null)
+    setPresenceCopied(false)
+    try {
+      await window.api.presence.enable()
+    } catch (e) {
+      setPresenceError(describeError(e, t, t.onboarding.genericError))
+    } finally {
+      setPresenceBusy(false)
+      setPresenceDeviceCode(null)
+    }
+  }
+
+  async function handleDisablePresence(): Promise<void> {
+    setPresenceBusy(true)
+    setPresenceError(null)
+    try {
+      await window.api.presence.disable()
+      setPresenceStatus('off')
+    } finally {
+      setPresenceBusy(false)
     }
   }
 
@@ -492,6 +537,84 @@ function SettingsScreen({
             <div style={styles.smartAppWarningText}>{t.settings.smartAppWarningText}</div>
           </div>
         </div>
+
+        {/* Presence — optional, off by default (see ROADMAP.md §1) */}
+        <div style={styles.card2}>
+          <div style={styles.h2}>{t.presence.title}</div>
+          <div style={{ ...styles.muted, lineHeight: 1.5, marginBottom: 14 }}>
+            {t.presence.description}
+          </div>
+
+          {presenceStatus !== 'off' && !presenceDeviceCode && (
+            <div style={styles.presenceStatusRow}>
+              <span
+                style={{
+                  ...styles.presenceDot,
+                  background:
+                    presenceStatus === 'online'
+                      ? colors.success
+                      : presenceStatus === 'connecting'
+                        ? colors.warning
+                        : colors.danger
+                }}
+              />
+              <span style={{ fontSize: 13.5, color: colors.text1 }}>
+                {presenceStatus === 'online' && t.presence.statusOnline}
+                {presenceStatus === 'connecting' && t.presence.statusConnecting}
+                {presenceStatus === 'error' && t.presence.statusReconnecting}
+              </span>
+            </div>
+          )}
+
+          {presenceDeviceCode && (
+            <div style={styles.presenceDeviceBox}>
+              <div style={styles.presenceDeviceCode}>{presenceDeviceCode.userCode}</div>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <Button
+                  variant="success"
+                  style={{ height: 32, padding: '0 14px', fontSize: 12.5 }}
+                  onClick={async () => {
+                    await window.api.copyToClipboard(presenceDeviceCode.userCode)
+                    setPresenceCopied(true)
+                  }}
+                >
+                  {presenceCopied ? `✓ ${t.onboarding.copied}` : t.onboarding.copy}
+                </Button>
+                <Button
+                  variant="primary"
+                  style={{ height: 32, padding: '0 14px', fontSize: 12.5 }}
+                  onClick={() => window.api.openExternal(presenceDeviceCode.verificationUri)}
+                >
+                  {t.onboarding.openGithub}
+                </Button>
+              </div>
+              <div style={styles.muted}>{t.onboarding.pasteCodeHint}</div>
+            </div>
+          )}
+
+          {!presenceDeviceCode && presenceStatus === 'off' && (
+            <Button
+              variant="secondary"
+              style={{ alignSelf: 'flex-start' }}
+              onClick={handleEnablePresence}
+              disabled={presenceBusy}
+            >
+              {presenceBusy && <span className="spinner" />}
+              {t.presence.enable}
+            </Button>
+          )}
+          {!presenceDeviceCode && presenceStatus !== 'off' && (
+            <Button
+              variant="ghost"
+              style={{ alignSelf: 'flex-start', height: 32, padding: '0 14px', fontSize: 12.5, marginTop: 12 }}
+              onClick={handleDisablePresence}
+              disabled={presenceBusy}
+            >
+              {t.presence.disable}
+            </Button>
+          )}
+          {presenceError && <div style={{ ...styles.createRepoError, marginTop: 10 }}>{presenceError}</div>}
+        </div>
       </div>
 
       {showDeleteRepo && (
@@ -727,6 +850,21 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 11.5,
     color: colors.text2,
     lineHeight: 1.5
+  },
+  presenceStatusRow: { display: 'flex', alignItems: 'center', gap: 9 },
+  presenceDot: { width: 9, height: 9, borderRadius: '50%', flexShrink: 0 },
+  presenceDeviceBox: { display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'flex-start' },
+  presenceDeviceCode: {
+    fontFamily: fonts.mono,
+    fontSize: 22,
+    fontWeight: 700,
+    letterSpacing: 3,
+    background: colors.bgInset,
+    border: `1px solid ${colors.borderAccent}`,
+    boxShadow: 'inset 0 1px 2px rgba(0,0,0,.3), 0 0 18px rgba(54,226,232,.18)',
+    padding: '7px 16px',
+    borderRadius: radii.md,
+    color: colors.cy
   }
 }
 

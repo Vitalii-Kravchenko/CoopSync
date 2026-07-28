@@ -13,6 +13,19 @@ export const GITHUB_CLIENT_ID = 'Ov23liThtglJqUxY4Kh0'
 // get a 403 from the "Delete repository" button — they'll need to re-login.
 export const GITHUB_SCOPE = 'repo read:org delete_repo'
 
+// Second, SEPARATE device flow login used only to talk to the presence/
+// signaling server (see ROADMAP.md §1.3) — an EMPTY scope means the
+// resulting token can only prove identity (GET /user works), it can't touch
+// any repo. Kept as its own token (presenceTokenStore.ts) so the repo-scoped
+// sync token above never leaves this machine.
+export const PRESENCE_GITHUB_SCOPE = ''
+
+// Presence/signaling server (coopsync-server, D:\Projects\CoopSync-Server) —
+// presence, "friend just pushed" instant notice, and (later) WebRTC signal
+// relay. The app is fully usable without it; this is a progressive
+// enhancement (see ROADMAP.md §1).
+export const SIGNALING_URL = 'wss://signal.coopsync.app'
+
 // Repo name used for saves. The owner/name namespace already guarantees
 // uniqueness, so there's no need to add the username to the name itself.
 export const SAVES_REPO_NAME = 'coopsync-saves'

@@ -105,7 +105,9 @@ export const es: Translation = {
     totalSyncsLabel: 'Sincronizaciones totales',
     neverSynced: '—',
     sentLabel: 'Enviada',
-    cancelInvite: 'Cancelar'
+    cancelInvite: 'Cancelar',
+    onlineStatus: 'en línea',
+    offlineStatus: 'desconectado'
   },
   history: {
     title: 'Historial de sincronización',

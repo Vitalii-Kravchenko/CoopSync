@@ -401,33 +401,38 @@ function FriendsScreen({ user, avatarDataUrl, active, onRepoChanged }: Props): R
             </div>
           ) : (
             <div style={styles.memberGrid}>
-              <div style={styles.memberCard}>
-                <div style={styles.memberHead}>
-                  <AvatarWithDot
-                    src={ownerLogin === user.login ? avatarDataUrl : avatars[ownerLogin]}
-                    size={AVATAR_SIZE}
-                    online={
-                      ownerLogin === user.login
-                        ? selfOnline
-                        : ownerId !== null
-                          ? presenceMap[ownerId]
-                          : undefined
-                    }
-                  />
-                  <div style={{ minWidth: 0 }}>
-                    <div style={styles.memberName}>{ownerLogin}</div>
-                    <span style={styles.ownerBadge}>
-                      <span style={{ display: 'flex', transform: 'translateY(-1px)' }}>
-                        <CrownIcon size={11} color={colors.cy} />
-                      </span>
-                      {t.friends.ownerBadge}
-                    </span>
+              {(() => {
+                const ownerOnline =
+                  ownerLogin === user.login
+                    ? selfOnline
+                    : ownerId !== null
+                      ? presenceMap[ownerId]
+                      : undefined
+                return (
+                  <div style={styles.memberCard}>
+                    <div style={styles.memberHead}>
+                      <AvatarWithDot src={ownerLogin === user.login ? avatarDataUrl : avatars[ownerLogin]} size={AVATAR_SIZE} online={ownerOnline} />
+                      <div style={{ minWidth: 0 }}>
+                        <div style={styles.memberName}>{ownerLogin}</div>
+                        <div style={styles.badgeRow}>
+                          <span style={styles.ownerBadge}>
+                            <span style={{ display: 'flex', transform: 'translateY(-1px)' }}>
+                              <CrownIcon size={11} color={colors.cy} />
+                            </span>
+                            {t.friends.ownerBadge}
+                          </span>
+                          <PresenceCaption online={ownerOnline} t={t} />
+                        </div>
+                      </div>
+                    </div>
+                    {renderStats(ownerLogin)}
                   </div>
-                </div>
-                {renderStats(ownerLogin)}
-              </div>
+                )
+              })()}
 
-              {collaborators.map((c) => (
+              {collaborators.map((c) => {
+                const online = c.login === user.login ? selfOnline : presenceMap[c.id]
+                return (
                 <div key={c.login} style={styles.memberCard}>
                   {isOwner && (
                     <button
@@ -447,19 +452,23 @@ function FriendsScreen({ user, avatarDataUrl, active, onRepoChanged }: Props): R
                     <AvatarWithDot
                       src={c.login === user.login ? avatarDataUrl : avatars[c.login]}
                       size={AVATAR_SIZE}
-                      online={c.login === user.login ? selfOnline : presenceMap[c.id]}
+                      online={online}
                     />
                     <div style={{ minWidth: 0 }}>
                       <div style={styles.memberName}>{c.login}</div>
-                      <span style={styles.acceptedBadge}>
-                        <CheckIcon size={11} color={colors.success} />
-                        {t.friends.acceptedBadge}
-                      </span>
+                      <div style={styles.badgeRow}>
+                        <span style={styles.acceptedBadge}>
+                          <CheckIcon size={11} color={colors.success} />
+                          {t.friends.acceptedBadge}
+                        </span>
+                        <PresenceCaption online={online} t={t} />
+                      </div>
                     </div>
                   </div>
                   {renderStats(c.login)}
                 </div>
-              ))}
+                )
+              })}
 
               {invites.map((i) => (
                 <div key={i.id} style={styles.pendingCard}>
@@ -522,6 +531,8 @@ function FriendsScreen({ user, avatarDataUrl, active, onRepoChanged }: Props): R
 // renders no dot at all rather than a false "offline" — sync stats from the
 // push history (renderStats below) stay the always-available, honest signal
 // of real activity regardless of whether presence is enabled.
+// Sizing/glow matches docs/design-system.html §4.8 "Аватари" exactly (13px
+// dot, 2.5px surface-color border, glow only while online).
 function AvatarWithDot({
   src,
   size,
@@ -538,17 +549,36 @@ function AvatarWithDot({
         <span
           style={{
             position: 'absolute',
-            bottom: -1,
-            right: -1,
-            width: 12,
-            height: 12,
+            bottom: 0,
+            right: 0,
+            width: 13,
+            height: 13,
             borderRadius: '50%',
             background: online ? colors.success : colors.text3,
-            border: `2px solid ${colors.bgSurface}`
+            border: `2.5px solid ${colors.bgSurface}`,
+            boxShadow: online ? `0 0 8px ${colors.success}` : 'none'
           }}
         />
       )}
     </div>
+  )
+}
+
+// Small caption next to a member's role badge — same treatment as the
+// design system's under-avatar "online"/"away" label (§4.8), just placed
+// inline here since this layout's badge already sits under the name.
+function PresenceCaption({
+  online,
+  t
+}: {
+  online?: boolean
+  t: Translation
+}): React.JSX.Element | null {
+  if (online === undefined) return null
+  return (
+    <span style={{ fontFamily: fonts.mono, fontSize: 10, color: colors.text3 }}>
+      {online ? t.friends.onlineStatus : t.friends.offlineStatus}
+    </span>
   )
 }
 
@@ -566,8 +596,7 @@ const badgeBase: React.CSSProperties = {
   fontWeight: 600,
   letterSpacing: '.04em',
   padding: '0 9px',
-  borderRadius: radii.pill,
-  marginTop: 4
+  borderRadius: radii.pill
 }
 
 const cardBase: React.CSSProperties = {
@@ -659,6 +688,7 @@ const styles: Record<string, React.CSSProperties> = {
     opacity: 0.9
   },
   memberHead: { display: 'flex', alignItems: 'center', gap: 11 },
+  badgeRow: { display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, flexWrap: 'wrap' },
   memberName: {
     fontSize: 14,
     fontWeight: 600,

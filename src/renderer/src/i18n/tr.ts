@@ -106,7 +106,9 @@ export const tr: Translation = {
     totalSyncsLabel: 'Toplam senkron',
     neverSynced: '—',
     sentLabel: 'Gönderildi:',
-    cancelInvite: 'İptal et'
+    cancelInvite: 'İptal et',
+    onlineStatus: 'çevrimiçi',
+    offlineStatus: 'çevrimdışı'
   },
   history: {
     title: 'Senkronizasyon geçmişi',

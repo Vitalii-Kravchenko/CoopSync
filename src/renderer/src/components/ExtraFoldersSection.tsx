@@ -61,11 +61,21 @@ function ExtraFoldersSection({ appId, syncVersion, onBanner, onSynced, user }: P
   const [addError, setAddError] = useState<string | null>(null)
 
   function load(): void {
-    Promise.all([window.api.games.listExtraFolders(appId), window.api.sync.statuses()])
-      .then(([f, all]) => {
-        setFolders(f)
+    // sync.statuses() FIRST, not Promise.all with listExtraFolders — its
+    // self-heal (sync.ts's getSyncStatuses) is what materializes a folder a
+    // co-op partner registered while we were offline (e.g. after a full
+    // reinstall wiped local settings). Racing the two meant listExtraFolders
+    // almost always won (pure local read vs. a network round-trip) and
+    // returned its answer BEFORE self-heal had written anything — the
+    // just-materialized folder was silently missing from its very first
+    // render, no matter how long the self-heal itself took after that.
+    window.api.sync
+      .statuses()
+      .then((all) => {
         setStatuses(all.find((s) => s.appId === appId)?.extraFolders ?? [])
+        return window.api.games.listExtraFolders(appId)
       })
+      .then(setFolders)
       .catch(() => {
         // Best-effort — the section just shows whatever it last had.
       })

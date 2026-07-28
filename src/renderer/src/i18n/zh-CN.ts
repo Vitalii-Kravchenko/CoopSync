@@ -101,7 +101,9 @@ export const zhCN: Translation = {
     totalSyncsLabel: '同步总数',
     neverSynced: '—',
     sentLabel: '已发送',
-    cancelInvite: '取消'
+    cancelInvite: '取消',
+    onlineStatus: '在线',
+    offlineStatus: '离线'
   },
   history: {
     title: '同步历史',

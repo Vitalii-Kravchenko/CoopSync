@@ -105,7 +105,9 @@ export const ptBR: Translation = {
     totalSyncsLabel: 'Sincronizações no total',
     neverSynced: '—',
     sentLabel: 'Enviado',
-    cancelInvite: 'Cancelar'
+    cancelInvite: 'Cancelar',
+    onlineStatus: 'online',
+    offlineStatus: 'offline'
   },
   history: {
     title: 'Histórico de sincronização',

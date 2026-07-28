@@ -105,7 +105,9 @@ export const uk: Translation = {
     totalSyncsLabel: 'Всього синків',
     neverSynced: '—',
     sentLabel: 'Надіслано',
-    cancelInvite: 'Скасувати'
+    cancelInvite: 'Скасувати',
+    onlineStatus: 'онлайн',
+    offlineStatus: 'офлайн'
   },
   history: {
     title: 'Історія синхронізацій',

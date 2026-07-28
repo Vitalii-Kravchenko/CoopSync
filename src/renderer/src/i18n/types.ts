@@ -130,6 +130,8 @@ export interface Translation {
     neverSynced: string
     sentLabel: string
     cancelInvite: string
+    onlineStatus: string
+    offlineStatus: string
   }
   history: {
     title: string

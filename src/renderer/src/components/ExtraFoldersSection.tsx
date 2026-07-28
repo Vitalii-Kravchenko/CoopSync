@@ -821,13 +821,23 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: radii.md,
     boxShadow: shadows.sh3
   },
+  // overflow:'hidden' is load-bearing, not decorative: each button below has
+  // NO radius of its own (borderRadius:0) — only the group's own pill shape
+  // rounds the two OUTER corners (via this clip), while the seam between
+  // the two buttons stays a flat, straight edge. Giving each button its own
+  // full pill radius (as this used to) rounds their INNER facing corners
+  // too, which — with the small gap between them — opened a curved
+  // lens-shaped sliver of the group's own background at the seam (visible
+  // top/bottom of the divider, near "Спільна з другом"'s left edge): a real
+  // visual artifact found 2026-07-28, not a rendering glitch.
   segmentGroup: {
     display: 'inline-flex',
     padding: 3,
     borderRadius: radii.pill,
     background: colors.bgInset,
     border: `1px solid ${colors.borderDefault}`,
-    gap: 2
+    gap: 2,
+    overflow: 'hidden'
   },
   segmentBtn: {
     height: 26,
@@ -836,7 +846,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     fontSize: 11,
     border: 'none',
-    borderRadius: radii.pill,
+    borderRadius: 0,
     background: 'transparent',
     color: colors.text3,
     cursor: 'pointer'
@@ -846,13 +856,15 @@ const styles: Record<string, React.CSSProperties> = {
   // (design system 4.5's own segmented-control numbers: 32px/0 16px/12.5px)
   // for SharedToggle's two prominent, always-visible usages — see its own
   // comment for why it doesn't just reuse the compact FolderCard sizing.
+  // overflow:'hidden' — see segmentGroup's own comment, same reasoning.
   scopeSegmentGroup: {
     display: 'inline-flex',
     padding: 3,
     borderRadius: radii.pill,
     background: colors.bgInset,
     border: `1px solid ${colors.borderDefault}`,
-    gap: 2
+    gap: 2,
+    overflow: 'hidden'
   },
   scopeSegmentBtn: {
     height: 32,
@@ -861,7 +873,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     fontSize: 12.5,
     border: 'none',
-    borderRadius: radii.pill,
+    borderRadius: 0,
     background: 'transparent',
     color: colors.text3,
     cursor: 'pointer'

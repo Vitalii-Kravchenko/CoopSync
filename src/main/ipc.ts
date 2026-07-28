@@ -41,6 +41,7 @@ import {
   downloadExtraFolder,
   pushFolderToRegistry,
   removeFolderFromRegistry,
+  deleteExtraFolderContent,
   getRegisteredFolderLabels
 } from './services/sync'
 import { startWatcher, stopWatcher, triggerFriendCheck } from './services/watcher'
@@ -817,19 +818,19 @@ export function registerIpcHandlers(): void {
     }
   )
 
-  // Remove a folder — stops syncing it, doesn't touch already-pushed cloud
-  // data or local files. If it was registered (shared), the registry removal
-  // is retried until it lands (games:remove-custom's exact reasoning,
-  // one level down) since nothing local still references this folder to
-  // retry from once removeExtraFolder below has already run.
+  // Remove a folder — for good: deletes its actual synced content (and
+  // registry entry, if it was shared) from the repo too, not just the local
+  // reference (used to leave the real files behind forever, silently eating
+  // GitHub storage with no way to reclaim it — Vitalii's call, 2026-07-28).
+  // The git-side deletion is retried until it lands (games:remove-custom's
+  // exact reasoning, one level down) since nothing local still references
+  // this folder to retry from once removeExtraFolder below has already run.
   ipcMain.handle('games:remove-extra-folder', async (_event, appId: string, folderId: string): Promise<void> => {
-    const wasShared = getExtraFolders(appId).find((f) => f.id === folderId)?.shared ?? false
     removeExtraFolder(appId, folderId)
-    if (!wasShared) return
     try {
       const { token, owner } = await syncTarget()
       const { owner: actor } = await requireAuth()
-      await removeFolderFromRegistry(token, owner, actor, appId, folderId)
+      await deleteExtraFolderContent(token, owner, actor, appId, folderId)
     } catch {
       addPendingFolderRemoval(appId, folderId)
     }

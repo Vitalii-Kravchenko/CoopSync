@@ -1179,9 +1179,64 @@ export function pushFolderToRegistry(
   })
 }
 
-/** Remove an extra folder from the shared registry (best-effort — see
- *  ipc.ts's games:remove-extra-folder). Never touches a partner's own
- *  already-materialized local folder entry, same as removeCustomGameFromRegistry. */
+/** Remove an extra folder for good — both its registry entry (if it was
+ *  ever shared; a personal folder never had one) AND its actual synced
+ *  content + version meta in the repo (see ipc.ts's games:remove-extra-folder).
+ *  Used to only touch the registry, leaving the real files behind forever —
+ *  a real complaint (2026-07-28): a "removed" folder kept occupying space on
+ *  GitHub with no way to reclaim it. --ignore-unmatch makes the git rm calls
+ *  a no-op for a folder that was added but never actually pushed, instead of
+ *  failing the whole removal over nothing to delete. --allow-empty on the
+ *  commit covers that same case when there's also no registry entry to
+ *  touch (a personal folder that was never synced at all) — still leaves a
+ *  log entry of the deletion rather than silently doing nothing. */
+export function deleteExtraFolderContent(
+  token: string,
+  owner: string,
+  actor: string,
+  appId: string,
+  folderId: string
+): Promise<void> {
+  return withCustomGameRepoLock(async () => {
+    await ensureRepo(token, owner)
+    const current = await readCustomGamesRegistry()
+    if (current === null) throw makeAppError('GIT_GENERIC', { detail: 'registry unreadable' })
+    const idx = current.findIndex((e) => e.appId === appId)
+    const gameName = idx !== -1 ? current[idx].name : listCustomGames().find((g) => g.appId === appId)?.name
+    if (!gameName) return // game itself is already gone — nothing left to clean up
+    let label = folderId
+    if (idx !== -1) {
+      const entry = current[idx]
+      const folders = entry.folders ?? []
+      const nextFolders = folders.filter((f) => f.id !== folderId)
+      if (nextFolders.length !== folders.length) {
+        label = folders.find((f) => f.id === folderId)?.label ?? folderId
+        const next = [...current]
+        next[idx] = { ...entry, folders: nextFolders }
+        await mkdir(join(repoDir(), '.meta'), { recursive: true })
+        await writeFile(customGamesRegistryPath(), JSON.stringify(next, null, 2))
+      }
+    }
+    await git(['rm', '-r', '--ignore-unmatch', join(gameName, 'extra', folderId)])
+    await git(['rm', '-r', '--ignore-unmatch', join('.meta', 'folders', gameName, folderId)])
+    await git(['add', '-A'])
+    await git([
+      ...identityFlags(actor),
+      'commit',
+      '--allow-empty',
+      '-m',
+      `custom-game-folder: delete ${gameName} / ${label}`
+    ])
+    await git(['push', 'origin', 'main'])
+  })
+}
+
+/** Unregister an extra folder WITHOUT touching its synced content — used
+ *  only by games:set-extra-folder-shared's shared→personal flip (the
+ *  content keeps syncing personally, it just stops being visible to
+ *  everyone else; deleting it here would destroy the owner's own backup
+ *  over a visibility change, not a removal). Actual deletion is
+ *  deleteExtraFolderContent above. */
 export function removeFolderFromRegistry(
   token: string,
   owner: string,
@@ -1205,7 +1260,7 @@ export function removeFolderFromRegistry(
     await writeFile(customGamesRegistryPath(), JSON.stringify(next, null, 2))
     await git(['add', '-A'])
     const label = folders.find((f) => f.id === folderId)?.label ?? folderId
-    await git([...identityFlags(actor), 'commit', '-m', `custom-game-folder: remove ${entry.name} / ${label}`])
+    await git([...identityFlags(actor), 'commit', '-m', `custom-game-folder: unshare ${entry.name} / ${label}`])
     await git(['push', 'origin', 'main'])
   })
 }
@@ -1586,7 +1641,7 @@ async function doGetSyncStatuses(token: string, owner: string, actor: string): P
     const appId = key.slice(0, sep)
     const folderId = key.slice(sep + 1)
     try {
-      await removeFolderFromRegistry(token, owner, actor, appId, folderId)
+      await deleteExtraFolderContent(token, owner, actor, appId, folderId)
       clearPendingFolderRemoval(appId, folderId)
     } catch {
       // Try again next check.

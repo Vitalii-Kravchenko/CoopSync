@@ -523,8 +523,8 @@ function FolderCard({
                     onClick={() => !shareBusy && folder.shared && onToggleShared()}
                     disabled={shareBusy}
                   >
-                    {shareBusy && folder.shared && <span className="spinner" />}
                     {t.history.extraFolderPersonal}
+                    {shareBusy && folder.shared && <span className="spinner" />}
                   </button>
                   <button
                     className="reset-btn segment-option-btn"
@@ -532,8 +532,8 @@ function FolderCard({
                     onClick={() => !shareBusy && !folder.shared && onToggleShared()}
                     disabled={shareBusy}
                   >
-                    {shareBusy && !folder.shared && <span className="spinner" />}
                     {t.history.extraFolderShared}
+                    {shareBusy && !folder.shared && <span className="spinner" />}
                   </button>
                 </div>
               )}
@@ -606,8 +606,8 @@ export function SharedToggle({
           onClick={() => !disabled && shared && onChange(false)}
           disabled={disabled}
         >
-          {busy && shared && <span className="spinner" />}
           {t.history.extraFolderPersonal}
+          {busy && shared && <span className="spinner" />}
         </button>
         <button
           className="reset-btn segment-option-btn"
@@ -615,8 +615,8 @@ export function SharedToggle({
           onClick={() => !disabled && !shared && onChange(true)}
           disabled={disabled}
         >
-          {busy && !shared && <span className="spinner" />}
           {t.history.extraFolderShared}
+          {busy && !shared && <span className="spinner" />}
         </button>
       </div>
       <div style={styles.toggleHint}>

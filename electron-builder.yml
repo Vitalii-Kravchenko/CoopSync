@@ -34,7 +34,18 @@ nsis:
   # relied on there being a wizard page to show it on.
   oneClick: true
   perMachine: false
-  deleteAppDataOnUninstall: true
+  # false (not the previous true): uninstalling used to wipe %APPDATA%
+  # (app-settings.json) entirely — a plain "uninstall the app, keep the repo,
+  # reinstall" lost EVERY local setting, not just custom games: save-path
+  # overrides, the personal/shared choice per game, language, avatar, all of
+  # it. A custom game's own existence and shared extra folders self-heal back
+  # from the GitHub registry (see sync.ts's getSyncStatuses), but savePath/
+  # processNames/exclusions are deliberately per-machine and were never in
+  # that registry to heal from — those came back empty and needed a full
+  # manual redo. Matches the ordinary Windows expectation that uninstalling a
+  # program leaves your own settings alone unless you also delete its data
+  # folder yourself.
+  deleteAppDataOnUninstall: false
   # Still compiled in so build/installer.nsh's Smart App Control MessageBox
   # can show in the OS's UI language -- oneClick just means no picker DIALOG.
   installerLanguages:

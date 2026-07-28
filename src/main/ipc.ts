@@ -34,7 +34,6 @@ import {
   getAvatars,
   pushCustomGameToRegistry,
   deleteCustomGameContent,
-  unshareCustomGameFromRegistry,
   renameCustomGameInRegistry,
   pushCustomGameCover,
   uploadExtraFolder,
@@ -658,13 +657,21 @@ export function registerIpcHandlers(): void {
   // Flip it. A catalog game is never registry-tracked, so going personal or
   // back to shared is purely local for it — just the flag + a right-away
   // re-sync so the status pill doesn't sit stale until the next launch/exit.
-  // A custom game additionally has a registry entry to keep in sync:
-  // personal → unshareCustomGameFromRegistry (unregister, content stays —
-  // same "visibility change, not a removal" reasoning as extra folders'
-  // own shared→personal toggle); shared → pushCustomGameToRegistry
-  // (best-effort — if this particular push fails, the existing self-heal in
-  // getSyncStatuses already retries any custom game that isn't
-  // registryConfirmed yet, no separate pending-list needed here).
+  // A custom game's registry entry is deliberately left ALONE by this
+  // handler either way — unlike an extra folder (each one belongs to a
+  // single owner, see games:set-extra-folder-shared's NOT_FOLDER_OWNER
+  // check), a shared custom game's appId can be the SAME one on more than
+  // one person's machine (a co-op partner materializes it verbatim — see
+  // materializeRemoteCustomGame). This handler used to call
+  // unshareCustomGameFromRegistry when going personal, which removed the
+  // registry entry outright — fine for the one flipping the toggle, but it
+  // also unshared the game out from under anyone else who still had it
+  // shared: their next getSyncStatuses self-heal would see the appId gone
+  // from the registry and mark their own, still-wanted copy as
+  // orphaned/removed. "Only for me" must only change where THIS user's own
+  // saves sync to (main-personal/<login>, see sync.ts's mainContentDir) —
+  // whether the game exists in the shared space at all is a separate
+  // question, only "Remove game" (games:remove-custom) answers.
   ipcMain.handle(
     'games:set-personal',
     async (_event, appId: string, personal: boolean): Promise<void> => {
@@ -674,21 +681,23 @@ export function registerIpcHandlers(): void {
 
       setGamePersonal(appId, personal)
       if (isCustom && customGame) {
-        // Same local-state normalization the orphan-restore path uses
-        // (clears orphaned + registryConfirmed) — a deliberate personal
-        // switch is never itself an "orphaned" state, and either way this
-        // game must stop looking like "registered, needs a push".
-        if (personal) restoreOrphanedCustomGame(appId)
-        try {
-          const { token, owner } = await syncTarget()
-          const { owner: actor } = await requireAuth()
-          if (personal) {
-            await unshareCustomGameFromRegistry(token, owner, actor, appId)
-          } else {
+        if (personal) {
+          // Same local-state normalization the orphan-restore path uses
+          // (clears orphaned + registryConfirmed) — a deliberate personal
+          // switch is never itself an "orphaned" state, and either way this
+          // game must stop looking like "registered, needs a push". Purely
+          // local — see doc comment above for why the registry itself isn't
+          // touched here.
+          restoreOrphanedCustomGame(appId)
+        } else {
+          try {
+            const { token, owner } = await syncTarget()
+            const { owner: actor } = await requireAuth()
             await pushCustomGameToRegistry(token, owner, actor, appId, customGame.name)
+          } catch {
+            // Best-effort — the existing self-heal in getSyncStatuses
+            // already retries any custom game that isn't registryConfirmed yet.
           }
-        } catch {
-          // Best-effort — see doc comment above.
         }
       }
 

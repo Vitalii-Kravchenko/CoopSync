@@ -593,25 +593,31 @@ export function SharedToggle({
   const disabled = locked || busy
   return (
     <div style={styles.toggleWrap}>
-      <div style={styles.toggleRow}>
-        <Button
-          variant={!shared ? 'primary' : 'ghost'}
-          style={styles.toggleBtn}
+      {/* Sized a step up from FolderCard's own inline segmented toggle
+          (scopeSegment* vs segment*) — this one is the primary, always-
+          visible per-game/per-add-form choice, not a small control tucked
+          in a per-folder settings disclosure, so it gets the full size from
+          the design system's own segmented-control spec (4.5) instead of
+          the compact variant. */}
+      <div style={styles.scopeSegmentGroup}>
+        <button
+          className="reset-btn segment-option-btn"
+          style={{ ...styles.scopeSegmentBtn, ...(!shared ? styles.scopeSegmentBtnActive : null) }}
           onClick={() => !disabled && shared && onChange(false)}
           disabled={disabled}
         >
           {busy && shared && <span className="spinner" />}
           {t.history.extraFolderPersonal}
-        </Button>
-        <Button
-          variant={shared ? 'primary' : 'ghost'}
-          style={styles.toggleBtn}
+        </button>
+        <button
+          className="reset-btn segment-option-btn"
+          style={{ ...styles.scopeSegmentBtn, ...(shared ? styles.scopeSegmentBtnActive : null) }}
           onClick={() => !disabled && !shared && onChange(true)}
           disabled={disabled}
         >
           {busy && !shared && <span className="spinner" />}
           {t.history.extraFolderShared}
-        </Button>
+        </button>
       </div>
       <div style={styles.toggleHint}>
         {locked
@@ -682,9 +688,7 @@ const styles: Record<string, React.CSSProperties> = {
   errorText: { fontSize: 12, color: colors.danger, marginTop: 6 },
   smallBtn: { height: 30, padding: '0 12px', fontSize: 12, whiteSpace: 'nowrap' },
   toggleWrap: { marginBottom: 8 },
-  toggleRow: { display: 'flex', gap: 8 },
-  toggleBtn: { height: 30, padding: '0 16px', fontSize: 12 },
-  toggleHint: { fontSize: 11, color: colors.text3, marginTop: 6, lineHeight: 1.5 },
+  toggleHint: { fontSize: 11, color: colors.text3, marginTop: 8, lineHeight: 1.5 },
 
   // Flexbox, not grid — a grid track's minmax(x,calc(50%-gap)) still caps at
   // "50% of container" even once there's only one card left on its row,
@@ -838,6 +842,31 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer'
   },
   segmentBtnActive: { background: colors.bgHover, color: colors.text1 },
+  // Same shape/colors as segmentGroup/segmentBtn above, just a size step up
+  // (design system 4.5's own segmented-control numbers: 32px/0 16px/12.5px)
+  // for SharedToggle's two prominent, always-visible usages — see its own
+  // comment for why it doesn't just reuse the compact FolderCard sizing.
+  scopeSegmentGroup: {
+    display: 'inline-flex',
+    padding: 3,
+    borderRadius: radii.pill,
+    background: colors.bgInset,
+    border: `1px solid ${colors.borderDefault}`,
+    gap: 2
+  },
+  scopeSegmentBtn: {
+    height: 32,
+    padding: '0 16px',
+    fontFamily: fonts.display,
+    fontWeight: 600,
+    fontSize: 12.5,
+    border: 'none',
+    borderRadius: radii.pill,
+    background: 'transparent',
+    color: colors.text3,
+    cursor: 'pointer'
+  },
+  scopeSegmentBtnActive: { background: colors.bgHover, color: colors.text1 },
   removeRow: { display: 'flex', justifyContent: 'flex-end' },
   removeBtn: {
     display: 'inline-flex',

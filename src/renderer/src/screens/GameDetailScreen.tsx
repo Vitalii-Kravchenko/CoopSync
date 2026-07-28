@@ -578,7 +578,7 @@ function GameDetailScreen({
       <div style={styles.sectionLabel}>{t.history.sectionWhereSavesLive}</div>
       <div
         ref={savePathRef}
-        style={{ ...styles.savePathCard, ...(stillNeedsSetup ? styles.savePathCardHighlight : null) }}
+        style={{ ...styles.saveConfigCard, ...(stillNeedsSetup ? styles.savePathCardHighlight : null) }}
       >
         <div style={styles.savePathTopRow}>
           <div style={styles.savePathLabelRow}>
@@ -660,21 +660,23 @@ function GameDetailScreen({
             </div>
           </div>
         )}
-      </div>
 
-      <div style={styles.syncScopeCard}>
-        <div style={styles.savePathLabelRow}>
-          <span style={styles.savePathLabel}>{t.history.syncScopeTitle}</span>
+        <div style={styles.cardDivider} />
+
+        <div>
+          <div style={{ ...styles.savePathLabelRow, marginBottom: 10 }}>
+            <span style={styles.savePathLabel}>{t.history.syncScopeTitle}</span>
+          </div>
+          <SharedToggle
+            shared={!personal}
+            onChange={(shared) => void handleSetPersonal(!shared)}
+            t={t}
+            busy={personalBusy}
+            sharedHint={t.history.syncScopeSharedHint}
+            personalHint={t.history.syncScopePersonalHint}
+          />
+          {personalError && <div style={styles.savePathErrorText}>{personalError}</div>}
         </div>
-        <SharedToggle
-          shared={!personal}
-          onChange={(shared) => void handleSetPersonal(!shared)}
-          t={t}
-          busy={personalBusy}
-          sharedHint={t.history.syncScopeSharedHint}
-          personalHint={t.history.syncScopePersonalHint}
-        />
-        {personalError && <div style={styles.savePathErrorText}>{personalError}</div>}
       </div>
 
       {isCustom && (
@@ -1079,12 +1081,6 @@ const styles: Record<string, React.CSSProperties> = {
   // that unrelated 20px margin was quietly shrinking its visible border box
   // 20px shorter than exeCard's right next to it.
   syncBehaviorItem: { flex: '1 1 320px', minWidth: 320, marginBottom: 0 },
-  syncScopeCard: {
-    border: `1px solid ${colors.borderSubtle}`,
-    borderRadius: radii.lg,
-    padding: '16px 18px',
-    marginBottom: 20
-  },
   exeCard: {
     flex: '1 1 320px',
     minWidth: 320,
@@ -1108,7 +1104,11 @@ const styles: Record<string, React.CSSProperties> = {
   dangerZoneTitle: { fontFamily: fonts.display, fontSize: 13, fontWeight: 600, color: colors.text1, marginBottom: 3 },
   dangerZoneDesc: { fontSize: 12, color: colors.text3, lineHeight: 1.5 },
   dangerZoneBtn: { height: 36, padding: '0 16px', fontSize: 12.5, flexShrink: 0, whiteSpace: 'nowrap' },
-  savePathCard: {
+  // Save location + sync scope used to be two separate bordered cards
+  // stacked with a gap — same content, twice the border/padding overhead,
+  // and the "only me / shared" buttons sat full-width in their own box
+  // for no real reason. One card, one divider between the two sub-sections.
+  saveConfigCard: {
     border: `1px solid ${colors.borderSubtle}`,
     borderRadius: radii.lg,
     padding: '16px 18px',
@@ -1118,6 +1118,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderColor: colors.warningBd,
     boxShadow: `0 0 0 1px ${colors.warningBd}`
   },
+  cardDivider: { height: 1, background: colors.borderSubtle, margin: '16px 0' },
   savePathTopRow: {
     display: 'flex',
     alignItems: 'center',

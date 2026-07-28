@@ -1318,34 +1318,6 @@ export function removeFolderFromRegistry(
   })
 }
 
-/** Unregister a custom game WITHOUT touching its synced content — used only
- *  by games:set-game-personal's shared→personal flip, one level up from
- *  removeFolderFromRegistry's exact same reasoning: the content keeps
- *  syncing (now under the personal path), it just stops being visible to a
- *  co-op partner. No-op if this appId was never actually in the registry
- *  (nothing to unregister — e.g. its initial push had failed, or it's a
- *  catalog game, which is never registry-tracked at all). */
-export function unshareCustomGameFromRegistry(
-  token: string,
-  owner: string,
-  actor: string,
-  appId: string
-): Promise<void> {
-  return withCustomGameRepoLock(async () => {
-    await ensureRepo(token, owner)
-    const current = await readCustomGamesRegistry()
-    if (current === null) throw makeAppError('GIT_GENERIC', { detail: 'registry unreadable' })
-    const entry = current.find((e) => e.appId === appId)
-    if (!entry) return
-    const next = current.filter((e) => e.appId !== appId)
-    await mkdir(join(repoDir(), '.meta'), { recursive: true })
-    await writeFile(customGamesRegistryPath(), JSON.stringify(next, null, 2))
-    await git(['add', '-A'])
-    await git([...identityFlags(actor), 'commit', '-m', `custom-game: unshare ${entry.name}`])
-    await git(['push', 'origin', 'main'])
-  })
-}
-
 /**
  * Download files from the cloud that are missing locally — without touching
  * existing local files (git-like behavior: add what's missing, don't

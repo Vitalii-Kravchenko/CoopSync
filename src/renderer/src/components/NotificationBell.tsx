@@ -12,6 +12,7 @@ import {
   AlertTriangleIcon,
   AlertCircleIcon
 } from './icons'
+import Button from './Button'
 import type { AppNotification, AppNotificationKind } from '../../../shared/types'
 
 // ISO timestamp -> "2 min ago" / "1 hr ago" / "3 days ago" (localized).
@@ -202,8 +203,32 @@ function NotificationBell(): React.JSX.Element {
 // hover state, background switches between transparent and bgHover.
 function NotificationItem({ n, t }: { n: AppNotification; t: Translation }): React.JSX.Element {
   const [hover, setHover] = useState(false)
+  const [restoring, setRestoring] = useState(false)
+  const [restored, setRestored] = useState(false)
   const { title, body } = describe(n, t)
   const { Icon, color, bg } = KIND_STYLE[n.kind]
+
+  // "Restore just for myself" (see sync.ts's CustomGame.orphaned/personal
+  // doc comments) — only these two kinds carry the appId (and, for a
+  // folder, folderId) needed to act; an older notification logged before
+  // this feature shipped won't have them, so the button just doesn't show.
+  const canRestore =
+    (n.kind === 'game-removed' && !!n.params.appId) ||
+    (n.kind === 'folder-removed' && !!n.params.appId && !!n.params.folderId)
+
+  async function handleRestore(): Promise<void> {
+    setRestoring(true)
+    try {
+      if (n.kind === 'folder-removed') {
+        await window.api.games.restoreOrphanedFolder(n.params.appId, n.params.folderId)
+      } else {
+        await window.api.games.restoreOrphanedGame(n.params.appId)
+      }
+      setRestored(true)
+    } finally {
+      setRestoring(false)
+    }
+  }
 
   return (
     <div
@@ -225,6 +250,26 @@ function NotificationItem({ n, t }: { n: AppNotification; t: Translation }): Rea
           {!n.read && <span style={styles.unreadDot} />}
         </div>
         <div style={styles.itemText}>{body}</div>
+        {canRestore && (
+          <div style={{ marginTop: 8 }}>
+            {restored ? (
+              <span style={styles.restoredLabel}>{t.notifications.restored}</span>
+            ) : (
+              <Button
+                variant="secondary"
+                style={styles.restoreBtn}
+                disabled={restoring}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  void handleRestore()
+                }}
+              >
+                {restoring && <span className="spinner" />}
+                {restoring ? t.notifications.restoring : t.notifications.restoreAction}
+              </Button>
+            )}
+          </div>
+        )}
         <div style={styles.itemTime}>{formatRelativeTime(n.createdAt, t)}</div>
       </div>
     </div>
@@ -317,7 +362,9 @@ const styles: Record<string, React.CSSProperties> = {
   },
   unreadDot: { width: 6, height: 6, borderRadius: '50%', background: colors.cy, flexShrink: 0 },
   itemText: { fontFamily: fonts.body, fontSize: 12.5, color: colors.text2, lineHeight: 1.45 },
-  itemTime: { fontFamily: fonts.mono, fontSize: 11, color: colors.text3, marginTop: 5 }
+  itemTime: { fontFamily: fonts.mono, fontSize: 11, color: colors.text3, marginTop: 5 },
+  restoreBtn: { height: 28, padding: '0 12px', fontSize: 12 },
+  restoredLabel: { fontSize: 12, color: colors.success, fontWeight: 600 }
 }
 
 export default NotificationBell

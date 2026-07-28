@@ -40,6 +40,7 @@ export const ru: Translation = {
     statusNoSaves: 'Сейвов нет',
     statusNoRepo: 'Хранилище не подключено',
     statusNeedsSetup: 'Нужна настройка',
+    statusOrphaned: 'Удалено из группы',
     statusChecking: 'Проверяю…',
     unsupported: 'Не поддерживается',
     syncing: 'Синхронизирую…',
@@ -240,11 +241,14 @@ export const ru: Translation = {
     syncConflictTitle: 'Синхронизация пропущена',
     accessRevokedTitle: 'Доступ отозван',
     accessRevokedBody: (host) => `У тебя больше нет доступа к общему хранилищу ${host}.`,
-    gameRemovedTitle: 'Игра удалена',
-    gameRemovedBody: (game) => `«${game}» удалена из коопа — друг убрал её из списка.`,
-    folderRemovedTitle: 'Папка больше не общая',
+    gameRemovedTitle: 'Игра удалена из группы',
+    gameRemovedBody: (game) => `«${game}» удалена из кооп-группы. Твои собственные файлы не тронуты.`,
+    folderRemovedTitle: 'Папка удалена из группы',
     folderRemovedBody: (game, folder) =>
-      `«${game} / ${folder}» больше не общая — либо удалена, либо друг сделал её личной.`
+      `«${game} / ${folder}» удалена из кооп-группы. Твои собственные файлы не тронуты.`,
+    restoreAction: 'Восстановить только для себя',
+    restoring: 'Восстанавливаю…',
+    restored: 'Восстановлено — синхронизируется теперь только для тебя'
   },
   onboarding: {
     welcomeTitle: 'Добро пожаловать в CoopSync!',

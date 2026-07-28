@@ -251,14 +251,14 @@ async function tick(
         // BUT only if the cloud is newer. Otherwise we'd overwrite newer local progress.
         let statuses: Awaited<ReturnType<typeof getSyncStatuses>> | null = null
         try {
-          const restored = await restoreMissingFiles(token, owner, game.appId)
+          const restored = await restoreMissingFiles(token, owner, game.appId, actor)
           statuses = await getSyncStatuses(token, owner, actor)
           const st = statuses.find((s) => s.appId === game.appId)
           if (
             st &&
             (st.status === 'remote-newer' || st.status === 'cloud-only' || st.status === 'local-stale')
           ) {
-            const result = await downloadGame(token, owner, game.appId)
+            const result = await downloadGame(token, owner, game.appId, actor)
             onEvent({
               appId: game.appId,
               name: game.name,

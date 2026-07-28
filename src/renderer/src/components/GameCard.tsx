@@ -114,6 +114,8 @@ export function syncDisplay(
       }
     case 'needs-setup':
       return { color: colors.warning, bg: colors.warningBg, bd: colors.warningBd, text: t.gameCard.statusNeedsSetup }
+    case 'orphaned':
+      return { color: colors.danger, bg: colors.dangerBg, bd: colors.dangerBd, text: t.gameCard.statusOrphaned }
     default:
       return {
         color: colors.text3,

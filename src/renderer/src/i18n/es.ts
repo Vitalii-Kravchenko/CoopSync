@@ -40,6 +40,7 @@ export const es: Translation = {
     statusNoSaves: 'Sin partidas guardadas',
     statusNoRepo: 'Repositorio no conectado',
     statusNeedsSetup: 'Necesita configuración',
+    statusOrphaned: 'Eliminado del grupo',
     statusChecking: 'Comprobando…',
     unsupported: 'No compatible',
     syncing: 'Sincronizando…',
@@ -240,11 +241,14 @@ export const es: Translation = {
     syncConflictTitle: 'Sincronización omitida',
     accessRevokedTitle: 'Acceso revocado',
     accessRevokedBody: (host) => `Ya no tienes acceso al almacenamiento compartido de ${host}.`,
-    gameRemovedTitle: 'Juego eliminado',
-    gameRemovedBody: (game) => `"${game}" se eliminó del co-op — tu amigo lo quitó de la lista.`,
-    folderRemovedTitle: 'La carpeta ya no se comparte',
+    gameRemovedTitle: 'Juego eliminado del grupo',
+    gameRemovedBody: (game) => `"${game}" se eliminó del grupo co-op. Tus propios archivos siguen intactos.`,
+    folderRemovedTitle: 'Carpeta eliminada del grupo',
     folderRemovedBody: (game, folder) =>
-      `"${game} / ${folder}" ya no se comparte — se eliminó, o tu amigo la puso como solo personal.`
+      `"${game} / ${folder}" se eliminó del grupo co-op. Tus propios archivos siguen intactos.`,
+    restoreAction: 'Restaurar solo para mí',
+    restoring: 'Restaurando…',
+    restored: 'Restaurado — ahora se sincroniza solo para ti'
   },
   onboarding: {
     welcomeTitle: '¡Bienvenido a CoopSync!',

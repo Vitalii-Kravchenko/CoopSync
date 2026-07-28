@@ -40,6 +40,7 @@ export const tr: Translation = {
     statusNoSaves: 'Kayıt yok',
     statusNoRepo: 'Depo bağlı değil',
     statusNeedsSetup: 'Kurulum gerekiyor',
+    statusOrphaned: 'Gruptan kaldırıldı',
     statusChecking: 'Kontrol ediliyor…',
     unsupported: 'Desteklenmiyor',
     syncing: 'Senkronize ediliyor…',
@@ -241,11 +242,14 @@ export const tr: Translation = {
     syncConflictTitle: 'Senkronizasyon atlandı',
     accessRevokedTitle: 'Erişim iptal edildi',
     accessRevokedBody: (host) => `Artık ${host} kullanıcısının paylaşılan deposuna erişimin yok.`,
-    gameRemovedTitle: 'Oyun kaldırıldı',
-    gameRemovedBody: (game) => `"${game}" co-op'tan kaldırıldı — arkadaşın onu listeden çıkardı.`,
-    folderRemovedTitle: 'Klasör artık paylaşılmıyor',
+    gameRemovedTitle: 'Oyun gruptan kaldırıldı',
+    gameRemovedBody: (game) => `"${game}" co-op grubundan kaldırıldı. Kendi dosyaların dokunulmadan duruyor.`,
+    folderRemovedTitle: 'Klasör gruptan kaldırıldı',
     folderRemovedBody: (game, folder) =>
-      `"${game} / ${folder}" artık paylaşılmıyor — ya kaldırıldı, ya da arkadaşın onu kişisel yaptı.`
+      `"${game} / ${folder}" co-op grubundan kaldırıldı. Kendi dosyaların dokunulmadan duruyor.`,
+    restoreAction: 'Sadece benim için geri yükle',
+    restoring: 'Geri yükleniyor…',
+    restored: 'Geri yüklendi — artık sadece senin için senkronize ediliyor'
   },
   onboarding: {
     welcomeTitle: "CoopSync'e hoş geldin!",

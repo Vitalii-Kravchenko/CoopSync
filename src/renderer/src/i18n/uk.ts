@@ -40,6 +40,7 @@ export const uk: Translation = {
     statusNoSaves: 'Сейвів нема',
     statusNoRepo: 'Сховище не підключено',
     statusNeedsSetup: 'Потрібне налаштування',
+    statusOrphaned: 'Видалено з групи',
     statusChecking: 'Перевіряю…',
     unsupported: 'Не підтримується',
     syncing: 'Синхронізую…',
@@ -240,11 +241,14 @@ export const uk: Translation = {
     syncConflictTitle: 'Синк пропущено',
     accessRevokedTitle: 'Доступ відкликано',
     accessRevokedBody: (host) => `У тебе більше немає доступу до сховища ${host}.`,
-    gameRemovedTitle: 'Гру видалено',
-    gameRemovedBody: (game) => `«${game}» видалено з коопу — друг прибрав її зі списку.`,
-    folderRemovedTitle: 'Папку більше не видно',
+    gameRemovedTitle: 'Гру видалено з групи',
+    gameRemovedBody: (game) => `«${game}» видалено з коопу — друг прибрав її. Твої файли лишились на місці.`,
+    folderRemovedTitle: 'Папку видалено з групи',
     folderRemovedBody: (game, folder) =>
-      `«${game} / ${folder}» більше не спільна — або видалена, або друг зробив її особистою.`
+      `«${game} / ${folder}» видалено з коопу. Твої файли лишились на місці.`,
+    restoreAction: 'Відновити тільки для себе',
+    restoring: 'Відновлюю…',
+    restored: 'Відновлено — синкається тільки для тебе'
   },
   onboarding: {
     welcomeTitle: 'Ласкаво просимо до CoopSync!',

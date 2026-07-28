@@ -146,6 +146,22 @@ export interface CustomGame {
    *  side a missing registry entry looked identical to their own initial
    *  push having failed. */
   registryConfirmed?: boolean
+  /** Set by getSyncStatuses' self-heal the moment it notices someone else
+   *  removed this game from the shared registry (see registryConfirmed
+   *  above) — replaces the old behavior of silently deleting the local copy
+   *  too. Local files/settings are left untouched; the game just stops
+   *  syncing until the user picks a next step via the game-removed
+   *  notification's Restore action (see `personal` below), same idea one
+   *  level down as CustomExtraFolder.orphaned. */
+  orphaned?: boolean
+  /** True once the user has restored an orphaned game "just for themself"
+   *  (ipc.ts's games:restore-orphaned-game) — it keeps syncing to the SAME
+   *  shared repo, but under a path namespaced by their own login (mirrors
+   *  CustomExtraFolder's shared:false personal path), invisible to anyone
+   *  else and never pushed back to the shared registry. Mutually exclusive
+   *  with ever being registryConfirmed again — a personal game has
+   *  deliberately opted out of the shared group. */
+  personal?: boolean
   /** Additional save folders beyond the one above (e.g. a folder for
    *  character saves kept separate from world saves, Terraria-style) — each
    *  is independently synced. Optional/undefined = none added. */
@@ -182,6 +198,13 @@ export interface CustomExtraFolder {
    *  — treated permissively (anyone may still change it) rather than
    *  locking out folders that predate the restriction. */
   addedBy?: string
+  /** Same idea as CustomGame.orphaned, one level down — set when
+   *  getSyncStatuses' self-heal notices this SHARED folder vanished from the
+   *  registry (someone deleted it). Content/settings are left alone; syncing
+   *  just stops until the user restores it "just for themself" via the
+   *  folder-removed notification's Restore action, which simply flips
+   *  `shared` to false (see its own doc comment) and clears this flag. */
+  orphaned?: boolean
 }
 
 /** Sync status of one CustomGame.extraFolders entry — mirrors GameSyncStatus
@@ -211,6 +234,7 @@ export type SyncStatus =
   | 'no-saves' // neither exists
   | 'no-repo' // repo deleted/not connected — nothing to compare cloud versions against
   | 'needs-setup' // a co-op partner added this custom game — this PC hasn't set its local save folder yet
+  | 'orphaned' // someone else removed this from the shared group — see CustomGame.orphaned/CustomExtraFolder.orphaned
 
 export interface GameSyncStatus {
   appId: string
@@ -248,8 +272,8 @@ export type AppNotificationKind =
   | 'friend-declined' // params: { login }
   | 'sync-conflict-skipped' // params: { game }
   | 'access-revoked' // params: { host }
-  | 'game-removed' // params: { game }
-  | 'folder-removed' // params: { game, folder } — an extra folder (see CustomGame.extraFolders), not the whole game
+  | 'game-removed' // params: { game, appId } — game is now orphaned (see CustomGame.orphaned), Restore action re-syncs it personal-only
+  | 'folder-removed' // params: { game, folder, appId, folderId } — an extra folder (CustomGame.extraFolders) went orphaned, same Restore idea one level down
 
 /** A single bell entry. main only knows kind+params (like AutoSyncEvent) —
  * the renderer localizes title/body from them. */

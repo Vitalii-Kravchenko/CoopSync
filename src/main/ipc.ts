@@ -33,10 +33,9 @@ import {
   uploadAvatar,
   getAvatars,
   pushCustomGameToRegistry,
-  removeCustomGameFromRegistry,
+  deleteCustomGameContent,
   renameCustomGameInRegistry,
   pushCustomGameCover,
-  purgeGameHistory,
   uploadExtraFolder,
   downloadExtraFolder,
   pushFolderToRegistry,
@@ -74,7 +73,9 @@ import {
   setExtraFolderShared,
   addPendingFolderRemoval,
   hasExtraFolderLabel,
-  extraFolderPathConflict
+  extraFolderPathConflict,
+  restoreOrphanedCustomGame,
+  restoreOrphanedFolder
 } from './games/customGames'
 import { scanForExecutables } from './games/exeScan'
 import { saveToken, loadToken, clearToken } from './services/tokenStore'
@@ -601,9 +602,13 @@ export function registerIpcHandlers(): void {
     return basename(result.filePaths[0])
   })
 
-  // Remove a manually-added game (stops syncing it — doesn't touch its
-  // local save files or anything already pushed to the shared repo).
+  // Remove a manually-added game — for good: deletes its save content,
+  // version meta, cover, and history from the shared repo too, not just the
+  // local reference (used to leave the real files behind forever, silently
+  // eating GitHub storage with no way to reclaim it — Vitalii's call,
+  // 2026-07-28). Never touches this game's own local save files.
   ipcMain.handle('games:remove-custom', async (_event, appId: string): Promise<void> => {
+    const gameName = listCustomGames().find((g) => g.appId === appId)?.name
     removeCustomGame(appId)
     // Best-effort — no login/repo/internet yet shouldn't block removing a
     // game locally. But a partner who already materialized this game only
@@ -616,32 +621,28 @@ export function registerIpcHandlers(): void {
     try {
       const { token, owner } = await syncTarget()
       const { owner: actor } = await requireAuth()
-      await removeCustomGameFromRegistry(token, owner, actor, appId)
+      await deleteCustomGameContent(token, owner, actor, appId, gameName)
     } catch {
       addPendingCustomGameRemoval(appId)
     }
-    // The cover is small, purely cosmetic, and — unlike the save data itself
-    // — has no "history" a co-op partner would ever want preserved after a
-    // deliberate removal, so (unlike the save folder) it's cleaned up right
-    // away rather than left orphaned in .meta/covers forever. Best-effort:
-    // a failure here just leaves one stale cover file behind, not worth its
-    // own retry-tracking the way the registry entry above needs.
+  })
+
+  // "Restore just for myself" from the game-removed notification (Vitalii's
+  // call, 2026-07-28) — a co-op partner removed this game from the shared
+  // group; the local copy was kept (never deleted, see CustomGame.orphaned),
+  // this just flips it personal and re-syncs it right away so the status
+  // pill doesn't sit on "orphaned" until the next launch/exit. The push is
+  // best-effort — a failure here (offline, save folder briefly missing) just
+  // means the game stays personal but not yet synced, exactly like any other
+  // regular upload failure; the next auto-sync or manual Upload click retries it.
+  ipcMain.handle('games:restore-orphaned-game', async (_event, appId: string): Promise<void> => {
+    restoreOrphanedCustomGame(appId)
     try {
       const { token, owner } = await syncTarget()
       const { owner: actor } = await requireAuth()
-      await pushCustomGameCover(token, owner, actor, appId, null)
+      await uploadGame(token, owner, appId, actor)
     } catch {
-      // Not retried — see comment above.
-    }
-    // Same reasoning as the cover cleanup right above — a deleted game's
-    // sync history is just clutter in the History screen from then on, not
-    // something worth preserving indefinitely.
-    try {
-      const { token, owner } = await syncTarget()
-      const { owner: actor } = await requireAuth()
-      await purgeGameHistory(token, owner, actor, appId)
-    } catch {
-      // Not retried — see comment above.
+      // Best-effort — see doc comment above.
     }
   })
 
@@ -836,6 +837,24 @@ export function registerIpcHandlers(): void {
     }
   })
 
+  // "Restore just for myself" from the folder-removed notification — same
+  // idea as games:restore-orphaned-game, one level down: flips the folder
+  // personal (setExtraFolderShared's own shared:false path) and re-syncs it
+  // right away, best-effort.
+  ipcMain.handle(
+    'games:restore-orphaned-folder',
+    async (_event, appId: string, folderId: string): Promise<void> => {
+      restoreOrphanedFolder(appId, folderId)
+      try {
+        const { token, owner } = await syncTarget()
+        const { owner: actor } = await requireAuth()
+        await uploadExtraFolder(token, owner, appId, folderId, actor)
+      } catch {
+        // Best-effort — see games:restore-orphaned-game's doc comment.
+      }
+    }
+  )
+
   // A folder's label is never a repo path segment (folder.id — a uuid — is),
   // so unlike a game rename this never touches the shared repo's file
   // layout — just the registry entry, if it's shared.
@@ -957,7 +976,8 @@ export function registerIpcHandlers(): void {
   // Download the game's saves from GitHub (from the host's repo).
   ipcMain.handle('sync:download', async (_event, appId: string): Promise<SyncResult> => {
     const { token, owner } = await syncTarget()
-    return downloadGame(token, owner, appId)
+    const { owner: actor } = await requireAuth()
+    return downloadGame(token, owner, appId, actor)
   })
 
   // Upload/download an extra folder's saves — same as sync:upload/download,

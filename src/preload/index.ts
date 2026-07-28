@@ -101,6 +101,10 @@ const api = {
       ipcRenderer.invoke('games:add-custom', name, savePath, processNames, coverDataUrl),
     /** Remove a manually-added game. */
     removeCustom: (appId: string): Promise<void> => ipcRenderer.invoke('games:remove-custom', appId),
+    /** "Restore just for myself" an orphaned game (see the game-removed
+     *  notification) — keeps its local save data, re-syncs it personal-only. */
+    restoreOrphanedGame: (appId: string): Promise<void> =>
+      ipcRenderer.invoke('games:restore-orphaned-game', appId),
     /** Rename a manually-added game. */
     renameCustom: (appId: string, name: string): Promise<void> =>
       ipcRenderer.invoke('games:rename-custom', appId, name),
@@ -143,6 +147,10 @@ const api = {
       ipcRenderer.invoke('games:add-extra-folder', appId, label, savePath, shared),
     removeExtraFolder: (appId: string, folderId: string): Promise<void> =>
       ipcRenderer.invoke('games:remove-extra-folder', appId, folderId),
+    /** "Restore just for myself" an orphaned folder (see the folder-removed
+     *  notification) — same idea as restoreOrphanedGame, one level down. */
+    restoreOrphanedFolder: (appId: string, folderId: string): Promise<void> =>
+      ipcRenderer.invoke('games:restore-orphaned-folder', appId, folderId),
     renameExtraFolder: (appId: string, folderId: string, label: string): Promise<void> =>
       ipcRenderer.invoke('games:rename-extra-folder', appId, folderId, label),
     pickExtraFolderSaveFolder: (): Promise<string | null> =>

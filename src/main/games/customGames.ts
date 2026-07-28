@@ -183,6 +183,34 @@ export function removeCustomGame(appId: string): void {
   setSavePathOverride(appId, null)
 }
 
+/** Someone else removed this game from the shared registry — see
+ *  CustomGame.orphaned's doc comment. No-op if appId isn't a locally-known
+ *  custom game, or already orphaned. */
+export function markCustomGameOrphaned(appId: string): void {
+  writeSettings({
+    customGames: listCustomGames().map((g) => (g.appId === appId && !g.orphaned ? { ...g, orphaned: true } : g))
+  })
+}
+
+/** "Restore just for myself" (ipc.ts's games:restore-orphaned-game) — keeps
+ *  the local game exactly as it was, clears the orphaned flag, and flips it
+ *  personal: from here on it syncs to a login-namespaced path in the SAME
+ *  shared repo (see sync.ts's mainContentDir), invisible to anyone else and
+ *  never pushed back to the shared registry. registryConfirmed is reset too
+ *  — code that branches on it (e.g. ipc.ts's games:rename-custom) must treat
+ *  a personal game as never-registered, not as "registered, needs a registry
+ *  push" (it must never touch the shared registry again). No-op if appId
+ *  isn't a locally-known custom game. */
+export function restoreOrphanedCustomGame(appId: string): void {
+  writeSettings({
+    customGames: listCustomGames().map((g) =>
+      g.appId === appId
+        ? { ...g, orphaned: undefined, personal: true, registryConfirmed: undefined }
+        : g
+    )
+  })
+}
+
 export function getPendingCustomGameRemovals(): string[] {
   return readSettings().pendingCustomGameRemovals ?? []
 }
@@ -349,6 +377,28 @@ export function setExtraFolderShared(appId: string, folderId: string, shared: bo
 
 export function markExtraFolderRegistryConfirmed(appId: string, folderId: string): void {
   updateFolder(appId, folderId, (f) => (f.registryConfirmed ? f : { ...f, registryConfirmed: true }))
+}
+
+/** Someone else removed this SHARED folder from the registry — see
+ *  CustomExtraFolder.orphaned's doc comment. No-op if already orphaned. */
+export function markExtraFolderOrphaned(appId: string, folderId: string): void {
+  updateFolder(appId, folderId, (f) => (f.orphaned ? f : { ...f, orphaned: true }))
+}
+
+/** "Restore just for myself" (ipc.ts's games:restore-orphaned-folder) —
+ *  flips the folder to personal (shared: false, same setting
+ *  setExtraFolderShared's own toggle uses) and clears orphaned +
+ *  registryConfirmed, so it's treated as never-registered everywhere else
+ *  that checks those flags. From the next sync (auto or manual) its content
+ *  lands under the personal path (extraFolderContentDir), invisible to
+ *  anyone else. */
+export function restoreOrphanedFolder(appId: string, folderId: string): void {
+  updateFolder(appId, folderId, (f) => ({
+    ...f,
+    shared: false,
+    orphaned: undefined,
+    registryConfirmed: undefined
+  }))
 }
 
 // A co-op partner added a SHARED extra folder and pushed it to the registry

@@ -68,6 +68,7 @@ export interface Translation {
     statusNoRepo: string
     statusChecking: string
     statusNeedsSetup: string
+    statusOrphaned: string
     unsupported: string
     syncing: string
     upload: string
@@ -265,6 +266,12 @@ export interface Translation {
     gameRemovedBody: (game: string) => string
     folderRemovedTitle: string
     folderRemovedBody: (game: string, folder: string) => string
+    /** Action button on the game-removed/folder-removed notification —
+     *  keeps the local copy, re-syncs it just for the clicker (see
+     *  CustomGame.orphaned/personal). */
+    restoreAction: string
+    restoring: string
+    restored: string
   }
   onboarding: {
     welcomeTitle: string

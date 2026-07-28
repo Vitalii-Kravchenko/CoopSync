@@ -38,6 +38,7 @@ export const zhCN: Translation = {
     statusNoSaves: '没有存档',
     statusNoRepo: '仓库未连接',
     statusNeedsSetup: '需要设置',
+    statusOrphaned: '已从组中移除',
     statusChecking: '正在检查…',
     unsupported: '不支持',
     syncing: '同步中…',
@@ -230,10 +231,13 @@ export const zhCN: Translation = {
     syncConflictTitle: '同步已跳过',
     accessRevokedTitle: '访问权限已被取消',
     accessRevokedBody: (host) => `你已不再拥有 ${host} 共享存储的访问权限。`,
-    gameRemovedTitle: '游戏已移除',
-    gameRemovedBody: (game) => `《${game}》已从联机列表中移除——好友把它从列表里删掉了。`,
-    folderRemovedTitle: '文件夹不再共享',
-    folderRemovedBody: (game, folder) => `"${game} / ${folder}" 不再共享——已被移除，或好友把它设为了仅个人。`
+    gameRemovedTitle: '游戏已从小组移除',
+    gameRemovedBody: (game) => `《${game}》已从联机小组移除。你自己的文件未受影响。`,
+    folderRemovedTitle: '文件夹已从小组移除',
+    folderRemovedBody: (game, folder) => `"${game} / ${folder}" 已从联机小组移除。你自己的文件未受影响。`,
+    restoreAction: '仅为自己恢复',
+    restoring: '正在恢复…',
+    restored: '已恢复——现在仅为你同步'
   },
   onboarding: {
     welcomeTitle: '欢迎使用 CoopSync！',

@@ -40,6 +40,7 @@ export const de: Translation = {
     statusNoSaves: 'Keine Spielstände',
     statusNoRepo: 'Repository nicht verbunden',
     statusNeedsSetup: 'Einrichtung nötig',
+    statusOrphaned: 'Aus der Gruppe entfernt',
     statusChecking: 'Wird geprüft…',
     unsupported: 'Nicht unterstützt',
     syncing: 'Synchronisiere…',
@@ -241,11 +242,14 @@ export const de: Translation = {
     syncConflictTitle: 'Synchronisierung übersprungen',
     accessRevokedTitle: 'Zugriff entzogen',
     accessRevokedBody: (host) => `Du hast keinen Zugriff mehr auf den gemeinsamen Speicher von ${host}.`,
-    gameRemovedTitle: 'Spiel entfernt',
-    gameRemovedBody: (game) => `„${game}" wurde aus dem Koop entfernt — dein Freund hat es von der Liste genommen.`,
-    folderRemovedTitle: 'Ordner nicht mehr geteilt',
+    gameRemovedTitle: 'Spiel aus der Gruppe entfernt',
+    gameRemovedBody: (game) => `„${game}" wurde aus der Koop-Gruppe entfernt. Deine eigenen Dateien sind unberührt.`,
+    folderRemovedTitle: 'Ordner aus der Gruppe entfernt',
     folderRemovedBody: (game, folder) =>
-      `„${game} / ${folder}" wird nicht mehr geteilt — entweder entfernt, oder dein Freund hat ihn auf privat gestellt.`
+      `„${game} / ${folder}" wurde aus der Koop-Gruppe entfernt. Deine eigenen Dateien sind unberührt.`,
+    restoreAction: 'Nur für mich wiederherstellen',
+    restoring: 'Wird wiederhergestellt…',
+    restored: 'Wiederhergestellt — synct jetzt nur für dich'
   },
   onboarding: {
     welcomeTitle: 'Willkommen bei CoopSync!',

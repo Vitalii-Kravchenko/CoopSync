@@ -40,6 +40,7 @@ export const pl: Translation = {
     statusNoSaves: 'Brak zapisów',
     statusNoRepo: 'Repozytorium niepodłączone',
     statusNeedsSetup: 'Wymaga konfiguracji',
+    statusOrphaned: 'Usunięto z grupy',
     statusChecking: 'Sprawdzam…',
     unsupported: 'Nieobsługiwana',
     syncing: 'Synchronizuję…',
@@ -240,11 +241,14 @@ export const pl: Translation = {
     syncConflictTitle: 'Synchronizacja pominięta',
     accessRevokedTitle: 'Dostęp cofnięty',
     accessRevokedBody: (host) => `Nie masz już dostępu do wspólnego magazynu ${host}.`,
-    gameRemovedTitle: 'Gra usunięta',
-    gameRemovedBody: (game) => `„${game}" zostało usunięte z coopa — znajomy usunął ją z listy.`,
-    folderRemovedTitle: 'Folder już nie współdzielony',
+    gameRemovedTitle: 'Gra usunięta z grupy',
+    gameRemovedBody: (game) => `„${game}" zostało usunięte z grupy coop. Twoje pliki zostały nietknięte.`,
+    folderRemovedTitle: 'Folder usunięty z grupy',
     folderRemovedBody: (game, folder) =>
-      `„${game} / ${folder}" nie jest już współdzielony — albo usunięty, albo znajomy zmienił go na osobisty.`
+      `„${game} / ${folder}" zostało usunięte z grupy coop. Twoje pliki zostały nietknięte.`,
+    restoreAction: 'Przywróć tylko dla mnie',
+    restoring: 'Przywracanie…',
+    restored: 'Przywrócono — synchronizuje się teraz tylko dla ciebie'
   },
   onboarding: {
     welcomeTitle: 'Witamy w CoopSync!',

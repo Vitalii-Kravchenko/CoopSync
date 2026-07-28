@@ -13,15 +13,15 @@ import {
   listCustomGames,
   setCustomGameCover,
   setCustomGameName,
-  removeCustomGame,
   getPendingCustomGameRemovals,
   clearPendingCustomGameRemoval,
   markCustomGameRegistryConfirmed,
+  markCustomGameOrphaned,
   buildExcludePattern,
   materializeRemoteExtraFolder,
   markExtraFolderRegistryConfirmed,
+  markExtraFolderOrphaned,
   setExtraFolderLabel,
-  removeExtraFolder,
   getPendingFolderRemovals,
   clearPendingFolderRemoval
 } from '../games/customGames'
@@ -59,8 +59,15 @@ function repoDir(): string {
 // 2026-07-27 — see extraFolderContentDir's doc comment for the exact
 // feedback-loop bug that caused (main folder's rm+recopy wiping an extra
 // folder that lived inside it, and vice versa for its hash).
-function mainContentDir(gameName: string): string {
-  return join(repoDir(), gameName, 'main')
+// personalLogin (set only for a CustomGame with personal:true — see its own
+// doc comment) routes to a path namespaced by that login instead, mirroring
+// extraFolderContentDir's shared/personal split one level up: a restored
+// "just for myself" game keeps syncing to the SAME repo, just invisible to
+// anyone else and never registered.
+function mainContentDir(gameName: string, personalLogin?: string): string {
+  return personalLogin
+    ? join(repoDir(), gameName, 'main-personal', personalLogin)
+    : join(repoDir(), gameName, 'main')
 }
 
 // Repo URL with the token for private access (push/pull without a separate git login).
@@ -225,6 +232,17 @@ function findGame(appId: string): { name: string; savePath: string; saveFilePatt
   return { name: g.name, savePath, saveFilePattern: g.saveFilePattern }
 }
 
+// Only a CustomGame can be personal (see its own doc comment) — a catalog
+// game is always shared, there's no local record to check. `actor` doubles
+// as the personal path's namespace: whoever is running THIS client is the
+// only one who could ever have personal:true set for this appId locally —
+// nobody else's copy of the app has this game at all once it's orphaned.
+function personalLoginFor(appId: string, actor: string): string | undefined {
+  return isCustomGameId(appId) && listCustomGames().find((g) => g.appId === appId)?.personal
+    ? actor
+    : undefined
+}
+
 // Copies a folder, skipping files (not folders) that don't match the game's
 // pattern — needed for games where the same saves folder also contains
 // account-specific files that must not be moved to a different PC (see
@@ -262,8 +280,13 @@ async function clearFiltered(dir: string, pattern?: RegExp): Promise<void> {
 // --- Save versions ---
 // The cloud version lives in the repo at .meta/<game>.json; the local one — in userData.
 
-function remoteMetaPath(name: string): string {
-  return join(repoDir(), '.meta', `${name}.json`)
+// personalLogin — see mainContentDir's doc comment; a personal game's
+// version meta lives in its own file so it can never collide with (or feed)
+// the shared one a co-op partner reads.
+function remoteMetaPath(name: string, personalLogin?: string): string {
+  return personalLogin
+    ? join(repoDir(), '.meta', `${name}-personal-${personalLogin}.json`)
+    : join(repoDir(), '.meta', `${name}.json`)
 }
 
 interface RemoteMeta {
@@ -272,8 +295,8 @@ interface RemoteMeta {
   updatedBy: string
 }
 
-async function readRemoteMeta(name: string): Promise<RemoteMeta | null> {
-  const p = remoteMetaPath(name)
+async function readRemoteMeta(name: string, personalLogin?: string): Promise<RemoteMeta | null> {
+  const p = remoteMetaPath(name, personalLogin)
   if (!existsSync(p)) return null
   try {
     // Strip a possible leading BOM — otherwise JSON.parse fails.
@@ -284,15 +307,15 @@ async function readRemoteMeta(name: string): Promise<RemoteMeta | null> {
   }
 }
 
-async function readRemoteVersion(name: string): Promise<number> {
-  const meta = await readRemoteMeta(name)
+async function readRemoteVersion(name: string, personalLogin?: string): Promise<number> {
+  const meta = await readRemoteMeta(name, personalLogin)
   return meta?.version ?? 0
 }
 
-async function writeRemoteMeta(name: string, version: number, owner: string): Promise<void> {
+async function writeRemoteMeta(name: string, version: number, owner: string, personalLogin?: string): Promise<void> {
   await mkdir(join(repoDir(), '.meta'), { recursive: true })
   const meta = { version, updatedAt: new Date().toISOString(), updatedBy: owner }
-  await writeFile(remoteMetaPath(name), JSON.stringify(meta, null, 2))
+  await writeFile(remoteMetaPath(name, personalLogin), JSON.stringify(meta, null, 2))
 }
 
 // The version number to use for a game's NEXT push, from ANY of its
@@ -369,26 +392,6 @@ async function appendHistory(entry: SyncHistoryEntry): Promise<void> {
   await writeFile(historyPath(), JSON.stringify(next, null, 2))
 }
 
-/** Drop every history entry for a game (matched by appId — covers both its
- *  main folder AND any extra folder, since those log under the same appId
- *  with just a "Game / Folder" label) — called right after a deliberate
- *  removal (see ipc.ts's games:remove-custom). Best-effort, same as the
- *  cover cleanup right next to it: a failure here just leaves stale rows in
- *  the History screen, not worth its own retry-tracking. */
-export function purgeGameHistory(token: string, owner: string, actor: string, appId: string): Promise<void> {
-  return withCustomGameRepoLock(async () => {
-    await ensureRepo(token, owner)
-    const current = await readHistory()
-    const next = current.filter((e) => e.appId !== appId)
-    if (next.length === current.length) return
-    await mkdir(join(repoDir(), '.meta'), { recursive: true })
-    await writeFile(historyPath(), JSON.stringify(next, null, 2))
-    await git(['add', '-A'])
-    await git([...identityFlags(actor), 'commit', '-m', `history: purge entries for removed game ${appId}`])
-    await git(['push', 'origin', 'main'])
-  })
-}
-
 /** Push event history, newest first. */
 export async function getSyncHistory(token: string, owner: string): Promise<SyncHistoryEntry[]> {
   try {
@@ -450,7 +453,8 @@ export async function uploadGame(
   const game = findGame(appId)
   if (!existsSync(game.savePath)) throw makeAppError('SAVE_FOLDER_NOT_FOUND')
 
-  const dest = mainContentDir(game.name)
+  const personalLogin = personalLoginFor(appId, actor)
+  const dest = mainContentDir(game.name, personalLogin)
 
   // If a cloud copy already exists and its content matches the local one
   // (no real changes — typical case: local version tracking got reset, but
@@ -462,7 +466,7 @@ export async function uploadGame(
       folderHash(dest, game.saveFilePattern)
     ])
     if (localHash === remoteHash) {
-      const remoteVersion = await readRemoteVersion(game.name)
+      const remoteVersion = await readRemoteVersion(game.name, personalLogin)
       await setLocalVersion(appId, remoteVersion)
       return { version: remoteVersion, pushed: false }
     }
@@ -473,15 +477,20 @@ export async function uploadGame(
   await copyFiltered(game.savePath, dest, game.saveFilePattern)
 
   const newVersion = explicitVersion ?? (await nextGameVersion(game.name))
-  await writeRemoteMeta(game.name, newVersion, actor)
-  await appendHistory({
-    appId,
-    gameName: game.name,
-    version: newVersion,
-    updatedBy: actor,
-    updatedAt: new Date().toISOString(),
-    ...(restoredFrom !== undefined ? { restoredFrom } : {})
-  })
+  await writeRemoteMeta(game.name, newVersion, actor, personalLogin)
+  // A personal push is never logged in the shared history — nobody else's
+  // client even knows this game still exists (same reasoning as a personal
+  // extra folder's uploadExtraFolder, right next to its own appendHistory).
+  if (!personalLogin) {
+    await appendHistory({
+      appId,
+      gameName: game.name,
+      version: newVersion,
+      updatedBy: actor,
+      updatedAt: new Date().toISOString(),
+      ...(restoredFrom !== undefined ? { restoredFrom } : {})
+    })
+  }
 
   await git(['add', '-A'])
   const restoreNote = restoredFrom !== undefined ? ` [restored from ${formatVersion(restoredFrom)}]` : ''
@@ -753,7 +762,7 @@ async function readCustomGamesRegistry(): Promise<RemoteCustomGameEntry[] | null
   }
 }
 
-// pushCustomGameToRegistry / removeCustomGameFromRegistry / pushCustomGameCover
+// pushCustomGameToRegistry / deleteCustomGameContent / pushCustomGameCover
 // are each called both directly (ipc.ts, right after a local add/remove/cover
 // change) AND from inside getSyncStatuses's own registry-sync/cover-adopt
 // passes (self-healing a previous failure, or reacting to a partner's
@@ -833,26 +842,69 @@ export function renameCustomGameInRegistry(
   })
 }
 
-/** Remove a custom game from the shared registry (best-effort — see ipc.ts's
- *  games:remove-custom). Never touches anyone's already-materialized local
- *  entry — a partner who already set up their save folder keeps working. */
-export function removeCustomGameFromRegistry(
+/** Remove a custom game for good — its registry entry, main+extra save
+ *  content, version meta, cover, and its own history.json entries, all in
+ *  one commit+push (see ipc.ts's games:remove-custom). Used to only touch
+ *  the registry (with the cover/history dropped separately, best-effort) —
+ *  the actual save content and version history stayed in the repo forever,
+ *  quietly eating GitHub storage with no way to reclaim it. Same bug and
+ *  same fix as deleteExtraFolderContent above; a whole game is just the
+ *  bigger version of it. --ignore-unmatch/--allow-empty: a game that was
+ *  added locally but never actually confirmed registered still needs a
+ *  clean commit even though there's nothing real on the remote side to
+ *  remove. Never touches anyone's OWN copy of this game — a partner keeps
+ *  playing on their own files; getSyncStatuses' self-heal is what notices
+ *  the registry entry vanished and reacts on their side. */
+export function deleteCustomGameContent(
   token: string,
   owner: string,
   actor: string,
-  appId: string
+  appId: string,
+  // The registry only ever knows a game's name if it was actually shared —
+  // for one that was added but never confirmed registered, there'd be
+  // nothing to fall back to here (the local record is already gone by the
+  // time this runs — ipc.ts's games:remove-custom removes it from
+  // settings.json before this call). The caller reads it while it's still
+  // there and passes it through instead.
+  knownGameName?: string
 ): Promise<void> {
   return withCustomGameRepoLock(async () => {
     await ensureRepo(token, owner)
     const current = await readCustomGamesRegistry()
     if (current === null) throw makeAppError('GIT_GENERIC', { detail: 'registry unreadable' })
+    const entry = current.find((e) => e.appId === appId)
     const next = current.filter((e) => e.appId !== appId)
-    if (next.length === current.length) return
-    await mkdir(join(repoDir(), '.meta'), { recursive: true })
-    await writeFile(customGamesRegistryPath(), JSON.stringify(next, null, 2))
+    if (next.length !== current.length) {
+      await mkdir(join(repoDir(), '.meta'), { recursive: true })
+      await writeFile(customGamesRegistryPath(), JSON.stringify(next, null, 2))
+    }
+
+    const history = await readHistory()
+    const nextHistory = history.filter((e) => e.appId !== appId)
+    if (nextHistory.length !== history.length) {
+      await mkdir(join(repoDir(), '.meta'), { recursive: true })
+      await writeFile(historyPath(), JSON.stringify(nextHistory, null, 2))
+    }
+
+    const gameName = entry?.name ?? knownGameName
+    if (gameName) {
+      // Whole <gameName>/ subtree — main content AND any extra folders live
+      // under it (mainContentDir/extraFolderContentDir), so this one rm
+      // covers both without walking the folder list separately.
+      await git(['rm', '-r', '--ignore-unmatch', gameName])
+      await git(['rm', '-r', '--ignore-unmatch', join('.meta', `${gameName}.json`)])
+      await git(['rm', '-r', '--ignore-unmatch', join('.meta', 'folders', gameName)])
+    }
+    await git(['rm', '-r', '--ignore-unmatch', join('.meta', 'covers', `${appId.replace(/:/g, '_')}.txt`)])
+
     await git(['add', '-A'])
-    const name = current.find((e) => e.appId === appId)?.name ?? appId
-    await git([...identityFlags(actor), 'commit', '-m', `custom-game: remove ${name}`])
+    await git([
+      ...identityFlags(actor),
+      'commit',
+      '--allow-empty',
+      '-m',
+      `custom-game: delete ${gameName ?? appId}`
+    ])
     await git(['push', 'origin', 'main'])
   })
 }
@@ -1275,10 +1327,15 @@ export function removeFolderFromRegistry(
  * pushed over the cloud.
  * Returns the number of restored files.
  */
-export async function restoreMissingFiles(token: string, owner: string, appId: string): Promise<number> {
+export async function restoreMissingFiles(
+  token: string,
+  owner: string,
+  appId: string,
+  actor: string
+): Promise<number> {
   await ensureRepo(token, owner)
   const game = findGame(appId)
-  const repoPath = mainContentDir(game.name)
+  const repoPath = mainContentDir(game.name, personalLoginFor(appId, actor))
   if (!existsSync(repoPath)) return 0
 
   let restored = 0
@@ -1303,18 +1360,24 @@ export async function restoreMissingFiles(token: string, owner: string, appId: s
 }
 
 /** Download the game's saves from GitHub into the local folder (pull). */
-export async function downloadGame(token: string, owner: string, appId: string): Promise<SyncResult> {
+export async function downloadGame(
+  token: string,
+  owner: string,
+  appId: string,
+  actor: string
+): Promise<SyncResult> {
   await ensureRepo(token, owner)
   const game = findGame(appId)
+  const personalLogin = personalLoginFor(appId, actor)
 
-  const src = mainContentDir(game.name)
+  const src = mainContentDir(game.name, personalLogin)
   if (!existsSync(src)) throw makeAppError('NO_CLOUD_SAVES')
 
   await mkdir(game.savePath, { recursive: true })
   await copyFiltered(src, game.savePath, game.saveFilePattern)
 
   // Local version now equals the cloud version.
-  const remoteVersion = await readRemoteVersion(game.name)
+  const remoteVersion = await readRemoteVersion(game.name, personalLogin)
   await setLocalVersion(appId, remoteVersion)
   return { version: remoteVersion }
 }
@@ -1554,6 +1617,11 @@ async function doGetSyncStatuses(token: string, owner: string, actor: string): P
       materializeRemoteCustomGame(entry.appId, entry.name)
     }
     for (const g of listCustomGames()) {
+      // Orphaned (awaiting the user's own Restore decision) or already
+      // restored personal — either way this game has deliberately opted out
+      // of the shared registry, permanently until the user acts again via
+      // the UI. Must never re-push it or re-flag it as newly orphaned.
+      if (g.orphaned || g.personal) continue
       if (registered.has(g.appId)) {
         if (!g.registryConfirmed) markCustomGameRegistryConfirmed(g.appId)
         // Someone renamed it (owner or not, same as a removal) — mirror the
@@ -1577,7 +1645,7 @@ async function doGetSyncStatuses(token: string, owner: string, actor: string): P
           materializeRemoteExtraFolder(g.appId, rf.id, rf.label, rf.addedBy)
         }
         for (const f of g.extraFolders ?? []) {
-          if (!f.shared) continue
+          if (!f.shared || f.orphaned) continue
           if (remoteFolderIds.has(f.id)) {
             if (!f.registryConfirmed) markExtraFolderRegistryConfirmed(g.appId, f.id)
             const rLabel = remoteFolders.find((rf) => rf.id === f.id)?.label
@@ -1585,8 +1653,8 @@ async function doGetSyncStatuses(token: string, owner: string, actor: string): P
             continue
           }
           if (f.registryConfirmed) {
-            removeExtraFolder(g.appId, f.id)
-            addNotification('folder-removed', { game: g.name, folder: f.label })
+            markExtraFolderOrphaned(g.appId, f.id)
+            addNotification('folder-removed', { game: g.name, folder: f.label, appId: g.appId, folderId: f.id })
             continue
           }
           try {
@@ -1602,9 +1670,12 @@ async function doGetSyncStatuses(token: string, owner: string, actor: string): P
       }
       if (g.registryConfirmed) {
         // Was registered before, isn't now -- somebody removed it on
-        // purpose (whether or not it was "ours"). Converge, don't fight it.
-        removeCustomGame(g.appId)
-        addNotification('game-removed', { game: g.name })
+        // purpose (whether or not it was "ours"). Converge, don't fight it —
+        // but "converge" now means going orphaned, not silently deleting the
+        // local copy (see CustomGame.orphaned's doc comment): the game-removed
+        // notification's Restore action is how the user takes it from here.
+        markCustomGameOrphaned(g.appId)
+        addNotification('game-removed', { game: g.name, appId: g.appId })
         continue
       }
       // Never confirmed registered yet -- this is a fresh local add whose
@@ -1619,13 +1690,17 @@ async function doGetSyncStatuses(token: string, owner: string, actor: string): P
     // See above — try again next time getSyncStatuses runs.
   }
 
-  // Retry a custom game's registry-removal push that failed when it was
+  // Retry a custom game's content-deletion push that failed when it was
   // removed locally (games:remove-custom) — nothing local still references
-  // that appId to fall back on, so this list (not the registry-sync pass
-  // above) is what remembers it still needs to happen.
+  // that appId (or its name) to fall back on, so this list (not the
+  // registry-sync pass above) is what remembers it still needs to happen.
+  // No knownGameName here: if the registry itself never had this game
+  // either (never confirmed registered before the removal), its content
+  // can't be located anymore — same rare edge case deleteCustomGameContent's
+  // own doc comment already covers.
   for (const appId of getPendingCustomGameRemovals()) {
     try {
-      await removeCustomGameFromRegistry(token, owner, actor, appId)
+      await deleteCustomGameContent(token, owner, actor, appId)
       clearPendingCustomGameRemoval(appId)
     } catch {
       // Try again next check.
@@ -1681,12 +1756,23 @@ async function doGetSyncStatuses(token: string, owner: string, actor: string): P
       continue
     }
 
-    const repoPath = mainContentDir(g.name)
+    // Orphaned — someone else removed this game from the shared group (see
+    // CustomGame.orphaned). Its old shared path may well still exist locally
+    // from before, but comparing against it would be meaningless (nothing
+    // pushes there anymore) — show a distinct status instead until the user
+    // resolves it via the game-removed notification's Restore action.
+    if (isCustomGameId(g.appId) && listCustomGames().find((x) => x.appId === g.appId)?.orphaned) {
+      result.push({ appId: g.appId, status: 'orphaned', localVersion: 0, remoteVersion: 0 })
+      continue
+    }
+
+    const personalLogin = personalLoginFor(g.appId, actor)
+    const repoPath = mainContentDir(g.name, personalLogin)
     const localExists = existsSync(savePath)
     const remoteExists = existsSync(repoPath)
 
     const localVer = localVersions[g.appId] ?? 0
-    const remoteMeta = await readRemoteMeta(g.name)
+    const remoteMeta = await readRemoteMeta(g.name, personalLogin)
     const remoteVer = remoteMeta?.version ?? 0
 
     let status: SyncStatus
@@ -1757,6 +1843,23 @@ async function doGetSyncStatuses(token: string, owner: string, actor: string): P
           label: f.label,
           shared: f.shared,
           status: 'needs-setup',
+          localVersion: 0,
+          remoteVersion: 0
+        })
+        continue
+      }
+
+      // Orphaned — see CustomExtraFolder.orphaned. f.shared is still true
+      // here (only the Restore action flips it), so comparing against
+      // extraFolderContentDir's shared path would just compare against
+      // content that's already gone — a distinct status until the user
+      // resolves it via the folder-removed notification's Restore action.
+      if (f.orphaned) {
+        folderStatuses.push({
+          folderId: f.id,
+          label: f.label,
+          shared: f.shared,
+          status: 'orphaned',
           localVersion: 0,
           remoteVersion: 0
         })

@@ -337,17 +337,6 @@ export const en: Translation = {
     restartToInstall: 'Restart & install',
     updateCheckError: "Couldn't check for updates"
   },
-  presence: {
-    title: 'Presence',
-    description:
-      'See instantly when your co-op partner is online, and get notified the moment they push a save — instead of waiting for the periodic check. Optional, off by default.',
-    enable: 'Enable presence',
-    disable: 'Disable',
-    statusOff: 'Off',
-    statusConnecting: 'Connecting…',
-    statusOnline: 'Connected',
-    statusReconnecting: 'Reconnecting…'
-  },
   support: {
     tooltip: 'Support',
     title: 'Contact support',

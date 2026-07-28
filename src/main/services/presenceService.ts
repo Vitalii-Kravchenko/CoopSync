@@ -21,6 +21,12 @@ interface Callbacks {
    *  without every one of those call sites needing to remember to push an
    *  update here itself. */
   getFriendIds: () => Promise<number[]>
+  /** Called before EVERY connect attempt — presence auths with a
+   *  short-lived JWT (see presenceJwt.ts), so a reconnect after sitting
+   *  disconnected for a while must mint a fresh one, not reuse a stale
+   *  string captured at startPresence time. A throw here is treated like
+   *  any other connection failure (backoff + retry). */
+  getAuthToken: () => Promise<string>
 }
 
 const HEARTBEAT_MS = 30_000 // must stay well under Cloudflare's ~100s idle timeout
@@ -29,7 +35,6 @@ const MAX_BACKOFF_MS = 30_000
 
 let ws: WebSocket | null = null
 let callbacks: Callbacks | null = null
-let currentToken: string | null = null
 let stopped = true
 let reconnectAttempt = 0
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null
@@ -40,24 +45,30 @@ let friendsRefreshTimer: ReturnType<typeof setInterval> | null = null
 // 'friends' declare, see coopsync-server's hub.ts setFriends) ask for the
 // current picture instead of waiting up to FRIENDS_REFRESH_MS for the next one.
 const knownPresence = new Map<number, boolean>()
+// Bumped on every startPresence/stopPresence — connect() awaits a token
+// mint before opening the socket, and anything captured before that await
+// (or a close event from a previous session's socket) must not act on the
+// session that replaced it. Same failure family as the renderer races in
+// project memory: two overlapping "sessions" both driving reconnects.
+let session = 0
 
 /** Current known online/offline per friend id. */
 export function getPresenceSnapshot(): Record<number, boolean> {
   return Object.fromEntries(knownPresence)
 }
 
-export function startPresence(token: string, cb: Callbacks): void {
+export function startPresence(cb: Callbacks): void {
   stopPresence() // clears any previous connection/timers first
+  session++
   stopped = false
-  currentToken = token
   callbacks = cb
   reconnectAttempt = 0
   connect()
 }
 
 export function stopPresence(): void {
+  session++
   stopped = true
-  currentToken = null
   callbacks = null
   if (reconnectTimer) {
     clearTimeout(reconnectTimer)
@@ -82,8 +93,26 @@ function send(msg: Record<string, unknown>): void {
 }
 
 function connect(): void {
-  if (stopped || !currentToken) return
-  callbacks?.onConnectionChange('connecting')
+  if (stopped || !callbacks) return
+  const mySession = session
+  callbacks.onConnectionChange('connecting')
+  void (async () => {
+    let token: string
+    try {
+      token = await callbacks!.getAuthToken()
+    } catch (e) {
+      log(`presence: failed to mint auth token: ${e instanceof Error ? e.message : String(e)}`)
+      if (session !== mySession) return
+      callbacks?.onConnectionChange('error')
+      scheduleReconnect()
+      return
+    }
+    if (session !== mySession) return // stopped/restarted while minting
+    openSocket(mySession, token)
+  })()
+}
+
+function openSocket(mySession: number, token: string): void {
   try {
     ws = new WebSocket(SIGNALING_URL)
   } catch (e) {
@@ -93,10 +122,11 @@ function connect(): void {
   }
 
   ws.addEventListener('open', () => {
-    send({ t: 'auth', token: currentToken })
+    send({ t: 'auth', token })
   })
 
   ws.addEventListener('message', (event) => {
+    if (session !== mySession) return
     let msg: Record<string, unknown>
     try {
       msg = JSON.parse(String(event.data))
@@ -131,6 +161,10 @@ function connect(): void {
 
   ws.addEventListener('close', (event) => {
     log(`presence: connection closed (code=${event.code})`)
+    // A previous session's socket closing (stopPresence -> startPresence
+    // already moved on) must not touch the live session's timers or
+    // schedule a competing reconnect loop.
+    if (session !== mySession) return
     stopHeartbeat()
     stopFriendsRefresh()
     callbacks?.onConnectionChange(stopped ? 'off' : 'error')

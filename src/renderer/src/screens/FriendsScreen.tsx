@@ -119,6 +119,16 @@ function FriendsScreen({ user, avatarDataUrl, active, onRepoChanged }: Props): R
     })
   }, [])
 
+  // Our own dot — presence has no per-friend entry for ourselves (the hub
+  // only ever reports OTHER users), so it's driven by the connection state
+  // directly instead of presenceMap.
+  const [selfOnline, setSelfOnline] = useState(false)
+
+  useEffect(() => {
+    window.api.presence.getConnectionState().then((s) => setSelfOnline(s === 'online'))
+    return window.api.presence.onConnectionChange((s) => setSelfOnline(s === 'online'))
+  }, [])
+
   async function load(): Promise<void> {
     window.api.role.pendingInvites().then(setMyPendingInvites).catch(() => {})
     try {
@@ -397,7 +407,11 @@ function FriendsScreen({ user, avatarDataUrl, active, onRepoChanged }: Props): R
                     src={ownerLogin === user.login ? avatarDataUrl : avatars[ownerLogin]}
                     size={AVATAR_SIZE}
                     online={
-                      ownerLogin !== user.login && ownerId !== null ? presenceMap[ownerId] : undefined
+                      ownerLogin === user.login
+                        ? selfOnline
+                        : ownerId !== null
+                          ? presenceMap[ownerId]
+                          : undefined
                     }
                   />
                   <div style={{ minWidth: 0 }}>
@@ -433,7 +447,7 @@ function FriendsScreen({ user, avatarDataUrl, active, onRepoChanged }: Props): R
                     <AvatarWithDot
                       src={c.login === user.login ? avatarDataUrl : avatars[c.login]}
                       size={AVATAR_SIZE}
-                      online={c.login !== user.login ? presenceMap[c.id] : undefined}
+                      online={c.login === user.login ? selfOnline : presenceMap[c.id]}
                     />
                     <div style={{ minWidth: 0 }}>
                       <div style={styles.memberName}>{c.login}</div>

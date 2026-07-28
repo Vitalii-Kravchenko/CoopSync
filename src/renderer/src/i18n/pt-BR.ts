@@ -339,17 +339,6 @@ export const ptBR: Translation = {
     restartToInstall: 'Reiniciar e instalar',
     updateCheckError: 'Não foi possível verificar atualizações'
   },
-  presence: {
-    title: 'Presença',
-    description:
-      'Veja instantaneamente quando seu parceiro de coop está online e receba um aviso assim que ele enviar um save — em vez de esperar a verificação periódica. Opcional, desativado por padrão.',
-    enable: 'Ativar presença',
-    disable: 'Desativar',
-    statusOff: 'Desativado',
-    statusConnecting: 'Conectando…',
-    statusOnline: 'Conectado',
-    statusReconnecting: 'Reconectando…'
-  },
   support: {
     tooltip: 'Suporte',
     title: 'Contatar o suporte',

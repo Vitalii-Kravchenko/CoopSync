@@ -259,23 +259,18 @@ const api = {
     pendingInvites: (): Promise<string[]> => ipcRenderer.invoke('role:pending-invites')
   },
   presence: {
-    /** Current connection state ('off' if never enabled). */
-    getStatus: (): Promise<PresenceConnectionState> => ipcRenderer.invoke('presence:get-status'),
+    // No enable/disable here on purpose — presence has no user-facing
+    // toggle and no separate login (see ipc.ts's startPresenceIfConfigured
+    // doc comment). It's always on once logged in; the renderer only reads
+    // friend states and the connection state.
     /** Currently-known friend online/offline state, keyed by numeric GitHub
      *  id — for a screen that mounts after presence already connected. */
     getSnapshot: (): Promise<Record<number, boolean>> => ipcRenderer.invoke('presence:get-snapshot'),
-    /** Start the second, zero-scope device flow login used only for
-     *  presence. Resolves once the user confirms (subscribe to
-     *  onDeviceCode first to show the code). */
-    enable: (): Promise<void> => ipcRenderer.invoke('presence:enable'),
-    /** Disconnect and forget the presence token. */
-    disable: (): Promise<void> => ipcRenderer.invoke('presence:disable'),
-    /** Subscribe to the presence device flow code (separate from auth's). */
-    onDeviceCode: (callback: (info: DeviceCodeInfo) => void): (() => void) => {
-      const listener = (_event: unknown, info: DeviceCodeInfo): void => callback(info)
-      ipcRenderer.on('presence:device-code', listener)
-      return () => ipcRenderer.removeListener('presence:device-code', listener)
-    },
+    /** Current presence connection state — for a screen (Friends tab) that
+     *  mounts after presence already connected and would otherwise have to
+     *  wait for the next onConnectionChange event to know we're online. */
+    getConnectionState: (): Promise<PresenceConnectionState> =>
+      ipcRenderer.invoke('presence:get-connection-state'),
     /** Subscribe to presence connection state changes. */
     onConnectionChange: (callback: (state: PresenceConnectionState) => void): (() => void) => {
       const listener = (_event: unknown, state: PresenceConnectionState): void => callback(state)

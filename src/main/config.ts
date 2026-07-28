@@ -13,12 +13,14 @@ export const GITHUB_CLIENT_ID = 'Ov23liThtglJqUxY4Kh0'
 // get a 403 from the "Delete repository" button — they'll need to re-login.
 export const GITHUB_SCOPE = 'repo read:org delete_repo'
 
-// Second, SEPARATE device flow login used only to talk to the presence/
-// signaling server (see ROADMAP.md §1.3) — an EMPTY scope means the
-// resulting token can only prove identity (GET /user works), it can't touch
-// any repo. Kept as its own token (presenceTokenStore.ts) so the repo-scoped
-// sync token above never leaves this machine.
-export const PRESENCE_GITHUB_SCOPE = ''
+// Trades the main GitHub token for a short-lived presence JWT (id + login
+// only, ~10 min TTL) minted by our own site Worker — so the signaling
+// server below never sees a GitHub token, and there's no second login step.
+// The GitHub token goes ONLY to this first-party endpoint over HTTPS, for a
+// single GET /user, and is never stored there (replaces the separate
+// zero-scope device flow that existed before 0.9.41 — Vitalii's call,
+// 2026-07-28).
+export const PRESENCE_TOKEN_ENDPOINT = 'https://coopsync.app/api/presence-token'
 
 // Presence/signaling server (coopsync-server, D:\Projects\CoopSync-Server) —
 // presence, "friend just pushed" instant notice, and (later) WebRTC signal

@@ -1,6 +1,6 @@
 import { app, ipcMain, shell, clipboard, BrowserWindow, dialog } from 'electron'
-import { existsSync, readdirSync, readFileSync, statSync } from 'fs'
-import { basename, extname } from 'path'
+import { existsSync, readdirSync, readFileSync, rmSync, statSync } from 'fs'
+import { basename, extname, join } from 'path'
 import { makeAppError, parseAppError } from '../shared/errors'
 import { readSettings, writeSettings } from './services/settingsStore'
 import { updateTrayLanguage } from './trayIcon'
@@ -77,9 +77,8 @@ import {
 } from './games/customGames'
 import { scanForExecutables } from './games/exeScan'
 import { saveToken, loadToken, clearToken } from './services/tokenStore'
-import { savePresenceToken, loadPresenceToken, clearPresenceToken } from './services/presenceTokenStore'
 import { startPresence, stopPresence, notifySavePushed, getPresenceSnapshot } from './services/presenceService'
-import { PRESENCE_GITHUB_SCOPE } from './config'
+import { mintPresenceToken } from './services/presenceJwt'
 import { sendSupportMessage } from './services/support'
 import { checkForUpdates, downloadUpdate, quitAndInstall } from './services/updater'
 import type {
@@ -157,6 +156,9 @@ async function requireOwner(): Promise<{ token: string; owner: string }> {
 
 let presenceWindow: BrowserWindow | null = null
 let presenceStarted = false
+// Last known state — so a screen that mounts (or remounts, e.g. tab
+// revisit) after presence already connected can ask instead of waiting for
+// the next onConnectionChange event (see presence:get-connection-state).
 let presenceState: PresenceConnectionState = 'off'
 
 function sendPresenceState(state: PresenceConnectionState): void {
@@ -188,19 +190,20 @@ async function computeFriendIds(): Promise<number[]> {
   }
 }
 
-// Starts the presence connection if a zero-scope presence token already
-// exists (from a previous presence:enable) and it isn't already running.
-// Called both right after presence:enable and on every watcher:start (i.e.
-// whenever the app has a logged-in, role-configured session) so a restart
-// reconnects automatically without needing its own separate bootstrapping
-// in main/index.ts, which runs before any of that is known.
+// Starts the presence connection if the user is logged in and it isn't
+// already running. Presence has no user-facing toggle and no separate
+// credential (Vitalii's call, 2026-07-28): it's always on with the main
+// login, auth'd via a short-lived JWT minted from the main token right
+// before every connect (see presenceJwt.ts). Called from auth:login (fresh
+// onboarding) and every watcher:start (app restart into an already-logged-in
+// session — main/index.ts's startup runs before any of that is known, so it
+// can't bootstrap this itself).
 function startPresenceIfConfigured(win: BrowserWindow): void {
   if (presenceStarted) return
-  const token = loadPresenceToken()
-  if (!token) return
+  if (!loadToken()) return
   presenceStarted = true
   presenceWindow = win
-  startPresence(token, {
+  startPresence({
     onConnectionChange: sendPresenceState,
     onPresence: (id, online) => win.webContents.send('presence:changed', id, online),
     onSavePushed: (fromId, fromLogin, gameId) => {
@@ -209,7 +212,12 @@ function startPresenceIfConfigured(win: BrowserWindow): void {
       triggerFriendCheck()
       win.webContents.send('presence:friend-pushed', { fromId, fromLogin, gameId })
     },
-    getFriendIds: computeFriendIds
+    getFriendIds: computeFriendIds,
+    getAuthToken: () => {
+      const token = loadToken()
+      if (!token) throw new Error('not logged in')
+      return mintPresenceToken(token)
+    }
   })
 }
 
@@ -261,6 +269,15 @@ async function pickImageFile(
 
 // Registers all IPC channels (calls from renderer into main).
 export function registerIpcHandlers(): void {
+  // One-time cleanup: pre-0.9.41 versions kept a separate zero-scope
+  // presence token (presence-auth.bin, its own device flow) — obsolete now
+  // that presence reuses the main login via a Worker-minted JWT (see
+  // presenceJwt.ts). Harmless no-op once the file is gone.
+  try {
+    rmSync(join(app.getPath('userData'), 'presence-auth.bin'), { force: true })
+  } catch {
+    // Locked/unreadable — a stray encrypted blob nothing reads anymore.
+  }
   // Check the current state: whether there's a stored token and whether it works.
   ipcMain.handle('auth:get-status', async (): Promise<AuthStatus> => {
     const token = loadToken()
@@ -295,6 +312,10 @@ export function registerIpcHandlers(): void {
     saveToken(token)
 
     const user = await fetchUser(token)
+    // Presence is always-on with the main login (see
+    // startPresenceIfConfigured's doc comment) — connect right away.
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (win) startPresenceIfConfigured(win)
     return { state: 'logged-in', user }
   })
 
@@ -303,11 +324,9 @@ export function registerIpcHandlers(): void {
     clearToken()
     cachedOwner = null
     writeSettings({ role: undefined, hostOwner: undefined })
-    // Presence's friend list depends on this session's repo membership — once
-    // that's gone, disconnect rather than keep reporting a stale/empty one.
-    // The zero-scope presence token itself is untouched (a separate
-    // credential, see config.ts) — logging back in and finishing onboarding
-    // reconnects automatically via watcher:start.
+    // Presence auths via the main token (presenceJwt.ts) — with it gone
+    // there's nothing to connect with anyway. Logging back in reconnects
+    // automatically via auth:login/watcher:start.
     presenceStarted = false
     stopPresence()
     sendPresenceState('off')
@@ -1018,10 +1037,8 @@ export function registerIpcHandlers(): void {
       (updates: FriendSaveUpdate[]) => event.sender.send('sync:friend-update', updates),
       () => event.sender.send('sync:background-check')
     )
-    // Reconnect presence here too — covers an app restart while already
-    // logged in and role-configured (main/index.ts's startup runs before any
-    // of that is known, so it can't bootstrap this itself). A no-op if
-    // presence was never enabled (no token) or is already connected.
+    // Presence: connect if not already running (app restart while already
+    // logged in — auth:login's own trigger only fires during fresh onboarding).
     const win = BrowserWindow.fromWebContents(event.sender)
     if (win) startPresenceIfConfigured(win)
   })
@@ -1031,10 +1048,7 @@ export function registerIpcHandlers(): void {
   })
 
   // --- Presence (online status + instant "friend pushed" notice) ---
-
-  ipcMain.handle('presence:get-status', (): PresenceConnectionState =>
-    loadPresenceToken() ? presenceState : 'off'
-  )
+  // No user-facing enable/disable — see autoEnablePresenceIfNeeded's doc comment.
 
   // Snapshot of currently-known friend online/offline state — for a screen
   // (Friends tab) that mounts after presence already connected and already
@@ -1042,27 +1056,8 @@ export function registerIpcHandlers(): void {
   // getPresenceSnapshot doc comment).
   ipcMain.handle('presence:get-snapshot', (): Record<number, boolean> => getPresenceSnapshot())
 
-  // Second, separate device flow login (empty scope — see config.ts's
-  // PRESENCE_GITHUB_SCOPE and ROADMAP.md §1.3) purely to prove identity to
-  // the presence server. Mirrors auth:login's shape (device-code event, then
-  // resolves once the user confirms) but on its own channel, since a user
-  // enabling presence is already logged in with the main (repo-scoped) token.
-  ipcMain.handle('presence:enable', async (event): Promise<void> => {
-    const { deviceCode, info } = await requestDeviceCode(PRESENCE_GITHUB_SCOPE)
-    event.sender.send('presence:device-code', info)
-    const token = await pollForToken(deviceCode, info.interval)
-    savePresenceToken(token)
-    presenceStarted = false // in case a previous, now-stale connection was left marked started
-    const win = BrowserWindow.fromWebContents(event.sender)
-    if (win) startPresenceIfConfigured(win)
-  })
-
-  ipcMain.handle('presence:disable', (): void => {
-    presenceStarted = false
-    stopPresence()
-    clearPresenceToken()
-    sendPresenceState('off')
-  })
+  // Current connection state — see presenceState's doc comment above.
+  ipcMain.handle('presence:get-connection-state', (): PresenceConnectionState => presenceState)
 
   // --- Window controls (for the custom titlebar) ---
 

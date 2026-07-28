@@ -325,16 +325,6 @@ export const zhCN: Translation = {
     restartToInstall: '重启并安装',
     updateCheckError: '检查更新失败'
   },
-  presence: {
-    title: '在线状态',
-    description: '立即查看你的搭档是否在线,并在对方上传存档的瞬间收到通知——无需等待定期检查。可选功能,默认关闭。',
-    enable: '启用在线状态',
-    disable: '禁用',
-    statusOff: '已关闭',
-    statusConnecting: '连接中…',
-    statusOnline: '已连接',
-    statusReconnecting: '正在重新连接…'
-  },
   support: {
     tooltip: '支持',
     title: '联系支持',

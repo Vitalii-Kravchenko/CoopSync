@@ -73,17 +73,15 @@ function formatResetTime(epochMs: number): string {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
-/** Step 1: get the device code + the code shown to the user.
- *  scope defaults to the main sync scope — the presence login (see
- *  config.ts's PRESENCE_GITHUB_SCOPE) passes an empty one instead. */
-export async function requestDeviceCode(scope: string = GITHUB_SCOPE): Promise<{
+/** Step 1: get the device code + the code shown to the user. */
+export async function requestDeviceCode(): Promise<{
   deviceCode: string
   info: DeviceCodeInfo
 }> {
   const res = await githubFetch('https://github.com/login/device/code', {
     method: 'POST',
     headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-    body: JSON.stringify({ client_id: GITHUB_CLIENT_ID, scope })
+    body: JSON.stringify({ client_id: GITHUB_CLIENT_ID, scope: GITHUB_SCOPE })
   })
   if (!res.ok) {
     throw makeAppError('DEVICE_CODE_FAILED', { status: String(res.status) })

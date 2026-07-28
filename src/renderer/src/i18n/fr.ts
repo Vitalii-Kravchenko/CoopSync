@@ -340,17 +340,6 @@ export const fr: Translation = {
     restartToInstall: 'Redémarrer et installer',
     updateCheckError: "Impossible de vérifier les mises à jour"
   },
-  presence: {
-    title: 'Présence',
-    description:
-      'Voyez instantanément quand votre partenaire coop est en ligne, et soyez averti dès qu’il envoie une sauvegarde — au lieu d’attendre la vérification périodique. Facultatif, désactivé par défaut.',
-    enable: 'Activer la présence',
-    disable: 'Désactiver',
-    statusOff: 'Désactivé',
-    statusConnecting: 'Connexion…',
-    statusOnline: 'Connecté',
-    statusReconnecting: 'Reconnexion…'
-  },
   support: {
     tooltip: 'Support',
     title: 'Contacter le support',

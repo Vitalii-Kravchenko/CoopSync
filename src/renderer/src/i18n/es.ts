@@ -339,17 +339,6 @@ export const es: Translation = {
     restartToInstall: 'Reiniciar e instalar',
     updateCheckError: 'No se pudo comprobar si hay actualizaciones'
   },
-  presence: {
-    title: 'Presencia',
-    description:
-      'Ve al instante cuando tu compañero de coop está en línea, y recibe un aviso en cuanto suba una partida — en lugar de esperar la comprobación periódica. Opcional, desactivado por defecto.',
-    enable: 'Activar presencia',
-    disable: 'Desactivar',
-    statusOff: 'Desactivado',
-    statusConnecting: 'Conectando…',
-    statusOnline: 'Conectado',
-    statusReconnecting: 'Reconectando…'
-  },
   support: {
     tooltip: 'Soporte',
     title: 'Contactar con soporte',

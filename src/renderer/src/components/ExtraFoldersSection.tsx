@@ -519,11 +519,7 @@ function FolderCard({
                 <div style={styles.segmentGroup}>
                   <button
                     className="reset-btn segment-option-btn"
-                    style={{
-                      ...styles.segmentBtn,
-                      ...styles.segmentBtnFirst,
-                      ...(!folder.shared ? styles.segmentBtnActive : null)
-                    }}
+                    style={{ ...styles.segmentBtn, ...(!folder.shared ? styles.segmentBtnActive : null) }}
                     onClick={() => !shareBusy && folder.shared && onToggleShared()}
                     disabled={shareBusy}
                   >
@@ -532,11 +528,7 @@ function FolderCard({
                   </button>
                   <button
                     className="reset-btn segment-option-btn"
-                    style={{
-                      ...styles.segmentBtn,
-                      ...styles.segmentBtnLast,
-                      ...(folder.shared ? styles.segmentBtnActive : null)
-                    }}
+                    style={{ ...styles.segmentBtn, ...(folder.shared ? styles.segmentBtnActive : null) }}
                     onClick={() => !shareBusy && !folder.shared && onToggleShared()}
                     disabled={shareBusy}
                   >
@@ -610,11 +602,7 @@ export function SharedToggle({
       <div style={styles.scopeSegmentGroup}>
         <button
           className="reset-btn segment-option-btn"
-          style={{
-            ...styles.scopeSegmentBtn,
-            ...styles.segmentBtnFirst,
-            ...(!shared ? styles.scopeSegmentBtnActive : null)
-          }}
+          style={{ ...styles.scopeSegmentBtn, ...(!shared ? styles.scopeSegmentBtnActive : null) }}
           onClick={() => !disabled && shared && onChange(false)}
           disabled={disabled}
         >
@@ -623,11 +611,7 @@ export function SharedToggle({
         </button>
         <button
           className="reset-btn segment-option-btn"
-          style={{
-            ...styles.scopeSegmentBtn,
-            ...styles.segmentBtnLast,
-            ...(shared ? styles.scopeSegmentBtnActive : null)
-          }}
+          style={{ ...styles.scopeSegmentBtn, ...(shared ? styles.scopeSegmentBtnActive : null) }}
           onClick={() => !disabled && !shared && onChange(true)}
           disabled={disabled}
         >
@@ -837,17 +821,6 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: radii.md,
     boxShadow: shadows.sh3
   },
-  // Each button gets NO radius by default (segmentBtnFirst/segmentBtnLast
-  // below add it back, but ONLY on that button's own two OUTER corners).
-  // Giving every button its own full pill radius on ALL corners (as this
-  // used to) rounded the INNER corners too — the ones facing the other
-  // button — which, with the small gap between them, opened a curved
-  // lens-shaped sliver of the group's own background at the seam (visible
-  // near "Спільна з другом"'s left edge): a real visual artifact found
-  // 2026-07-28. Squaring off the inner corners fixes that while keeping
-  // the outer ends properly rounded — plain overflow:hidden clipping on
-  // the group (tried first) fixed the seam too, but flattened BOTH ends of
-  // both buttons, which lost the rounded pill look entirely.
   segmentGroup: {
     display: 'inline-flex',
     padding: 3,
@@ -856,41 +829,38 @@ const styles: Record<string, React.CSSProperties> = {
     border: `1px solid ${colors.borderDefault}`,
     gap: 2
   },
+  // display/alignItems/justifyContent/gap are load-bearing, not decorative:
+  // a plain <button> with no flex layout renders its spinner (an inline
+  // element with an explicit width/height — see .spinner in index.css) and
+  // text however inline layout happens to flow them, which visibly
+  // distorted the button's box the instant a toggle went busy (found
+  // 2026-07-28 — misread at first as a static border-radius/seam issue,
+  // since it only ever showed up on the button just clicked, right as its
+  // spinner appeared). The Button component elsewhere never had this
+  // problem because its .btn CSS class already sets these same properties;
+  // this is that same fix, inline, for a plain button instead.
   segmentBtn: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
     height: 26,
     padding: '0 12px',
     fontFamily: fonts.display,
     fontWeight: 600,
     fontSize: 11,
     border: 'none',
-    borderRadius: 0,
+    borderRadius: radii.pill,
     background: 'transparent',
     color: colors.text3,
     cursor: 'pointer'
   },
   segmentBtnActive: { background: colors.bgHover, color: colors.text1 },
-  // Applied on top of segmentBtn/scopeSegmentBtn (same two objects work for
-  // both sizes — only the corner radius matters here, not the button's own
-  // height/padding). First = leftmost button (rounds its left corners only,
-  // squares the right ones facing the other button); Last = mirror.
-  segmentBtnFirst: {
-    borderTopLeftRadius: radii.pill,
-    borderBottomLeftRadius: radii.pill,
-    borderTopRightRadius: 0,
-    borderBottomRightRadius: 0
-  },
-  segmentBtnLast: {
-    borderTopRightRadius: radii.pill,
-    borderBottomRightRadius: radii.pill,
-    borderTopLeftRadius: 0,
-    borderBottomLeftRadius: 0
-  },
   // Same shape/colors as segmentGroup/segmentBtn above, just a size step up
   // (design system 4.5's own segmented-control numbers: 32px/0 16px/12.5px)
   // for SharedToggle's two prominent, always-visible usages — see its own
   // comment for why it doesn't just reuse the compact FolderCard sizing.
-  // Corners handled the same way as segmentGroup/segmentBtn — see that
-  // comment; SharedToggle applies the same segmentBtnFirst/segmentBtnLast.
+  // Same flex-centering fix as segmentBtn — see its comment.
   scopeSegmentGroup: {
     display: 'inline-flex',
     padding: 3,
@@ -900,13 +870,17 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 2
   },
   scopeSegmentBtn: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
     height: 32,
     padding: '0 16px',
     fontFamily: fonts.display,
     fontWeight: 600,
     fontSize: 12.5,
     border: 'none',
-    borderRadius: 0,
+    borderRadius: radii.pill,
     background: 'transparent',
     color: colors.text3,
     cursor: 'pointer'

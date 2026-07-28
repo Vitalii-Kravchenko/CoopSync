@@ -240,7 +240,7 @@ function findGame(appId: string): { name: string; savePath: string; saveFilePatt
 // setting never leaves this machine, and a custom game's counterpart
 // (nobody else's copy of the app even HAS the appId at all once it's
 // orphaned) works the same way.
-function personalLoginFor(appId: string, actor: string): string | undefined {
+export function personalLoginFor(appId: string, actor: string): string | undefined {
   return isGamePersonal(appId) ? actor : undefined
 }
 
@@ -308,7 +308,7 @@ async function readRemoteMeta(name: string, personalLogin?: string): Promise<Rem
   }
 }
 
-async function readRemoteVersion(name: string, personalLogin?: string): Promise<number> {
+export async function readRemoteVersion(name: string, personalLogin?: string): Promise<number> {
   const meta = await readRemoteMeta(name, personalLogin)
   return meta?.version ?? 0
 }
@@ -343,7 +343,22 @@ async function writeRemoteMeta(name: string, version: number, owner: string, per
 // happily ADOPTS whatever this returns when it's cascaded together with a
 // world save (see watcher.ts) — that's the whole point, staying coordinated
 // with the world when it participates — it just never feeds back into it.
-export async function nextGameVersion(gameName: string): Promise<number> {
+//
+// `ownDestination` — the version already sitting at the SPECIFIC place this
+// one push is about to overwrite (its own personal meta, or a personal
+// folder's own meta — the caller already knows which, since it's the one
+// about to write there), folded into the max on top of the shared baseline
+// above. Real bug found 2026-07-28: a game (or folder) switched to personal
+// claimed the exact same "sharedBaseline + 1" on EVERY subsequent push,
+// forever — since a personal namespace deliberately never feeds the shared
+// counter (the paragraph above), nothing ever moved the baseline forward for
+// it, so the very first personal push and every one after it computed the
+// identical number (e.g. toggling a game to "only me" at v19 pushed v20 —
+// then playing, saving and exiting immediately pushed v20 again, not v21).
+// This does NOT reintroduce that earlier bug: it only widens what the
+// destination's OWN next push considers, never what a later SHARED push
+// (which never passes this) reads.
+export async function nextGameVersion(gameName: string, ownDestination?: number): Promise<number> {
   let max = await readRemoteVersion(gameName)
   const foldersDir = join(repoDir(), '.meta', 'folders', gameName)
   if (existsSync(foldersDir)) {
@@ -361,6 +376,7 @@ export async function nextGameVersion(gameName: string): Promise<number> {
       }
     }
   }
+  if (ownDestination !== undefined && ownDestination > max) max = ownDestination
   return max + 1
 }
 
@@ -477,7 +493,9 @@ export async function uploadGame(
   await rm(dest, { recursive: true, force: true })
   await copyFiltered(game.savePath, dest, game.saveFilePattern)
 
-  const newVersion = explicitVersion ?? (await nextGameVersion(game.name))
+  const newVersion =
+    explicitVersion ??
+    (await nextGameVersion(game.name, personalLogin ? await readRemoteVersion(game.name, personalLogin) : undefined))
   await writeRemoteMeta(game.name, newVersion, actor, personalLogin)
   // A personal push is never logged in the shared history — nobody else's
   // client even knows this game still exists (same reasoning as a personal
@@ -1022,7 +1040,7 @@ function extraFolderMetaPath(gameName: string, folder: CustomExtraFolder, actor:
     : join(extraFolderMetaDir(gameName, folder.id), `personal-${actor}.json`)
 }
 
-async function readExtraFolderMeta(
+export async function readExtraFolderMeta(
   gameName: string,
   folder: CustomExtraFolder,
   actor: string
@@ -1092,7 +1110,12 @@ export async function uploadExtraFolder(
   await rm(dest, { recursive: true, force: true })
   await copyFiltered(folder.savePath, dest, pattern)
 
-  const newVersion = explicitVersion ?? (await nextGameVersion(game.name))
+  const newVersion =
+    explicitVersion ??
+    (await nextGameVersion(
+      game.name,
+      !folder.shared ? (await readExtraFolderMeta(game.name, folder, actor))?.version : undefined
+    ))
   await writeExtraFolderMeta(game.name, folder, actor, newVersion, actor)
   // Shared folder pushes join the same shared history log the main folder
   // already uses — a partner sees them the same way. A personal folder's

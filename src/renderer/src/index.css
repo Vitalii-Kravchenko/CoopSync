@@ -152,6 +152,14 @@ body {
   box-shadow: none !important;
   transform: none !important;
 }
+/* A fast/repeated click on a button's own label text otherwise highlights it
+   as a text selection (Chromium doesn't block this on <button> by default,
+   unlike some other native controls) — never an intended text-select target. */
+.btn,
+.reset-btn {
+  user-select: none;
+  -webkit-user-select: none;
+}
 /* Loading state (design system 4.1, "loading" swatch) — currentColor-based
    so it fits whichever button variant/text color it's dropped into. */
 .spinner {
@@ -218,6 +226,14 @@ body {
    so a plain CSS :hover works directly. */
 .segment-option-btn:hover:not(:disabled) {
   color: #edf1fa !important;
+}
+/* Native disabled already blocks the click — this is just so a busy toggle
+   (e.g. GameDetailScreen's sync-scope switch while it's saving) actually
+   LOOKS blocked too, instead of sitting there fully opaque and inviting a
+   repeat click that does nothing. */
+.segment-option-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 .remove-folder-btn:hover:not(:disabled) {
   color: #ff9aa6 !important;

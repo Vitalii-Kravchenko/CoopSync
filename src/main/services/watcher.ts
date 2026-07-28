@@ -13,7 +13,10 @@ import {
   restoreExtraFolderMissingFiles,
   localExtraFolderFingerprint,
   nextGameVersion,
-  folderHash
+  folderHash,
+  personalLoginFor,
+  readRemoteVersion,
+  readExtraFolderMeta
 } from './sync'
 import { getRunningProcesses, isGameRunning } from './processCheck'
 import { getNotified, markNotified } from './notifyState'
@@ -458,7 +461,14 @@ async function pushGameSaves(
       // EXCEPT when the caller passes explicitVersion, meaning this push is
       // part of the same synchronous exit-time batch as another folder's
       // push (see tick()'s exit branch) — then it reuses that number instead.
-      const version = explicitVersion ?? (await nextGameVersion(game.name))
+      // A personal game's own last version has to feed into ITS OWN next
+      // number here too (see nextGameVersion's ownDestination doc comment)
+      // — this is the one call that decides the whole exit batch's shared
+      // version number (see tick()'s exit branch), so getting it wrong here
+      // means every folder pushed alongside it inherits the stuck number too.
+      const personalLogin = personalLoginFor(game.appId, actor)
+      const ownDestination = personalLogin ? await readRemoteVersion(game.name, personalLogin) : undefined
+      const version = explicitVersion ?? (await nextGameVersion(game.name, ownDestination))
       const result = await uploadGame(token, owner, game.appId, actor, undefined, version)
       if (result.pushed === false) {
         // The local and cloud content hashes matched — nothing was actually
@@ -531,7 +541,12 @@ async function pushFolderSaves(
       // mean "an old backup was swapped in unwatched" here either. Version
       // freshly claimed per push unless explicitVersion carries one forward
       // from the same exit-time batch — same reasoning as pushGameSaves above.
-      const version = explicitVersion ?? (await nextGameVersion(game.name))
+      // A personal FOLDER (independent of the game's own scope — see
+      // extraFolderContentDir) needs the same ownDestination treatment.
+      const ownDestination = !folder.shared
+        ? (await readExtraFolderMeta(game.name, folder, actor))?.version
+        : undefined
+      const version = explicitVersion ?? (await nextGameVersion(game.name, ownDestination))
       const result = await uploadExtraFolder(token, owner, game.appId, folder.id, actor, version)
       if (result.pushed === false) {
         // Silent only mid-session — see pushGameSaves's identical reasoning.

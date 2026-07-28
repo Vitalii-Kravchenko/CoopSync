@@ -531,8 +531,14 @@ function FriendsScreen({ user, avatarDataUrl, active, onRepoChanged }: Props): R
 // renders no dot at all rather than a false "offline" — sync stats from the
 // push history (renderStats below) stay the always-available, honest signal
 // of real activity regardless of whether presence is enabled.
-// Sizing/glow matches docs/design-system.html §4.8 "Аватари" exactly (13px
-// dot, 2.5px surface-color border, glow only while online).
+// Sizing matches docs/design-system.html §4.8 "Аватари" (13px dot, 2.5px
+// surface-color border, glow only while online) — the CORNER moved from
+// bottom-right to top-right (Vitalii's call, 2026-07-28: reads better here
+// since the member's name/role sits directly below the avatar, right where a
+// bottom-right dot used to visually crowd it), and now overlaps the avatar's
+// own ring slightly (-2px) instead of sitting flush inside it — the small
+// "sitting on top of the edge" overlap most badge-on-avatar designs use.
+// docs/design-system.html §4.8 was updated to match.
 function AvatarWithDot({
   src,
   size,
@@ -549,8 +555,8 @@ function AvatarWithDot({
         <span
           style={{
             position: 'absolute',
-            bottom: 0,
-            right: 0,
+            top: -2,
+            right: -2,
             width: 13,
             height: 13,
             borderRadius: '50%',

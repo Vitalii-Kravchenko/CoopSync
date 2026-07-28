@@ -487,6 +487,41 @@ export async function uploadGame(
       await setLocalVersion(appId, remoteVersion)
       return { version: remoteVersion, pushed: false }
     }
+  } else {
+    // dest doesn't exist yet — either this is truly the first push ever for
+    // this game, OR (games:set-personal's immediate re-sync right after
+    // flipping shared<->personal) it's the first push to the OTHER scope,
+    // and the actual save folder was never touched by that toggle. Compare
+    // against THAT one before assuming this is new content: real bug found
+    // 2026-07-28 — every toggle unconditionally minted a fresh version
+    // number for a pure preference flip, so switching personal->shared->
+    // personal with zero gameplay in between kept bumping the number every
+    // single time, and flipping back to shared made it look like it "went
+    // down" (it didn't — shared and personal are just two separate
+    // counters; only the never-changing one was being read again).
+    const altPersonalLogin = personalLogin ? undefined : actor
+    const altDest = mainContentDir(game.name, altPersonalLogin)
+    if (existsSync(altDest)) {
+      const [localHash, altHash] = await Promise.all([
+        folderHash(game.savePath, game.saveFilePattern),
+        folderHash(altDest, game.saveFilePattern)
+      ])
+      if (localHash === altHash) {
+        const carriedVersion = explicitVersion ?? (await readRemoteVersion(game.name, altPersonalLogin))
+        await copyFiltered(game.savePath, dest, game.saveFilePattern)
+        await writeRemoteMeta(game.name, carriedVersion, actor, personalLogin)
+        await git(['add', '-A'])
+        await git([
+          ...identityFlags(actor),
+          'commit',
+          '-m',
+          `sync-scope: ${game.name} now ${personalLogin ? 'personal' : 'shared'} (${formatVersion(carriedVersion)}, no content change)`
+        ])
+        await git(['push', 'origin', 'main'])
+        await setLocalVersion(appId, carriedVersion)
+        return { version: carriedVersion, pushed: false }
+      }
+    }
   }
 
   // Replace the game folder's content in the repo with fresh local saves.
@@ -1104,6 +1139,35 @@ export async function uploadExtraFolder(
       const remoteVersion = (await readExtraFolderMeta(game.name, folder, actor))?.version ?? 0
       await setLocalVersion(folderVersionKey(appId, folderId), remoteVersion)
       return { version: remoteVersion, pushed: false }
+    }
+  } else {
+    // Mirrors uploadGame's own altDest check right above (see its doc
+    // comment) — a folder whose shared/personal flag just flipped
+    // (games:set-extra-folder-shared) never had its actual save data
+    // touched by that toggle alone.
+    const altFolder: CustomExtraFolder = { ...folder, shared: !folder.shared }
+    const altDest = extraFolderContentDir(game.name, altFolder, actor)
+    if (existsSync(altDest)) {
+      const [localHash, altHash] = await Promise.all([
+        folderHash(folder.savePath, pattern),
+        folderHash(altDest, pattern)
+      ])
+      if (localHash === altHash) {
+        const carriedVersion =
+          explicitVersion ?? ((await readExtraFolderMeta(game.name, altFolder, actor))?.version ?? 0)
+        await copyFiltered(folder.savePath, dest, pattern)
+        await writeExtraFolderMeta(game.name, folder, actor, carriedVersion, actor)
+        await git(['add', '-A'])
+        await git([
+          ...identityFlags(actor),
+          'commit',
+          '-m',
+          `sync-scope: ${game.name} / ${folder.label} now ${folder.shared ? 'shared' : 'personal'} (${formatVersion(carriedVersion)}, no content change)`
+        ])
+        await git(['push', 'origin', 'main'])
+        await setLocalVersion(folderVersionKey(appId, folderId), carriedVersion)
+        return { version: carriedVersion, pushed: false }
+      }
     }
   }
 

@@ -566,12 +566,14 @@ function FolderCard({
   )
 }
 
-function SharedToggle({
+export function SharedToggle({
   shared,
   onChange,
   t,
   locked = false,
-  busy = false
+  busy = false,
+  sharedHint,
+  personalHint
 }: {
   shared: boolean
   onChange: (shared: boolean) => void
@@ -582,6 +584,11 @@ function SharedToggle({
   /** True while a change is actually in flight — blocks repeat clicks and
    *  shows a spinner instead of silently doing nothing visible. */
   busy?: boolean
+  /** Defaults to the extra-folder wording — GameDetailScreen's own
+   *  sync-scope toggle (a whole game, not a folder within one) passes its
+   *  own game-level hint text instead. */
+  sharedHint?: string
+  personalHint?: string
 }): React.JSX.Element {
   const disabled = locked || busy
   return (
@@ -612,8 +619,8 @@ function SharedToggle({
           : busy
             ? t.history.extraFolderShareToggleBusy
             : shared
-              ? t.history.extraFolderSharedHint
-              : t.history.extraFolderPersonalHint}
+              ? (sharedHint ?? t.history.extraFolderSharedHint)
+              : (personalHint ?? t.history.extraFolderPersonalHint)}
       </div>
     </div>
   )

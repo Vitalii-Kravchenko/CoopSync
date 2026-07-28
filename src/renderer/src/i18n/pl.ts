@@ -207,7 +207,12 @@ export const pl: Translation = {
     extraFolderRenameError: 'Nie udało się zmienić nazwy folderu',
     extraFolderShareToggleError: 'Nie udało się zmienić ustawienia udostępniania',
     extraFolderShareToggleSuccess: 'Zaktualizowano ustawienie udostępniania',
-    extraFolderShareToggleBusy: 'Zapisywanie…'
+    extraFolderShareToggleBusy: 'Zapisywanie…',
+    syncScopeTitle: 'Zakres synchronizacji',
+    syncScopeSharedHint: 'Synchronizuje się ze wspólnym magazynem — znajomi widzą tę grę.',
+    syncScopePersonalHint:
+      'Nadal jest zapisywana w chmurze (z własną historią wersji), ale w osobistej przestrzeni pod twoim kontem — znajomi jej nie widzą.',
+    syncScopeToggleError: 'Nie udało się zmienić zakresu synchronizacji'
   },
   cloudWarning: {
     title: 'Wyłącz Steam Cloud dla synchronizowanych gier',

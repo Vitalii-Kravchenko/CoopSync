@@ -207,7 +207,12 @@ export const es: Translation = {
     extraFolderRenameError: 'No se pudo renombrar la carpeta',
     extraFolderShareToggleError: 'No se pudo cambiar el ajuste de compartición',
     extraFolderShareToggleSuccess: 'Configuración actualizada',
-    extraFolderShareToggleBusy: 'Guardando…'
+    extraFolderShareToggleBusy: 'Guardando…',
+    syncScopeTitle: 'Ámbito de sincronización',
+    syncScopeSharedHint: 'Se sincroniza con el almacenamiento compartido — tus amigos ven este juego.',
+    syncScopePersonalHint:
+      'Igual se respalda en la nube (con su propio historial de versiones), pero en un espacio personal bajo tu propia cuenta — tus amigos nunca lo ven.',
+    syncScopeToggleError: 'No se pudo cambiar el ámbito de sincronización'
   },
   cloudWarning: {
     title: 'Desactiva Steam Cloud para los juegos sincronizados',

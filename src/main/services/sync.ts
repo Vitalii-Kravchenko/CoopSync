@@ -6,6 +6,7 @@ import { basename, join } from 'path'
 import { existsSync, statSync } from 'fs'
 import { cp, rm, mkdir, readdir, readFile, writeFile } from 'fs/promises'
 import { resolveSavePath } from '../games/savePath'
+import { isGamePersonal } from '../games/syncScope'
 import {
   getSyncableGames,
   isCustomGameId,
@@ -232,15 +233,15 @@ function findGame(appId: string): { name: string; savePath: string; saveFilePatt
   return { name: g.name, savePath, saveFilePattern: g.saveFilePattern }
 }
 
-// Only a CustomGame can be personal (see its own doc comment) — a catalog
-// game is always shared, there's no local record to check. `actor` doubles
-// as the personal path's namespace: whoever is running THIS client is the
-// only one who could ever have personal:true set for this appId locally —
-// nobody else's copy of the app has this game at all once it's orphaned.
+// ANY game (catalog or custom — see settingsStore.ts's personalGameIds doc
+// comment) can be personal. `actor` doubles as the personal path's
+// namespace: whoever is running THIS client is the only one who could ever
+// have this appId marked personal locally — a catalog game's personal
+// setting never leaves this machine, and a custom game's counterpart
+// (nobody else's copy of the app even HAS the appId at all once it's
+// orphaned) works the same way.
 function personalLoginFor(appId: string, actor: string): string | undefined {
-  return isCustomGameId(appId) && listCustomGames().find((g) => g.appId === appId)?.personal
-    ? actor
-    : undefined
+  return isGamePersonal(appId) ? actor : undefined
 }
 
 // Copies a folder, skipping files (not folders) that don't match the game's
@@ -1317,6 +1318,34 @@ export function removeFolderFromRegistry(
   })
 }
 
+/** Unregister a custom game WITHOUT touching its synced content — used only
+ *  by games:set-game-personal's shared→personal flip, one level up from
+ *  removeFolderFromRegistry's exact same reasoning: the content keeps
+ *  syncing (now under the personal path), it just stops being visible to a
+ *  co-op partner. No-op if this appId was never actually in the registry
+ *  (nothing to unregister — e.g. its initial push had failed, or it's a
+ *  catalog game, which is never registry-tracked at all). */
+export function unshareCustomGameFromRegistry(
+  token: string,
+  owner: string,
+  actor: string,
+  appId: string
+): Promise<void> {
+  return withCustomGameRepoLock(async () => {
+    await ensureRepo(token, owner)
+    const current = await readCustomGamesRegistry()
+    if (current === null) throw makeAppError('GIT_GENERIC', { detail: 'registry unreadable' })
+    const entry = current.find((e) => e.appId === appId)
+    if (!entry) return
+    const next = current.filter((e) => e.appId !== appId)
+    await mkdir(join(repoDir(), '.meta'), { recursive: true })
+    await writeFile(customGamesRegistryPath(), JSON.stringify(next, null, 2))
+    await git(['add', '-A'])
+    await git([...identityFlags(actor), 'commit', '-m', `custom-game: unshare ${entry.name}`])
+    await git(['push', 'origin', 'main'])
+  })
+}
+
 /**
  * Download files from the cloud that are missing locally — without touching
  * existing local files (git-like behavior: add what's missing, don't
@@ -1617,11 +1646,12 @@ async function doGetSyncStatuses(token: string, owner: string, actor: string): P
       materializeRemoteCustomGame(entry.appId, entry.name)
     }
     for (const g of listCustomGames()) {
-      // Orphaned (awaiting the user's own Restore decision) or already
-      // restored personal — either way this game has deliberately opted out
-      // of the shared registry, permanently until the user acts again via
-      // the UI. Must never re-push it or re-flag it as newly orphaned.
-      if (g.orphaned || g.personal) continue
+      // Orphaned (awaiting the user's own Restore decision) or personal
+      // (restored, or deliberately switched via the game's own sync-scope
+      // toggle) — either way this game has opted out of the shared registry
+      // until the user acts again via the UI. Must never re-push it or
+      // re-flag it as newly orphaned.
+      if (g.orphaned || isGamePersonal(g.appId)) continue
       if (registered.has(g.appId)) {
         if (!g.registryConfirmed) markCustomGameRegistryConfirmed(g.appId)
         // Someone renamed it (owner or not, same as a removal) — mirror the

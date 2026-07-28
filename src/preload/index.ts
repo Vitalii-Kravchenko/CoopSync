@@ -105,6 +105,11 @@ const api = {
      *  notification) — keeps its local save data, re-syncs it personal-only. */
     restoreOrphanedGame: (appId: string): Promise<void> =>
       ipcRenderer.invoke('games:restore-orphaned-game', appId),
+    /** Current "only for me / for me and friends" setting — any game. */
+    isPersonal: (appId: string): Promise<boolean> => ipcRenderer.invoke('games:is-personal', appId),
+    /** Flip it — see ipc.ts's games:set-personal doc comment. */
+    setPersonal: (appId: string, personal: boolean): Promise<void> =>
+      ipcRenderer.invoke('games:set-personal', appId, personal),
     /** Rename a manually-added game. */
     renameCustom: (appId: string, name: string): Promise<void> =>
       ipcRenderer.invoke('games:rename-custom', appId, name),

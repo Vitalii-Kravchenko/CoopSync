@@ -208,7 +208,12 @@ export const fr: Translation = {
     extraFolderRenameError: 'Impossible de renommer le dossier',
     extraFolderShareToggleError: 'Impossible de modifier le partage',
     extraFolderShareToggleSuccess: 'Partage mis à jour',
-    extraFolderShareToggleBusy: 'Mise à jour…'
+    extraFolderShareToggleBusy: 'Mise à jour…',
+    syncScopeTitle: 'Portée de synchronisation',
+    syncScopeSharedHint: 'Synchronisé avec le stockage partagé — tes amis voient ce jeu.',
+    syncScopePersonalHint:
+      "Toujours sauvegardé dans le cloud (avec son propre historique), mais dans un espace personnel sous ton propre compte — tes amis ne le voient jamais.",
+    syncScopeToggleError: 'Impossible de changer la portée de synchronisation'
   },
   cloudWarning: {
     title: 'Désactive Steam Cloud pour les jeux synchronisés',

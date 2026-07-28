@@ -34,6 +34,7 @@ import {
   getAvatars,
   pushCustomGameToRegistry,
   deleteCustomGameContent,
+  unshareCustomGameFromRegistry,
   renameCustomGameInRegistry,
   pushCustomGameCover,
   uploadExtraFolder,
@@ -51,6 +52,7 @@ import { READY_GAMES } from './games/catalog'
 import { resolveSavePath, isCustomSavePath, setSavePathOverride } from './games/savePath'
 import {
   getSyncableGames,
+  isCustomGameId,
   listCustomGames,
   addCustomGame,
   removeCustomGame,
@@ -77,6 +79,7 @@ import {
   restoreOrphanedCustomGame,
   restoreOrphanedFolder
 } from './games/customGames'
+import { isGamePersonal, setGamePersonal } from './games/syncScope'
 import { scanForExecutables } from './games/exeScan'
 import { saveToken, loadToken, clearToken } from './services/tokenStore'
 import { startPresence, stopPresence, notifySavePushed, getPresenceSnapshot } from './services/presenceService'
@@ -637,6 +640,7 @@ export function registerIpcHandlers(): void {
   // regular upload failure; the next auto-sync or manual Upload click retries it.
   ipcMain.handle('games:restore-orphaned-game', async (_event, appId: string): Promise<void> => {
     restoreOrphanedCustomGame(appId)
+    setGamePersonal(appId, true)
     try {
       const { token, owner } = await syncTarget()
       const { owner: actor } = await requireAuth()
@@ -645,6 +649,59 @@ export function registerIpcHandlers(): void {
       // Best-effort — see doc comment above.
     }
   })
+
+  // Current "only for me / for me and friends" setting — ANY game, catalog
+  // or custom (Vitalii's call, 2026-07-28). See settingsStore.ts's
+  // personalGameIds doc comment.
+  ipcMain.handle('games:is-personal', (_event, appId: string): boolean => isGamePersonal(appId))
+
+  // Flip it. A catalog game is never registry-tracked, so going personal or
+  // back to shared is purely local for it — just the flag + a right-away
+  // re-sync so the status pill doesn't sit stale until the next launch/exit.
+  // A custom game additionally has a registry entry to keep in sync:
+  // personal → unshareCustomGameFromRegistry (unregister, content stays —
+  // same "visibility change, not a removal" reasoning as extra folders'
+  // own shared→personal toggle); shared → pushCustomGameToRegistry
+  // (best-effort — if this particular push fails, the existing self-heal in
+  // getSyncStatuses already retries any custom game that isn't
+  // registryConfirmed yet, no separate pending-list needed here).
+  ipcMain.handle(
+    'games:set-personal',
+    async (_event, appId: string, personal: boolean): Promise<void> => {
+      if (personal === isGamePersonal(appId)) return
+      const isCustom = isCustomGameId(appId)
+      const customGame = isCustom ? listCustomGames().find((g) => g.appId === appId) : undefined
+
+      setGamePersonal(appId, personal)
+      if (isCustom && customGame) {
+        // Same local-state normalization the orphan-restore path uses
+        // (clears orphaned + registryConfirmed) — a deliberate personal
+        // switch is never itself an "orphaned" state, and either way this
+        // game must stop looking like "registered, needs a push".
+        if (personal) restoreOrphanedCustomGame(appId)
+        try {
+          const { token, owner } = await syncTarget()
+          const { owner: actor } = await requireAuth()
+          if (personal) {
+            await unshareCustomGameFromRegistry(token, owner, actor, appId)
+          } else {
+            await pushCustomGameToRegistry(token, owner, actor, appId, customGame.name)
+          }
+        } catch {
+          // Best-effort — see doc comment above.
+        }
+      }
+
+      try {
+        const { token, owner } = await syncTarget()
+        const { owner: actor } = await requireAuth()
+        await uploadGame(token, owner, appId, actor)
+      } catch {
+        // Best-effort — a failure here just means the toggle took effect
+        // locally but hasn't synced yet, same as any other upload failure.
+      }
+    }
+  )
 
   // Rename a manually-added game. Unlike the cover (adopted best-effort in
   // the background), a rename touches the shared repo's folder layout — see

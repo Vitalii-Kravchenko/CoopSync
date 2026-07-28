@@ -205,7 +205,12 @@ export const en: Translation = {
     extraFolderRenameError: 'Could not rename the folder',
     extraFolderShareToggleError: 'Could not change the sharing setting',
     extraFolderShareToggleSuccess: 'Sharing setting updated',
-    extraFolderShareToggleBusy: 'Updating…'
+    extraFolderShareToggleBusy: 'Updating…',
+    syncScopeTitle: 'Sync scope',
+    syncScopeSharedHint: 'Syncs to the shared storage — your friends can see this game.',
+    syncScopePersonalHint:
+      'Still backed up to the cloud (with its own version history), but into a personal space under your own account — friends never see it.',
+    syncScopeToggleError: 'Could not change the sync scope'
   },
   cloudWarning: {
     title: 'Turn off Steam Cloud for synced games',

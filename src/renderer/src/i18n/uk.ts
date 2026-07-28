@@ -207,7 +207,12 @@ export const uk: Translation = {
     extraFolderRenameError: 'Не вдалося перейменувати папку',
     extraFolderShareToggleError: 'Не вдалося змінити налаштування спільного доступу',
     extraFolderShareToggleSuccess: 'Налаштування збережено',
-    extraFolderShareToggleBusy: 'Зберігаю…'
+    extraFolderShareToggleBusy: 'Зберігаю…',
+    syncScopeTitle: 'Область синхронізації',
+    syncScopeSharedHint: 'Синхронізується зі спільним сховищем — друзі бачать цю гру.',
+    syncScopePersonalHint:
+      'Все одно бекапиться в хмару (зі своєю історією версій), але в особистий простір під твоїм акаунтом — друзі його не бачать.',
+    syncScopeToggleError: 'Не вдалося змінити область синхронізації'
   },
   cloudWarning: {
     title: 'Вимкни Steam Cloud для ігор, які синкає CoopSync',

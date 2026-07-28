@@ -17,7 +17,7 @@ import Button from '../components/Button'
 import ConfirmModal from '../components/ConfirmModal'
 import CoverCropModal from '../components/CoverCropModal'
 import ExcludeFilesCard from '../components/ExcludeFilesCard'
-import ExtraFoldersSection from '../components/ExtraFoldersSection'
+import ExtraFoldersSection, { SharedToggle } from '../components/ExtraFoldersSection'
 import ExePicker from '../components/ExePicker'
 import Pagination from '../components/Pagination'
 import type { BannerState } from '../components/Banner'
@@ -243,6 +243,33 @@ function GameDetailScreen({
       .then(setProcessNames)
       .catch(() => setProcessNames([]))
   }, [appId, isCustom])
+
+  // "Only for me / for me and friends" — any game, catalog or custom (see
+  // ipc.ts's games:set-personal doc comment).
+  const [personal, setPersonal] = useState(false)
+  const [personalBusy, setPersonalBusy] = useState(false)
+  const [personalError, setPersonalError] = useState<string | null>(null)
+
+  useEffect(() => {
+    window.api.games
+      .isPersonal(appId)
+      .then(setPersonal)
+      .catch(() => setPersonal(false))
+  }, [appId])
+
+  async function handleSetPersonal(next: boolean): Promise<void> {
+    setPersonalBusy(true)
+    setPersonalError(null)
+    try {
+      await window.api.games.setPersonal(appId, next)
+      setPersonal(next)
+      onSynced()
+    } catch (e) {
+      setPersonalError(describeError(e, t, t.history.syncScopeToggleError))
+    } finally {
+      setPersonalBusy(false)
+    }
+  }
 
   function handleProcessNamesChange(names: string[]): void {
     setProcessNames(names)
@@ -633,6 +660,21 @@ function GameDetailScreen({
             </div>
           </div>
         )}
+      </div>
+
+      <div style={styles.syncScopeCard}>
+        <div style={styles.savePathLabelRow}>
+          <span style={styles.savePathLabel}>{t.history.syncScopeTitle}</span>
+        </div>
+        <SharedToggle
+          shared={!personal}
+          onChange={(shared) => void handleSetPersonal(!shared)}
+          t={t}
+          busy={personalBusy}
+          sharedHint={t.history.syncScopeSharedHint}
+          personalHint={t.history.syncScopePersonalHint}
+        />
+        {personalError && <div style={styles.savePathErrorText}>{personalError}</div>}
       </div>
 
       {isCustom && (
@@ -1037,6 +1079,12 @@ const styles: Record<string, React.CSSProperties> = {
   // that unrelated 20px margin was quietly shrinking its visible border box
   // 20px shorter than exeCard's right next to it.
   syncBehaviorItem: { flex: '1 1 320px', minWidth: 320, marginBottom: 0 },
+  syncScopeCard: {
+    border: `1px solid ${colors.borderSubtle}`,
+    borderRadius: radii.lg,
+    padding: '16px 18px',
+    marginBottom: 20
+  },
   exeCard: {
     flex: '1 1 320px',
     minWidth: 320,

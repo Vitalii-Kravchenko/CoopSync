@@ -208,7 +208,12 @@ export const tr: Translation = {
     extraFolderRenameError: 'Klasör yeniden adlandırılamadı',
     extraFolderShareToggleError: 'Paylaşım ayarı değiştirilemedi',
     extraFolderShareToggleSuccess: 'Paylaşım ayarı güncellendi',
-    extraFolderShareToggleBusy: 'Kaydediliyor…'
+    extraFolderShareToggleBusy: 'Kaydediliyor…',
+    syncScopeTitle: 'Senkronizasyon kapsamı',
+    syncScopeSharedHint: 'Paylaşılan depoyla senkronize olur — arkadaşların bu oyunu görür.',
+    syncScopePersonalHint:
+      'Yine de buluta yedeklenir (kendi sürüm geçmişiyle), ama kendi hesabın altında kişisel bir alana — arkadaşların bunu asla görmez.',
+    syncScopeToggleError: 'Senkronizasyon kapsamı değiştirilemedi'
   },
   cloudWarning: {
     title: "Senkronize edilen oyunlar için Steam Cloud'u kapat",

@@ -193,20 +193,19 @@ export function markCustomGameOrphaned(appId: string): void {
 }
 
 /** "Restore just for myself" (ipc.ts's games:restore-orphaned-game) — keeps
- *  the local game exactly as it was, clears the orphaned flag, and flips it
- *  personal: from here on it syncs to a login-namespaced path in the SAME
- *  shared repo (see sync.ts's mainContentDir), invisible to anyone else and
- *  never pushed back to the shared registry. registryConfirmed is reset too
- *  — code that branches on it (e.g. ipc.ts's games:rename-custom) must treat
- *  a personal game as never-registered, not as "registered, needs a registry
- *  push" (it must never touch the shared registry again). No-op if appId
- *  isn't a locally-known custom game. */
+ *  the local game exactly as it was, clears the orphaned flag, and marks it
+ *  personal via the generic per-game toggle (see settingsStore.ts's
+ *  personalGameIds / syncScope.ts's setGamePersonal) — the caller is
+ *  responsible for that call, this only clears the custom-game-specific
+ *  flags. registryConfirmed is reset too — code that branches on it (e.g.
+ *  ipc.ts's games:rename-custom) must treat a personal game as
+ *  never-registered, not as "registered, needs a registry push" (it must
+ *  never touch the shared registry again). No-op if appId isn't a
+ *  locally-known custom game. */
 export function restoreOrphanedCustomGame(appId: string): void {
   writeSettings({
     customGames: listCustomGames().map((g) =>
-      g.appId === appId
-        ? { ...g, orphaned: undefined, personal: true, registryConfirmed: undefined }
-        : g
+      g.appId === appId ? { ...g, orphaned: undefined, registryConfirmed: undefined } : g
     )
   })
 }

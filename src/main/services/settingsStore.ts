@@ -35,6 +35,13 @@ interface AppSettings {
    *  one level down. Only ever holds folders that were shared (a personal
    *  folder was never registered, so there's nothing to retract). */
   pendingFolderRemovals?: string[]
+  /** appIds synced to a personal space instead of the shared one — for ANY
+   *  game, catalog or custom (Vitalii's call, 2026-07-28: a per-game
+   *  "only for me / for me and friends" toggle, not just custom games).
+   *  See main/games/syncScope.ts and sync.ts's personalLoginFor. A catalog
+   *  game has no other local record at all, so this list (not a field on
+   *  some other object) is its only home for the setting. */
+  personalGameIds?: string[]
 }
 
 // English — universal fallback if the installer's language couldn't be determined.

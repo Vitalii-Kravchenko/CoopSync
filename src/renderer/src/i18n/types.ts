@@ -225,6 +225,14 @@ export interface Translation {
     extraFolderShareToggleError: string
     extraFolderShareToggleSuccess: string
     extraFolderShareToggleBusy: string
+    /** Sync-scope toggle on a game's own detail screen (any game, catalog or
+     *  custom — not just extra folders) — reuses SharedToggle from
+     *  ExtraFoldersSection.tsx, and its extraFolderShared/extraFolderPersonal/
+     *  extraFolderShareToggleBusy labels, just with these game-level hints. */
+    syncScopeTitle: string
+    syncScopeSharedHint: string
+    syncScopePersonalHint: string
+    syncScopeToggleError: string
   }
   cloudWarning: {
     title: string

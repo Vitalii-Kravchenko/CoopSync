@@ -199,7 +199,11 @@ export const zhCN: Translation = {
     extraFolderRenameError: '无法重命名文件夹',
     extraFolderShareToggleError: '无法更改共享设置',
     extraFolderShareToggleSuccess: '共享设置已更新',
-    extraFolderShareToggleBusy: '正在保存…'
+    extraFolderShareToggleBusy: '正在保存…',
+    syncScopeTitle: '同步范围',
+    syncScopeSharedHint: '与共享存储同步——好友可以看到这个游戏。',
+    syncScopePersonalHint: '仍会备份到云端（有自己的版本历史），但存放在你自己账号下的个人空间——好友永远看不到。',
+    syncScopeToggleError: '无法更改同步范围'
   },
   cloudWarning: {
     title: '为已同步的游戏关闭 Steam 云存储',

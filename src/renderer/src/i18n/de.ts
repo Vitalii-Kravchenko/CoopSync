@@ -208,7 +208,12 @@ export const de: Translation = {
     extraFolderRenameError: 'Ordner konnte nicht umbenannt werden',
     extraFolderShareToggleError: 'Freigabeeinstellung konnte nicht geändert werden',
     extraFolderShareToggleSuccess: 'Freigabeeinstellung aktualisiert',
-    extraFolderShareToggleBusy: 'Wird gespeichert…'
+    extraFolderShareToggleBusy: 'Wird gespeichert…',
+    syncScopeTitle: 'Sync-Bereich',
+    syncScopeSharedHint: 'Synchronisiert mit dem gemeinsamen Speicher — deine Freunde sehen dieses Spiel.',
+    syncScopePersonalHint:
+      'Wird trotzdem in die Cloud gesichert (mit eigener Versionshistorie), aber in einen persönlichen Bereich unter deinem eigenen Konto — Freunde sehen es nie.',
+    syncScopeToggleError: 'Sync-Bereich konnte nicht geändert werden'
   },
   cloudWarning: {
     title: 'Steam Cloud für synchronisierte Spiele deaktivieren',

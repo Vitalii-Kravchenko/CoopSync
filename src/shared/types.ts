@@ -151,17 +151,11 @@ export interface CustomGame {
    *  above) — replaces the old behavior of silently deleting the local copy
    *  too. Local files/settings are left untouched; the game just stops
    *  syncing until the user picks a next step via the game-removed
-   *  notification's Restore action (see `personal` below), same idea one
-   *  level down as CustomExtraFolder.orphaned. */
+   *  notification's Restore action, which sets it personal — see
+   *  settingsStore.ts's personalGameIds (the "just for me / for me and
+   *  friends" toggle applies to ANY game, catalog or custom, so it isn't a
+   *  field here) — same idea one level down as CustomExtraFolder.orphaned. */
   orphaned?: boolean
-  /** True once the user has restored an orphaned game "just for themself"
-   *  (ipc.ts's games:restore-orphaned-game) — it keeps syncing to the SAME
-   *  shared repo, but under a path namespaced by their own login (mirrors
-   *  CustomExtraFolder's shared:false personal path), invisible to anyone
-   *  else and never pushed back to the shared registry. Mutually exclusive
-   *  with ever being registryConfirmed again — a personal game has
-   *  deliberately opted out of the shared group. */
-  personal?: boolean
   /** Additional save folders beyond the one above (e.g. a folder for
    *  character saves kept separate from world saves, Terraria-style) — each
    *  is independently synced. Optional/undefined = none added. */

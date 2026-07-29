@@ -135,6 +135,9 @@ export interface Translation {
     cancelInvite: string
     onlineStatus: string
     offlineStatus: string
+    /** Shown next to a friend's presence caption when they're currently
+     *  playing something we both sync (see presenceService.ts's onPlaying). */
+    playingLabel: (game: string) => string
   }
   history: {
     title: string

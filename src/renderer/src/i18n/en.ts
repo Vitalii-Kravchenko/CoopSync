@@ -107,7 +107,8 @@ export const en: Translation = {
     sentLabel: 'Sent',
     cancelInvite: 'Cancel',
     onlineStatus: 'online',
-    offlineStatus: 'offline'
+    offlineStatus: 'offline',
+    playingLabel: (game) => `🎮 Playing ${game}`
   },
   history: {
     title: 'Sync history',

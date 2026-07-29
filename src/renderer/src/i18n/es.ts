@@ -109,7 +109,8 @@ export const es: Translation = {
     sentLabel: 'Enviada',
     cancelInvite: 'Cancelar',
     onlineStatus: 'en línea',
-    offlineStatus: 'desconectado'
+    offlineStatus: 'desconectado',
+    playingLabel: (game) => `🎮 Jugando a ${game}`
   },
   history: {
     title: 'Historial de sincronización',

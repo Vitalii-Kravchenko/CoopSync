@@ -110,7 +110,8 @@ export const tr: Translation = {
     sentLabel: 'Gönderildi:',
     cancelInvite: 'İptal et',
     onlineStatus: 'çevrimiçi',
-    offlineStatus: 'çevrimdışı'
+    offlineStatus: 'çevrimdışı',
+    playingLabel: (game) => `🎮 ${game} oynuyor`
   },
   history: {
     title: 'Senkronizasyon geçmişi',

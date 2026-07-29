@@ -21,7 +21,7 @@ import {
 import { getRunningProcesses, isGameRunning } from './processCheck'
 import { getNotified, markNotified } from './notifyState'
 import { getSavesRepo, listInvitations, listCollaborators } from './github'
-import { notifySavePushed, notifyPlayingState } from './presenceService'
+import { notifySavePushed, notifyPlayingState, getPlayingSnapshot } from './presenceService'
 import {
   getKnownPending,
   getKnownCollaborators,
@@ -39,6 +39,16 @@ import type { AutoSyncEvent, FriendSaveUpdate } from '../../shared/types'
 let timer: NodeJS.Timeout | null = null
 let running: Record<string, boolean> = {}
 let busy = false
+
+/** Whether WE are currently running this exact game — the gate for the
+ *  "friend is playing" toast/bell notification (see ipc.ts's onPlaying):
+ *  it should only interrupt when it's actually about a session I'm also in
+ *  right now, not for every game a friend happens to touch (Vitalii's call,
+ *  2026-07-30). The GameCard badge stays unconditional — that screen is
+ *  specifically for browsing games I'm NOT currently playing. */
+export function isCurrentlyPlaying(appId: string): boolean {
+  return running[appId] === true
+}
 
 // Mid-session auto-push (while the game is still running, not just at exit)
 // runs on its OWN faster timer (fingerprintTimer, see below), separate from
@@ -253,6 +263,15 @@ async function tick(
         // the pull work below so a friend's badge lights up the instant the
         // game opens, not after however long the sync itself takes.
         notifyPlayingState(game.appId)
+        // A friend who was ALREADY playing this exact game before we joined
+        // sent their own 'playing' event earlier — back when isCurrentlyPlaying
+        // for us was still false, so ipc.ts's onPlaying handler correctly
+        // skipped notifying us then. No fresh event will arrive now to
+        // trigger it (they're not launching again), so this is the other
+        // half of the "only notify about a game I'm actually in" rule: check
+        // the current snapshot ourselves the moment WE join.
+        const alreadyThere = Object.values(getPlayingSnapshot()).find((p) => p.gameId === game.appId)
+        if (alreadyThere) addNotification('friend-playing', { login: alreadyThere.login, game: game.name })
         // The game just launched → first, download files missing locally
         // (e.g. a deleted world), without touching existing local files —
         // this is always safe, regardless of versions. Then a full pull,

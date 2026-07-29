@@ -119,6 +119,33 @@ function FriendsScreen({ user, avatarDataUrl, active, onRepoChanged }: Props): R
     })
   }, [])
 
+  // What each friend is currently playing (see presenceService.ts's
+  // onPlaying) — id -> resolved game name, absent when not playing. Shown
+  // here unconditionally (unlike the toast/bell, which only fires when I'm
+  // ALSO playing the same game right now — Vitalii's call, 2026-07-30): the
+  // Friends tab is exactly the passive, on-demand place to check what
+  // someone's up to without being interrupted about it.
+  const [playingMap, setPlayingMap] = useState<Record<number, string>>({})
+
+  useEffect(() => {
+    window.api.presence.getPlayingSnapshot().then((snapshot) => {
+      const map: Record<number, string> = {}
+      for (const [id, info] of Object.entries(snapshot)) map[Number(id)] = info.gameName
+      setPlayingMap(map)
+    })
+    return window.api.presence.onPlaying(({ id, gameName }) => {
+      setPlayingMap((prev) => {
+        if (gameName === null) {
+          if (!(id in prev)) return prev
+          const next = { ...prev }
+          delete next[id]
+          return next
+        }
+        return { ...prev, [id]: gameName }
+      })
+    })
+  }, [])
+
   // Our own dot — presence has no per-friend entry for ourselves (the hub
   // only ever reports OTHER users), so it's driven by the connection state
   // directly instead of presenceMap.
@@ -423,6 +450,9 @@ function FriendsScreen({ user, avatarDataUrl, active, onRepoChanged }: Props): R
                           </span>
                           <PresenceCaption online={ownerOnline} t={t} />
                         </div>
+                        {ownerLogin !== user.login && ownerId !== null && ownerOnline && playingMap[ownerId] && (
+                          <div style={styles.playingLabel}>{t.friends.playingLabel(playingMap[ownerId])}</div>
+                        )}
                       </div>
                     </div>
                     {renderStats(ownerLogin)}
@@ -463,6 +493,9 @@ function FriendsScreen({ user, avatarDataUrl, active, onRepoChanged }: Props): R
                         </span>
                         <PresenceCaption online={online} t={t} />
                       </div>
+                      {c.login !== user.login && online && playingMap[c.id] && (
+                        <div style={styles.playingLabel}>{t.friends.playingLabel(playingMap[c.id])}</div>
+                      )}
                     </div>
                   </div>
                   {renderStats(c.login)}
@@ -695,6 +728,14 @@ const styles: Record<string, React.CSSProperties> = {
   },
   memberHead: { display: 'flex', alignItems: 'center', gap: 11 },
   badgeRow: { display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, flexWrap: 'wrap' },
+  playingLabel: {
+    marginTop: 5,
+    fontSize: 11.5,
+    color: colors.cy,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap'
+  },
   memberName: {
     fontSize: 14,
     fontWeight: 600,

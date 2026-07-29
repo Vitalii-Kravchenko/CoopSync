@@ -308,7 +308,7 @@ const api = {
      *  present for a friend currently playing (see presenceService.ts's
      *  getPlayingSnapshot). For a screen that mounts after presence already
      *  connected. */
-    getPlayingSnapshot: (): Promise<Record<number, { login: string; gameId: string }>> =>
+    getPlayingSnapshot: (): Promise<Record<number, { login: string; gameId: string; gameName: string }>> =>
       ipcRenderer.invoke('presence:get-playing-snapshot'),
     /** Subscribe to a friend starting (gameId set) or stopping (gameId null)
      *  playing a game we both sync. */

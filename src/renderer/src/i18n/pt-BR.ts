@@ -109,7 +109,8 @@ export const ptBR: Translation = {
     sentLabel: 'Enviado',
     cancelInvite: 'Cancelar',
     onlineStatus: 'online',
-    offlineStatus: 'offline'
+    offlineStatus: 'offline',
+    playingLabel: (game) => `🎮 Jogando ${game}`
   },
   history: {
     title: 'Histórico de sincronização',

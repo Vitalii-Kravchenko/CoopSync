@@ -464,6 +464,10 @@ export interface FriendPlayingEvent {
   id: number
   login: string
   gameId: string | null
+  /** Resolved display name, or null alongside gameId: null. Resolved once in
+   *  main (see ipc.ts) so no renderer screen needs its own catalog lookup —
+   *  falls back to the raw gameId there if the game isn't found locally. */
+  gameName: string | null
 }
 
 /** Auto-update state, pushed from main (electron-updater) to the renderer. */

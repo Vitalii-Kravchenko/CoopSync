@@ -43,7 +43,7 @@ import {
   deleteExtraFolderContent,
   getRegisteredFolderLabels
 } from './services/sync'
-import { startWatcher, stopWatcher, triggerFriendCheck } from './services/watcher'
+import { startWatcher, stopWatcher, triggerFriendCheck, isCurrentlyPlaying } from './services/watcher'
 import { markSeen } from './services/notifyState'
 import { forgetPending } from './services/backgroundState'
 import { getNotifications, markRead, markAllRead, clearAll, addNotification } from './services/notificationStore'
@@ -224,14 +224,22 @@ function startPresenceIfConfigured(win: BrowserWindow): void {
       win.webContents.send('presence:friend-pushed', { fromId, fromLogin, gameId })
     },
     onPlaying: (id, login, gameId) => {
-      // Always forwarded to the renderer for the GameCard badge, regardless
-      // of direction (gameId null clears it just as much as a real id sets it).
-      win.webContents.send('presence:playing', { id, login, gameId })
-      // Only a REAL "started playing" is toast/bell-worthy — going back to
-      // null is just the badge quietly turning off, not an event to notify about.
-      if (gameId === null) return
-      const game = getSyncableGames().find((g) => g.appId === gameId)
-      addNotification('friend-playing', { login, game: game?.name ?? gameId })
+      const gameName = gameId ? (getSyncableGames().find((g) => g.appId === gameId)?.name ?? gameId) : null
+      // Always forwarded to the renderer — the GameCard badge and the
+      // Friends tab's "currently playing" line both want this regardless of
+      // whether it's toast/bell-worthy (gameId null clears both just as much
+      // as a real id sets them).
+      win.webContents.send('presence:playing', { id, login, gameId, gameName })
+      // The toast/bell notification is gated much tighter (Vitalii's call,
+      // 2026-07-30): only when it's about a game *I* am also playing right
+      // now — otherwise every game a friend happens to touch would interrupt
+      // me regardless of relevance. Going back to null is just the badge
+      // turning off, never notification-worthy either way. The OTHER half of
+      // "friend was already there when I joined" lives in watcher.ts's
+      // launch branch — no fresh event arrives here for that case.
+      if (gameId === null || gameName === null) return
+      if (!isCurrentlyPlaying(gameId)) return
+      addNotification('friend-playing', { login, game: gameName })
     },
     getFriendIds: computeFriendIds,
     getAuthToken: () => {
@@ -1180,10 +1188,20 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('presence:get-snapshot', (): Record<number, boolean> => getPresenceSnapshot())
 
   // Same idea, one level down — currently-known "who's playing what" (see
-  // presenceService.ts's getPlayingSnapshot doc comment).
+  // presenceService.ts's getPlayingSnapshot doc comment). Resolves gameName
+  // here too (same lookup as onPlaying above) so a screen mounting fresh
+  // (e.g. opening the Friends tab) doesn't need its own catalog lookup.
   ipcMain.handle(
     'presence:get-playing-snapshot',
-    (): Record<number, { login: string; gameId: string }> => getPlayingSnapshot()
+    (): Record<number, { login: string; gameId: string; gameName: string }> => {
+      const snapshot = getPlayingSnapshot()
+      const resolved: Record<number, { login: string; gameId: string; gameName: string }> = {}
+      for (const [id, info] of Object.entries(snapshot)) {
+        const gameName = getSyncableGames().find((g) => g.appId === info.gameId)?.name ?? info.gameId
+        resolved[Number(id)] = { ...info, gameName }
+      }
+      return resolved
+    }
   )
 
   // Current connection state — see presenceState's doc comment above.

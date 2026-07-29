@@ -109,7 +109,8 @@ export const uk: Translation = {
     sentLabel: 'Надіслано',
     cancelInvite: 'Скасувати',
     onlineStatus: 'онлайн',
-    offlineStatus: 'офлайн'
+    offlineStatus: 'офлайн',
+    playingLabel: (game) => `🎮 Грає в ${game}`
   },
   history: {
     title: 'Історія синхронізацій',

@@ -105,7 +105,8 @@ export const zhCN: Translation = {
     sentLabel: '已发送',
     cancelInvite: '取消',
     onlineStatus: '在线',
-    offlineStatus: '离线'
+    offlineStatus: '离线',
+    playingLabel: (game) => `🎮 正在玩 ${game}`
   },
   history: {
     title: '同步历史',

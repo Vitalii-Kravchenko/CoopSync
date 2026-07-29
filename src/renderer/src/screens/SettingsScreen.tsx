@@ -70,6 +70,15 @@ function SettingsScreen({
   const [autoCheckUpdates, setAutoCheckUpdates] = useState(true)
   const [appVersion, setAppVersion] = useState('')
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus>({ state: 'idle' })
+  // Disables the "Download update" button the instant it's clicked, before
+  // main's first 'download-progress' event round-trips back and the button
+  // unmounts on its own (updateStatus.state leaving 'available') — without
+  // this, a fast double-click could fire autoUpdater.downloadUpdate() twice
+  // in that window (see updater.ts's downloadInFlight guard, which now also
+  // protects against the same race from the other two "Download" buttons —
+  // the MainScreen banner and the update toast).
+  const [downloadClicked, setDownloadClicked] = useState(false)
+  useEffect(() => setDownloadClicked(false), [updateStatus.state])
   const [showDeleteRepo, setShowDeleteRepo] = useState(false)
   const [deletingRepo, setDeletingRepo] = useState(false)
   const [deleteRepoError, setDeleteRepoError] = useState<string | null>(null)
@@ -490,7 +499,11 @@ function SettingsScreen({
               <Button
                 variant="primary"
                 style={{ height: 30, padding: '0 12px', fontSize: 12, flexShrink: 0, whiteSpace: 'nowrap' }}
-                onClick={() => window.api.updater.download()}
+                onClick={() => {
+                  setDownloadClicked(true)
+                  window.api.updater.download()
+                }}
+                disabled={downloadClicked}
               >
                 {t.settings.downloadUpdate}
               </Button>

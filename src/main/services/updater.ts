@@ -53,9 +53,23 @@ function clearCheckTimeout(): void {
 // the tray, so if you missed it (or dismissed it, or cleared the whole
 // Action Center) it should simply show up again next time, not go silent
 // for good.
+// Guards downloadUpdate() below against firing autoUpdater.downloadUpdate()
+// more than once for the same available version — three independent UI
+// surfaces (Settings, the MainScreen banner, the update toast) can each
+// send a click before the FIRST 'download-progress' event round-trips back
+// and flips their button away from "available", so without this a fast
+// double-click (or clicking two of the three surfaces in that same window)
+// used to kick off two overlapping downloads. Two real electron-updater
+// downloads racing each other is exactly what made the percent shown in the
+// UI jump around non-monotonically (20% / 40% / 80% / back to 0%) instead
+// of climbing — each stream reports its own progress against the same
+// 'download-progress' listener above.
+let downloadInFlight = false
+
 autoUpdater.on('checking-for-update', () => send({ state: 'checking' }))
 autoUpdater.on('update-available', (info) => {
   clearCheckTimeout()
+  downloadInFlight = false
   send({ state: 'available', version: info.version })
   if (getLastNotifiedUpdateVersion() !== info.version) {
     setLastNotifiedUpdateVersion(info.version)
@@ -70,9 +84,13 @@ autoUpdater.on('update-not-available', () => {
 autoUpdater.on('download-progress', (p) =>
   send({ state: 'downloading', percent: Math.round(p.percent) })
 )
-autoUpdater.on('update-downloaded', (info) => send({ state: 'downloaded', version: info.version }))
+autoUpdater.on('update-downloaded', (info) => {
+  downloadInFlight = false
+  send({ state: 'downloaded', version: info.version })
+})
 autoUpdater.on('error', (err) => {
   clearCheckTimeout()
+  downloadInFlight = false
   send({ state: 'error', message: err.message })
 })
 
@@ -94,6 +112,8 @@ function checkForUpdates(): void {
 
 export function downloadUpdate(): void {
   if (!app.isPackaged) return
+  if (downloadInFlight) return
+  downloadInFlight = true
   void autoUpdater.downloadUpdate()
 }
 

@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { colors, fonts, radii, shadows } from '../theme'
 import { CloseIcon } from './icons'
 import { useI18n } from '../i18n'
@@ -13,6 +14,12 @@ interface Props {
 
 function UpdateAvailableBanner({ status, onDismiss }: Props): React.JSX.Element {
   const { t } = useI18n()
+  // Same reasoning as SettingsScreen's downloadClicked — disables this
+  // button the instant it's clicked, before the round-trip to main flips
+  // `status` away from 'available' on its own (see updater.ts's
+  // downloadInFlight guard for the authoritative fix across all 3 surfaces).
+  const [downloadClicked, setDownloadClicked] = useState(false)
+  useEffect(() => setDownloadClicked(false), [status.state])
 
   return (
     <div style={styles.wrap}>
@@ -27,7 +34,15 @@ function UpdateAvailableBanner({ status, onDismiss }: Props): React.JSX.Element 
         </div>
       </div>
       {status.state === 'available' && (
-        <Button variant="primary" style={styles.actionBtn} onClick={() => window.api.updater.download()}>
+        <Button
+          variant="primary"
+          style={styles.actionBtn}
+          onClick={() => {
+            setDownloadClicked(true)
+            window.api.updater.download()
+          }}
+          disabled={downloadClicked}
+        >
           {t.settings.downloadUpdate}
         </Button>
       )}

@@ -53,7 +53,8 @@ export const fr: Translation = {
     savesSizeLabel: 'Taille des sauvegardes :',
     details: 'Détails',
     customTag: 'Ajouté manuellement',
-    setUp: 'Configurer'
+    setUp: 'Configurer',
+    friendPlayingBadge: (login) => `${login} joue`
   },
   addGame: {
     title: 'Ajouter un jeu',
@@ -252,6 +253,8 @@ export const fr: Translation = {
     folderRemovedTitle: 'Dossier retiré du groupe',
     folderRemovedBody: (game, folder) =>
       `« ${game} / ${folder} » a été retiré du groupe coop. Tes propres fichiers restent intacts.`,
+    friendPlayingTitle: 'Un ami joue en ce moment',
+    friendPlayingBody: (login, game) => `${login} vient de lancer ${game}.`,
     restoreAction: 'Restaurer juste pour moi',
     restoring: 'Restauration…',
     restored: 'Restauré — se synchronise maintenant juste pour toi'

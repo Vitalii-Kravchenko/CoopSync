@@ -51,7 +51,8 @@ export const en: Translation = {
     savesSizeLabel: 'Save size:',
     details: 'Details',
     customTag: 'Added manually',
-    setUp: 'Set up'
+    setUp: 'Set up',
+    friendPlayingBadge: (login) => `${login} is playing`
   },
   addGame: {
     title: 'Add a game',
@@ -249,6 +250,8 @@ export const en: Translation = {
     folderRemovedTitle: 'Folder removed from the group',
     folderRemovedBody: (game, folder) =>
       `"${game} / ${folder}" was removed from the co-op group. Your own files are untouched.`,
+    friendPlayingTitle: 'Friend is playing',
+    friendPlayingBody: (login, game) => `${login} just started playing ${game}.`,
     restoreAction: 'Restore just for me',
     restoring: 'Restoring…',
     restored: 'Restored — now syncing just for you'

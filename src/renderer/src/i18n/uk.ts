@@ -53,7 +53,8 @@ export const uk: Translation = {
     savesSizeLabel: 'Розмір сейвів:',
     details: 'Деталі',
     customTag: 'Додано вручну',
-    setUp: 'Налаштувати'
+    setUp: 'Налаштувати',
+    friendPlayingBadge: (login) => `Грає ${login}`
   },
   addGame: {
     title: 'Додати гру',
@@ -251,6 +252,8 @@ export const uk: Translation = {
     folderRemovedTitle: 'Папку видалено з групи',
     folderRemovedBody: (game, folder) =>
       `«${game} / ${folder}» видалено з коопу. Твої файли лишились на місці.`,
+    friendPlayingTitle: 'Друг зараз грає',
+    friendPlayingBody: (login, game) => `${login} щойно запустив(ла) ${game}.`,
     restoreAction: 'Відновити тільки для себе',
     restoring: 'Відновлюю…',
     restored: 'Відновлено — синкається тільки для тебе'

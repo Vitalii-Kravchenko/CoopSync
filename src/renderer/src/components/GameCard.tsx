@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { colors, fonts, radii, shadows, steamPoster, transitions } from '../theme'
 import { useI18n } from '../i18n'
 import type { Translation } from '../i18n'
-import { UploadIcon, DownloadIcon, HistoryIcon, DiskIcon, EditIcon } from './icons'
+import { UploadIcon, DownloadIcon, HistoryIcon, DiskIcon, EditIcon, GamepadIcon } from './icons'
 import Button from './Button'
 import type { SyncStatus } from '../../../shared/types'
 import { formatVersion } from '../../../shared/format'
@@ -31,6 +31,9 @@ interface Props {
   sizeBytes?: number
   /** Sync in progress for this specific game. */
   busy?: boolean
+  /** Login of a mutual friend currently playing this game right now (see
+   *  presenceService.ts's onPlaying / MainScreen's friendPlayingByGame). */
+  friendPlayingLogin?: string
   onUpload?: () => void
   onDownload?: () => void
   /** Open the game's own detail screen (its own sync history, future restore points). */
@@ -139,6 +142,7 @@ function GameCard({
   lastSyncAt,
   sizeBytes,
   busy,
+  friendPlayingLogin,
   onUpload,
   onDownload,
   onOpenDetails
@@ -183,6 +187,14 @@ function GameCard({
         )}
 
         {installed && !supported && <div style={styles.unsupported}>{t.gameCard.unsupported}</div>}
+
+        {friendPlayingLogin && (
+          <div style={styles.friendPlaying} title={t.gameCard.friendPlayingBadge(friendPlayingLogin)}>
+            <span style={styles.friendPlayingDot} />
+            <GamepadIcon size={12} color={colors.cy} />
+            <span style={styles.friendPlayingText}>{t.gameCard.friendPlayingBadge(friendPlayingLogin)}</span>
+          </div>
+        )}
 
         {playable && (
           <div
@@ -396,6 +408,40 @@ const styles: Record<string, React.CSSProperties> = {
     color: colors.text3
   },
   syncing: { color: colors.text1, fontFamily: fonts.display, fontWeight: 600, fontSize: 13, textAlign: 'center' },
+  friendPlaying: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    maxWidth: 'calc(100% - 16px)',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 5,
+    height: 22,
+    padding: '0 9px 0 8px',
+    borderRadius: radii.pill,
+    background: 'rgba(6,8,13,.78)',
+    border: `1px solid ${colors.borderAccent}`,
+    backdropFilter: 'blur(2px)',
+    boxShadow: shadows.sh2
+  },
+  friendPlayingDot: {
+    width: 5,
+    height: 5,
+    borderRadius: '50%',
+    background: colors.cy,
+    flexShrink: 0,
+    animation: 'glowpulse 1.4s ease-in-out infinite'
+  },
+  friendPlayingText: {
+    fontFamily: fonts.display,
+    fontSize: 10.5,
+    fontWeight: 600,
+    color: colors.text1,
+    letterSpacing: '.02em',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap'
+  },
   unsupported: {
     position: 'absolute',
     top: '50%',

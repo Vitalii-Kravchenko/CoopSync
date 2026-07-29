@@ -23,7 +23,8 @@ import type {
   GameSavePathInfo,
   CustomExtraFolder,
   PresenceConnectionState,
-  FriendPushedEvent
+  FriendPushedEvent,
+  FriendPlayingEvent
 } from '../shared/types'
 
 // API exposed to the renderer as window.api.
@@ -302,6 +303,19 @@ const api = {
       const listener = (_event: unknown, payload: FriendPushedEvent): void => callback(payload)
       ipcRenderer.on('presence:friend-pushed', listener)
       return () => ipcRenderer.removeListener('presence:friend-pushed', listener)
+    },
+    /** Currently-known friend gameId, keyed by numeric GitHub id — only
+     *  present for a friend currently playing (see presenceService.ts's
+     *  getPlayingSnapshot). For a screen that mounts after presence already
+     *  connected. */
+    getPlayingSnapshot: (): Promise<Record<number, { login: string; gameId: string }>> =>
+      ipcRenderer.invoke('presence:get-playing-snapshot'),
+    /** Subscribe to a friend starting (gameId set) or stopping (gameId null)
+     *  playing a game we both sync. */
+    onPlaying: (callback: (event: FriendPlayingEvent) => void): (() => void) => {
+      const listener = (_event: unknown, payload: FriendPlayingEvent): void => callback(payload)
+      ipcRenderer.on('presence:playing', listener)
+      return () => ipcRenderer.removeListener('presence:playing', listener)
     }
   },
   support: {

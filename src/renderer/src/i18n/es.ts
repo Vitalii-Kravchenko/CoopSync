@@ -53,7 +53,8 @@ export const es: Translation = {
     savesSizeLabel: 'Tamaño de las partidas:',
     details: 'Detalles',
     customTag: 'Añadido manualmente',
-    setUp: 'Configurar'
+    setUp: 'Configurar',
+    friendPlayingBadge: (login) => `${login} está jugando`
   },
   addGame: {
     title: 'Añadir un juego',
@@ -251,6 +252,8 @@ export const es: Translation = {
     folderRemovedTitle: 'Carpeta eliminada del grupo',
     folderRemovedBody: (game, folder) =>
       `"${game} / ${folder}" se eliminó del grupo co-op. Tus propios archivos siguen intactos.`,
+    friendPlayingTitle: 'Un amigo está jugando',
+    friendPlayingBody: (login, game) => `${login} acaba de iniciar ${game}.`,
     restoreAction: 'Restaurar solo para mí',
     restoring: 'Restaurando…',
     restored: 'Restaurado — ahora se sincroniza solo para ti'

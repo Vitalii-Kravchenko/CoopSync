@@ -16,6 +16,10 @@ interface Callbacks {
   onConnectionChange: (state: PresenceConnectionState) => void
   onPresence: (id: number, online: boolean) => void
   onSavePushed: (fromId: number, fromLogin: string, gameId: string) => void
+  /** A mutual friend started (gameId set) or stopped (gameId null) playing —
+   *  fan-out from the server (see coopsync-server's hub.ts setPlaying), plus
+   *  a one-time snapshot right after declaring friends (bootstrap). */
+  onPlaying: (id: number, login: string, gameId: string | null) => void
   /** Called periodically (and once right after auth) to get the current
    *  mutual-friend id list — covers invite accepted/kicked/role changed
    *  without every one of those call sites needing to remember to push an
@@ -45,6 +49,13 @@ let friendsRefreshTimer: ReturnType<typeof setInterval> | null = null
 // 'friends' declare, see coopsync-server's hub.ts setFriends) ask for the
 // current picture instead of waiting up to FRIENDS_REFRESH_MS for the next one.
 const knownPresence = new Map<number, boolean>()
+// Same idea as knownPresence, one level down: friendId -> {login, gameId}
+// currently playing (login carried along since a screen mounting fresh via
+// getPlayingSnapshot has no other cheap way to resolve it). Absence means
+// "not known to be playing anything" — cleared wholesale on stopPresence,
+// same as knownPresence (a fresh connect gets a fresh bootstrap snapshot
+// from the server for whoever's still playing).
+const knownPlaying = new Map<number, { login: string; gameId: string }>()
 // Bumped on every startPresence/stopPresence — connect() awaits a token
 // mint before opening the socket, and anything captured before that await
 // (or a close event from a previous session's socket) must not act on the
@@ -55,6 +66,11 @@ let session = 0
 /** Current known online/offline per friend id. */
 export function getPresenceSnapshot(): Record<number, boolean> {
   return Object.fromEntries(knownPresence)
+}
+
+/** Current known {login, gameId} per friend id (only present while playing). */
+export function getPlayingSnapshot(): Record<number, { login: string; gameId: string }> {
+  return Object.fromEntries(knownPlaying)
 }
 
 export function startPresence(cb: Callbacks): void {
@@ -79,11 +95,19 @@ export function stopPresence(): void {
   ws?.close()
   ws = null
   knownPresence.clear()
+  knownPlaying.clear()
 }
 
 /** Tell the server we just pushed a save — a no-op if presence isn't connected. */
 export function notifySavePushed(gameId: string): void {
   send({ t: 'save:pushed', gameId })
+}
+
+/** Tell the server what we're currently playing (or that we stopped, via
+ *  null) — a no-op if presence isn't connected, same as notifySavePushed.
+ *  See watcher.ts's launch/exit detection for the call sites. */
+export function notifyPlayingState(gameId: string | null): void {
+  send({ t: 'playing', gameId })
 }
 
 function send(msg: Record<string, unknown>): void {
@@ -150,6 +174,16 @@ function openSocket(mySession: number, token: string): void {
       case 'save:pushed':
         if (typeof msg['from'] === 'number' && typeof msg['gameId'] === 'string') {
           callbacks?.onSavePushed(msg['from'], String(msg['fromLogin'] ?? ''), msg['gameId'])
+        }
+        break
+      case 'playing':
+        if (typeof msg['from'] === 'number' && (msg['gameId'] === null || typeof msg['gameId'] === 'string')) {
+          const id = msg['from']
+          const gameId = msg['gameId'] as string | null
+          const login = String(msg['fromLogin'] ?? '')
+          if (gameId === null) knownPlaying.delete(id)
+          else knownPlaying.set(id, { login, gameId })
+          callbacks?.onPlaying(id, login, gameId)
         }
         break
       case 'error':

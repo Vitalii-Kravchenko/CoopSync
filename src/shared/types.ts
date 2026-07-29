@@ -268,6 +268,7 @@ export type AppNotificationKind =
   | 'access-revoked' // params: { host }
   | 'game-removed' // params: { game, appId } — game is now orphaned (see CustomGame.orphaned), Restore action re-syncs it personal-only
   | 'folder-removed' // params: { game, folder, appId, folderId } — an extra folder (CustomGame.extraFolders) went orphaned, same Restore idea one level down
+  | 'friend-playing' // params: { login, game } — a mutual friend just launched a game we both sync (see presenceService.ts's onPlaying)
 
 /** Same events as the bell (AppNotificationKind) plus one that's toast-only —
  *  a friend's save arriving is transient, worth a popup but not a permanent
@@ -454,6 +455,15 @@ export interface FriendPushedEvent {
   fromId: number
   fromLogin: string
   gameId: string
+}
+
+/** A mutual friend just started (or stopped) playing a game — used to drive
+ *  the "friend is playing" badge on GameCard. gameId: null means they closed
+ *  it (or went offline — see coopsync-server's hub.ts offline-clear). */
+export interface FriendPlayingEvent {
+  id: number
+  login: string
+  gameId: string | null
 }
 
 /** Auto-update state, pushed from main (electron-updater) to the renderer. */

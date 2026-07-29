@@ -8,7 +8,8 @@ import {
   LibraryIcon,
   AlertTriangleIcon,
   AlertCircleIcon,
-  CloseIcon
+  CloseIcon,
+  GamepadIcon
 } from './components/icons'
 
 // Shared between NotificationBell (persisted bell panel) and the toast
@@ -56,6 +57,11 @@ export function describeNotification(
       return {
         title: t.notifications.folderRemovedTitle,
         body: t.notifications.folderRemovedBody(params.game, params.folder)
+      }
+    case 'friend-playing':
+      return {
+        title: t.notifications.friendPlayingTitle,
+        body: t.notifications.friendPlayingBody(params.login, params.game)
       }
   }
 }
@@ -133,7 +139,8 @@ export const KIND_STYLE: Record<ToastKind, KindStyle> = {
   'sync-conflict-skipped': style('warning', AlertTriangleIcon),
   'access-revoked': style('danger', AlertCircleIcon),
   'game-removed': style('warning', TrashIcon),
-  'folder-removed': style('warning', TrashIcon)
+  'folder-removed': style('warning', TrashIcon),
+  'friend-playing': style('info', GamepadIcon)
 }
 
 /** Kinds whose toast carries an action button instead of a plain dismiss ×

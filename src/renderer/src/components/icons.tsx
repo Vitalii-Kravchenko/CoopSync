@@ -315,3 +315,15 @@ export function UsersIcon({ size = 16, color }: IconProps): React.JSX.Element {
     </svg>
   )
 }
+
+export function GamepadIcon({ size = 16, color }: IconProps): React.JSX.Element {
+  return (
+    <svg {...base(size)} style={{ color }}>
+      <line x1="6" y1="12" x2="10" y2="12" />
+      <line x1="8" y1="10" x2="8" y2="14" />
+      <circle cx="15" cy="13" r="1" fill={color ?? 'currentColor'} stroke="none" />
+      <circle cx="18" cy="11" r="1" fill={color ?? 'currentColor'} stroke="none" />
+      <path d="M17.32 5H6.68a4 4 0 0 0-3.98 3.6l-.7 7A3 3 0 0 0 5 19a3 3 0 0 0 2.24-1l1.52-1.68a2 2 0 0 1 1.48-.65h3.52a2 2 0 0 1 1.48.65L16.76 18a3 3 0 0 0 2.24 1 3 3 0 0 0 3-3.4l-.7-7A4 4 0 0 0 17.32 5Z" />
+    </svg>
+  )
+}

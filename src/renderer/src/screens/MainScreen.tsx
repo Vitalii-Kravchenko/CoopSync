@@ -99,6 +99,32 @@ function MainScreen({
     return window.api.updater.onStatus(setUpdateStatus)
   }, [])
 
+  // "Friend is playing" badge (see presenceService.ts's onPlaying) — appId ->
+  // their login, only present while they're actually playing it right now.
+  // A friend only ever plays one thing at a time (protocol.ts), so a fresh
+  // event first clears whatever entry used to have that same login before
+  // (possibly) adding it back under the new gameId — otherwise switching
+  // games would leave a stale badge glowing on the OLD one forever.
+  const [friendPlayingByGame, setFriendPlayingByGame] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    window.api.presence.getPlayingSnapshot().then((snapshot) => {
+      const map: Record<string, string> = {}
+      for (const info of Object.values(snapshot)) map[info.gameId] = info.login
+      setFriendPlayingByGame(map)
+    })
+    return window.api.presence.onPlaying(({ login, gameId }) => {
+      setFriendPlayingByGame((prev) => {
+        const next: Record<string, string> = {}
+        for (const [appId, existingLogin] of Object.entries(prev)) {
+          if (existingLogin !== login) next[appId] = existingLogin
+        }
+        if (gameId !== null) next[gameId] = login
+        return next
+      })
+    })
+  }, [])
+
   // This screen fires off several independent, unawaited installed-games
   // refreshes from different triggers (mount, a syncVersion bump, returning
   // to this tab, a manual sync, removing a custom game...) that can easily
@@ -419,6 +445,7 @@ function MainScreen({
                 lastSyncAt={syncStatuses[g.appId]?.lastSyncAt}
                 sizeBytes={syncStatuses[g.appId]?.sizeBytes}
                 busy={syncing === g.appId}
+                friendPlayingLogin={friendPlayingByGame[g.appId]}
                 onUpload={() => handleSync(g.appId, 'upload')}
                 onDownload={() => handleSync(g.appId, 'download')}
                 onOpenDetails={() =>
@@ -455,6 +482,7 @@ function MainScreen({
                     lastSyncAt={syncStatuses[g.appId]?.lastSyncAt}
                     sizeBytes={syncStatuses[g.appId]?.sizeBytes}
                     busy={syncing === g.appId}
+                    friendPlayingLogin={friendPlayingByGame[g.appId]}
                     onUpload={() => handleSync(g.appId, 'upload')}
                     onDownload={() => handleSync(g.appId, 'download')}
                     onOpenDetails={() => setSelectedGame({ appId: g.appId, name: g.name })}

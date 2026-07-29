@@ -21,7 +21,7 @@ import {
 import { getRunningProcesses, isGameRunning } from './processCheck'
 import { getNotified, markNotified } from './notifyState'
 import { getSavesRepo, listInvitations, listCollaborators } from './github'
-import { notifySavePushed } from './presenceService'
+import { notifySavePushed, notifyPlayingState } from './presenceService'
 import {
   getKnownPending,
   getKnownCollaborators,
@@ -248,6 +248,11 @@ async function tick(
       if (initial) continue
 
       if (!was && now) {
+        // Tell mutual friends we're playing this — best-effort, a no-op if
+        // presence isn't connected (see presenceService.ts). Fired before
+        // the pull work below so a friend's badge lights up the instant the
+        // game opens, not after however long the sync itself takes.
+        notifyPlayingState(game.appId)
         // The game just launched → first, download files missing locally
         // (e.g. a deleted world), without touching existing local files —
         // this is always safe, regardless of versions. Then a full pull,
@@ -346,6 +351,9 @@ async function tick(
           }
         }
       } else if (was && !now) {
+        // Tell mutual friends we stopped — same best-effort no-op reasoning
+        // as the launch-time call above.
+        notifyPlayingState(null)
         // The game closed → the exit-time push is still the final catch-all,
         // regardless of whatever the mid-session settle check already did —
         // it covers whatever changed in the gap since the last settled push,

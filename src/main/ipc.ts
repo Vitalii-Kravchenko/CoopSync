@@ -46,7 +46,7 @@ import {
 import { startWatcher, stopWatcher, triggerFriendCheck } from './services/watcher'
 import { markSeen } from './services/notifyState'
 import { forgetPending } from './services/backgroundState'
-import { getNotifications, markRead, markAllRead, clearAll } from './services/notificationStore'
+import { getNotifications, markRead, markAllRead, clearAll, addNotification } from './services/notificationStore'
 import { READY_GAMES } from './games/catalog'
 import { resolveSavePath, isCustomSavePath, setSavePathOverride } from './games/savePath'
 import {
@@ -81,7 +81,13 @@ import {
 import { isGamePersonal, setGamePersonal } from './games/syncScope'
 import { scanForExecutables } from './games/exeScan'
 import { saveToken, loadToken, clearToken } from './services/tokenStore'
-import { startPresence, stopPresence, notifySavePushed, getPresenceSnapshot } from './services/presenceService'
+import {
+  startPresence,
+  stopPresence,
+  notifySavePushed,
+  getPresenceSnapshot,
+  getPlayingSnapshot
+} from './services/presenceService'
 import { mintPresenceToken } from './services/presenceJwt'
 import { sendSupportMessage } from './services/support'
 import { checkForUpdates, downloadUpdate, quitAndInstall } from './services/updater'
@@ -216,6 +222,16 @@ function startPresenceIfConfigured(win: BrowserWindow): void {
       // eventually run on its own — just triggered right now instead of waited for.
       triggerFriendCheck()
       win.webContents.send('presence:friend-pushed', { fromId, fromLogin, gameId })
+    },
+    onPlaying: (id, login, gameId) => {
+      // Always forwarded to the renderer for the GameCard badge, regardless
+      // of direction (gameId null clears it just as much as a real id sets it).
+      win.webContents.send('presence:playing', { id, login, gameId })
+      // Only a REAL "started playing" is toast/bell-worthy — going back to
+      // null is just the badge quietly turning off, not an event to notify about.
+      if (gameId === null) return
+      const game = getSyncableGames().find((g) => g.appId === gameId)
+      addNotification('friend-playing', { login, game: game?.name ?? gameId })
     },
     getFriendIds: computeFriendIds,
     getAuthToken: () => {
@@ -1162,6 +1178,13 @@ export function registerIpcHandlers(): void {
   // got its one-time push from the server (see presenceService.ts's
   // getPresenceSnapshot doc comment).
   ipcMain.handle('presence:get-snapshot', (): Record<number, boolean> => getPresenceSnapshot())
+
+  // Same idea, one level down — currently-known "who's playing what" (see
+  // presenceService.ts's getPlayingSnapshot doc comment).
+  ipcMain.handle(
+    'presence:get-playing-snapshot',
+    (): Record<number, { login: string; gameId: string }> => getPlayingSnapshot()
+  )
 
   // Current connection state — see presenceState's doc comment above.
   ipcMain.handle('presence:get-connection-state', (): PresenceConnectionState => presenceState)

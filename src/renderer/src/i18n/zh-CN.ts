@@ -51,7 +51,8 @@ export const zhCN: Translation = {
     savesSizeLabel: '存档大小：',
     details: '详情',
     customTag: '手动添加',
-    setUp: '设置'
+    setUp: '设置',
+    friendPlayingBadge: (login) => `${login} 正在游玩`
   },
   addGame: {
     title: '添加游戏',
@@ -239,6 +240,8 @@ export const zhCN: Translation = {
     gameRemovedBody: (game) => `《${game}》已从联机小组移除。你自己的文件未受影响。`,
     folderRemovedTitle: '文件夹已从小组移除',
     folderRemovedBody: (game, folder) => `"${game} / ${folder}" 已从联机小组移除。你自己的文件未受影响。`,
+    friendPlayingTitle: '好友正在游戏',
+    friendPlayingBody: (login, game) => `${login} 刚刚开始玩《${game}》。`,
     restoreAction: '仅为自己恢复',
     restoring: '正在恢复…',
     restored: '已恢复——现在仅为你同步'

@@ -81,6 +81,8 @@ export interface Translation {
     details: string
     customTag: string
     setUp: string
+    /** Overlay badge on the poster when a mutual friend is playing this game right now. */
+    friendPlayingBadge: (login: string) => string
   }
   addGame: {
     title: string
@@ -274,6 +276,9 @@ export interface Translation {
     gameRemovedBody: (game: string) => string
     folderRemovedTitle: string
     folderRemovedBody: (game: string, folder: string) => string
+    /** A mutual friend just launched a game we both sync. */
+    friendPlayingTitle: string
+    friendPlayingBody: (login: string, game: string) => string
     /** Action button on the game-removed/folder-removed notification —
      *  keeps the local copy, re-syncs it just for the clicker (see
      *  CustomGame.orphaned/personal). */

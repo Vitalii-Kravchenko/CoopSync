@@ -53,7 +53,8 @@ export const de: Translation = {
     savesSizeLabel: 'Speichergröße:',
     details: 'Details',
     customTag: 'Manuell hinzugefügt',
-    setUp: 'Einrichten'
+    setUp: 'Einrichten',
+    friendPlayingBadge: (login) => `${login} spielt`
   },
   addGame: {
     title: 'Spiel hinzufügen',
@@ -252,6 +253,8 @@ export const de: Translation = {
     folderRemovedTitle: 'Ordner aus der Gruppe entfernt',
     folderRemovedBody: (game, folder) =>
       `„${game} / ${folder}" wurde aus der Koop-Gruppe entfernt. Deine eigenen Dateien sind unberührt.`,
+    friendPlayingTitle: 'Freund spielt gerade',
+    friendPlayingBody: (login, game) => `${login} hat gerade ${game} gestartet.`,
     restoreAction: 'Nur für mich wiederherstellen',
     restoring: 'Wird wiederhergestellt…',
     restored: 'Wiederhergestellt — synct jetzt nur für dich'

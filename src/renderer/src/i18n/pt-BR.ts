@@ -53,7 +53,8 @@ export const ptBR: Translation = {
     savesSizeLabel: 'Tamanho dos saves:',
     details: 'Detalhes',
     customTag: 'Adicionado manualmente',
-    setUp: 'Configurar'
+    setUp: 'Configurar',
+    friendPlayingBadge: (login) => `${login} está jogando`
   },
   addGame: {
     title: 'Adicionar um jogo',
@@ -251,6 +252,8 @@ export const ptBR: Translation = {
     folderRemovedTitle: 'Pasta removida do grupo',
     folderRemovedBody: (game, folder) =>
       `"${game} / ${folder}" foi removida do grupo co-op. Seus próprios arquivos continuam intactos.`,
+    friendPlayingTitle: 'Um amigo está jogando',
+    friendPlayingBody: (login, game) => `${login} acabou de iniciar ${game}.`,
     restoreAction: 'Restaurar só para mim',
     restoring: 'Restaurando…',
     restored: 'Restaurado — sincronizando agora só para você'

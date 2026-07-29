@@ -53,7 +53,8 @@ export const ru: Translation = {
     savesSizeLabel: 'Размер сейвов:',
     details: 'Подробнее',
     customTag: 'Добавлено вручную',
-    setUp: 'Настроить'
+    setUp: 'Настроить',
+    friendPlayingBadge: (login) => `Играет ${login}`
   },
   addGame: {
     title: 'Добавить игру',
@@ -251,6 +252,8 @@ export const ru: Translation = {
     folderRemovedTitle: 'Папка удалена из группы',
     folderRemovedBody: (game, folder) =>
       `«${game} / ${folder}» удалена из кооп-группы. Твои собственные файлы не тронуты.`,
+    friendPlayingTitle: 'Друг сейчас играет',
+    friendPlayingBody: (login, game) => `${login} только что запустил(а) ${game}.`,
     restoreAction: 'Восстановить только для себя',
     restoring: 'Восстанавливаю…',
     restored: 'Восстановлено — синхронизируется теперь только для тебя'

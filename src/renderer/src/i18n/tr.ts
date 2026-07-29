@@ -53,7 +53,8 @@ export const tr: Translation = {
     savesSizeLabel: 'Kayıt boyutu:',
     details: 'Ayrıntılar',
     customTag: 'Elle eklendi',
-    setUp: 'Kur'
+    setUp: 'Kur',
+    friendPlayingBadge: (login) => `${login} oynuyor`
   },
   addGame: {
     title: 'Oyun ekle',
@@ -252,6 +253,8 @@ export const tr: Translation = {
     folderRemovedTitle: 'Klasör gruptan kaldırıldı',
     folderRemovedBody: (game, folder) =>
       `"${game} / ${folder}" co-op grubundan kaldırıldı. Kendi dosyaların dokunulmadan duruyor.`,
+    friendPlayingTitle: 'Bir arkadaşın şu an oynuyor',
+    friendPlayingBody: (login, game) => `${login} az önce ${game} oyununu başlattı.`,
     restoreAction: 'Sadece benim için geri yükle',
     restoring: 'Geri yükleniyor…',
     restored: 'Geri yüklendi — artık sadece senin için senkronize ediliyor'

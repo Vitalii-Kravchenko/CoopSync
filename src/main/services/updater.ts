@@ -66,9 +66,37 @@ function clearCheckTimeout(): void {
 // 'download-progress' listener above.
 let downloadInFlight = false
 
+// Same reasoning as checkTimeout above, one step later: electron-updater can
+// go silent mid-download too (not just during the initial check), and with
+// downloadInFlight now the ONLY thing standing between a stuck download and
+// an unusable "Download" button, a silent hang would previously have been
+// masked by a double-click accidentally starting a second, working attempt.
+// Rearmed on every real 'download-progress' tick, so a big file on a slow
+// connection is never mistaken for stalled as long as it keeps moving at
+// all — only genuine silence for this long forces a recoverable error state.
+const DOWNLOAD_STALL_MS = 60_000
+let downloadStallTimer: ReturnType<typeof setTimeout> | null = null
+
+function clearDownloadStallTimer(): void {
+  if (downloadStallTimer) {
+    clearTimeout(downloadStallTimer)
+    downloadStallTimer = null
+  }
+}
+
+function armDownloadStallTimer(): void {
+  clearDownloadStallTimer()
+  downloadStallTimer = setTimeout(() => {
+    downloadStallTimer = null
+    downloadInFlight = false
+    send({ state: 'error', message: 'download stalled' })
+  }, DOWNLOAD_STALL_MS)
+}
+
 autoUpdater.on('checking-for-update', () => send({ state: 'checking' }))
 autoUpdater.on('update-available', (info) => {
   clearCheckTimeout()
+  clearDownloadStallTimer()
   downloadInFlight = false
   send({ state: 'available', version: info.version })
   if (getLastNotifiedUpdateVersion() !== info.version) {
@@ -81,15 +109,18 @@ autoUpdater.on('update-not-available', () => {
   clearCheckTimeout()
   send({ state: 'not-available' })
 })
-autoUpdater.on('download-progress', (p) =>
+autoUpdater.on('download-progress', (p) => {
+  armDownloadStallTimer()
   send({ state: 'downloading', percent: Math.round(p.percent) })
-)
+})
 autoUpdater.on('update-downloaded', (info) => {
+  clearDownloadStallTimer()
   downloadInFlight = false
   send({ state: 'downloaded', version: info.version })
 })
 autoUpdater.on('error', (err) => {
   clearCheckTimeout()
+  clearDownloadStallTimer()
   downloadInFlight = false
   send({ state: 'error', message: err.message })
 })
@@ -114,6 +145,9 @@ export function downloadUpdate(): void {
   if (!app.isPackaged) return
   if (downloadInFlight) return
   downloadInFlight = true
+  // Armed here too, not just on the first 'download-progress' tick — covers
+  // a hang so complete that not even one progress event ever arrives.
+  armDownloadStallTimer()
   void autoUpdater.downloadUpdate()
 }
 

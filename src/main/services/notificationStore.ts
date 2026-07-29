@@ -2,6 +2,7 @@ import { app, BrowserWindow } from 'electron'
 import { randomUUID } from 'crypto'
 import { existsSync, readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
+import { showToast } from './toastWindow'
 import type { AppNotification, AppNotificationKind } from '../../shared/types'
 
 // The notification bell's persisted history — unlike the transient sync
@@ -54,6 +55,11 @@ export function addNotification(kind: AppNotificationKind, params: Record<string
   list.length = Math.min(list.length, MAX_NOTIFICATIONS)
   persist()
   broadcast()
+  // 'update-available' is excluded — updater.ts already shows its OWN toast
+  // for this kind, deliberately NOT deduped per-version the way the bell
+  // entry is (see updater.ts's comment on why). Toasting it again here would
+  // double up.
+  if (kind !== 'update-available') showToast(kind, params)
 }
 
 export function markRead(ids: string[]): void {

@@ -261,8 +261,11 @@ function App(): React.JSX.Element {
 
   // A friend pushed a save while this device wasn't running/looking —
   // background-detected by the watcher (see watcher.ts checkFriendUpdates),
-  // independent of any game launch/exit on THIS pc. Toast via the OS
-  // notification center + light up the History nav badge.
+  // independent of any game launch/exit on THIS pc. The toast itself is now
+  // fired from main (ipc.ts's watcher:start handler, via toastWindow.ts) —
+  // it needs to show even while this window is hidden in the tray, which a
+  // renderer-side Notification call here couldn't guarantee. This effect
+  // only owns the History nav badge + background refresh.
   useEffect(() => {
     if (phase !== 'app') return
     return window.api.watcher.onFriendUpdate((updates) => {
@@ -271,18 +274,12 @@ function App(): React.JSX.Element {
         for (const u of updates) next.add(u.appId)
         return next
       })
-      for (const u of updates) {
-        const n = new Notification(t.notifications.friendUploadedTitle, {
-          body: t.notifications.friendUploadedBody(u.updatedBy, u.name)
-        })
-        n.onclick = () => void window.api.window.maximize()
-      }
       // Refresh statuses/history in the background — if the Games tab is
       // already open, this shows the new version right away and (via the
       // 'active' gate in MainScreen) marks it seen immediately too.
       bumpSyncVersion()
     })
-  }, [phase, t])
+  }, [phase])
 
   // Every ~2min background status check (watcher.ts's checkFriendUpdates)
   // may silently materialize a co-op partner's new custom game or adopt

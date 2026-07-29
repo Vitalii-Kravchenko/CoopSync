@@ -240,7 +240,7 @@ export const uk: Translation = {
     newGamesTitle: 'Додано підтримку нових ігор',
     newGamesBody: (names) => `CoopSync тепер синхронізує: ${names}.`,
     friendAcceptedTitle: 'Запрошення прийнято',
-    friendAcceptedBody: (login) => `Запрошення для ${login} прийнято — тепер є доступ.`,
+    friendAcceptedBody: (login) => `Запрошення для ${login} прийнято.`,
     friendDeclinedTitle: 'Запрошення не прийнято',
     friendDeclinedBody: (login) => `Запрошення для ${login} не прийнято.`,
     syncConflictTitle: 'Синк пропущено',

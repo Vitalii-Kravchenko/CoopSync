@@ -241,7 +241,7 @@ export const de: Translation = {
     newGamesTitle: 'Neue Spiele unterstützt',
     newGamesBody: (names) => `CoopSync synchronisiert jetzt: ${names}.`,
     friendAcceptedTitle: 'Einladung angenommen',
-    friendAcceptedBody: (login) => `${login} hat deine Einladung angenommen und hat jetzt Zugriff.`,
+    friendAcceptedBody: (login) => `${login} hat deine Einladung angenommen.`,
     friendDeclinedTitle: 'Einladung nicht angenommen',
     friendDeclinedBody: (login) => `${login} hat die Einladung nicht angenommen.`,
     syncConflictTitle: 'Synchronisierung übersprungen',

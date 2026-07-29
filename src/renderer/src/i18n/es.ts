@@ -240,7 +240,7 @@ export const es: Translation = {
     newGamesTitle: 'Nuevos juegos compatibles',
     newGamesBody: (names) => `CoopSync ahora sincroniza: ${names}.`,
     friendAcceptedTitle: 'Invitación aceptada',
-    friendAcceptedBody: (login) => `${login} aceptó tu invitación y ahora tiene acceso.`,
+    friendAcceptedBody: (login) => `${login} aceptó tu invitación.`,
     friendDeclinedTitle: 'Invitación no aceptada',
     friendDeclinedBody: (login) => `${login} no aceptó la invitación.`,
     syncConflictTitle: 'Sincronización omitida',

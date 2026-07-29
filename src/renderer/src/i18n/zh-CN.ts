@@ -229,7 +229,7 @@ export const zhCN: Translation = {
     newGamesTitle: '新增支持的游戏',
     newGamesBody: (names) => `CoopSync 现在支持同步：${names}。`,
     friendAcceptedTitle: '邀请已接受',
-    friendAcceptedBody: (login) => `${login} 已接受邀请，现在拥有访问权限。`,
+    friendAcceptedBody: (login) => `${login} 已接受邀请。`,
     friendDeclinedTitle: '邀请未被接受',
     friendDeclinedBody: (login) => `${login} 未接受邀请。`,
     syncConflictTitle: '同步已跳过',

@@ -1,0 +1,145 @@
+/* Toast overlay window — own tiny stylesheet (not index.css: this window
+   never needs the scrollbar/reset rules meant for the full app UI).
+   Tone hex values here must stay in sync with notificationCopy.ts's
+   TONE_COLORS/NEUTRAL — CSS can't import JS constants. */
+
+html,
+body {
+  margin: 0;
+  background: transparent;
+  overflow: hidden;
+  font-family: 'Sora', system-ui, sans-serif;
+}
+* {
+  box-sizing: border-box;
+}
+
+/* Card border hover — the ONLY visual change on card hover (no lift/
+   transform, see ToastCard's doc comment). Pausing the countdown itself is
+   handled in JS (mouseenter/mouseleave), this only owns the color. */
+.toast-card {
+  transition: border-color 150ms ease;
+}
+.toast-card-success:hover {
+  border-color: rgba(63, 217, 166, 0.75);
+}
+.toast-card-warning:hover {
+  border-color: rgba(242, 177, 74, 0.75);
+}
+.toast-card-danger:hover {
+  border-color: rgba(255, 107, 124, 0.75);
+}
+.toast-card-info:hover {
+  border-color: rgba(90, 169, 255, 0.75);
+}
+.toast-card-neutral:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+/* Dismiss "×" — quiet at rest, tinted on hover/focus. Color/background only. */
+.toast-dismiss {
+  transition:
+    color 120ms ease,
+    background 120ms ease;
+}
+.toast-dismiss-success:hover,
+.toast-dismiss-success:focus-visible {
+  color: #3fd9a6;
+  background: rgba(63, 217, 166, 0.12);
+}
+.toast-dismiss-warning:hover,
+.toast-dismiss-warning:focus-visible {
+  color: #f2b14a;
+  background: rgba(242, 177, 74, 0.12);
+}
+.toast-dismiss-danger:hover,
+.toast-dismiss-danger:focus-visible {
+  color: #ff6b7c;
+  background: rgba(255, 107, 124, 0.12);
+}
+.toast-dismiss-info:hover,
+.toast-dismiss-info:focus-visible {
+  color: #5aa9ff;
+  background: rgba(90, 169, 255, 0.12);
+}
+.toast-dismiss-neutral:hover,
+.toast-dismiss-neutral:focus-visible {
+  color: #b6bfd2;
+  background: rgba(255, 255, 255, 0.08);
+}
+.toast-dismiss:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+/* Action button (e.g. "Update now"/"Restore") — solid tone background set
+   inline (per-instance), brightness-only hover/active, no movement. */
+.toast-action {
+  transition: filter 120ms ease;
+}
+.toast-action:hover {
+  filter: brightness(1.08);
+}
+.toast-action:active {
+  filter: brightness(0.94);
+}
+/* outline-color is explicit per tone (not currentColor) — the button's own
+   text color is a near-black shade meant to sit ON the tone background, so
+   currentColor here would render an almost-invisible dark ring. */
+.toast-action:focus-visible {
+  outline: 2px solid;
+  outline-offset: 2px;
+}
+.toast-action-success:focus-visible {
+  outline-color: #3fd9a6;
+}
+.toast-action-warning:focus-visible {
+  outline-color: #f2b14a;
+}
+.toast-action-danger:focus-visible {
+  outline-color: #ff6b7c;
+}
+.toast-action-info:focus-visible {
+  outline-color: #5aa9ff;
+}
+.toast-action-neutral:focus-visible {
+  outline-color: #b6bfd2;
+}
+
+/* Entrance/exit — the toast's OWN motion (independent of the no-movement
+   hover rule above). New toast slides up + fades in; a dismissed one just
+   fades out in place (the flex gap collapses once it's actually removed
+   from the list, a beat after this animation finishes). */
+@keyframes toast-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes toast-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+/* Durations here must match ToastStack.tsx's EXIT_MS (the array-removal
+   delay for toast-exit) so the DOM node is only actually dropped once its
+   fade has genuinely finished playing. */
+.toast-enter {
+  animation: toast-slide-in 200ms ease-out;
+}
+.toast-exit {
+  animation: toast-fade-out 150ms ease-in forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast-enter,
+  .toast-exit {
+    animation-duration: 0.001ms;
+  }
+}

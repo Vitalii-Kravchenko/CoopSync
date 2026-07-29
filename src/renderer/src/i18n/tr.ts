@@ -241,7 +241,7 @@ export const tr: Translation = {
     newGamesTitle: 'Yeni oyun desteği eklendi',
     newGamesBody: (names) => `CoopSync artık şunları senkronize edebilir: ${names}.`,
     friendAcceptedTitle: 'Davet kabul edildi',
-    friendAcceptedBody: (login) => `${login} davetini kabul etti ve artık erişimi var.`,
+    friendAcceptedBody: (login) => `${login} davetini kabul etti.`,
     friendDeclinedTitle: 'Davet kabul edilmedi',
     friendDeclinedBody: (login) => `${login} daveti kabul etmedi.`,
     syncConflictTitle: 'Senkronizasyon atlandı',

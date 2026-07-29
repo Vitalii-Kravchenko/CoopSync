@@ -2,18 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import { colors, fonts, radii, shadows } from '../theme'
 import { useI18n } from '../i18n'
 import type { Translation } from '../i18n'
-import {
-  BellIcon,
-  CheckIcon,
-  TrashIcon,
-  InfoIcon,
-  LibraryIcon,
-  CloseIcon,
-  AlertTriangleIcon,
-  AlertCircleIcon
-} from './icons'
+import { BellIcon, CheckIcon, TrashIcon } from './icons'
 import Button from './Button'
-import type { AppNotification, AppNotificationKind } from '../../../shared/types'
+import { describeNotification, KIND_STYLE } from '../notificationCopy'
+import type { AppNotification } from '../../../shared/types'
 
 // ISO timestamp -> "2 min ago" / "1 hr ago" / "3 days ago" (localized).
 // Same helper (and the same t.history.* keys) as History/GameDetail/Friends —
@@ -26,59 +18,6 @@ function formatRelativeTime(iso: string, t: Translation): string {
   if (diffHours < 24) return t.history.hoursAgo(diffHours)
   const diffDays = Math.floor(diffHours / 24)
   return t.history.daysAgo(diffDays)
-}
-
-function describe(n: AppNotification, t: Translation): { title: string; body: string } {
-  switch (n.kind) {
-    case 'update-available':
-      return { title: t.updateBanner.title, body: t.updateBanner.message(n.params.version) }
-    case 'new-games':
-      return { title: t.notifications.newGamesTitle, body: t.notifications.newGamesBody(n.params.names) }
-    case 'friend-accepted':
-      return {
-        title: t.notifications.friendAcceptedTitle,
-        body: t.notifications.friendAcceptedBody(n.params.login)
-      }
-    case 'friend-declined':
-      return {
-        title: t.notifications.friendDeclinedTitle,
-        body: t.notifications.friendDeclinedBody(n.params.login)
-      }
-    case 'sync-conflict-skipped':
-      return { title: t.notifications.syncConflictTitle, body: `${n.params.game}: ${t.main.pushSkipped}` }
-    case 'access-revoked':
-      return {
-        title: t.notifications.accessRevokedTitle,
-        body: t.notifications.accessRevokedBody(n.params.host)
-      }
-    case 'game-removed':
-      return {
-        title: t.notifications.gameRemovedTitle,
-        body: t.notifications.gameRemovedBody(n.params.game)
-      }
-    case 'folder-removed':
-      return {
-        title: t.notifications.folderRemovedTitle,
-        body: t.notifications.folderRemovedBody(n.params.game, n.params.folder)
-      }
-  }
-}
-
-// Same icon/severity language as docs/design-system.html 4.10 "Сповіщення" —
-// Toast: a colored circle (success/warning/danger/info) + icon, so a bell
-// entry reads as the same component, just in a compact list row.
-const KIND_STYLE: Record<
-  AppNotificationKind,
-  { Icon: (p: { size?: number; color?: string }) => React.JSX.Element; color: string; bg: string }
-> = {
-  'update-available': { Icon: InfoIcon, color: colors.info, bg: colors.infoBg },
-  'new-games': { Icon: LibraryIcon, color: colors.success, bg: colors.successBg },
-  'friend-accepted': { Icon: CheckIcon, color: colors.success, bg: colors.successBg },
-  'friend-declined': { Icon: CloseIcon, color: colors.warning, bg: colors.warningBg },
-  'sync-conflict-skipped': { Icon: AlertTriangleIcon, color: colors.warning, bg: colors.warningBg },
-  'access-revoked': { Icon: AlertCircleIcon, color: colors.danger, bg: colors.dangerBg },
-  'game-removed': { Icon: TrashIcon, color: colors.warning, bg: colors.warningBg },
-  'folder-removed': { Icon: TrashIcon, color: colors.warning, bg: colors.warningBg }
 }
 
 // Bell icon + dropdown panel (titlebar, next to Support) — the persisted
@@ -205,7 +144,7 @@ function NotificationItem({ n, t }: { n: AppNotification; t: Translation }): Rea
   const [hover, setHover] = useState(false)
   const [restoring, setRestoring] = useState(false)
   const [restored, setRestored] = useState(false)
-  const { title, body } = describe(n, t)
+  const { title, body } = describeNotification(n.kind, n.params, t)
   const { Icon, color, bg } = KIND_STYLE[n.kind]
 
   // "Restore just for myself" (see sync.ts's CustomGame.orphaned/personal

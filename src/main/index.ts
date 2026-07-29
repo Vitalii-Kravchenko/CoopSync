@@ -4,7 +4,9 @@ import { join } from 'path'
 import { registerIpcHandlers } from './ipc'
 import { createTray } from './trayIcon'
 import { consumeJustInstalledMarker, readSettings, writeSettings } from './services/settingsStore'
-import { scheduleStartupCheck, setShowWindowCallback } from './services/updater'
+import { scheduleStartupCheck } from './services/updater'
+import { setToastShowWindowCallback } from './services/toastWindow'
+import { scheduleDevToastTest } from './services/devToastTest'
 import { READY_GAMES } from './games/catalog'
 import { getKnownGameIds, setKnownGameIds } from './services/backgroundState'
 import { addNotification, markObsoleteUpdateNotificationsRead } from './services/notificationStore'
@@ -192,8 +194,10 @@ if (!gotSingleInstanceLock) {
       isQuitting = true
       app.quit()
     })
-    setShowWindowCallback(showWindow)
+    setToastShowWindowCallback(showWindow)
     scheduleStartupCheck()
+    // TEMPORARY — visual QA for the new toast system, see devToastTest.ts.
+    if (!app.isPackaged) scheduleDevToastTest()
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) {

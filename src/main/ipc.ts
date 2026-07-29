@@ -85,6 +85,7 @@ import { startPresence, stopPresence, notifySavePushed, getPresenceSnapshot } fr
 import { mintPresenceToken } from './services/presenceJwt'
 import { sendSupportMessage } from './services/support'
 import { checkForUpdates, downloadUpdate, quitAndInstall } from './services/updater'
+import { showToast, setActionHandler } from './services/toastWindow'
 import type {
   AuthStatus,
   SavesRepoStatus,
@@ -273,6 +274,20 @@ async function pickImageFile(
 
 // Registers all IPC channels (calls from renderer into main).
 export function registerIpcHandlers(): void {
+  // Toast action buttons (see toastWindow.ts) — the two kinds that carry one
+  // ("Update now" / "Restore just for me") both already have their real
+  // handlers in scope here (imported above), same as NotificationBell's own
+  // restore button and the Settings "About" card's update button.
+  setActionHandler((kind, params) => {
+    if (kind === 'update-available') {
+      downloadUpdate()
+    } else if (kind === 'game-removed') {
+      restoreOrphanedCustomGame(params.appId)
+    } else if (kind === 'folder-removed') {
+      restoreOrphanedFolder(params.appId, params.folderId)
+    }
+  })
+
   // One-time cleanup: pre-0.9.41 versions kept a separate zero-scope
   // presence token (presence-auth.bin, its own device flow) — obsolete now
   // that presence reuses the main login via a Worker-minted JWT (see
@@ -1121,7 +1136,12 @@ export function registerIpcHandlers(): void {
       owner,
       actorLogin,
       (e) => event.sender.send('sync:auto', e),
-      (updates: FriendSaveUpdate[]) => event.sender.send('sync:friend-update', updates),
+      (updates: FriendSaveUpdate[]) => {
+        event.sender.send('sync:friend-update', updates)
+        for (const u of updates) {
+          showToast('save-uploaded', { login: u.updatedBy, game: u.name, version: String(u.version) })
+        }
+      },
       () => event.sender.send('sync:background-check')
     )
     // Presence: connect if not already running (app restart while already

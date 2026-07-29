@@ -269,6 +269,25 @@ export type AppNotificationKind =
   | 'game-removed' // params: { game, appId } — game is now orphaned (see CustomGame.orphaned), Restore action re-syncs it personal-only
   | 'folder-removed' // params: { game, folder, appId, folderId } — an extra folder (CustomGame.extraFolders) went orphaned, same Restore idea one level down
 
+/** Same events as the bell (AppNotificationKind) plus one that's toast-only —
+ *  a friend's save arriving is transient, worth a popup but not a permanent
+ *  bell entry the way "significant" events are. */
+export type ToastKind = AppNotificationKind | 'save-uploaded' // params: { login, game, version }
+
+/** One popup shown in the OS-level toast window (see
+ *  main/services/toastWindow.ts) — replaces the native Notification API
+ *  everywhere in the app. language is captured at send time rather than
+ *  read live by the toast window, so a language change mid-toast can't
+ *  leave an already-showing toast out of sync with a fresh one appearing
+ *  right after. */
+export interface ToastShowPayload {
+  id: string
+  kind: ToastKind
+  params: Record<string, string>
+  createdAt: string
+  language: string
+}
+
 /** A single bell entry. main only knows kind+params (like AutoSyncEvent) —
  * the renderer localizes title/body from them. */
 export interface AppNotification {

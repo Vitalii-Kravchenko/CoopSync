@@ -238,7 +238,7 @@ export const en: Translation = {
     newGamesTitle: 'New games supported',
     newGamesBody: (names) => `CoopSync can now sync: ${names}.`,
     friendAcceptedTitle: 'Invitation accepted',
-    friendAcceptedBody: (login) => `${login} accepted your invitation and now has access.`,
+    friendAcceptedBody: (login) => `${login} accepted your invitation.`,
     friendDeclinedTitle: 'Invitation not accepted',
     friendDeclinedBody: (login) => `${login} didn't accept the invitation.`,
     syncConflictTitle: 'Sync skipped',

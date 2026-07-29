@@ -361,6 +361,8 @@ export interface Translation {
     version: (v: string) => string
     aboutDescription: string
     githubRepoLink: string
+    privacyPolicyLink: string
+    termsOfServiceLink: string
     checkForUpdates: string
     checkingForUpdates: string
     updateAvailable: (v: string) => string

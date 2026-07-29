@@ -433,10 +433,28 @@ function SettingsScreen({
           </div>
           <button
             className="reset-btn"
-            style={styles.linkBtn}
+            style={{ ...styles.linkBtn, marginBottom: 8 }}
             onClick={() => window.api.openExternal('https://github.com/Vitalii-Kravchenko/CoopSync')}
           >
             {t.settings.githubRepoLink}
+          </button>
+          <button
+            className="reset-btn"
+            style={{ ...styles.linkBtn, marginBottom: 8 }}
+            onClick={() =>
+              window.api.openExternal(`https://coopsync.app/privacy.html?lang=${language}`)
+            }
+          >
+            {t.settings.privacyPolicyLink}
+          </button>
+          <button
+            className="reset-btn"
+            style={styles.linkBtn}
+            onClick={() =>
+              window.api.openExternal(`https://coopsync.app/terms.html?lang=${language}`)
+            }
+          >
+            {t.settings.termsOfServiceLink}
           </button>
           <div style={{ ...styles.divider, margin: '14px 0' }} />
           <div style={styles.updateRow}>

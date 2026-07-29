@@ -340,6 +340,8 @@ export const ru: Translation = {
     version: (v) => `Версия ${v}`,
     aboutDescription: 'Синхронизация сохранений кооперативных игр между друзьями через GitHub.',
     githubRepoLink: 'Репозиторий GitHub →',
+    privacyPolicyLink: 'Политика конфиденциальности →',
+    termsOfServiceLink: 'Условия использования →',
     checkForUpdates: 'Проверить обновления',
     checkingForUpdates: 'Проверяем обновления…',
     updateAvailable: (v) => `Доступно обновление: v${v}`,

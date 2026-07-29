@@ -341,6 +341,8 @@ export const fr: Translation = {
     version: (v) => `Version ${v}`,
     aboutDescription: 'Synchronise les sauvegardes de jeux coopératifs entre amis via GitHub.',
     githubRepoLink: 'Dépôt GitHub →',
+    privacyPolicyLink: 'Politique de confidentialité →',
+    termsOfServiceLink: "Conditions d'utilisation →",
     checkForUpdates: 'Vérifier les mises à jour',
     checkingForUpdates: 'Vérification des mises à jour…',
     updateAvailable: (v) => `Mise à jour disponible : v${v}`,

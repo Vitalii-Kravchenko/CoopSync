@@ -340,6 +340,8 @@ export const ptBR: Translation = {
     version: (v) => `Versão ${v}`,
     aboutDescription: 'Sincroniza saves de jogos cooperativos entre amigos via GitHub.',
     githubRepoLink: 'Repositório do GitHub →',
+    privacyPolicyLink: 'Política de Privacidade →',
+    termsOfServiceLink: 'Termos de Serviço →',
     checkForUpdates: 'Verificar atualizações',
     checkingForUpdates: 'Verificando atualizações…',
     updateAvailable: (v) => `Atualização disponível: v${v}`,

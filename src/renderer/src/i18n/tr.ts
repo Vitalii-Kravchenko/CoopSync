@@ -341,6 +341,8 @@ export const tr: Translation = {
     version: (v) => `Sürüm ${v}`,
     aboutDescription: 'Arkadaşlar arasında GitHub üzerinden ortak oyun kayıtlarını senkronize eder.',
     githubRepoLink: 'GitHub deposu →',
+    privacyPolicyLink: 'Gizlilik Politikası →',
+    termsOfServiceLink: 'Kullanım Koşulları →',
     checkForUpdates: 'Güncellemeleri denetle',
     checkingForUpdates: 'Güncellemeler denetleniyor…',
     updateAvailable: (v) => `Güncelleme mevcut: v${v}`,

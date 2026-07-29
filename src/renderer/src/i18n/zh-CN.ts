@@ -325,6 +325,8 @@ export const zhCN: Translation = {
     version: (v) => `版本 ${v}`,
     aboutDescription: '通过 GitHub 在朋友之间同步联机游戏存档。',
     githubRepoLink: 'GitHub 仓库 →',
+    privacyPolicyLink: '隐私政策 →',
+    termsOfServiceLink: '服务条款 →',
     checkForUpdates: '检查更新',
     checkingForUpdates: '正在检查更新…',
     updateAvailable: (v) => `发现新版本：v${v}`,

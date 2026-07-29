@@ -341,6 +341,8 @@ export const de: Translation = {
     version: (v) => `Version ${v}`,
     aboutDescription: 'Synchronisiert Spielstände von Koop-Spielen zwischen Freunden über GitHub.',
     githubRepoLink: 'GitHub-Repository →',
+    privacyPolicyLink: 'Datenschutzerklärung →',
+    termsOfServiceLink: 'Nutzungsbedingungen →',
     checkForUpdates: 'Nach Updates suchen',
     checkingForUpdates: 'Suche nach Updates…',
     updateAvailable: (v) => `Update verfügbar: v${v}`,

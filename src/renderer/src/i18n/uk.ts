@@ -340,6 +340,8 @@ export const uk: Translation = {
     version: (v) => `Версія ${v}`,
     aboutDescription: 'Синхронізація збережень кооперативних ігор між друзями через GitHub.',
     githubRepoLink: 'GitHub репозиторій →',
+    privacyPolicyLink: 'Політика конфіденційності →',
+    termsOfServiceLink: 'Умови надання послуг →',
     checkForUpdates: 'Перевірити оновлення',
     checkingForUpdates: 'Перевіряємо оновлення…',
     updateAvailable: (v) => `Доступне оновлення: v${v}`,

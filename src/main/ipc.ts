@@ -43,7 +43,14 @@ import {
   deleteExtraFolderContent,
   getRegisteredFolderLabels
 } from './services/sync'
-import { startWatcher, stopWatcher, triggerFriendCheck, isCurrentlyPlaying } from './services/watcher'
+import {
+  startWatcher,
+  stopWatcher,
+  triggerFriendCheck,
+  isCurrentlyPlaying,
+  markFriendPlayingNotified,
+  clearFriendPlayingNotified
+} from './services/watcher'
 import { markSeen } from './services/notifyState'
 import { forgetPending } from './services/backgroundState'
 import { getNotifications, markRead, markAllRead, clearAll, addNotification } from './services/notificationStore'
@@ -91,7 +98,8 @@ import {
 import { mintPresenceToken } from './services/presenceJwt'
 import { sendSupportMessage } from './services/support'
 import { checkForUpdates, downloadUpdate, quitAndInstall } from './services/updater'
-import { showToast, setActionHandler } from './services/toastWindow'
+import { showToast, setActionHandler, setInstallHandler } from './services/toastWindow'
+import { setActiveScreen } from './services/windowState'
 import type {
   AuthStatus,
   SavesRepoStatus,
@@ -237,9 +245,21 @@ function startPresenceIfConfigured(win: BrowserWindow): void {
       // turning off, never notification-worthy either way. The OTHER half of
       // "friend was already there when I joined" lives in watcher.ts's
       // launch branch — no fresh event arrives here for that case.
-      if (gameId === null || gameName === null) return
+      if (gameId === null || gameName === null) {
+        // They left (or went offline) — clear the dedup guard for THEM
+        // specifically, so if they rejoin while I'm still playing, I get
+        // notified again instead of the guard silencing it forever.
+        clearFriendPlayingNotified(id)
+        return
+      }
       if (!isCurrentlyPlaying(gameId)) return
-      addNotification('friend-playing', { login, game: gameName })
+      // markFriendPlayingNotified also guards against watcher.ts's own
+      // launch-time "already there" check firing for the exact same join
+      // (see its doc comment) — without it, a friend's periodic presence
+      // bootstrap re-send could double this notification.
+      if (markFriendPlayingNotified(id, gameId)) {
+        addNotification('friend-playing', { login, game: gameName })
+      }
     },
     getFriendIds: computeFriendIds,
     getAuthToken: () => {
@@ -304,13 +324,20 @@ export function registerIpcHandlers(): void {
   // restore button and the Settings "About" card's update button.
   setActionHandler((kind, params) => {
     if (kind === 'update-available') {
-      downloadUpdate()
+      // Started from the toast's OWN button — it stays open and tracks the
+      // download live instead of getting dismissed (see updater.ts's origin
+      // param and ToastCard's update-available special-case).
+      downloadUpdate('toast')
     } else if (kind === 'game-removed') {
       restoreOrphanedCustomGame(params.appId)
     } else if (kind === 'folder-removed') {
       restoreOrphanedFolder(params.appId, params.folderId)
     }
   })
+  // The toast's "Install update" button, once a download it's tracking live
+  // finishes (see ToastCard) — a dedicated channel, not routed through the
+  // action dispatch above (see toastWindow.ts's setInstallHandler doc comment).
+  setInstallHandler(() => quitAndInstall())
 
   // One-time cleanup: pre-0.9.41 versions kept a separate zero-scope
   // presence token (presence-auth.bin, its own device flow) — obsolete now
@@ -1237,6 +1264,14 @@ export function registerIpcHandlers(): void {
   // renderer must not call maximize() — that forcibly shows the window
   // (documented Electron behavior), which breaks "start minimized to tray".
   ipcMain.handle('window:was-started-hidden', (): boolean => process.argv.includes('--hidden'))
+
+  // Renderer reports its current tab on every navigation — see
+  // windowState.ts's doc comment for why this lives here (not updater.ts,
+  // which is the one thing actually consuming it).
+  ipcMain.on('window:active-screen', (event, screen: string) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (win) setActiveScreen(screen, win)
+  })
 
   // --- Startup settings ---
 

@@ -238,7 +238,12 @@ const api = {
       const listener = (_event: unknown, maximized: boolean): void => callback(maximized)
       ipcRenderer.on('window:maximized-change', listener)
       return () => ipcRenderer.removeListener('window:maximized-change', listener)
-    }
+    },
+    /** Report the currently active Sidebar tab — lets main decide whether
+     *  the update-available toast would just be duplicating a banner
+     *  that's already on screen (see windowState.ts). Fire-and-forget, no
+     *  response expected. */
+    setActiveScreen: (screen: string): void => ipcRenderer.send('window:active-screen', screen)
   },
   settings: {
     /** Current startup settings. */

@@ -36,6 +36,13 @@ function App(): React.JSX.Element {
     setScreen(next)
     if (next === 'main') setMainResetSignal((v) => v + 1)
   }
+  // Lets main decide whether the update-available toast would just be
+  // duplicating the Games-tab banner that's already on screen right now
+  // (see main/services/windowState.ts) — reported on every navigation, not
+  // just once, since main has no other way to find out the tab changed.
+  useEffect(() => {
+    window.api.window.setActiveScreen(screen)
+  }, [screen])
   // Global sync toast — rendered outside the tabs (styles.appBody),
   // so it stays visible regardless of which tab is currently open.
   // A queue, not a single slot — when a game syncs several folders in one

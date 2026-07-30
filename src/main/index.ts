@@ -6,7 +6,7 @@ import { createTray } from './trayIcon'
 import { consumeJustInstalledMarker, readSettings, writeSettings } from './services/settingsStore'
 import { scheduleStartupCheck } from './services/updater'
 import { setToastShowWindowCallback } from './services/toastWindow'
-import { scheduleDevToastTest } from './services/devToastTest'
+import { scheduleDevToastTest, scheduleUpdateFlowTest } from './services/devToastTest'
 import { READY_GAMES } from './games/catalog'
 import { getKnownGameIds, setKnownGameIds } from './services/backgroundState'
 import { addNotification, markObsoleteUpdateNotificationsRead } from './services/notificationStore'
@@ -197,7 +197,10 @@ if (!gotSingleInstanceLock) {
     setToastShowWindowCallback(showWindow)
     scheduleStartupCheck()
     // TEMPORARY — visual QA for the new toast system, see devToastTest.ts.
-    if (!app.isPackaged) scheduleDevToastTest()
+    if (!app.isPackaged) {
+      scheduleDevToastTest()
+      scheduleUpdateFlowTest()
+    }
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) {

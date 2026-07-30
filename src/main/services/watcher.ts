@@ -50,6 +50,34 @@ export function isCurrentlyPlaying(appId: string): boolean {
   return running[appId] === true
 }
 
+// Dedup guard for the "friend is playing" toast/bell notification — friendId
+// -> gameId already notified about. TWO independent code paths can each
+// decide to fire it for the exact same join: this file's own launch-time
+// "already there" check further down, and ipc.ts's onPlaying (fired for
+// every 'playing' event from that friend — including the periodic bootstrap
+// re-send presenceService.ts's friends-refresh triggers every ~2 min while
+// both are still playing, and any presence reconnect). Without a shared
+// guard, both can land for the exact same join — the "two notifications
+// instead of one" Vitalii saw in practice (2026-07-30).
+const notifiedFriendPlaying = new Map<number, string>()
+
+/** Returns true (and marks it) only the first time this friend+game pairing
+ *  hasn't already been notified about — both onPlaying (ipc.ts) and the
+ *  launch-time check below must go through this before ever calling
+ *  addNotification('friend-playing', ...). */
+export function markFriendPlayingNotified(friendId: number, gameId: string): boolean {
+  if (notifiedFriendPlaying.get(friendId) === gameId) return false
+  notifiedFriendPlaying.set(friendId, gameId)
+  return true
+}
+
+/** Friend stopped playing (or went offline) — clears just their entry, so
+ *  the NEXT time they join while I'm still playing, I get notified again.
+ *  See ipc.ts's onPlaying(gameId: null) case. */
+export function clearFriendPlayingNotified(friendId: number): void {
+  notifiedFriendPlaying.delete(friendId)
+}
+
 // Mid-session auto-push (while the game is still running, not just at exit)
 // runs on its OWN faster timer (fingerprintTimer, see below), separate from
 // the 5s process-launch/exit poll — checking the save folder is just a
@@ -270,8 +298,13 @@ async function tick(
         // trigger it (they're not launching again), so this is the other
         // half of the "only notify about a game I'm actually in" rule: check
         // the current snapshot ourselves the moment WE join.
-        const alreadyThere = Object.values(getPlayingSnapshot()).find((p) => p.gameId === game.appId)
-        if (alreadyThere) addNotification('friend-playing', { login: alreadyThere.login, game: game.name })
+        const alreadyThere = Object.entries(getPlayingSnapshot()).find(([, p]) => p.gameId === game.appId)
+        if (alreadyThere) {
+          const [friendId, info] = alreadyThere
+          if (markFriendPlayingNotified(Number(friendId), game.appId)) {
+            addNotification('friend-playing', { login: info.login, game: game.name })
+          }
+        }
         // The game just launched → first, download files missing locally
         // (e.g. a deleted world), without touching existing local files —
         // this is always safe, regardless of versions. Then a full pull,
@@ -373,6 +406,11 @@ async function tick(
         // Tell mutual friends we stopped — same best-effort no-op reasoning
         // as the launch-time call above.
         notifyPlayingState(null)
+        // I'm the one leaving now, not a friend — clear the WHOLE guard (not
+        // just one entry), so the next time I join anything, whoever's
+        // already there gets freshly notified again instead of staying
+        // silenced by a stale entry from this session.
+        notifiedFriendPlaying.clear()
         // The game closed → the exit-time push is still the final catch-all,
         // regardless of whatever the mid-session settle check already did —
         // it covers whatever changed in the gap since the last settled push,

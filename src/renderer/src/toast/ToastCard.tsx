@@ -4,7 +4,7 @@ import { translations } from '../i18n/registry'
 import { isLanguageCode } from '../i18n/types'
 import { describeNotification, KIND_STYLE, toastAction } from '../notificationCopy'
 import { CloseIcon } from '../components/icons'
-import type { ToastShowPayload } from '../../../shared/types'
+import type { ToastShowPayload, UpdateStatus } from '../../../shared/types'
 
 // Every toast auto-dismisses now, counted down by the bottom line — even
 // the ones with an action button (update available, restore). They used to
@@ -16,9 +16,19 @@ import type { ToastShowPayload } from '../../../shared/types'
 // but everything eventually goes away on its own.
 const DURATION_MS = 8000
 const ACTION_DURATION_MS = 20000
+// Once the update this toast is tracking finishes downloading, it's worth
+// noticeably more time than even ACTION_DURATION_MS before it gives up on
+// its own — Vitalii's call (2026-07-30): a stray click restarting CoopSync
+// mid-something is more annoying than this sitting around a bit longer.
+const READY_DURATION_MS = 60000
 
 interface Props {
   toast: ToastShowPayload
+  /** Live auto-update state — only actually consulted for an
+   *  update-available toast (see the phase logic below), which needs to
+   *  reflect a download in progress instead of staying frozen with whatever
+   *  it showed when it first appeared. */
+  updateStatus: UpdateStatus
   onDismiss: (id: string) => void
   onAction: (toast: ToastShowPayload) => void
   onOpenMain: (id: string) => void
@@ -31,23 +41,64 @@ interface Props {
 // transform anywhere (Vitalii's explicit call: the toast already has its
 // own entrance animation, movement on hover on top of that reads as
 // jittery).
-function ToastCard({ toast, onDismiss, onAction, onOpenMain }: Props): React.JSX.Element {
+function ToastCard({ toast, updateStatus, onDismiss, onAction, onOpenMain }: Props): React.JSX.Element {
   const t = translations[isLanguageCode(toast.language) ? toast.language : 'en']
-  const { title, body } = describeNotification(toast.kind, toast.params, t)
   const kindStyle = KIND_STYLE[toast.kind]
-  const action = toastAction(toast.kind, t)
   const { Icon } = kindStyle
-  const duration = action ? ACTION_DURATION_MS : DURATION_MS
+
+  // update-available is the one kind that can change shape AFTER it's shown
+  // — a download it tracks live can start (from its own button) or finish
+  // (from any surface) while it's still sitting on screen, instead of
+  // staying frozen with whatever it displayed the instant it appeared
+  // (Vitalii's report, 2026-07-30: a stale "Download update" button next to
+  // an already-downloaded update elsewhere in the app). Every other kind
+  // ignores updateStatus entirely and behaves exactly as before.
+  const updatePhase: 'available' | 'downloading' | 'downloaded' =
+    toast.kind === 'update-available' && (updateStatus.state === 'downloading' || updateStatus.state === 'downloaded')
+      ? updateStatus.state
+      : 'available'
+
+  const { title, body } =
+    updatePhase === 'downloading'
+      ? {
+          title: t.updateBanner.title,
+          body: t.settings.updateDownloading(updateStatus.state === 'downloading' ? updateStatus.percent : 0)
+        }
+      : updatePhase === 'downloaded'
+        ? { title: t.updateBanner.readyTitle, body: t.updateBanner.readyMessage }
+        : describeNotification(toast.kind, toast.params, t)
+
+  const action =
+    updatePhase === 'downloading'
+      ? undefined // no button while it's actively downloading, just the dismiss ×
+      : updatePhase === 'downloaded'
+        ? { label: t.settings.restartToInstall }
+        : toastAction(toast.kind, t)
+
+  const duration = updatePhase === 'downloaded' ? READY_DURATION_MS : action ? ACTION_DURATION_MS : DURATION_MS
 
   const [paused, setPaused] = useState(false)
   const [remaining, setRemaining] = useState(duration)
   const rafRef = useRef<number | null>(null)
 
+  // A phase change carries its own fresh duration (available -> downloading
+  // has none at all; downloading -> downloaded gets the long READY_DURATION_MS)
+  // — restart the countdown from it rather than continuing to count down
+  // whatever was left from the PREVIOUS phase.
+  useEffect(() => {
+    setRemaining(duration)
+    // duration is a pure function of updatePhase — no need to list it too.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [updatePhase])
+
   // JS-driven (not a CSS transition) so pausing on hover is just "stop
   // updating state" — resuming continues from the exact remaining value
-  // instead of re-deriving it from a frozen CSS width.
+  // instead of re-deriving it from a frozen CSS width. Never runs at all
+  // while actively downloading — Vitalii's explicit call: it must not
+  // disappear out from under an in-progress download just because a timer
+  // ran out.
   useEffect(() => {
-    if (paused) return
+    if (paused || updatePhase === 'downloading') return
     let last = Date.now()
     function tick(): void {
       const now = Date.now()
@@ -60,13 +111,35 @@ function ToastCard({ toast, onDismiss, onAction, onOpenMain }: Props): React.JSX
     return () => {
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
     }
-  }, [paused])
+  }, [paused, updatePhase])
 
   useEffect(() => {
-    if (remaining <= 0) onDismiss(toast.id)
-  }, [remaining, toast.id, onDismiss])
+    if (updatePhase !== 'downloading' && remaining <= 0) onDismiss(toast.id)
+  }, [remaining, updatePhase, toast.id, onDismiss])
 
-  const percent = Math.max(0, Math.min(100, (remaining / duration) * 100))
+  // While downloading, the bottom line reports DOWNLOAD progress (grows
+  // left-to-right as it nears done) instead of the countdown (which shrinks
+  // as time runs out) — same bar, different meaning, and there's no
+  // countdown running in this phase anyway.
+  const percent =
+    updatePhase === 'downloading'
+      ? updateStatus.state === 'downloading'
+        ? updateStatus.percent
+        : 0
+      : Math.max(0, Math.min(100, (remaining / duration) * 100))
+
+  function handleActionClick(e: React.MouseEvent): void {
+    e.stopPropagation()
+    if (updatePhase === 'downloaded') {
+      // Not routed through onAction/'toast:action' — this button's meaning
+      // (install, not download) only exists because of the live phase, not
+      // the toast's own fixed kind (see toastWindow.ts's setInstallHandler).
+      window.toastApi.installUpdate()
+      onDismiss(toast.id)
+    } else {
+      onAction(toast)
+    }
+  }
 
   return (
     <div
@@ -88,10 +161,7 @@ function ToastCard({ toast, onDismiss, onAction, onOpenMain }: Props): React.JSX
           <button
             className={`toast-action toast-action-${kindStyle.tone}`}
             style={{ ...styles.actionBtn, background: kindStyle.color, color: kindStyle.textOnTone }}
-            onClick={(e) => {
-              e.stopPropagation()
-              onAction(toast)
-            }}
+            onClick={handleActionClick}
           >
             {action.label}
           </button>

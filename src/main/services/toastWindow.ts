@@ -20,7 +20,12 @@ import type { ToastKind, ToastShowPayload } from '../../shared/types'
 // below) to avoid a circular import, since updater.ts and notificationStore.ts
 // both need to call showToast() from here.
 
-const WIDTH = 452 // 420 card + room either side for the hover glow/shadow to not get clipped
+// 420 card + room either side for the card's own shadow (theme.ts's sh3,
+// 28px blur) to fully fade before hitting the window's edge — 16px used to
+// be all the margin here, which is less than the blur radius itself, so the
+// shadow was getting hard-clipped by the window bounds instead of fading
+// out (Vitalii's "weird shadow left and right", 2026-07-30).
+const WIDTH = 420 + 30 * 2
 const BOTTOM_MARGIN = 22
 
 // A toast fired the instant the app starts (or, in dev, while the toast
@@ -61,13 +66,36 @@ let lastReportedHeight = 0
 // mainWindow/showWindow closure) respectively — see their call sites.
 let actionHandler: ((kind: ToastKind, params: Record<string, string>) => void) | null = null
 let showWindowCb: (() => void) | null = null
+// Wired by ipc.ts to quitAndInstall() — kept as its own tiny channel rather
+// than overloading actionHandler/'toast:action' above: this is the ONE
+// button whose meaning changes live out from under the toast's own fixed
+// `kind` (see ToastCard's update-available special-case), so it's simpler
+// as a dedicated round-trip than teaching the generic action dispatch about
+// a kind that isn't really a ToastKind.
+let installHandler: (() => void) | null = null
 
 export function setActionHandler(fn: (kind: ToastKind, params: Record<string, string>) => void): void {
   actionHandler = fn
 }
 
+export function setInstallHandler(fn: () => void): void {
+  installHandler = fn
+}
+
 export function setToastShowWindowCallback(fn: () => void): void {
   showWindowCb = fn
+}
+
+/** Tell the toast window to drop any currently-shown toast of this kind —
+ *  used when the update download was started from a DIFFERENT surface
+ *  (Settings/the Games-tab banner) than this toast itself: that toast's
+ *  "Download update" prompt is now stale/redundant, so it just goes away
+ *  instead of sitting there with a button that no longer does anything
+ *  useful (Vitalii's call, 2026-07-30). A no-op if the window was never
+ *  created or has nothing of that kind showing. */
+export function dismissToastsOfKind(kind: ToastKind): void {
+  if (!win || win.isDestroyed()) return
+  win.webContents.send('toast:dismiss-kind', kind)
 }
 
 function ensureWindow(): BrowserWindow {
@@ -158,9 +186,19 @@ function ensureWindow(): BrowserWindow {
     (event, kind: ToastKind, params: Record<string, string>) => {
       if (BrowserWindow.fromWebContents(event.sender) !== w) return
       actionHandler?.(kind, params)
-      showWindowCb?.()
+      // update-available deliberately stays in the tray (Vitalii's call,
+      // 2026-07-30): the download runs entirely in main and this same toast
+      // tracks its progress live (see ToastCard), so there's no need to yank
+      // the main window forward just for clicking this button — unlike the
+      // restore actions below, which need the app open to actually show
+      // their result.
+      if (kind !== 'update-available') showWindowCb?.()
     }
   )
+  ipcMain.on('toast:install-update', (event) => {
+    if (BrowserWindow.fromWebContents(event.sender) !== w) return
+    installHandler?.()
+  })
 
   return win
 }

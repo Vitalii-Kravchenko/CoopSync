@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { ToastShowPayload } from '../shared/types'
+import type { ToastKind, ToastShowPayload, UpdateStatus } from '../shared/types'
 
 // Bridge for the separate toast overlay window (see
 // main/services/toastWindow.ts) — deliberately its own tiny surface
@@ -32,9 +32,31 @@ const toastApi = {
    *  window up, no side effect. */
   openMain: (): void => ipcRenderer.send('toast:open-main'),
   /** Clicked the toast's action button (e.g. "Update now"/"Restore") — main
-   *  performs the kind-specific effect AND brings the main window up. */
+   *  performs the kind-specific effect AND brings the main window up (except
+   *  update-available, see toastWindow.ts). */
   action: (kind: string, params: Record<string, string>): void =>
-    ipcRenderer.send('toast:action', kind, params)
+    ipcRenderer.send('toast:action', kind, params),
+  /** Clicked "Install update" on the toast once a download it's tracking
+   *  live finished — see toastWindow.ts's setInstallHandler. */
+  installUpdate: (): void => ipcRenderer.send('toast:install-update'),
+  /** Live auto-update state, same 'updater:status' broadcast every window
+   *  gets — lets the update-available toast track a download in progress
+   *  instead of staying frozen with whatever it showed when it first
+   *  appeared (see ToastCard). */
+  onUpdateStatus: (callback: (status: UpdateStatus) => void): (() => void) => {
+    const listener = (_event: unknown, status: UpdateStatus): void => callback(status)
+    ipcRenderer.on('updater:status', listener)
+    return () => ipcRenderer.removeListener('updater:status', listener)
+  },
+  /** Main is telling this window to drop any currently-shown toast of this
+   *  kind — used when the update download was started from a different
+   *  surface (Settings/Games-tab banner), making this toast's own prompt
+   *  stale (see toastWindow.ts's dismissToastsOfKind). */
+  onDismissKind: (callback: (kind: ToastKind) => void): (() => void) => {
+    const listener = (_event: unknown, kind: ToastKind): void => callback(kind)
+    ipcRenderer.on('toast:dismiss-kind', listener)
+    return () => ipcRenderer.removeListener('toast:dismiss-kind', listener)
+  }
 }
 
 contextBridge.exposeInMainWorld('toastApi', toastApi)

@@ -2,11 +2,19 @@ import { app, BrowserWindow } from 'electron'
 import { autoUpdater } from 'electron-updater'
 import { readSettings } from './settingsStore'
 import { addNotification } from './notificationStore'
-import { showToast } from './toastWindow'
+import { showToast, dismissToastsOfKind } from './toastWindow'
 import { getLastNotifiedUpdateVersion, setLastNotifiedUpdateVersion } from './backgroundState'
+import { isScreenVisible } from './windowState'
 import type { UpdateStatus } from '../../shared/types'
 
 function showUpdateToast(version: string): void {
+  // The Games tab (screen 'main') already shows this exact info via its own
+  // banner (UpdateAvailableBanner) whenever it's the one actually on screen
+  // — popping the bottom-center toast too would just be the same message
+  // twice at once (Vitalii's call, 2026-07-30). Anywhere else (another tab,
+  // minimized, tray) the toast is the only thing that reaches the user, so
+  // it still fires as usual.
+  if (isScreenVisible('main')) return
   showToast('update-available', { version })
 }
 
@@ -141,10 +149,18 @@ function checkForUpdates(): void {
   void autoUpdater.checkForUpdates()
 }
 
-export function downloadUpdate(): void {
+// origin distinguishes "started from the toast's own button" from "started
+// from Settings or the Games-tab banner" (ipc.ts's setActionHandler passes
+// 'toast', the 'updater:download' IPC handler below defaults to 'ui').
+// Only the 'ui' case dismisses the update-available toast — if it was the
+// toast's OWN button that was clicked, it stays open and tracks the download
+// live instead (see ToastCard's update-available special-case), since it's
+// the only surface visible right then.
+export function downloadUpdate(origin: 'ui' | 'toast' = 'ui'): void {
   if (!app.isPackaged) return
   if (downloadInFlight) return
   downloadInFlight = true
+  if (origin === 'ui') dismissToastsOfKind('update-available')
   // Armed here too, not just on the first 'download-progress' tick — covers
   // a hang so complete that not even one progress event ever arrives.
   armDownloadStallTimer()

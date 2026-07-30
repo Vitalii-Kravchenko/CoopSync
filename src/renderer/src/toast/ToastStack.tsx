@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import ToastCard from './ToastCard'
-import type { ToastShowPayload } from '../../../shared/types'
+import type { ToastShowPayload, UpdateStatus } from '../../../shared/types'
 
 // Matches toast.css's toast-fade-out animation-duration — the array removal
 // (which actually shrinks the stack) only happens once the fade has
@@ -16,6 +16,10 @@ function ToastStack(): React.JSX.Element {
   const [toasts, setToasts] = useState<ToastShowPayload[]>([])
   const [removing, setRemoving] = useState<Set<string>>(new Set())
   const containerRef = useRef<HTMLDivElement>(null)
+  // Live auto-update state — lets an update-available toast track a download
+  // in progress instead of staying frozen with whatever it showed when it
+  // first appeared (see ToastCard's update-available special-case).
+  const [updateStatus, setUpdateStatus] = useState<UpdateStatus>({ state: 'idle' })
 
   // Two toasts arriving within the same instant (e.g. two events genuinely
   // coincide) used to both slide in at once — visually abrupt/jarring
@@ -44,6 +48,8 @@ function ToastStack(): React.JSX.Element {
     []
   )
 
+  useEffect(() => window.toastApi.onUpdateStatus(setUpdateStatus), [])
+
   // useCallback (not plain functions) is load-bearing here, not just style:
   // these are passed down as ToastCard props, and ToastCard's own "did the
   // countdown hit zero" effect lists onDismiss in its dependency array. A
@@ -67,7 +73,10 @@ function ToastStack(): React.JSX.Element {
   const action = useCallback(
     (toast: ToastShowPayload): void => {
       window.toastApi.action(toast.kind, toast.params)
-      dismiss(toast.id)
+      // update-available is the one exception — it stays open and tracks
+      // the download live instead of dismissing right away (see ToastCard's
+      // update-available special-case).
+      if (toast.kind !== 'update-available') dismiss(toast.id)
     },
     [dismiss]
   )
@@ -75,6 +84,20 @@ function ToastStack(): React.JSX.Element {
   const openMain = useCallback((): void => {
     window.toastApi.openMain()
   }, [])
+
+  // Main says the download started from a different surface (Settings/the
+  // Games-tab banner) — drop any toast of that kind, it's stale now (see
+  // toastWindow.ts's dismissToastsOfKind doc comment).
+  useEffect(
+    () =>
+      window.toastApi.onDismissKind((kind) => {
+        setToasts((list) => {
+          for (const t of list) if (t.kind === kind) dismiss(t.id)
+          return list
+        })
+      }),
+    [dismiss]
+  )
 
   useEffect(() => {
     const el = containerRef.current
@@ -96,7 +119,13 @@ function ToastStack(): React.JSX.Element {
       <div ref={containerRef} style={styles.stack}>
         {toasts.map((toast) => (
           <div key={toast.id} className={removing.has(toast.id) ? 'toast-exit' : 'toast-enter'}>
-            <ToastCard toast={toast} onDismiss={dismiss} onAction={action} onOpenMain={openMain} />
+            <ToastCard
+              toast={toast}
+              updateStatus={updateStatus}
+              onDismiss={dismiss}
+              onAction={action}
+              onOpenMain={openMain}
+            />
           </div>
         ))}
       </div>
@@ -129,12 +158,14 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: 'column',
     alignItems: 'center',
     gap: 10,
-    // Horizontal only — matches toastWindow.ts's WIDTH (420 card + 16 each
-    // side). No vertical padding: ResizeObserver's contentRect excludes an
-    // element's own padding, and this container's measured height is what
-    // main uses to size the window — vertical padding here would get
-    // silently clipped rather than reported.
-    padding: '0 16px',
+    // Horizontal only — matches toastWindow.ts's WIDTH (420 card + 30 each
+    // side, enough for the card's own shadow to fully fade instead of
+    // getting hard-clipped by the window edge). No vertical padding:
+    // ResizeObserver's contentRect excludes an element's own padding, and
+    // this container's measured height is what main uses to size the
+    // window — vertical padding here would get silently clipped rather than
+    // reported.
+    padding: '0 30px',
     width: '100%'
   }
 }

@@ -54,7 +54,8 @@ export const uk: Translation = {
     details: 'Деталі',
     customTag: 'Додано вручну',
     setUp: 'Налаштувати',
-    friendPlayingBadge: (login) => `Грає ${login}`
+    friendPlayingBadge: (login) => `Грає ${login}`,
+    brokenVersionBadge: 'Позначено як зіпсоване — не завантажуй',
   },
   addGame: {
     title: 'Додати гру',
@@ -138,6 +139,14 @@ export const uk: Translation = {
     restoreError: 'Не вдалося відновити версію',
     revertSuccess: (version) => `Відновлено версію ${version}`,
     restoredFromBadge: (version) => `↩ з ${version}`,
+    noteAction: 'Нотатка до версії',
+    noteModalTitle: (version) => `Нотатка до ${version}`,
+    notePlaceholder: 'Наприклад: світ зіпсувався, не качайте цю версію',
+    noteBrokenLabel: 'Позначити як зіпсовану (попередити перед завантаженням)',
+    noteSave: 'Зберегти',
+    noteCancel: 'Скасувати',
+    noteSaveError: 'Не вдалось зберегти нотатку',
+    brokenBadge: '⚠ Зіпсовано',
     savePathTitle: 'Розташування сейвів',
     savePathCustomBadge: 'Власний шлях',
     savePathNotFound: 'Папку не знайдено',
@@ -266,6 +275,9 @@ export const uk: Translation = {
     friendPlayingTitle: 'Друг зараз грає',
     friendPlayingBody: (login, game, alreadyPlaying) =>
       alreadyPlaying ? `${login} зараз грає в ${game}.` : `${login} щойно запустив(ла) ${game}.`,
+    lockWarningTitle: 'Можливий конфлікт сейву',
+    lockWarningBody: (login, game) =>
+      `${login}, можливо, теж зараз грає в ${game} — одночасна гра іноді призводить до конфлікту при синхронізації.`,
     restoreAction: 'Відновити тільки для себе',
     restoring: 'Відновлюю…',
     restored: 'Відновлено — синкається тільки для тебе',
@@ -277,6 +289,9 @@ export const uk: Translation = {
     welcomeTitle: 'Ласкаво просимо до CoopSync!',
     welcomeSubtitle: 'Налаштуймо синхронізацію за кілька кроків',
     step1Title: 'Увійти через GitHub',
+    permissionsToggle: '🔒 Що саме дозволяю цим входом?',
+    permissionsBody:
+      'GitHub дає CoopSync доступ до репозиторіїв твого акаунта (технічний обсяг токена: "repo" — без цього неможливо створити приватне сховище сейвів; "delete_repo" — лише для кнопки «Видалити сховище» в Налаштуваннях; "read:org" — щоб бачити список твоїх організацій). CoopSync ніколи не чіпає жоден інший репозиторій, окрім свого власного coopsync-saves. Токен лишається лише на цьому ПК, зашифрований штатними засобами Windows.',
     loginButton: 'Увійти через GitHub',
     copied: 'Скопійовано',
     copy: 'Копіювати',
@@ -287,6 +302,8 @@ export const uk: Translation = {
     hostDesc: 'Створю спільне сховище, друг підключиться до мене',
     joinTitle: 'Підключитися до друга',
     joinDesc: 'Друг уже створив сховище і запросив мене',
+    soloTitle: 'Тільки для себе',
+    soloDesc: 'Бекап сейвів з повною історією версій — без другого гравця. Підходить і для сценарію ПК + ноутбук.',
     pendingInviteFrom: (host) => `${host} запросив тебе до свого сховища`,
     youAreHost: 'Ти головний',
     change: 'змінити',

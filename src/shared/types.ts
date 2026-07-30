@@ -257,6 +257,12 @@ export interface GameSyncStatus {
   sizeBytes?: number
   /** Status of each of this game's extra folders (see CustomGame.extraFolders) — empty/undefined for a catalog game or a custom game with none added. */
   extraFolders?: FolderSyncStatus[]
+  /** Note attached to the CURRENT cloud version, if any (see
+   *  sync.ts's setVersionNote) — mirrors the matching history entry's own
+   *  note, kept in sync so it shows up here too, not just in History. */
+  note?: string
+  /** "Don't download this version" flag on the CURRENT cloud version. */
+  broken?: boolean
 }
 
 /** A cloud save version the local user hasn't seen yet (someone else pushed
@@ -291,6 +297,7 @@ export type ToastKind =
   | AppNotificationKind
   | 'save-uploaded' // params: { login, game, version }
   | 'friend-playing' // params: { login, game, alreadyPlaying } — a mutual friend and I are playing the same game right now (see presenceService.ts's onPlaying). alreadyPlaying: 'true' when I'm the one joining and they were already there — the body reads "X is playing Y" instead of "X just started Y", since from my side nothing just "happened"
+  | 'lock-warning' // params: { login, game, since } — repo lock-file fallback for the same warning (see sync.ts's checkAndClaimGameLock) that works even without the signaling server; since is carried for potential future use but not shown in the current copy
 
 /** One popup shown in the OS-level toast window (see
  *  main/services/toastWindow.ts) — replaces the native Notification API
@@ -418,6 +425,13 @@ export interface SyncHistoryEntry {
   /** Set when this push was a revert — the version its content was restored
    *  from, not a branch, just a new version carrying old content forward. */
   restoredFrom?: number
+  /** Free-text note attached to this specific version, after the fact (see
+   *  sync.ts's setVersionNote) — e.g. "world got corrupted, don't pull this
+   *  one". Never set at push time; only ever added/edited later via History. */
+  note?: string
+  /** "Don't download this version" flag — same idea as note, a boolean
+   *  instead of free text. */
+  broken?: boolean
 }
 
 /** User's role in the co-op. */

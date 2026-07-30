@@ -54,7 +54,8 @@ export const ru: Translation = {
     details: 'Подробнее',
     customTag: 'Добавлено вручную',
     setUp: 'Настроить',
-    friendPlayingBadge: (login) => `Играет ${login}`
+    friendPlayingBadge: (login) => `Играет ${login}`,
+    brokenVersionBadge: 'Помечено как сломанное — не скачивай',
   },
   addGame: {
     title: 'Добавить игру',
@@ -138,6 +139,14 @@ export const ru: Translation = {
     restoreError: 'Не удалось восстановить версию',
     revertSuccess: (version) => `Восстановлена версия ${version}`,
     restoredFromBadge: (version) => `↩ из ${version}`,
+    noteAction: 'Заметка к версии',
+    noteModalTitle: (version) => `Заметка к ${version}`,
+    notePlaceholder: 'Например: мир сломался, не скачивайте эту версию',
+    noteBrokenLabel: 'Пометить как сломанную (предупредить перед скачиванием)',
+    noteSave: 'Сохранить',
+    noteCancel: 'Отмена',
+    noteSaveError: 'Не удалось сохранить заметку',
+    brokenBadge: '⚠ Сломано',
     savePathTitle: 'Расположение сохранений',
     savePathCustomBadge: 'Свой путь',
     savePathNotFound: 'Папка не найдена',
@@ -266,6 +275,9 @@ export const ru: Translation = {
     friendPlayingTitle: 'Друг сейчас играет',
     friendPlayingBody: (login, game, alreadyPlaying) =>
       alreadyPlaying ? `${login} сейчас играет в ${game}.` : `${login} только что запустил(а) ${game}.`,
+    lockWarningTitle: 'Возможный конфликт сейва',
+    lockWarningBody: (login, game) =>
+      `${login}, возможно, тоже сейчас играет в ${game} — одновременная игра иногда приводит к конфликту синхронизации.`,
     restoreAction: 'Восстановить только для себя',
     restoring: 'Восстанавливаю…',
     restored: 'Восстановлено — синхронизируется теперь только для тебя',
@@ -277,6 +289,9 @@ export const ru: Translation = {
     welcomeTitle: 'Добро пожаловать в CoopSync!',
     welcomeSubtitle: 'Настроим синхронизацию за несколько шагов',
     step1Title: 'Войти через GitHub',
+    permissionsToggle: '🔒 Что именно разрешает этот вход?',
+    permissionsBody:
+      'GitHub даёт CoopSync доступ к репозиториям твоего аккаунта (технический охват токена: "repo" — необходим для создания приватного хранилища сейвов; "delete_repo" — только для кнопки «Удалить хранилище» в Настройках; "read:org" — чтобы видеть список твоих организаций). CoopSync никогда не трогает ни один репозиторий, кроме своего собственного coopsync-saves. Токен остаётся только на этом ПК, зашифрованный штатными средствами Windows.',
     loginButton: 'Войти через GitHub',
     copied: 'Скопировано',
     copy: 'Копировать',
@@ -287,6 +302,8 @@ export const ru: Translation = {
     hostDesc: 'Создам общее хранилище, друг подключится ко мне',
     joinTitle: 'Подключиться к другу',
     joinDesc: 'Друг уже создал хранилище и пригласил меня',
+    soloTitle: 'Только для себя',
+    soloDesc: 'Бэкап сейвов с полной историей версий — без второго игрока. Подходит и для сценария ПК + ноутбук.',
     pendingInviteFrom: (host) => `${host} пригласил тебя в своё хранилище`,
     youAreHost: 'Ты главный',
     change: 'изменить',

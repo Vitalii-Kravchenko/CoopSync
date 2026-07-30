@@ -52,7 +52,8 @@ export const en: Translation = {
     details: 'Details',
     customTag: 'Added manually',
     setUp: 'Set up',
-    friendPlayingBadge: (login) => `${login} is playing`
+    friendPlayingBadge: (login) => `${login} is playing`,
+    brokenVersionBadge: "Marked as broken — don't download",
   },
   addGame: {
     title: 'Add a game',
@@ -136,6 +137,14 @@ export const en: Translation = {
     restoreError: "Couldn't restore this version",
     revertSuccess: (version) => `Restored version ${version}`,
     restoredFromBadge: (version) => `↩ from ${version}`,
+    noteAction: 'Version note',
+    noteModalTitle: (version) => `Note for ${version}`,
+    notePlaceholder: "E.g.: the world got corrupted, don't download this version",
+    noteBrokenLabel: 'Mark as broken (warn before downloading)',
+    noteSave: 'Save',
+    noteCancel: 'Cancel',
+    noteSaveError: 'Could not save the note',
+    brokenBadge: '⚠ Broken',
     savePathTitle: 'Save location',
     savePathCustomBadge: 'Custom',
     savePathNotFound: 'Folder not found',
@@ -264,6 +273,9 @@ export const en: Translation = {
     friendPlayingTitle: 'Friend is playing',
     friendPlayingBody: (login, game, alreadyPlaying) =>
       alreadyPlaying ? `${login} is playing ${game}.` : `${login} just started playing ${game}.`,
+    lockWarningTitle: 'Possible save conflict',
+    lockWarningBody: (login, game) =>
+      `${login} may also be playing ${game} right now — playing at the same time can sometimes cause a sync conflict.`,
     restoreAction: 'Restore just for me',
     restoring: 'Restoring…',
     restored: 'Restored — now syncing just for you',
@@ -275,6 +287,9 @@ export const en: Translation = {
     welcomeTitle: 'Welcome to CoopSync!',
     welcomeSubtitle: "Let's set up sync in a few steps",
     step1Title: 'Sign in with GitHub',
+    permissionsToggle: '🔒 What exactly does this login allow?',
+    permissionsBody:
+      'GitHub grants CoopSync access to your account\'s repositories (the token\'s technical scope: "repo" — needed to create the private saves storage; "delete_repo" — only for the "Delete storage" button in Settings; "read:org" — to see your list of organizations). CoopSync never touches any repository other than its own coopsync-saves. The token stays on this PC only, encrypted with Windows\' own facilities.',
     loginButton: 'Sign in with GitHub',
     copied: 'Copied',
     copy: 'Copy',
@@ -285,6 +300,8 @@ export const en: Translation = {
     hostDesc: "I'll create the shared storage, my friend connects to me",
     joinTitle: 'Connect to a friend',
     joinDesc: 'My friend already created the storage and invited me',
+    soloTitle: 'Just for myself',
+    soloDesc: 'Back up your saves with full version history — no second player needed. Works great for a PC + laptop, too.',
     pendingInviteFrom: (host) => `${host} invited you to their storage`,
     youAreHost: "You're the host",
     change: 'change',

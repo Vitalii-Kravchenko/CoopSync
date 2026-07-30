@@ -54,7 +54,8 @@ export const tr: Translation = {
     details: 'Ayrıntılar',
     customTag: 'Elle eklendi',
     setUp: 'Kur',
-    friendPlayingBadge: (login) => `${login} oynuyor`
+    friendPlayingBadge: (login) => `${login} oynuyor`,
+    brokenVersionBadge: 'Bozuk olarak işaretlendi — indirme',
   },
   addGame: {
     title: 'Oyun ekle',
@@ -139,6 +140,14 @@ export const tr: Translation = {
     restoreError: 'Sürüm geri yüklenemedi',
     revertSuccess: (version) => `${version} sürümü geri yüklendi`,
     restoredFromBadge: (version) => `↩ ${version} sürümünden`,
+    noteAction: 'Sürüm notu',
+    noteModalTitle: (version) => `${version} için not`,
+    notePlaceholder: 'Örn: dünya bozuldu, bu sürümü indirme',
+    noteBrokenLabel: 'Bozuk olarak işaretle (indirmeden önce uyar)',
+    noteSave: 'Kaydet',
+    noteCancel: 'İptal',
+    noteSaveError: 'Not kaydedilemedi',
+    brokenBadge: '⚠ Bozuk',
     savePathTitle: 'Kayıt konumu',
     savePathCustomBadge: 'Özel',
     savePathNotFound: 'Klasör bulunamadı',
@@ -267,6 +276,9 @@ export const tr: Translation = {
     friendPlayingTitle: 'Bir arkadaşın şu an oynuyor',
     friendPlayingBody: (login, game, alreadyPlaying) =>
       alreadyPlaying ? `${login} şu anda ${game} oynuyor.` : `${login} az önce ${game} oyununu başlattı.`,
+    lockWarningTitle: 'Olası kayıt çakışması',
+    lockWarningBody: (login, game) =>
+      `${login} şu anda ${game} oynuyor olabilir — aynı anda oynamak bazen senkronizasyon çakışmasına yol açabilir.`,
     restoreAction: 'Sadece benim için geri yükle',
     restoring: 'Geri yükleniyor…',
     restored: 'Geri yüklendi — artık sadece senin için senkronize ediliyor',
@@ -278,6 +290,9 @@ export const tr: Translation = {
     welcomeTitle: "CoopSync'e hoş geldin!",
     welcomeSubtitle: 'Senkronizasyonu birkaç adımda ayarlayalım',
     step1Title: 'GitHub ile giriş yap',
+    permissionsToggle: '🔒 Bu giriş tam olarak neye izin veriyor?',
+    permissionsBody:
+      'GitHub, CoopSync\'e hesabındaki depolara erişim verir (token\'ın teknik kapsamı: "repo" — özel kayıt deposunu oluşturmak için gerekli; "delete_repo" — yalnızca Ayarlar\'daki "Depoyu sil" düğmesi için; "read:org" — organizasyon listeni görebilmek için). CoopSync kendi coopsync-saves deposu dışında hiçbir depoya asla dokunmaz. Token yalnızca bu bilgisayarda kalır, Windows\'un kendi araçlarıyla şifrelenmiş olarak.',
     loginButton: 'GitHub ile giriş yap',
     copied: 'Kopyalandı',
     copy: 'Kopyala',
@@ -288,6 +303,8 @@ export const tr: Translation = {
     hostDesc: 'Ortak depoyu oluşturacağım, arkadaşım bana bağlanacak',
     joinTitle: 'Bir arkadaşa bağlan',
     joinDesc: 'Arkadaşım depoyu zaten oluşturdu ve beni davet etti',
+    soloTitle: 'Sadece kendim için',
+    soloDesc: 'Kayıtların tam sürüm geçmişiyle yedeklenir — ikinci bir oyuncuya gerek yok. PC + dizüstü senaryosu için de gayet uygun.',
     pendingInviteFrom: (host) => `${host} seni kendi deposuna davet etti`,
     youAreHost: 'Sen ana bilgisayarsın',
     change: 'değiştir',

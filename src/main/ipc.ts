@@ -28,6 +28,7 @@ import {
   getSyncStatuses,
   getSyncHistory,
   revertToVersion,
+  setVersionNote,
   resetLocalSaveState,
   adoptLocalHistoryAsOwnRepo,
   uploadAvatar,
@@ -1172,6 +1173,17 @@ export function registerIpcHandlers(): void {
     const { token, owner } = await syncTarget()
     return getSyncHistory(token, owner)
   })
+
+  // Attach/edit a note and/or "broken" flag on a specific past push, after
+  // the fact — never touches save content, see setVersionNote's own doc comment.
+  ipcMain.handle(
+    'sync:set-version-note',
+    async (_event, appId: string, version: number, note: string | undefined, broken: boolean): Promise<void> => {
+      const { token, owner } = await syncTarget()
+      const { owner: actorLogin } = await requireAuth()
+      await setVersionNote(token, owner, appId, version, actorLogin, { note, broken })
+    }
+  )
 
   // Revert a game's saves to an older version — pushed back as a new version,
   // not a branch (see revertToVersion).

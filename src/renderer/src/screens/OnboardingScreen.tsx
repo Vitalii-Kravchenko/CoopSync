@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { colors, fonts, gradients, radii, shadows, transitions } from '../theme'
 import { useI18n } from '../i18n'
 import { describeError } from '../errors'
-import { GitHubIcon, CheckIcon, CrownIcon, UsersIcon } from '../components/icons'
+import { GitHubIcon, CheckIcon, CrownIcon, UsersIcon, DiskIcon } from '../components/icons'
 import Avatar from '../components/Avatar'
 import Button from '../components/Button'
 import type {
@@ -22,9 +22,16 @@ interface Props {
 }
 
 function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Element {
-  const { t } = useI18n()
+  const { t, language } = useI18n()
+  const [showPermissions, setShowPermissions] = useState(false)
   const [auth, setAuth] = useState<AuthStatus | null>(null)
   const [role, setRole] = useState<UserRole | null>(null)
+  // Cosmetic-only, onboarding-local flag — "solo" is backed by the exact same
+  // role:'host' as the paired flow (own repo, own history, no code
+  // difference at all — see role:set-host in ipc.ts). This only decides
+  // whether step 4 (invite a friend) shows during THIS onboarding pass; a
+  // solo user can still invite someone later from Settings any time they want.
+  const [soloMode, setSoloMode] = useState(false)
   const [repo, setRepo] = useState<SavesRepoStatus | null>(null)
   const [deviceCode, setDeviceCode] = useState<DeviceCodeInfo | null>(null)
   const [invites, setInvites] = useState<PendingInvite[]>([])
@@ -86,11 +93,12 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
     }
   }
 
-  async function handleSetHost(): Promise<void> {
+  async function handleSetHost(solo: boolean): Promise<void> {
     setBusy(true)
     setError(null)
     try {
       await window.api.role.setHost()
+      setSoloMode(solo)
       setRole('host')
       await loadRepo()
     } catch (e) {
@@ -160,9 +168,30 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
       {/* STEP 1 — login */}
       <Step n={1} done={loggedIn} title={t.onboarding.step1Title}>
         {!loggedIn && !deviceCode && (
-          <Button variant="ghost" style={{ alignSelf: 'flex-start' }} onClick={handleLogin} disabled={busy}>
-            <GitHubIcon size={17} color={colors.text1} /> {t.onboarding.loginButton}
-          </Button>
+          <>
+            <Button variant="ghost" style={{ alignSelf: 'flex-start' }} onClick={handleLogin} disabled={busy}>
+              <GitHubIcon size={17} color={colors.text1} /> {t.onboarding.loginButton}
+            </Button>
+            <button
+              className="reset-btn"
+              style={styles.permissionsToggle}
+              onClick={() => setShowPermissions((v) => !v)}
+            >
+              {t.onboarding.permissionsToggle} {showPermissions ? '▾' : '▸'}
+            </button>
+            {showPermissions && (
+              <div style={styles.permissionsBox}>
+                <div>{t.onboarding.permissionsBody}</div>
+                <button
+                  className="reset-btn"
+                  style={styles.permissionsLink}
+                  onClick={() => window.api.openExternal(`https://coopsync.app/privacy.html?lang=${language}`)}
+                >
+                  {t.settings.privacyPolicyLink}
+                </button>
+              </div>
+            )}
+          </>
         )}
         {!loggedIn && deviceCode && (
           <div style={styles.device}>
@@ -215,7 +244,7 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
               icon={<CrownIcon size={18} color={colors.cy} />}
               title={t.onboarding.hostTitle}
               desc={t.onboarding.hostDesc}
-              onClick={handleSetHost}
+              onClick={() => handleSetHost(false)}
               disabled={busy}
             />
             <RoleCard
@@ -225,13 +254,31 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
               onClick={() => setRole('join')}
               disabled={busy}
             />
+            <RoleCard
+              icon={<DiskIcon size={18} color={colors.cy} />}
+              title={t.onboarding.soloTitle}
+              desc={t.onboarding.soloDesc}
+              onClick={() => handleSetHost(true)}
+              disabled={busy}
+            />
           </div>
         )}
         {role === 'host' && (
           <div style={styles.okRow}>
-            <CrownIcon size={16} color={colors.success} />
-            <span style={styles.okName}>{t.onboarding.youAreHost}</span>
-            <Button variant="ghost" style={styles.smallGhost} onClick={() => setRole(null)}>
+            {soloMode ? (
+              <DiskIcon size={16} color={colors.success} />
+            ) : (
+              <CrownIcon size={16} color={colors.success} />
+            )}
+            <span style={styles.okName}>{soloMode ? t.onboarding.soloTitle : t.onboarding.youAreHost}</span>
+            <Button
+              variant="ghost"
+              style={styles.smallGhost}
+              onClick={() => {
+                setRole(null)
+                setSoloMode(false)
+              }}
+            >
               {t.onboarding.change}
             </Button>
           </div>
@@ -265,7 +312,7 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
       {/* STEP 3 (host only) — repo + friend */}
       {role === 'host' && (
         <>
-          <Step n={3} done={repoReady} title={t.onboarding.step3Title}>
+          <Step n={3} done={repoReady} title={t.onboarding.step3Title} last={soloMode}>
             {!repoReady ? (
               <Button variant="primary" style={{ alignSelf: 'flex-start' }} onClick={handleCreateRepo} disabled={busy}>
                 {busy && <span className="spinner" />}
@@ -280,6 +327,7 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
             )}
           </Step>
 
+          {!soloMode && (
           <Step n={4} done={collaborators.length > 0} title={t.onboarding.step4Title} disabled={!repoReady} last>
             <div style={styles.row}>
               <input
@@ -313,6 +361,7 @@ function OnboardingScreen({ onComplete, avatarDataUrl }: Props): React.JSX.Eleme
               </div>
             )}
           </Step>
+          )}
         </>
       )}
 
@@ -476,6 +525,34 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center'
+  },
+  permissionsToggle: {
+    alignSelf: 'flex-start',
+    fontSize: 12.5,
+    color: colors.text3,
+    cursor: 'pointer',
+    textDecoration: 'underline',
+    textUnderlineOffset: 3
+  },
+  permissionsBox: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 8,
+    fontSize: 12.5,
+    lineHeight: 1.5,
+    color: colors.text2,
+    background: colors.bgInset,
+    border: `1px solid ${colors.borderSubtle}`,
+    borderRadius: radii.md,
+    padding: '12px 14px'
+  },
+  permissionsLink: {
+    alignSelf: 'flex-start',
+    fontSize: 12.5,
+    color: colors.cy,
+    cursor: 'pointer',
+    textDecoration: 'underline',
+    textUnderlineOffset: 3
   },
   roleTitle: { fontFamily: fonts.display, fontSize: 14.5, fontWeight: 700 },
   roleDesc: { fontSize: 12.5, color: colors.text3 },

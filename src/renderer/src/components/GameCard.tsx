@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { colors, fonts, radii, shadows, steamPoster, transitions } from '../theme'
 import { useI18n } from '../i18n'
 import type { Translation } from '../i18n'
-import { UploadIcon, DownloadIcon, HistoryIcon, DiskIcon, EditIcon, GamepadIcon } from './icons'
+import { UploadIcon, DownloadIcon, HistoryIcon, DiskIcon, EditIcon, GamepadIcon, AlertTriangleIcon } from './icons'
 import Button from './Button'
 import type { SyncStatus } from '../../../shared/types'
 import { formatVersion } from '../../../shared/format'
@@ -29,6 +29,11 @@ interface Props {
   lastSyncAt?: string
   /** Saves size in bytes. */
   sizeBytes?: number
+  /** The CURRENT cloud version was flagged "don't download this" (see
+   *  sync.ts's setVersionNote) — shown as its own warning badge only while
+   *  there's actually something to pull (remote-newer/cloud-only), the exact
+   *  moment this matters. */
+  broken?: boolean
   /** Sync in progress for this specific game. */
   busy?: boolean
   /** Login of a mutual friend currently playing this game right now (see
@@ -141,6 +146,7 @@ function GameCard({
   remoteVersion,
   lastSyncAt,
   sizeBytes,
+  broken,
   busy,
   friendPlayingLogin,
   onUpload,
@@ -160,6 +166,7 @@ function GameCard({
   const needsSetup = syncStatus === 'needs-setup'
   const showOverlay = (hover || busy) && playable
   const status = playable ? syncDisplay(syncStatus, t) : null
+  const showBrokenWarning = !!broken && (syncStatus === 'remote-newer' || syncStatus === 'cloud-only')
 
   return (
     <div style={{ ...styles.wrap, opacity: playable ? 1 : 0.7 }}>
@@ -193,6 +200,13 @@ function GameCard({
             <span style={styles.friendPlayingDot} />
             <GamepadIcon size={12} color={colors.cy} />
             <span style={styles.friendPlayingText}>{t.gameCard.friendPlayingBadge(friendPlayingLogin)}</span>
+          </div>
+        )}
+
+        {showBrokenWarning && (
+          <div style={styles.brokenWarning} title={t.gameCard.brokenVersionBadge}>
+            <AlertTriangleIcon size={12} color={colors.danger} />
+            <span style={styles.brokenWarningText}>{t.gameCard.brokenVersionBadge}</span>
           </div>
         )}
 
@@ -437,6 +451,30 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 10.5,
     fontWeight: 600,
     color: colors.text1,
+    letterSpacing: '.02em',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap'
+  },
+  brokenWarning: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    maxWidth: 'calc(100% - 16px)',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 5,
+    height: 22,
+    padding: '0 9px 0 8px',
+    borderRadius: radii.pill,
+    background: 'rgba(6,8,13,.78)',
+    border: `1px solid ${colors.dangerBd}`
+  },
+  brokenWarningText: {
+    fontFamily: fonts.display,
+    fontSize: 10.5,
+    fontWeight: 600,
+    color: colors.danger,
     letterSpacing: '.02em',
     overflow: 'hidden',
     textOverflow: 'ellipsis',

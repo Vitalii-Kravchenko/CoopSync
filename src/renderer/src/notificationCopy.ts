@@ -63,6 +63,11 @@ export function describeNotification(
         title: t.notifications.friendPlayingTitle,
         body: t.notifications.friendPlayingBody(params.login, params.game, params.alreadyPlaying === 'true')
       }
+    case 'lock-warning':
+      return {
+        title: t.notifications.lockWarningTitle,
+        body: t.notifications.lockWarningBody(params.login, params.game)
+      }
   }
 }
 
@@ -140,7 +145,8 @@ export const KIND_STYLE: Record<ToastKind, KindStyle> = {
   'access-revoked': style('danger', AlertCircleIcon),
   'game-removed': style('warning', TrashIcon),
   'folder-removed': style('warning', TrashIcon),
-  'friend-playing': style('info', GamepadIcon)
+  'friend-playing': style('info', GamepadIcon),
+  'lock-warning': style('warning', AlertTriangleIcon)
 }
 
 /** Kinds whose toast carries an action button instead of a plain dismiss ×

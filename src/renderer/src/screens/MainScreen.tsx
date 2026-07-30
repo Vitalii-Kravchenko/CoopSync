@@ -460,6 +460,7 @@ function MainScreen({
                 remoteVersion={syncStatuses[g.appId]?.remoteVersion}
                 lastSyncAt={syncStatuses[g.appId]?.lastSyncAt}
                 sizeBytes={syncStatuses[g.appId]?.sizeBytes}
+                broken={syncStatuses[g.appId]?.broken}
                 busy={syncing === g.appId}
                 friendPlayingLogin={friendPlayingByGame[g.appId]}
                 onUpload={() => handleSync(g.appId, 'upload')}
@@ -497,6 +498,7 @@ function MainScreen({
                     remoteVersion={syncStatuses[g.appId]?.remoteVersion}
                     lastSyncAt={syncStatuses[g.appId]?.lastSyncAt}
                     sizeBytes={syncStatuses[g.appId]?.sizeBytes}
+                    broken={syncStatuses[g.appId]?.broken}
                     busy={syncing === g.appId}
                     friendPlayingLogin={friendPlayingByGame[g.appId]}
                     onUpload={() => handleSync(g.appId, 'upload')}

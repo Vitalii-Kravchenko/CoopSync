@@ -83,6 +83,7 @@ export interface Translation {
     setUp: string
     /** Overlay badge on the poster when a mutual friend is playing this game right now. */
     friendPlayingBadge: (login: string) => string
+    brokenVersionBadge: string
   }
   addGame: {
     title: string
@@ -164,6 +165,14 @@ export interface Translation {
     restoreError: string
     revertSuccess: (version: string) => string
     restoredFromBadge: (version: string) => string
+    noteAction: string
+    noteModalTitle: (version: string) => string
+    notePlaceholder: string
+    noteBrokenLabel: string
+    noteSave: string
+    noteCancel: string
+    noteSaveError: string
+    brokenBadge: string
     savePathTitle: string
     savePathCustomBadge: string
     savePathNotFound: string
@@ -294,6 +303,11 @@ export interface Translation {
      *  "happened" from my side of that. */
     friendPlayingTitle: string
     friendPlayingBody: (login: string, game: string, alreadyPlaying: boolean) => string
+    /** Repo lock-file warning (see sync.ts's checkAndClaimGameLock) — a
+     *  fallback for the badge above that also works without the signaling
+     *  server, e.g. when the other player isn't connected to presence. */
+    lockWarningTitle: string
+    lockWarningBody: (login: string, game: string) => string
     /** Action button on the game-removed/folder-removed notification —
      *  keeps the local copy, re-syncs it just for the clicker (see
      *  CustomGame.orphaned/personal). */
@@ -312,6 +326,8 @@ export interface Translation {
     welcomeSubtitle: string
     step1Title: string
     loginButton: string
+    permissionsToggle: string
+    permissionsBody: string
     copied: string
     copy: string
     openGithub: string
@@ -321,6 +337,8 @@ export interface Translation {
     hostDesc: string
     joinTitle: string
     joinDesc: string
+    soloTitle: string
+    soloDesc: string
     pendingInviteFrom: (host: string) => string
     youAreHost: string
     change: string

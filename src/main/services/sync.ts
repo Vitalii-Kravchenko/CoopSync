@@ -301,6 +301,14 @@ interface RemoteMeta {
   version: number
   updatedAt: string
   updatedBy: string
+  /** Free-text note attached to this specific version — e.g. "world got
+   *  corrupted, don't pull this one". Set later, after the push already
+   *  happened, via setVersionNote — never at push time itself, so it never
+   *  adds friction to the actual upload/auto-sync flow. */
+  note?: string
+  /** "Don't download this version" flag — same idea as note, a boolean
+   *  instead of free text, driving its own warning badge. */
+  broken?: boolean
 }
 
 async function readRemoteMeta(name: string, personalLogin?: string): Promise<RemoteMeta | null> {
@@ -320,9 +328,25 @@ export async function readRemoteVersion(name: string, personalLogin?: string): P
   return meta?.version ?? 0
 }
 
-async function writeRemoteMeta(name: string, version: number, owner: string, personalLogin?: string): Promise<void> {
+async function writeRemoteMeta(
+  name: string,
+  version: number,
+  owner: string,
+  personalLogin?: string,
+  // Only ever passed by setVersionNote below, to attach note/broken to an
+  // already-pushed version without touching its updatedAt/updatedBy (an
+  // ordinary push never sets this — those two fields should keep reflecting
+  // the real push moment, not whenever someone later annotated it).
+  extra?: { note?: string; broken?: boolean; updatedAt?: string }
+): Promise<void> {
   await mkdir(join(repoDir(), '.meta'), { recursive: true })
-  const meta = { version, updatedAt: new Date().toISOString(), updatedBy: owner }
+  const meta: RemoteMeta = {
+    version,
+    updatedAt: extra?.updatedAt ?? new Date().toISOString(),
+    updatedBy: owner,
+    ...(extra?.note !== undefined ? { note: extra.note } : {}),
+    ...(extra?.broken !== undefined ? { broken: extra.broken } : {})
+  }
   await writeFile(remoteMetaPath(name, personalLogin), JSON.stringify(meta, null, 2))
 }
 
@@ -429,6 +453,53 @@ export async function getSyncHistory(token: string, owner: string): Promise<Sync
     if (!existsSync(historyPath())) throw e
   }
   return readHistory()
+}
+
+/** Attach (or clear) a note and/or "broken" flag on a specific past push,
+ *  after the fact — a deliberately separate action from uploadGame itself,
+ *  so annotating a version never adds a prompt/modal to the actual
+ *  upload/auto-sync path. Always updates the shared history entry; if
+ *  `version` is still the live cloud version, also mirrors onto the meta
+ *  file GameSyncStatus reads, so a "don't download this" warning shows up
+ *  immediately wherever the game's current cloud state is surfaced (not just
+ *  buried in History) — an older, superseded version's note only ever shows
+ *  there. A metadata-only commit; save content is never touched. */
+export async function setVersionNote(
+  token: string,
+  owner: string,
+  appId: string,
+  version: number,
+  actor: string,
+  patch: { note?: string; broken?: boolean }
+): Promise<void> {
+  await ensureRepo(token, owner)
+  const history = await readHistory()
+  const entry = history.find((e) => e.appId === appId && e.version === version)
+  if (!entry) throw makeAppError('GAME_NOT_SUPPORTED')
+
+  const nextHistory = history.map((e) =>
+    e.appId === appId && e.version === version ? { ...e, note: patch.note, broken: patch.broken } : e
+  )
+  await mkdir(join(repoDir(), '.meta'), { recursive: true })
+  await writeFile(historyPath(), JSON.stringify(nextHistory, null, 2))
+
+  // Personal versions never appear in the shared history in the first place
+  // (see uploadGame) — a note can only ever target a shared push, so the
+  // meta file it might mirror onto is always the shared one too.
+  const currentMeta = await readRemoteMeta(entry.gameName)
+  if (currentMeta && currentMeta.version === version) {
+    await writeRemoteMeta(entry.gameName, version, currentMeta.updatedBy, undefined, {
+      note: patch.note,
+      broken: patch.broken,
+      updatedAt: currentMeta.updatedAt
+    })
+  }
+
+  await git(['add', '-A'])
+  const status = await git(['status', '--porcelain'])
+  if (!status.trim()) return
+  await git([...identityFlags(actor), 'commit', '-m', `note: ${entry.gameName} ${formatVersion(version)}`])
+  await git(['push', 'origin', 'main'])
 }
 
 function localVersionsPath(): string {
@@ -572,6 +643,95 @@ export async function uploadGame(
   await git(['push', 'origin', 'main'])
   await setLocalVersion(appId, newVersion)
   return { version: newVersion, pushed: true }
+}
+
+// --- Game lock (crash-safe "friend is currently playing" warning) ---
+// A lightweight conflict-prevention signal that works even without the
+// signaling server (see ROADMAP.md's backlog item "Друг зараз грає") —
+// separate from presenceService's server-based "friend is playing"
+// badge/toast, which only ever fires while BOTH clients are online and
+// connected to it right now. This one just lives in the shared repo:
+// whoever launches a game writes a small lock file there (watcher.ts), and
+// the next person to launch the SAME game sees it and gets a one-time
+// warning — never a block (Vitalii's call: simultaneous play is usually a
+// deliberate shared session, e.g. world-hosting, not a mistake).
+//
+// TTL, not an explicit "I'm still here" heartbeat: if CoopSync itself
+// crashes or is killed while a game is running (not just the game crashing —
+// watcher.ts's process poll already notices THAT on its own regardless of a
+// clean exit), nothing would ever release the lock. After LOCK_TTL_MS it's
+// simply treated as stale and ignored instead of warning forever about a
+// session that's actually long over.
+
+interface GameLock {
+  holder: string
+  startedAt: string
+  updatedAt: string
+}
+
+const LOCK_TTL_MS = 6 * 60 * 60 * 1000 // 6 hours — comfortably longer than any real session
+
+function lockPath(gameName: string): string {
+  return join(repoDir(), '.meta', 'locks', `${gameName}.json`)
+}
+
+async function readGameLock(gameName: string): Promise<GameLock | null> {
+  const p = lockPath(gameName)
+  if (!existsSync(p)) return null
+  try {
+    const raw = (await readFile(p, 'utf8')).replace(/^﻿/, '')
+    return JSON.parse(raw) as GameLock
+  } catch {
+    return null
+  }
+}
+
+/** Called right when a game launches (watcher.ts). Returns who else (if
+ *  anyone) currently holds a fresh lock on it — the caller shows a one-time
+ *  warning toast for that and nothing more; this never blocks the launch.
+ *  Always claims the lock for the current actor afterward, fresh — see this
+ *  section's doc comment for why an overlapping session is flagged, not
+ *  prevented. */
+export async function checkAndClaimGameLock(
+  token: string,
+  owner: string,
+  gameName: string,
+  actor: string
+): Promise<{ heldByOther: string; since: string } | null> {
+  await ensureRepo(token, owner)
+  const existing = await readGameLock(gameName)
+  let warning: { heldByOther: string; since: string } | null = null
+  if (existing && existing.holder !== actor && Date.now() - new Date(existing.updatedAt).getTime() < LOCK_TTL_MS) {
+    warning = { heldByOther: existing.holder, since: existing.startedAt }
+  }
+
+  await mkdir(join(repoDir(), '.meta', 'locks'), { recursive: true })
+  const now = new Date().toISOString()
+  const lock: GameLock = { holder: actor, startedAt: now, updatedAt: now }
+  await writeFile(lockPath(gameName), JSON.stringify(lock, null, 2))
+  await git(['add', '-A'])
+  const status = await git(['status', '--porcelain'])
+  if (status.trim()) {
+    await git([...identityFlags(actor), 'commit', '-m', `lock: ${gameName} claimed by ${actor}`])
+    await git(['push', 'origin', 'main'])
+  }
+  return warning
+}
+
+/** Called right when a game exits (watcher.ts) — releases the lock, but only
+ *  if it's still ours (never clobbers a friend's own, later claim from a
+ *  session that overlapped with ours). Best-effort: a failed release just
+ *  leaves a lock that expires via TTL anyway. */
+export async function releaseGameLock(token: string, owner: string, gameName: string, actor: string): Promise<void> {
+  await ensureRepo(token, owner)
+  const existing = await readGameLock(gameName)
+  if (!existing || existing.holder !== actor) return
+  await rm(lockPath(gameName), { force: true })
+  await git(['add', '-A'])
+  const status = await git(['status', '--porcelain'])
+  if (!status.trim()) return
+  await git([...identityFlags(actor), 'commit', '-m', `lock: ${gameName} released by ${actor}`])
+  await git(['push', 'origin', 'main'])
 }
 
 // --- Conflict snapshots ---
@@ -2029,7 +2189,9 @@ async function doGetSyncStatuses(token: string, owner: string, actor: string): P
       remoteVersion: remoteVer,
       lastSyncAt: remoteMeta?.updatedAt,
       remoteUpdatedBy: remoteMeta?.updatedBy,
-      sizeBytes
+      sizeBytes,
+      note: remoteMeta?.note,
+      broken: remoteMeta?.broken
     })
   }
 

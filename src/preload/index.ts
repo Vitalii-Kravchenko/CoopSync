@@ -189,6 +189,9 @@ const api = {
     /** Revert the game's saves to an older version (pushed back as a new version). */
     revert: (appId: string, version: number): Promise<SyncResult> =>
       ipcRenderer.invoke('sync:revert', appId, version),
+    /** Attach/edit a note and/or "broken" flag on a specific past push. */
+    setVersionNote: (appId: string, version: number, note: string | undefined, broken: boolean): Promise<void> =>
+      ipcRenderer.invoke('sync:set-version-note', appId, version, note, broken),
     /** Mark game/version pairs as seen (clears the Games nav badge for them). */
     markSeen: (entries: Array<{ appId: string; version: number }>): Promise<void> =>
       ipcRenderer.invoke('sync:mark-seen', entries),

@@ -54,7 +54,8 @@ export const de: Translation = {
     details: 'Details',
     customTag: 'Manuell hinzugefügt',
     setUp: 'Einrichten',
-    friendPlayingBadge: (login) => `${login} spielt`
+    friendPlayingBadge: (login) => `${login} spielt`,
+    brokenVersionBadge: 'Als beschädigt markiert — nicht herunterladen',
   },
   addGame: {
     title: 'Spiel hinzufügen',
@@ -139,6 +140,14 @@ export const de: Translation = {
     restoreError: 'Version konnte nicht wiederhergestellt werden',
     revertSuccess: (version) => `Version ${version} wiederhergestellt`,
     restoredFromBadge: (version) => `↩ von ${version}`,
+    noteAction: 'Versionsnotiz',
+    noteModalTitle: (version) => `Notiz zu ${version}`,
+    notePlaceholder: 'Z. B.: Die Welt ist beschädigt, diese Version nicht herunterladen',
+    noteBrokenLabel: 'Als beschädigt markieren (vor dem Herunterladen warnen)',
+    noteSave: 'Speichern',
+    noteCancel: 'Abbrechen',
+    noteSaveError: 'Notiz konnte nicht gespeichert werden',
+    brokenBadge: '⚠ Beschädigt',
     savePathTitle: 'Speicherort',
     savePathCustomBadge: 'Benutzerdefiniert',
     savePathNotFound: 'Ordner nicht gefunden',
@@ -267,6 +276,9 @@ export const de: Translation = {
     friendPlayingTitle: 'Freund spielt gerade',
     friendPlayingBody: (login, game, alreadyPlaying) =>
       alreadyPlaying ? `${login} spielt gerade ${game}.` : `${login} hat gerade ${game} gestartet.`,
+    lockWarningTitle: 'Möglicher Speicherkonflikt',
+    lockWarningBody: (login, game) =>
+      `${login} spielt eventuell gerade ebenfalls ${game} — gleichzeitiges Spielen kann manchmal zu einem Synchronisierungskonflikt führen.`,
     restoreAction: 'Nur für mich wiederherstellen',
     restoring: 'Wird wiederhergestellt…',
     restored: 'Wiederhergestellt — synct jetzt nur für dich',
@@ -278,6 +290,9 @@ export const de: Translation = {
     welcomeTitle: 'Willkommen bei CoopSync!',
     welcomeSubtitle: 'Richten wir die Synchronisierung in wenigen Schritten ein',
     step1Title: 'Mit GitHub anmelden',
+    permissionsToggle: '🔒 Was genau erlaubt diese Anmeldung?',
+    permissionsBody:
+      'GitHub gewährt CoopSync Zugriff auf die Repositories deines Kontos (technischer Umfang des Tokens: "repo" — nötig, um den privaten Speicher für Spielstände zu erstellen; "delete_repo" — nur für die Schaltfläche "Speicher löschen" in den Einstellungen; "read:org" — um deine Liste von Organisationen zu sehen). CoopSync greift niemals auf ein anderes Repository als sein eigenes coopsync-saves zu. Das Token bleibt nur auf diesem PC, verschlüsselt mit Windows-eigenen Mitteln.',
     loginButton: 'Mit GitHub anmelden',
     copied: 'Kopiert',
     copy: 'Kopieren',
@@ -288,6 +303,8 @@ export const de: Translation = {
     hostDesc: 'Ich erstelle den gemeinsamen Speicher, mein Freund verbindet sich mit mir',
     joinTitle: 'Mit einem Freund verbinden',
     joinDesc: 'Mein Freund hat den Speicher bereits erstellt und mich eingeladen',
+    soloTitle: 'Nur für mich',
+    soloDesc: 'Sicherung der Spielstände mit vollständigem Versionsverlauf — ohne zweiten Spieler. Eignet sich auch für PC + Laptop.',
     pendingInviteFrom: (host) => `${host} hat dich zu seinem Speicher eingeladen`,
     youAreHost: 'Du bist der Host',
     change: 'ändern',

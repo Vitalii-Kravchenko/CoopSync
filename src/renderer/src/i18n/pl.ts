@@ -54,7 +54,8 @@ export const pl: Translation = {
     details: 'Szczegóły',
     customTag: 'Dodano ręcznie',
     setUp: 'Skonfiguruj',
-    friendPlayingBadge: (login) => `Gra: ${login}`
+    friendPlayingBadge: (login) => `Gra: ${login}`,
+    brokenVersionBadge: 'Oznaczone jako zepsute — nie pobieraj',
   },
   addGame: {
     title: 'Dodaj grę',
@@ -138,6 +139,14 @@ export const pl: Translation = {
     restoreError: 'Nie udało się przywrócić wersji',
     revertSuccess: (version) => `Przywrócono wersję ${version}`,
     restoredFromBadge: (version) => `↩ z ${version}`,
+    noteAction: 'Notatka do wersji',
+    noteModalTitle: (version) => `Notatka do ${version}`,
+    notePlaceholder: 'Np.: świat się zepsuł, nie pobieraj tej wersji',
+    noteBrokenLabel: 'Oznacz jako zepsutą (ostrzeż przed pobraniem)',
+    noteSave: 'Zapisz',
+    noteCancel: 'Anuluj',
+    noteSaveError: 'Nie udało się zapisać notatki',
+    brokenBadge: '⚠ Zepsuta',
     savePathTitle: 'Lokalizacja zapisów',
     savePathCustomBadge: 'Niestandardowa',
     savePathNotFound: 'Nie znaleziono folderu',
@@ -266,6 +275,9 @@ export const pl: Translation = {
     friendPlayingTitle: 'Znajomy właśnie gra',
     friendPlayingBody: (login, game, alreadyPlaying) =>
       alreadyPlaying ? `${login} właśnie gra w ${game}.` : `${login} właśnie uruchomił(a) ${game}.`,
+    lockWarningTitle: 'Możliwy konflikt zapisu',
+    lockWarningBody: (login, game) =>
+      `${login} może właśnie też grać w ${game} — jednoczesna gra czasem powoduje konflikt synchronizacji.`,
     restoreAction: 'Przywróć tylko dla mnie',
     restoring: 'Przywracanie…',
     restored: 'Przywrócono — synchronizuje się teraz tylko dla ciebie',
@@ -277,6 +289,9 @@ export const pl: Translation = {
     welcomeTitle: 'Witamy w CoopSync!',
     welcomeSubtitle: 'Skonfigurujmy synchronizację w kilku krokach',
     step1Title: 'Zaloguj się przez GitHub',
+    permissionsToggle: '🔒 Co dokładnie zezwala to logowanie?',
+    permissionsBody:
+      'GitHub daje CoopSync dostęp do repozytoriów Twojego konta (techniczny zakres tokena: "repo" — niezbędny do utworzenia prywatnego magazynu zapisów; "delete_repo" — tylko dla przycisku "Usuń magazyn" w Ustawieniach; "read:org" — aby zobaczyć listę Twoich organizacji). CoopSync nigdy nie dotyka żadnego innego repozytorium poza swoim własnym coopsync-saves. Token pozostaje tylko na tym komputerze, zaszyfrowany wbudowanymi mechanizmami Windows.',
     loginButton: 'Zaloguj się przez GitHub',
     copied: 'Skopiowano',
     copy: 'Kopiuj',
@@ -287,6 +302,8 @@ export const pl: Translation = {
     hostDesc: 'Utworzę wspólny magazyn, znajomy się do mnie podłączy',
     joinTitle: 'Dołącz do znajomego',
     joinDesc: 'Znajomy już utworzył magazyn i mnie zaprosił',
+    soloTitle: 'Tylko dla siebie',
+    soloDesc: 'Kopia zapasowa zapisów z pełną historią wersji — bez drugiego gracza. Świetnie sprawdza się też przy PC + laptop.',
     pendingInviteFrom: (host) => `${host} zaprosił cię do swojego magazynu`,
     youAreHost: 'Jesteś hostem',
     change: 'zmień',

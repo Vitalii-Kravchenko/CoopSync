@@ -17,7 +17,9 @@ import {
   personalLoginFor,
   readRemoteVersion,
   readExtraFolderMeta,
-  pushConflictSnapshot
+  pushConflictSnapshot,
+  checkAndClaimGameLock,
+  releaseGameLock
 } from './sync'
 import { getRunningProcesses, isGameRunning } from './processCheck'
 import { getNotified, markNotified } from './notifyState'
@@ -311,6 +313,29 @@ async function tick(
             showToast('friend-playing', { login: info.login, game: game.name, alreadyPlaying: 'true' })
           }
         }
+        // Repo-based lock file — the same "someone's already playing this"
+        // warning as the presence check above, but works even without the
+        // signaling server (a friend offline/not connected to presence still
+        // shows up here, since it just lives in the shared repo — see
+        // sync.ts's checkAndClaimGameLock doc comment). Skipped when presence
+        // already covered it (alreadyThere above) so the two mechanisms don't
+        // double-toast the exact same join in the common case where presence
+        // IS connected. Best-effort — a failed lock check never blocks the
+        // pull/launch below.
+        if (!alreadyThere) {
+          try {
+            const lockWarning = await checkAndClaimGameLock(token, owner, game.name, actor)
+            if (lockWarning) {
+              showToast('lock-warning', {
+                login: lockWarning.heldByOther,
+                game: game.name,
+                since: lockWarning.since
+              })
+            }
+          } catch {
+            // Best-effort — see comment above.
+          }
+        }
         // The game just launched → first, download files missing locally
         // (e.g. a deleted world), without touching existing local files —
         // this is always safe, regardless of versions. Then a full pull,
@@ -417,6 +442,15 @@ async function tick(
         // already there gets freshly notified again instead of staying
         // silenced by a stale entry from this session.
         notifiedFriendPlaying.clear()
+        // Release our own repo lock claim (see the launch-time
+        // checkAndClaimGameLock above) — a no-op if we never actually held it
+        // (e.g. this launch's alreadyThere branch skipped claiming it, or a
+        // friend's later launch already overwrote it with their own claim).
+        try {
+          await releaseGameLock(token, owner, game.name, actor)
+        } catch {
+          // Best-effort — an unreleased lock just expires via TTL instead.
+        }
         // The game closed → the exit-time push is still the final catch-all,
         // regardless of whatever the mid-session settle check already did —
         // it covers whatever changed in the gap since the last settled push,

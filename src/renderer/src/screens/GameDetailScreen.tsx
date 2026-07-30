@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { colors, fonts, radii, steamPoster, transitions } from '../theme'
+import { colors, fonts, radii, shadows, steamPoster, transitions } from '../theme'
 import { useI18n } from '../i18n'
 import { describeError, describeSyncResult } from '../errors'
 import type { Translation } from '../i18n'
@@ -10,11 +10,13 @@ import {
   EditIcon,
   TrashIcon,
   AlertTriangleIcon,
-  LockIcon
+  LockIcon,
+  CloseIcon
 } from '../components/icons'
 import Avatar from '../components/Avatar'
 import Button from '../components/Button'
 import ConfirmModal from '../components/ConfirmModal'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 import CoverCropModal from '../components/CoverCropModal'
 import ExcludeFilesCard from '../components/ExcludeFilesCard'
 import ExtraFoldersSection, { SharedToggle } from '../components/ExtraFoldersSection'
@@ -209,6 +211,43 @@ function GameDetailScreen({
   const [restoreTarget, setRestoreTarget] = useState<SyncHistoryEntry | null>(null)
   const [restoring, setRestoring] = useState(false)
   const [restoreError, setRestoreError] = useState<string | null>(null)
+
+  // Retroactively attaching a note/"broken" flag to a past push (see
+  // sync.ts's setVersionNote) — a separate, deliberately after-the-fact
+  // action, never part of the upload/auto-sync flow itself.
+  const [noteTarget, setNoteTarget] = useState<SyncHistoryEntry | null>(null)
+  const [noteText, setNoteText] = useState('')
+  const [noteBroken, setNoteBroken] = useState(false)
+  const [noteSaving, setNoteSaving] = useState(false)
+  const [noteError, setNoteError] = useState<string | null>(null)
+
+  function openNoteEditor(entry: SyncHistoryEntry): void {
+    setNoteTarget(entry)
+    setNoteText(entry.note ?? '')
+    setNoteBroken(!!entry.broken)
+    setNoteError(null)
+  }
+
+  async function handleSaveNote(): Promise<void> {
+    if (!noteTarget) return
+    setNoteSaving(true)
+    setNoteError(null)
+    try {
+      const trimmed = noteText.trim()
+      await window.api.sync.setVersionNote(appId, noteTarget.version, trimmed || undefined, noteBroken)
+      setEntries((prev) =>
+        prev.map((e) =>
+          e.version === noteTarget.version ? { ...e, note: trimmed || undefined, broken: noteBroken } : e
+        )
+      )
+      setNoteTarget(null)
+      onSynced()
+    } catch (e) {
+      setNoteError(describeError(e, t, t.history.noteSaveError))
+    } finally {
+      setNoteSaving(false)
+    }
+  }
 
   // Where this game's saves live — a user override, or the catalog default.
   const [savePathInfo, setSavePathInfo] = useState<GameSavePathInfo | null>(null)
@@ -762,6 +801,7 @@ function GameDetailScreen({
                   canRestore={e.version !== latestVersion}
                   restoreDisabled={autoPushPending}
                   onRestoreClick={() => setRestoreTarget(e)}
+                  onNoteClick={() => openNoteEditor(e)}
                 />
               ))}
         </div>
@@ -831,6 +871,21 @@ function GameDetailScreen({
           }}
         />
       )}
+
+      {noteTarget && (
+        <NoteModal
+          t={t}
+          version={fmtVersion(noteTarget.version)}
+          note={noteText}
+          broken={noteBroken}
+          busy={noteSaving}
+          error={noteError}
+          onNoteChange={setNoteText}
+          onBrokenChange={setNoteBroken}
+          onSave={handleSaveNote}
+          onCancel={() => setNoteTarget(null)}
+        />
+      )}
     </div>
   )
 }
@@ -842,7 +897,8 @@ function HistoryRow({
   last,
   canRestore,
   restoreDisabled,
-  onRestoreClick
+  onRestoreClick,
+  onNoteClick
 }: {
   entry: SyncHistoryEntry
   t: Translation
@@ -855,6 +911,7 @@ function HistoryRow({
    *  button out instead of hiding it, since it's back to usable in a moment. */
   restoreDisabled: boolean
   onRestoreClick: () => void
+  onNoteClick: () => void
 }): React.JSX.Element {
   const [hover, setHover] = useState(false)
 
@@ -883,9 +940,24 @@ function HistoryRow({
         {entry.restoredFrom !== undefined && (
           <span style={styles.restoredBadge}>{t.history.restoredFromBadge(fmtVersion(entry.restoredFrom))}</span>
         )}
+        {entry.broken && <span style={styles.brokenBadge}>{t.history.brokenBadge}</span>}
+        {entry.note && (
+          <div style={styles.noteText} title={entry.note}>
+            {entry.note}
+          </div>
+        )}
       </div>
       <div style={styles.mono}>{formatRelativeTime(entry.updatedAt, t)}</div>
-      <div>
+      <div style={styles.rowActions}>
+        <Button
+          variant="ghost"
+          style={styles.noteBtn}
+          onClick={onNoteClick}
+          title={t.history.noteAction}
+          aria-label={t.history.noteAction}
+        >
+          <EditIcon size={13} color={colors.text2} />
+        </Button>
         {canRestore && (
           <Button
             variant="ghost"
@@ -897,6 +969,94 @@ function HistoryRow({
             {t.history.restore}
           </Button>
         )}
+      </div>
+    </div>
+  )
+}
+
+// Editing a version's note/"broken" flag — a lightweight, neutral-colored
+// sibling of ConfirmModal (that one is danger-only styling and a plain-string
+// description, neither fits a form with a textarea + checkbox).
+function NoteModal({
+  t,
+  version,
+  note,
+  broken,
+  busy,
+  error,
+  onNoteChange,
+  onBrokenChange,
+  onSave,
+  onCancel
+}: {
+  t: Translation
+  version: string
+  note: string
+  broken: boolean
+  busy: boolean
+  error: string | null
+  onNoteChange: (v: string) => void
+  onBrokenChange: (v: boolean) => void
+  onSave: () => void
+  onCancel: () => void
+}): React.JSX.Element {
+  const mouseDownOnBackdrop = useRef(false)
+  const cardRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(cardRef)
+
+  return (
+    <div
+      style={styles.noteBackdrop}
+      onMouseDown={(e) => {
+        mouseDownOnBackdrop.current = e.target === e.currentTarget
+      }}
+      onClick={(e) => {
+        if (!busy && mouseDownOnBackdrop.current && e.target === e.currentTarget) onCancel()
+      }}
+    >
+      <div ref={cardRef} style={styles.noteCard} onClick={(e) => e.stopPropagation()}>
+        <div style={styles.noteHeader}>
+          <div style={styles.noteTitle}>{t.history.noteModalTitle(version)}</div>
+          <button
+            className="icon-btn"
+            style={styles.noteCloseBtn}
+            onClick={onCancel}
+            disabled={busy}
+            title={t.windowControls.close}
+            aria-label={t.windowControls.close}
+          >
+            <CloseIcon size={15} />
+          </button>
+        </div>
+        <textarea
+          className="input-field"
+          style={styles.noteTextarea}
+          placeholder={t.history.notePlaceholder}
+          value={note}
+          onChange={(e) => onNoteChange(e.target.value)}
+          disabled={busy}
+          rows={3}
+        />
+        <label style={styles.noteCheckboxRow}>
+          <input
+            type="checkbox"
+            checked={broken}
+            onChange={(e) => onBrokenChange(e.target.checked)}
+            disabled={busy}
+            style={{ accentColor: colors.cy }}
+          />
+          {t.history.noteBrokenLabel}
+        </label>
+        {error && <div style={styles.noteError}>{error}</div>}
+        <div style={styles.noteActions}>
+          <Button variant="ghost" onClick={onCancel} disabled={busy}>
+            {t.history.noteCancel}
+          </Button>
+          <Button variant="primary" onClick={onSave} disabled={busy}>
+            {busy && <span className="spinner" />}
+            {t.history.noteSave}
+          </Button>
+        </div>
       </div>
     </div>
   )
@@ -1215,8 +1375,80 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: radii.pill
   },
   actionDot: { width: 6, height: 6, borderRadius: '50%', background: colors.success, flexShrink: 0 },
-  restoreBtn: { height: 30, padding: '0 12px', fontSize: 12, justifySelf: 'end' },
+  restoreBtn: { height: 30, padding: '0 12px', fontSize: 12 },
   restoredBadge: { display: 'block', fontSize: 10, color: colors.cy, marginTop: 2 },
+  brokenBadge: {
+    display: 'inline-block',
+    marginLeft: 6,
+    fontSize: 10,
+    fontWeight: 700,
+    color: colors.danger
+  },
+  noteText: {
+    fontFamily: fonts.body,
+    fontSize: 11,
+    color: colors.text3,
+    marginTop: 2,
+    maxWidth: 200,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap'
+  },
+  rowActions: { display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'flex-end' },
+  noteBtn: { width: 28, height: 28, padding: 0, flexShrink: 0 },
+  noteBackdrop: {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(0,0,0,.55)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 200
+  },
+  noteCard: {
+    width: 420,
+    border: `1px solid ${colors.borderSubtle}`,
+    borderRadius: radii.lg,
+    background: colors.bgOverlay,
+    boxShadow: shadows.sh5,
+    padding: 22,
+    outline: 'none'
+  },
+  noteHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+  noteCloseBtn: { width: 32, height: 32 },
+  noteTitle: { fontFamily: fonts.display, fontWeight: 600, fontSize: 16, color: colors.text1 },
+  noteTextarea: {
+    width: '100%',
+    resize: 'vertical',
+    padding: '10px 12px',
+    border: `1px solid ${colors.borderDefault}`,
+    borderRadius: radii.md,
+    background: colors.bgInset,
+    color: colors.text1,
+    fontFamily: fonts.body,
+    fontSize: 13,
+    outline: 'none',
+    boxSizing: 'border-box'
+  },
+  noteCheckboxRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    fontSize: 12.5,
+    color: colors.text2,
+    marginTop: 12,
+    cursor: 'pointer'
+  },
+  noteError: {
+    fontSize: 12.5,
+    color: colors.danger,
+    background: colors.dangerBg,
+    border: `1px solid ${colors.dangerBd}`,
+    borderRadius: radii.sm,
+    padding: '8px 10px',
+    marginTop: 12
+  },
+  noteActions: { display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 18 },
   playerCell: { display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, paddingRight: 10 },
   playerName: {
     fontSize: 12.5,

@@ -54,7 +54,8 @@ export const ptBR: Translation = {
     details: 'Detalhes',
     customTag: 'Adicionado manualmente',
     setUp: 'Configurar',
-    friendPlayingBadge: (login) => `${login} está jogando`
+    friendPlayingBadge: (login) => `${login} está jogando`,
+    brokenVersionBadge: 'Marcado como corrompido — não baixe',
   },
   addGame: {
     title: 'Adicionar um jogo',
@@ -138,6 +139,14 @@ export const ptBR: Translation = {
     restoreError: 'Não foi possível restaurar a versão',
     revertSuccess: (version) => `Versão ${version} restaurada`,
     restoredFromBadge: (version) => `↩ de ${version}`,
+    noteAction: 'Nota da versão',
+    noteModalTitle: (version) => `Nota para ${version}`,
+    notePlaceholder: 'Ex.: o mundo corrompeu, não baixe esta versão',
+    noteBrokenLabel: 'Marcar como corrompida (avisar antes de baixar)',
+    noteSave: 'Salvar',
+    noteCancel: 'Cancelar',
+    noteSaveError: 'Não foi possível salvar a nota',
+    brokenBadge: '⚠ Corrompida',
     savePathTitle: 'Local dos saves',
     savePathCustomBadge: 'Personalizado',
     savePathNotFound: 'Pasta não encontrada',
@@ -266,6 +275,9 @@ export const ptBR: Translation = {
     friendPlayingTitle: 'Um amigo está jogando',
     friendPlayingBody: (login, game, alreadyPlaying) =>
       alreadyPlaying ? `${login} está jogando ${game}.` : `${login} acabou de iniciar ${game}.`,
+    lockWarningTitle: 'Possível conflito de save',
+    lockWarningBody: (login, game) =>
+      `${login} também pode estar jogando ${game} agora — jogar ao mesmo tempo às vezes causa um conflito de sincronização.`,
     restoreAction: 'Restaurar só para mim',
     restoring: 'Restaurando…',
     restored: 'Restaurado — sincronizando agora só para você',
@@ -277,6 +289,9 @@ export const ptBR: Translation = {
     welcomeTitle: 'Bem-vindo ao CoopSync!',
     welcomeSubtitle: 'Vamos configurar a sincronização em algumas etapas',
     step1Title: 'Entrar com o GitHub',
+    permissionsToggle: '🔒 O que exatamente esse login permite?',
+    permissionsBody:
+      'O GitHub concede ao CoopSync acesso aos repositórios da sua conta (escopo técnico do token: "repo" — necessário para criar o armazenamento privado dos saves; "delete_repo" — apenas para o botão "Excluir armazenamento" nas Configurações; "read:org" — para ver a lista das suas organizações). O CoopSync nunca toca em nenhum outro repositório além do seu próprio coopsync-saves. O token fica somente neste PC, criptografado pelos recursos nativos do Windows.',
     loginButton: 'Entrar com o GitHub',
     copied: 'Copiado',
     copy: 'Copiar',
@@ -287,6 +302,8 @@ export const ptBR: Translation = {
     hostDesc: 'Vou criar o armazenamento compartilhado, meu amigo se conecta a mim',
     joinTitle: 'Conectar a um amigo',
     joinDesc: 'Meu amigo já criou o armazenamento e me convidou',
+    soloTitle: 'Só para mim',
+    soloDesc: 'Backup dos saves com histórico completo de versões — sem um segundo jogador. Funciona muito bem também para PC + notebook.',
     pendingInviteFrom: (host) => `${host} te convidou para o armazenamento dele`,
     youAreHost: 'Você é o anfitrião',
     change: 'alterar',

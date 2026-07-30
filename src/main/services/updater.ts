@@ -9,12 +9,15 @@ import type { UpdateStatus } from '../../shared/types'
 
 function showUpdateToast(version: string): void {
   // The Games tab (screen 'main') already shows this exact info via its own
-  // banner (UpdateAvailableBanner) whenever it's the one actually on screen
-  // — popping the bottom-center toast too would just be the same message
-  // twice at once (Vitalii's call, 2026-07-30). Anywhere else (another tab,
-  // minimized, tray) the toast is the only thing that reaches the user, so
-  // it still fires as usual.
-  if (isScreenVisible('main')) return
+  // banner (UpdateAvailableBanner), and Settings shows it via the About
+  // card's own "Download update" row (including right after a manual
+  // "Check for updates" click there) — popping the bottom-center toast too
+  // would just be the same message twice at once while either is the one
+  // actually on screen (Vitalii's call, 2026-07-30, extended 2026-07-30
+  // after he hit this from Settings specifically). Anywhere else (another
+  // tab, minimized, tray) the toast is the only thing that reaches the
+  // user, so it still fires as usual.
+  if (isScreenVisible('main') || isScreenVisible('settings')) return
   showToast('update-available', { version })
 }
 

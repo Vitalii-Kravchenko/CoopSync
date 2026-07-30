@@ -4,6 +4,7 @@ import { useI18n } from '../i18n'
 import { describeError, describeSyncResult } from '../errors'
 import GameCard from '../components/GameCard'
 import CloudWarningBanner from '../components/CloudWarningBanner'
+import OneDriveWarningBanner from '../components/OneDriveWarningBanner'
 import UpdateAvailableBanner from '../components/UpdateAvailableBanner'
 import AddCustomGameModal from '../components/AddCustomGameModal'
 import type { BannerState } from '../components/Banner'
@@ -14,7 +15,8 @@ import type {
   InstalledGame,
   CatalogGame,
   GameSyncStatus,
-  UpdateStatus
+  UpdateStatus,
+  CloudSyncConflict
 } from '../../../shared/types'
 
 interface Props {
@@ -77,6 +79,10 @@ function MainScreen({
   const [syncStatuses, setSyncStatuses] = useState<Record<string, GameSyncStatus>>({})
   // Steam Cloud warning: shown once per launch, until dismissed via the close icon.
   const [showCloudWarning, setShowCloudWarning] = useState(false)
+  // OneDrive/Dropbox warning: same "once per launch" idea, but only actually
+  // shown once we know at least one synced game's save folder is affected.
+  const [showOneDriveWarning, setShowOneDriveWarning] = useState(false)
+  const [oneDriveConflicts, setOneDriveConflicts] = useState<CloudSyncConflict[]>([])
   // Update banner: mirrors the same 'updater:status' events Settings listens to,
   // so it's visible without opening Settings. Dismissible, same as the Cloud warning.
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus>({ state: 'idle' })
@@ -95,7 +101,11 @@ function MainScreen({
     void loadGames()
     // Statuses are fetched separately — they're slower (repo clone/pull).
     void loadStatuses()
-    window.api.settings.getGeneral().then((s) => setShowCloudWarning(s.showCloudWarning))
+    window.api.settings.getGeneral().then((s) => {
+      setShowCloudWarning(s.showCloudWarning)
+      setShowOneDriveWarning(s.showOneDriveWarning)
+    })
+    window.api.games.getCloudSyncConflicts().then(setOneDriveConflicts)
     return window.api.updater.onStatus(setUpdateStatus)
   }, [])
 
@@ -365,6 +375,12 @@ function MainScreen({
         />
       )}
       {showCloudWarning && <CloudWarningBanner onDismiss={() => setShowCloudWarning(false)} />}
+      {showOneDriveWarning && oneDriveConflicts.length > 0 && (
+        <OneDriveWarningBanner
+          gameNames={oneDriveConflicts.map((c) => c.name)}
+          onDismiss={() => setShowOneDriveWarning(false)}
+        />
+      )}
 
       <div style={styles.searchWrap}>
         <span style={styles.searchIcon}>

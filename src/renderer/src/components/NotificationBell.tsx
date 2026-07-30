@@ -144,6 +144,8 @@ function NotificationItem({ n, t }: { n: AppNotification; t: Translation }): Rea
   const [hover, setHover] = useState(false)
   const [restoring, setRestoring] = useState(false)
   const [restored, setRestored] = useState(false)
+  const [downloadingConflict, setDownloadingConflict] = useState(false)
+  const [conflictDownloaded, setConflictDownloaded] = useState(false)
   const { title, body } = describeNotification(n.kind, n.params, t)
   const { Icon, color, bg } = KIND_STYLE[n.kind]
 
@@ -154,6 +156,12 @@ function NotificationItem({ n, t }: { n: AppNotification; t: Translation }): Rea
   const canRestore =
     (n.kind === 'game-removed' && !!n.params.appId) ||
     (n.kind === 'folder-removed' && !!n.params.appId && !!n.params.folderId)
+
+  // A sync-conflict-skipped notification only carries appId+branch when a
+  // side conflict branch was actually created (see sync.ts's
+  // pushConflictSnapshot) — an older notification, or one where the branch
+  // push itself failed, has neither, so the button just doesn't show.
+  const canDownloadConflict = n.kind === 'sync-conflict-skipped' && !!n.params.appId && !!n.params.branch
 
   async function handleRestore(): Promise<void> {
     setRestoring(true)
@@ -166,6 +174,16 @@ function NotificationItem({ n, t }: { n: AppNotification; t: Translation }): Rea
       setRestored(true)
     } finally {
       setRestoring(false)
+    }
+  }
+
+  async function handleDownloadConflict(): Promise<void> {
+    setDownloadingConflict(true)
+    try {
+      await window.api.sync.downloadConflictSnapshot(n.params.appId, n.params.branch)
+      setConflictDownloaded(true)
+    } finally {
+      setDownloadingConflict(false)
     }
   }
 
@@ -205,6 +223,26 @@ function NotificationItem({ n, t }: { n: AppNotification; t: Translation }): Rea
               >
                 {restoring && <span className="spinner" />}
                 {restoring ? t.notifications.restoring : t.notifications.restoreAction}
+              </Button>
+            )}
+          </div>
+        )}
+        {canDownloadConflict && (
+          <div style={{ marginTop: 8 }}>
+            {conflictDownloaded ? (
+              <span style={styles.restoredLabel}>{t.notifications.conflictDownloaded}</span>
+            ) : (
+              <Button
+                variant="secondary"
+                style={styles.restoreBtn}
+                disabled={downloadingConflict}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  void handleDownloadConflict()
+                }}
+              >
+                {downloadingConflict && <span className="spinner" />}
+                {downloadingConflict ? t.notifications.downloadingConflict : t.notifications.downloadConflictAction}
               </Button>
             )}
           </div>

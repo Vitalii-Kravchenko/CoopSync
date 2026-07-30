@@ -67,6 +67,7 @@ function SettingsScreen({
   const [repoError, setRepoError] = useState<string | null>(null)
   const [toggleError, setToggleError] = useState<string | null>(null)
   const [showCloudWarning, setShowCloudWarning] = useState(true)
+  const [showOneDriveWarning, setShowOneDriveWarning] = useState(true)
   const [autoCheckUpdates, setAutoCheckUpdates] = useState(true)
   const [appVersion, setAppVersion] = useState('')
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus>({ state: 'idle' })
@@ -104,6 +105,7 @@ function SettingsScreen({
     window.api.settings.getStartup().then(setStartup)
     window.api.settings.getGeneral().then((s) => {
       setShowCloudWarning(s.showCloudWarning)
+      setShowOneDriveWarning(s.showOneDriveWarning)
       setAutoCheckUpdates(s.autoCheckUpdates)
     })
     window.api.getAppVersion().then(setAppVersion)
@@ -171,6 +173,18 @@ function SettingsScreen({
       await window.api.settings.setCloudWarning(value)
     } catch (e) {
       setShowCloudWarning(previous)
+      setToggleError(describeError(e, t, t.settings.saveError))
+    }
+  }
+
+  async function handleOneDriveWarningToggle(value: boolean): Promise<void> {
+    const previous = showOneDriveWarning
+    setShowOneDriveWarning(value)
+    setToggleError(null)
+    try {
+      await window.api.settings.setOneDriveWarning(value)
+    } catch (e) {
+      setShowOneDriveWarning(previous)
       setToggleError(describeError(e, t, t.settings.saveError))
     }
   }
@@ -422,6 +436,12 @@ function SettingsScreen({
             label={t.settings.cloudWarningToggle}
             value={showCloudWarning}
             onChange={handleCloudWarningToggle}
+          />
+          <div style={styles.divider} />
+          <Toggle
+            label={t.settings.oneDriveWarningToggle}
+            value={showOneDriveWarning}
+            onChange={handleOneDriveWarningToggle}
           />
           <div style={styles.divider} />
           <Toggle

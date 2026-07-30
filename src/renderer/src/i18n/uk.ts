@@ -225,6 +225,16 @@ export const uk: Translation = {
     settingsHint: 'Це попередження можна вимкнути в Налаштуваннях → Загальне.',
     dismiss: 'Закрити'
   },
+  oneDriveWarning: {
+    title: 'Сейв-папка синхронізується через OneDrive/Dropbox',
+    message:
+      'CoopSync сам керує сейвами цих ігор, але їхня сейв-папка ще й синхронізується через OneDrive або Dropbox. Коли обидва одночасно пишуть у ті самі файли, сейв можна зіпсувати — особливо через «заглушки» OneDrive Files On-Demand.',
+    gamesLabel: (games) => `Стосується: ${games}`,
+    instructions:
+      'Варто перенести сейв-папку поза OneDrive/Dropbox або виключити її з синхронізації в налаштуваннях OneDrive/Dropbox.',
+    settingsHint: 'Це попередження можна вимкнути в Налаштуваннях → Загальне.',
+    dismiss: 'Закрити'
+  },
   updateBanner: {
     title: 'Доступне оновлення',
     message: (v) => `CoopSync v${v} готовий до завантаження.`,
@@ -258,7 +268,10 @@ export const uk: Translation = {
       alreadyPlaying ? `${login} зараз грає в ${game}.` : `${login} щойно запустив(ла) ${game}.`,
     restoreAction: 'Відновити тільки для себе',
     restoring: 'Відновлюю…',
-    restored: 'Відновлено — синкається тільки для тебе'
+    restored: 'Відновлено — синкається тільки для тебе',
+    downloadConflictAction: 'Зберегти копію',
+    downloadingConflict: 'Зберігаю…',
+    conflictDownloaded: 'Збережено в папку «Документи»'
   },
   onboarding: {
     welcomeTitle: 'Ласкаво просимо до CoopSync!',
@@ -337,6 +350,7 @@ export const uk: Translation = {
     autostart: 'Запускати разом із Windows',
     startMinimized: 'Стартувати згорнутим у трей',
     cloudWarningToggle: 'Показувати попередження про Steam Cloud при запуску',
+    oneDriveWarningToggle: 'Попереджати про конфлікт із OneDrive/Dropbox',
     autoCheckUpdatesToggle: 'Автоматично перевіряти оновлення',
     smartAppWarningTitle: 'Smart App Control (Windows 11)',
     smartAppWarningText:

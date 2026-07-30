@@ -226,6 +226,16 @@ export const tr: Translation = {
     settingsHint: 'Bu uyarıyı Ayarlar → Genel bölümünden kapatabilirsin.',
     dismiss: 'Kapat'
   },
+  oneDriveWarning: {
+    title: 'Kayıt klasörü OneDrive/Dropbox tarafından senkronize ediliyor',
+    message:
+      "CoopSync bu oyunların kayıtlarını kendisi yönetir, ancak klasörleri OneDrive veya Dropbox tarafından da senkronize ediliyor. İkisi aynı anda aynı dosyalara yazarsa bir kayıt bozulabilir — özellikle OneDrive'ın \"İsteğe Bağlı Dosyalar\" yer tutucuları yüzünden.",
+    gamesLabel: (games) => `Etkilenen: ${games}`,
+    instructions:
+      "Kayıt klasörünü OneDrive/Dropbox dışına taşımayı ya da OneDrive/Dropbox ayarlarından senkronizasyon dışında bırakmayı düşün.",
+    settingsHint: 'Bu uyarıyı Ayarlar → Genel bölümünden kapatabilirsin.',
+    dismiss: 'Kapat'
+  },
   updateBanner: {
     title: 'Güncelleme mevcut',
     message: (v) => `CoopSync v${v} indirilmeye hazır.`,
@@ -259,7 +269,10 @@ export const tr: Translation = {
       alreadyPlaying ? `${login} şu anda ${game} oynuyor.` : `${login} az önce ${game} oyununu başlattı.`,
     restoreAction: 'Sadece benim için geri yükle',
     restoring: 'Geri yükleniyor…',
-    restored: 'Geri yüklendi — artık sadece senin için senkronize ediliyor'
+    restored: 'Geri yüklendi — artık sadece senin için senkronize ediliyor',
+    downloadConflictAction: 'Bir kopya kaydet',
+    downloadingConflict: 'Kaydediliyor…',
+    conflictDownloaded: 'Belgeler klasörüne kaydedildi'
   },
   onboarding: {
     welcomeTitle: "CoopSync'e hoş geldin!",
@@ -338,6 +351,7 @@ export const tr: Translation = {
     autostart: 'Windows ile başlat',
     startMinimized: 'Tepsi alanında küçültülmüş başlat',
     cloudWarningToggle: 'Başlangıçta Steam Cloud uyarısını göster',
+    oneDriveWarningToggle: 'OneDrive/Dropbox çakışması hakkında uyar',
     autoCheckUpdatesToggle: 'Güncellemeleri otomatik denetle',
     smartAppWarningTitle: 'Windows Smart App Control',
     smartAppWarningText:

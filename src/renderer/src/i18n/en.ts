@@ -223,6 +223,16 @@ export const en: Translation = {
     settingsHint: 'You can turn off this warning in Settings → General.',
     dismiss: 'Dismiss'
   },
+  oneDriveWarning: {
+    title: 'Save folder synced through OneDrive/Dropbox',
+    message:
+      "CoopSync manages saves for these games, but their save folder is also being synced by OneDrive or Dropbox. Both writing to the same files at once can corrupt a save — especially OneDrive's \"Files On-Demand\" placeholders.",
+    gamesLabel: (games) => `Affected: ${games}`,
+    instructions:
+      'Consider moving the save folder outside OneDrive/Dropbox, or excluding it from that sync in the OneDrive/Dropbox settings.',
+    settingsHint: 'You can turn off this warning in Settings → General.',
+    dismiss: 'Dismiss'
+  },
   updateBanner: {
     title: 'Update available',
     message: (v) => `CoopSync v${v} is ready to download.`,
@@ -256,7 +266,10 @@ export const en: Translation = {
       alreadyPlaying ? `${login} is playing ${game}.` : `${login} just started playing ${game}.`,
     restoreAction: 'Restore just for me',
     restoring: 'Restoring…',
-    restored: 'Restored — now syncing just for you'
+    restored: 'Restored — now syncing just for you',
+    downloadConflictAction: 'Save a copy',
+    downloadingConflict: 'Saving…',
+    conflictDownloaded: 'Saved to your Documents folder'
   },
   onboarding: {
     welcomeTitle: 'Welcome to CoopSync!',
@@ -335,6 +348,7 @@ export const en: Translation = {
     autostart: 'Launch with Windows',
     startMinimized: 'Start minimized to tray',
     cloudWarningToggle: 'Show Steam Cloud warning on launch',
+    oneDriveWarningToggle: 'Warn if a save folder is also synced by OneDrive/Dropbox',
     autoCheckUpdatesToggle: 'Automatically check for updates',
     smartAppWarningTitle: 'Windows Smart App Control',
     smartAppWarningText:

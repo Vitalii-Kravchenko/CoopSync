@@ -1,7 +1,7 @@
 import { app } from 'electron'
 import { execFile } from 'child_process'
 import { promisify } from 'util'
-import { createHash } from 'crypto'
+import { createHash, randomUUID } from 'crypto'
 import { basename, join } from 'path'
 import { existsSync, statSync } from 'fs'
 import { cp, rm, mkdir, readdir, readFile, writeFile } from 'fs/promises'
@@ -131,11 +131,13 @@ function identityFlags(actor: string): string[] {
   return ['-c', `user.name=${actor}`, '-c', `user.email=${actor}@users.noreply.github.com`]
 }
 
-// Run git inside the already-cloned repo.
-async function git(args: string[]): Promise<string> {
+// Run git in an arbitrary working directory (see withConflictWorktree below —
+// a conflict snapshot's checkout/commit/push happen in a throwaway worktree,
+// never in repoDir() itself).
+async function gitIn(dir: string, args: string[]): Promise<string> {
   try {
     const { stdout } = await exec('git', [...NO_HELPER, ...args], {
-      cwd: repoDir(),
+      cwd: dir,
       maxBuffer: BIG_BUFFER,
       env: GIT_ENV
     })
@@ -143,6 +145,11 @@ async function git(args: string[]): Promise<string> {
   } catch (e) {
     throw wrapGitError(e)
   }
+}
+
+// Run git inside the already-cloned repo.
+async function git(args: string[]): Promise<string> {
+  return gitIn(repoDir(), args)
 }
 
 // Concurrent calls (e.g. MainScreen and HistoryScreen both trigger
@@ -565,6 +572,108 @@ export async function uploadGame(
   await git(['push', 'origin', 'main'])
   await setLocalVersion(appId, newVersion)
   return { version: newVersion, pushed: true }
+}
+
+// --- Conflict snapshots ---
+// When the cloud has moved ahead of what a local session was based on (see
+// watcher.ts's pushGameSaves 'remote-newer' branch), pushing straight to
+// main would silently overwrite whatever the other player just uploaded —
+// so that push is skipped. But skipping it used to mean this session's
+// progress just vanished with no way to get it back. Instead, we push it to
+// its own side branch (conflict/<date>-<actor>-<game>-<random>) — never
+// touches main's version counter or content, so it can never overwrite the
+// other player's push, but the session is preserved and recoverable forever
+// (see downloadConflictSnapshot).
+
+function slugifyForRef(s: string): string {
+  return s.trim().replace(/\s+/g, '-').replace(/[^A-Za-z0-9._-]/g, '') || 'x'
+}
+
+// A conflict snapshot's checkout/commit/push all happen in a throwaway `git
+// worktree` — a second working directory attached to the SAME repo, entirely
+// separate from repoDir()'s own checkout/HEAD. Every step below only ever
+// touches this temp folder, so a crash or failure partway through can't
+// corrupt the main clone the rest of sync.ts depends on (see ensureRepo's own
+// doc comments on why that clone is treated as a fragile, disposable
+// technical copy, never a source of truth).
+async function withConflictWorktree<T>(ref: string, run: (dir: string) => Promise<T>): Promise<T> {
+  const dir = join(app.getPath('temp'), `coopsync-conflict-${randomUUID()}`)
+  await git(['worktree', 'add', '--detach', dir, ref])
+  try {
+    return await run(dir)
+  } finally {
+    try {
+      await git(['worktree', 'remove', dir, '--force'])
+    } catch {
+      // Fall through to the raw folder delete below either way.
+    }
+    await rm(dir, { recursive: true, force: true })
+  }
+}
+
+/** Preserve a local save that's about to be skipped instead of pushed (see
+ *  the doc comment above) — pushes it to its own conflict branch. Returns the
+ *  branch name, or null if there was no local save folder to preserve. */
+export async function pushConflictSnapshot(
+  token: string,
+  owner: string,
+  appId: string,
+  actor: string
+): Promise<string | null> {
+  await ensureRepo(token, owner)
+  const game = findGame(appId)
+  if (!existsSync(game.savePath)) return null
+
+  const branch = `conflict/${new Date().toISOString().slice(0, 10)}-${slugifyForRef(actor)}-${slugifyForRef(
+    game.name
+  )}-${randomUUID().slice(0, 6)}`
+
+  await withConflictWorktree('origin/main', async (dir) => {
+    await gitIn(dir, ['checkout', '-b', branch])
+    const dest = join(dir, game.name, 'main')
+    await rm(dest, { recursive: true, force: true })
+    await copyFiltered(game.savePath, dest, game.saveFilePattern)
+    await gitIn(dir, ['add', '-A'])
+    await gitIn(dir, [
+      ...identityFlags(actor),
+      'commit',
+      '-m',
+      `conflict: ${game.name} local snapshot from ${actor}`
+    ])
+    await gitIn(dir, ['push', 'origin', branch])
+  })
+
+  return branch
+}
+
+/** Pull a preserved conflict snapshot back out to a plain folder on disk for
+ *  the user to inspect/merge by hand — deliberately never overwrites the
+ *  live save folder itself, so recovering a conflict can't cause a data-loss
+ *  incident of its own. Returns the folder it wrote to. */
+export async function downloadConflictSnapshot(
+  token: string,
+  owner: string,
+  appId: string,
+  branch: string
+): Promise<string> {
+  await ensureRepo(token, owner)
+  const game = findGame(appId)
+  await git(['fetch', 'origin', branch])
+
+  const outDir = join(
+    app.getPath('documents'),
+    'CoopSync conflict backups',
+    `${slugifyForRef(game.name)}-${slugifyForRef(branch.split('/').pop() ?? branch)}`
+  )
+
+  await withConflictWorktree(`origin/${branch}`, async (dir) => {
+    const src = join(dir, game.name, 'main')
+    await rm(outDir, { recursive: true, force: true })
+    await mkdir(outDir, { recursive: true })
+    if (existsSync(src)) await cp(src, outDir, { recursive: true })
+  })
+
+  return outDir
 }
 
 // Finds the commit that produced a given historical version of a game — by

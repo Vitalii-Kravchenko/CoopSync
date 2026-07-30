@@ -225,6 +225,16 @@ export const pl: Translation = {
     settingsHint: 'Możesz wyłączyć to ostrzeżenie w Ustawieniach → Ogólne.',
     dismiss: 'Zamknij'
   },
+  oneDriveWarning: {
+    title: 'Folder zapisów jest synchronizowany przez OneDrive/Dropbox',
+    message:
+      'CoopSync sam zarządza zapisami tych gier, ale ich folder jest też synchronizowany przez OneDrive lub Dropbox. Gdy oba jednocześnie zapisują te same pliki, zapis może się uszkodzić — zwłaszcza przez pliki-zastępniki OneDrive "Pliki na żądanie".',
+    gamesLabel: (games) => `Dotyczy: ${games}`,
+    instructions:
+      'Warto przenieść folder zapisów poza OneDrive/Dropbox albo wykluczyć go z synchronizacji w ustawieniach OneDrive/Dropbox.',
+    settingsHint: 'Możesz wyłączyć to ostrzeżenie w Ustawieniach → Ogólne.',
+    dismiss: 'Zamknij'
+  },
   updateBanner: {
     title: 'Dostępna aktualizacja',
     message: (v) => `CoopSync v${v} jest gotowy do pobrania.`,
@@ -258,7 +268,10 @@ export const pl: Translation = {
       alreadyPlaying ? `${login} właśnie gra w ${game}.` : `${login} właśnie uruchomił(a) ${game}.`,
     restoreAction: 'Przywróć tylko dla mnie',
     restoring: 'Przywracanie…',
-    restored: 'Przywrócono — synchronizuje się teraz tylko dla ciebie'
+    restored: 'Przywrócono — synchronizuje się teraz tylko dla ciebie',
+    downloadConflictAction: 'Zapisz kopię',
+    downloadingConflict: 'Zapisywanie…',
+    conflictDownloaded: 'Zapisano w folderze Dokumenty'
   },
   onboarding: {
     welcomeTitle: 'Witamy w CoopSync!',
@@ -337,6 +350,7 @@ export const pl: Translation = {
     autostart: 'Uruchamiaj razem z Windows',
     startMinimized: 'Uruchamiaj zminimalizowane w zasobniku',
     cloudWarningToggle: 'Pokazuj ostrzeżenie o Steam Cloud przy uruchomieniu',
+    oneDriveWarningToggle: 'Ostrzegaj o konflikcie z OneDrive/Dropbox',
     autoCheckUpdatesToggle: 'Automatycznie sprawdzaj aktualizacje',
     smartAppWarningTitle: 'Smart App Control (Windows 11)',
     smartAppWarningText:

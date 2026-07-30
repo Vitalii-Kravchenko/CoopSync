@@ -80,6 +80,18 @@ export interface CatalogGame {
   name: string
 }
 
+/** A cloud-sync client already syncing a save folder on its own — see
+ *  games/cloudSyncPaths.ts. */
+export type CloudSyncProvider = 'onedrive' | 'dropbox'
+
+/** A game whose save folder sits inside a OneDrive/Dropbox-synced folder —
+ *  double-syncing the same files can corrupt saves (see games/cloudSyncPaths.ts). */
+export interface CloudSyncConflict {
+  appId: string
+  name: string
+  provider: CloudSyncProvider
+}
+
 /** Effective save-folder location for a game — a user override if set,
  *  otherwise the catalog default (see games/catalog.ts). */
 export interface GameSavePathInfo {
@@ -264,7 +276,7 @@ export type AppNotificationKind =
   | 'new-games' // params: { names } (comma-joined)
   | 'friend-accepted' // params: { login }
   | 'friend-declined' // params: { login }
-  | 'sync-conflict-skipped' // params: { game }
+  | 'sync-conflict-skipped' // params: { game, appId?, branch? } — appId+branch present when the local session was preserved to a conflict branch (see sync.ts's pushConflictSnapshot); "Save a copy" action pulls it out via sync:download-conflict-snapshot
   | 'access-revoked' // params: { host }
   | 'game-removed' // params: { game, appId } — game is now orphaned (see CustomGame.orphaned), Restore action re-syncs it personal-only
   | 'folder-removed' // params: { game, folder, appId, folderId } — an extra folder (CustomGame.extraFolders) went orphaned, same Restore idea one level down
@@ -386,6 +398,9 @@ export interface GeneralSettings {
   avatarDataUrl: string | null
   /** Whether to show the Steam Cloud warning on every launch. */
   showCloudWarning: boolean
+  /** Whether to warn when a synced game's save folder is already inside a
+   *  OneDrive/Dropbox-synced folder (see CloudSyncConflict). */
+  showOneDriveWarning: boolean
   /** Whether to silently check GitHub for a new release shortly after launch. */
   autoCheckUpdates: boolean
 }

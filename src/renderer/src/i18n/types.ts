@@ -246,6 +246,15 @@ export interface Translation {
     settingsHint: string
     dismiss: string
   }
+  oneDriveWarning: {
+    title: string
+    message: string
+    /** Comma-joined affected game names, e.g. "Affected: Terraria, Stardew Valley". */
+    gamesLabel: (games: string) => string
+    instructions: string
+    settingsHint: string
+    dismiss: string
+  }
   updateBanner: {
     title: string
     message: (v: string) => string
@@ -291,6 +300,12 @@ export interface Translation {
     restoreAction: string
     restoring: string
     restored: string
+    /** Action button on a sync-conflict-skipped notification that created a
+     *  conflict branch (see sync.ts's pushConflictSnapshot) — pulls it out to
+     *  a plain folder for the user to inspect/merge by hand. */
+    downloadConflictAction: string
+    downloadingConflict: string
+    conflictDownloaded: string
   }
   onboarding: {
     welcomeTitle: string
@@ -365,6 +380,7 @@ export interface Translation {
     autostart: string
     startMinimized: string
     cloudWarningToggle: string
+    oneDriveWarningToggle: string
     autoCheckUpdatesToggle: string
     smartAppWarningTitle: string
     smartAppWarningText: string

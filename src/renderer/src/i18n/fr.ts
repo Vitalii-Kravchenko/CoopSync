@@ -226,6 +226,16 @@ export const fr: Translation = {
     settingsHint: 'Tu peux désactiver cet avertissement dans Paramètres → Général.',
     dismiss: 'Fermer'
   },
+  oneDriveWarning: {
+    title: 'Dossier de sauvegardes synchronisé par OneDrive/Dropbox',
+    message:
+      "CoopSync gère les sauvegardes de ces jeux, mais leur dossier est aussi synchronisé par OneDrive ou Dropbox. Si les deux écrivent dans les mêmes fichiers en même temps, une sauvegarde peut être corrompue — notamment à cause des fichiers d'espace réservé « Fichiers à la demande » de OneDrive.",
+    gamesLabel: (games) => `Concerné(s) : ${games}`,
+    instructions:
+      'Il est conseillé de déplacer le dossier de sauvegardes hors de OneDrive/Dropbox, ou de l’exclure de cette synchronisation dans les paramètres de OneDrive/Dropbox.',
+    settingsHint: 'Tu peux désactiver cet avertissement dans Paramètres → Général.',
+    dismiss: 'Fermer'
+  },
   updateBanner: {
     title: 'Mise à jour disponible',
     message: (v) => `CoopSync v${v} est prêt à être téléchargé.`,
@@ -259,7 +269,10 @@ export const fr: Translation = {
       alreadyPlaying ? `${login} joue actuellement à ${game}.` : `${login} vient de lancer ${game}.`,
     restoreAction: 'Restaurer juste pour moi',
     restoring: 'Restauration…',
-    restored: 'Restauré — se synchronise maintenant juste pour toi'
+    restored: 'Restauré — se synchronise maintenant juste pour toi',
+    downloadConflictAction: 'Enregistrer une copie',
+    downloadingConflict: 'Enregistrement…',
+    conflictDownloaded: 'Enregistré dans ton dossier Documents'
   },
   onboarding: {
     welcomeTitle: 'Bienvenue sur CoopSync !',
@@ -338,6 +351,7 @@ export const fr: Translation = {
     autostart: 'Lancer avec Windows',
     startMinimized: "Démarrer réduit dans la barre d'état",
     cloudWarningToggle: 'Afficher l’avertissement Steam Cloud au démarrage',
+    oneDriveWarningToggle: 'Avertir en cas de conflit avec OneDrive/Dropbox',
     autoCheckUpdatesToggle: 'Vérifier automatiquement les mises à jour',
     smartAppWarningTitle: 'Smart App Control de Windows',
     smartAppWarningText:

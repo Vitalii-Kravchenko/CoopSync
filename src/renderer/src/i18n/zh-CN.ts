@@ -214,6 +214,15 @@ export const zhCN: Translation = {
     settingsHint: '你可以在 设置 → 通用 中关闭此提示。',
     dismiss: '关闭'
   },
+  oneDriveWarning: {
+    title: '存档文件夹正被 OneDrive/Dropbox 同步',
+    message:
+      'CoopSync 会自行管理这些游戏的存档，但它们的文件夹同时也在被 OneDrive 或 Dropbox 同步。两者同时写入相同文件可能导致存档损坏——尤其是 OneDrive 的"按需文件"占位符。',
+    gamesLabel: (games) => `受影响：${games}`,
+    instructions: '建议将存档文件夹移到 OneDrive/Dropbox 之外，或在 OneDrive/Dropbox 设置中将其排除同步。',
+    settingsHint: '你可以在 设置 → 通用 中关闭此提示。',
+    dismiss: '关闭'
+  },
   updateBanner: {
     title: '有可用更新',
     message: (v) => `CoopSync v${v} 已准备好下载。`,
@@ -246,7 +255,10 @@ export const zhCN: Translation = {
       alreadyPlaying ? `${login} 正在玩《${game}》。` : `${login} 刚刚开始玩《${game}》。`,
     restoreAction: '仅为自己恢复',
     restoring: '正在恢复…',
-    restored: '已恢复——现在仅为你同步'
+    restored: '已恢复——现在仅为你同步',
+    downloadConflictAction: '保存副本',
+    downloadingConflict: '正在保存…',
+    conflictDownloaded: '已保存到你的文档文件夹'
   },
   onboarding: {
     welcomeTitle: '欢迎使用 CoopSync！',
@@ -322,6 +334,7 @@ export const zhCN: Translation = {
     autostart: '随 Windows 启动',
     startMinimized: '启动时最小化到托盘',
     cloudWarningToggle: '启动时显示 Steam Cloud 提示',
+    oneDriveWarningToggle: '与 OneDrive/Dropbox 冲突时提醒',
     autoCheckUpdatesToggle: '自动检查更新',
     smartAppWarningTitle: 'Windows Smart App Control',
     smartAppWarningText:

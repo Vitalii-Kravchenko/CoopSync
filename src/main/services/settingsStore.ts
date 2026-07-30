@@ -17,6 +17,9 @@ interface AppSettings {
   avatarDataUrl?: string
   /** Whether to show the Steam Cloud warning on every launch. */
   showCloudWarning: boolean
+  /** Whether to warn when a synced game's save folder is already inside a
+   *  OneDrive/Dropbox-synced folder. */
+  showOneDriveWarning: boolean
   /** Whether to silently check GitHub for a new release shortly after launch. */
   autoCheckUpdates: boolean
   /** Manual save-folder overrides, keyed by appId — set via a game's detail
@@ -49,6 +52,7 @@ const DEFAULTS: AppSettings = {
   startMinimized: false,
   language: 'en',
   showCloudWarning: true,
+  showOneDriveWarning: true,
   autoCheckUpdates: true
 }
 

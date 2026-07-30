@@ -41,7 +41,8 @@ import {
   pushFolderToRegistry,
   removeFolderFromRegistry,
   deleteExtraFolderContent,
-  getRegisteredFolderLabels
+  getRegisteredFolderLabels,
+  downloadConflictSnapshot
 } from './services/sync'
 import {
   startWatcher,
@@ -87,6 +88,7 @@ import {
 } from './games/customGames'
 import { isGamePersonal, setGamePersonal } from './games/syncScope'
 import { scanForExecutables } from './games/exeScan'
+import { detectCloudSyncProvider } from './games/cloudSyncPaths'
 import { saveToken, loadToken, clearToken } from './services/tokenStore'
 import {
   startPresence,
@@ -120,7 +122,8 @@ import type {
   AppNotification,
   GameSavePathInfo,
   CustomExtraFolder,
-  PresenceConnectionState
+  PresenceConnectionState,
+  CloudSyncConflict
 } from '../shared/types'
 
 // Max picked image file size (avatar or game cover) — to keep settings.json
@@ -571,6 +574,21 @@ export function registerIpcHandlers(): void {
     if (!g) throw makeAppError('GAME_NOT_SUPPORTED')
     const path = resolveSavePath(g)
     return { path, isCustom: isCustomSavePath(appId), exists: existsSync(path) }
+  })
+
+  // Every synced game whose save folder already sits inside a OneDrive/
+  // Dropbox-synced folder — see cloudSyncPaths.ts for why that's risky.
+  // Only games with an existing local folder are worth flagging (a
+  // not-yet-configured custom game has no path to check).
+  ipcMain.handle('games:cloud-sync-conflicts', (): CloudSyncConflict[] => {
+    const conflicts: CloudSyncConflict[] = []
+    for (const g of getSyncableGames()) {
+      const path = resolveSavePath(g)
+      if (!path || !existsSync(path)) continue
+      const provider = detectCloudSyncProvider(path)
+      if (provider) conflicts.push({ appId: g.appId, name: g.name, provider })
+    }
+    return conflicts
   })
 
   // Native folder picker for manually correcting a game's save location.
@@ -1168,6 +1186,19 @@ export function registerIpcHandlers(): void {
     }
   )
 
+  // Pull a preserved conflict snapshot (see watcher.ts/sync.ts's
+  // pushConflictSnapshot) out to a plain folder for the user to inspect/merge
+  // by hand, and reveal it in Explorer. Never touches the live save folder.
+  ipcMain.handle(
+    'sync:download-conflict-snapshot',
+    async (_event, appId: string, branch: string): Promise<string> => {
+      const { token, owner } = await syncTarget()
+      const outDir = await downloadConflictSnapshot(token, owner, appId, branch)
+      void shell.openPath(outDir)
+      return outDir
+    }
+  )
+
   // The renderer just displayed these game/version pairs (Games tab opened
   // or refreshed) — clears the "unseen" nav badge for them and stops any
   // pending toast about a version the user already looked at.
@@ -1328,6 +1359,7 @@ export function registerIpcHandlers(): void {
       language: s.language,
       avatarDataUrl: s.avatarDataUrl ?? null,
       showCloudWarning: s.showCloudWarning,
+      showOneDriveWarning: s.showOneDriveWarning,
       autoCheckUpdates: s.autoCheckUpdates
     }
   })
@@ -1339,6 +1371,10 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle('settings:set-cloud-warning', (_event, showCloudWarning: boolean): void => {
     writeSettings({ showCloudWarning })
+  })
+
+  ipcMain.handle('settings:set-onedrive-warning', (_event, showOneDriveWarning: boolean): void => {
+    writeSettings({ showOneDriveWarning })
   })
 
   ipcMain.handle('settings:set-auto-check-updates', (_event, autoCheckUpdates: boolean): void => {

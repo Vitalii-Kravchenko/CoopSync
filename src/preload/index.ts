@@ -24,7 +24,8 @@ import type {
   CustomExtraFolder,
   PresenceConnectionState,
   FriendPushedEvent,
-  FriendPlayingEvent
+  FriendPlayingEvent,
+  CloudSyncConflict
 } from '../shared/types'
 
 // API exposed to the renderer as window.api.
@@ -85,6 +86,10 @@ const api = {
     /** Current save-folder location (override or catalog default). */
     getSavePath: (appId: string): Promise<GameSavePathInfo> =>
       ipcRenderer.invoke('games:get-save-path', appId),
+    /** Synced games whose save folder already sits inside a OneDrive/Dropbox
+     *  sync root — see cloudSyncPaths.ts. */
+    getCloudSyncConflicts: (): Promise<CloudSyncConflict[]> =>
+      ipcRenderer.invoke('games:cloud-sync-conflicts'),
     /** Open a native folder picker. null = cancelled. */
     pickSaveFolder: (): Promise<string | null> => ipcRenderer.invoke('games:pick-save-folder'),
     /** Set (path) or clear (null) a manual save-folder override. */
@@ -187,6 +192,11 @@ const api = {
     /** Mark game/version pairs as seen (clears the Games nav badge for them). */
     markSeen: (entries: Array<{ appId: string; version: number }>): Promise<void> =>
       ipcRenderer.invoke('sync:mark-seen', entries),
+    /** Pull a preserved conflict snapshot out to a plain folder (see the
+     *  sync-conflict-skipped notification's "Save a copy" action). Returns
+     *  the folder it wrote to (already revealed in Explorer by main). */
+    downloadConflictSnapshot: (appId: string, branch: string): Promise<string> =>
+      ipcRenderer.invoke('sync:download-conflict-snapshot', appId, branch),
     /** Upload/download an extra folder's saves (see games.listExtraFolders). */
     uploadExtraFolder: (appId: string, folderId: string): Promise<SyncResult> =>
       ipcRenderer.invoke('sync:upload-extra-folder', appId, folderId),
@@ -263,6 +273,9 @@ const api = {
     /** Enable/disable the Steam Cloud warning on launch. */
     setCloudWarning: (show: boolean): Promise<void> =>
       ipcRenderer.invoke('settings:set-cloud-warning', show),
+    /** Enable/disable the OneDrive/Dropbox save-folder overlap warning. */
+    setOneDriveWarning: (show: boolean): Promise<void> =>
+      ipcRenderer.invoke('settings:set-onedrive-warning', show),
     /** Enable/disable the silent update check shortly after launch. */
     setAutoCheckUpdates: (enabled: boolean): Promise<void> =>
       ipcRenderer.invoke('settings:set-auto-check-updates', enabled)

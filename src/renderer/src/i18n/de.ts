@@ -226,6 +226,16 @@ export const de: Translation = {
     settingsHint: 'Du kannst diese Warnung in Einstellungen → Allgemein deaktivieren.',
     dismiss: 'Schließen'
   },
+  oneDriveWarning: {
+    title: 'Spielstand-Ordner wird durch OneDrive/Dropbox synchronisiert',
+    message:
+      'CoopSync verwaltet die Spielstände dieser Spiele, aber ihr Ordner wird zusätzlich von OneDrive oder Dropbox synchronisiert. Wenn beide gleichzeitig dieselben Dateien beschreiben, kann ein Spielstand beschädigt werden — besonders durch OneDrives "Nur bei Bedarf"-Platzhalterdateien.',
+    gamesLabel: (games) => `Betroffen: ${games}`,
+    instructions:
+      'Verschiebe den Spielstand-Ordner am besten aus OneDrive/Dropbox heraus, oder schließe ihn in den OneDrive-/Dropbox-Einstellungen von der Synchronisierung aus.',
+    settingsHint: 'Du kannst diese Warnung in Einstellungen → Allgemein deaktivieren.',
+    dismiss: 'Schließen'
+  },
   updateBanner: {
     title: 'Update verfügbar',
     message: (v) => `CoopSync v${v} ist bereit zum Herunterladen.`,
@@ -259,7 +269,10 @@ export const de: Translation = {
       alreadyPlaying ? `${login} spielt gerade ${game}.` : `${login} hat gerade ${game} gestartet.`,
     restoreAction: 'Nur für mich wiederherstellen',
     restoring: 'Wird wiederhergestellt…',
-    restored: 'Wiederhergestellt — synct jetzt nur für dich'
+    restored: 'Wiederhergestellt — synct jetzt nur für dich',
+    downloadConflictAction: 'Kopie speichern',
+    downloadingConflict: 'Wird gespeichert…',
+    conflictDownloaded: 'In deinem Dokumente-Ordner gespeichert'
   },
   onboarding: {
     welcomeTitle: 'Willkommen bei CoopSync!',
@@ -338,6 +351,7 @@ export const de: Translation = {
     autostart: 'Mit Windows starten',
     startMinimized: 'Minimiert im Tray starten',
     cloudWarningToggle: 'Steam-Cloud-Warnung beim Start anzeigen',
+    oneDriveWarningToggle: 'Bei OneDrive/Dropbox-Konflikt warnen',
     autoCheckUpdatesToggle: 'Automatisch nach Updates suchen',
     smartAppWarningTitle: 'Windows Smart App Control',
     smartAppWarningText:

@@ -16,7 +16,8 @@ import {
   folderHash,
   personalLoginFor,
   readRemoteVersion,
-  readExtraFolderMeta
+  readExtraFolderMeta,
+  pushConflictSnapshot
 } from './sync'
 import { getRunningProcesses, isGameRunning } from './processCheck'
 import { getNotified, markNotified } from './notifyState'
@@ -504,8 +505,22 @@ async function pushGameSaves(
       onEvent({ appId: game.appId, name: game.name, action: 'push-skipped', ok: true, code: 'push-skipped' })
       // A real conflict (not the more benign "local was just stale") — this
       // session's progress genuinely wasn't uploaded, worth a persisted bell
-      // entry, not just a toast that vanishes in 5s.
-      addNotification('sync-conflict-skipped', { game: game.name })
+      // entry, not just a toast that vanishes in 5s. 'remote-newer' means
+      // there IS a real local save this session — preserve it to its own
+      // conflict branch (see sync.ts's pushConflictSnapshot) instead of just
+      // letting it vanish; 'cloud-only' has no local folder at all to save.
+      let branch: string | null = null
+      if (st?.status === 'remote-newer') {
+        try {
+          branch = await pushConflictSnapshot(token, owner, game.appId, actor)
+        } catch (e) {
+          log(`conflict snapshot failed for ${game.name}: ${errorCode(e).code}`)
+        }
+      }
+      addNotification(
+        'sync-conflict-skipped',
+        branch ? { game: game.name, appId: game.appId, branch } : { game: game.name }
+      )
     } else {
       // 'local-stale' (content differs, but no local file changed after the
       // last known cloud sync) used to also skip here — right, but ONLY the

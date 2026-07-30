@@ -225,6 +225,16 @@ export const es: Translation = {
     settingsHint: 'Puedes desactivar esta advertencia en Ajustes → General.',
     dismiss: 'Cerrar'
   },
+  oneDriveWarning: {
+    title: 'Carpeta de partidas sincronizada por OneDrive/Dropbox',
+    message:
+      'CoopSync gestiona las partidas guardadas de estos juegos, pero su carpeta también está siendo sincronizada por OneDrive o Dropbox. Si ambos escriben los mismos archivos a la vez, una partida puede dañarse, especialmente por los archivos marcador de posición "Archivos a petición" de OneDrive.',
+    gamesLabel: (games) => `Afectados: ${games}`,
+    instructions:
+      'Considera mover la carpeta de partidas fuera de OneDrive/Dropbox, o excluirla de esa sincronización en los ajustes de OneDrive/Dropbox.',
+    settingsHint: 'Puedes desactivar esta advertencia en Ajustes → General.',
+    dismiss: 'Cerrar'
+  },
   updateBanner: {
     title: 'Actualización disponible',
     message: (v) => `CoopSync v${v} está listo para descargar.`,
@@ -258,7 +268,10 @@ export const es: Translation = {
       alreadyPlaying ? `${login} está jugando ${game}.` : `${login} acaba de iniciar ${game}.`,
     restoreAction: 'Restaurar solo para mí',
     restoring: 'Restaurando…',
-    restored: 'Restaurado — ahora se sincroniza solo para ti'
+    restored: 'Restaurado — ahora se sincroniza solo para ti',
+    downloadConflictAction: 'Guardar una copia',
+    downloadingConflict: 'Guardando…',
+    conflictDownloaded: 'Guardado en tu carpeta Documentos'
   },
   onboarding: {
     welcomeTitle: '¡Bienvenido a CoopSync!',
@@ -337,6 +350,7 @@ export const es: Translation = {
     autostart: 'Iniciar con Windows',
     startMinimized: 'Iniciar minimizado en la bandeja',
     cloudWarningToggle: 'Mostrar advertencia de Steam Cloud al iniciar',
+    oneDriveWarningToggle: 'Avisar sobre conflicto con OneDrive/Dropbox',
     autoCheckUpdatesToggle: 'Buscar actualizaciones automáticamente',
     smartAppWarningTitle: 'Smart App Control de Windows',
     smartAppWarningText:

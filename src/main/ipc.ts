@@ -264,6 +264,11 @@ function startPresenceIfConfigured(win: BrowserWindow): void {
         showToast('friend-playing', { login, game: gameName, alreadyPlaying: 'false' })
       }
     },
+    // The server already staggers WHEN each client gets this (hub.ts's
+    // broadcastRelease), so no need to add any more delay/jitter here —
+    // just reuse the exact same silent check the 6h periodic recheck runs
+    // (checkForUpdates), which drives the existing bell/toast/banner flow.
+    onRelease: () => checkForUpdates(),
     getFriendIds: computeFriendIds,
     getAuthToken: () => {
       const token = loadToken()

@@ -20,6 +20,13 @@ interface Callbacks {
    *  fan-out from the server (see coopsync-server's hub.ts setPlaying), plus
    *  a one-time snapshot right after declaring friends (bootstrap). */
   onPlaying: (id: number, login: string, gameId: string | null) => void
+  /** coopsync-server noticed a new GitHub release and pushed it out (see
+   *  hub.ts's broadcastRelease, releaseWatcher.ts) — unlike everything else
+   *  here, not friend-gated, every connected client gets this. Carries
+   *  nothing but the tag; the caller just re-runs its OWN update check
+   *  (electron-updater/GitHub Releases stays the actual source of truth for
+   *  what's installable on this platform/channel). */
+  onRelease: (version: string) => void
   /** Called periodically (and once right after auth) to get the current
    *  mutual-friend id list — covers invite accepted/kicked/role changed
    *  without every one of those call sites needing to remember to push an
@@ -185,6 +192,9 @@ function openSocket(mySession: number, token: string): void {
           else knownPlaying.set(id, { login, gameId })
           callbacks?.onPlaying(id, login, gameId)
         }
+        break
+      case 'release':
+        if (typeof msg['version'] === 'string') callbacks?.onRelease(msg['version'])
         break
       case 'error':
         log(`presence: server error ${JSON.stringify(msg['code'])}`)

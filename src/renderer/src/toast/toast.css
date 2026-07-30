@@ -36,8 +36,13 @@ body {
   border-color: rgba(255, 255, 255, 0.22);
 }
 
-/* Dismiss "×" — quiet at rest, tinted on hover/focus. Color/background only. */
+/* Dismiss "×" — quiet at rest, tinted on hover/focus. Color/background only.
+   Resting color/background live HERE (not as an inline style on the element)
+   specifically so the :hover rules below can actually override them — an
+   inline style always wins over a stylesheet rule regardless of specificity. */
 .toast-dismiss {
+  color: #79839a;
+  background: none;
   transition:
     color 120ms ease,
     background 120ms ease;

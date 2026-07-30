@@ -167,7 +167,16 @@ export function downloadUpdate(origin: 'ui' | 'toast' = 'ui'): void {
   void autoUpdater.downloadUpdate()
 }
 
+// Same reasoning as downloadInFlight above, one step later: "Restart to
+// install" also exists on all 3 surfaces (Settings, the MainScreen banner,
+// the update toast), and quitAndInstall() takes a moment to actually tear
+// the app down — long enough for a fast double-click (or clicking two
+// surfaces) to fire it twice before the first call's quit takes effect.
+let installTriggered = false
+
 export function quitAndInstall(): void {
+  if (installTriggered) return
+  installTriggered = true
   autoUpdater.quitAndInstall()
 }
 

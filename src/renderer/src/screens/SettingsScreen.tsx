@@ -79,6 +79,11 @@ function SettingsScreen({
   // the MainScreen banner and the update toast).
   const [downloadClicked, setDownloadClicked] = useState(false)
   useEffect(() => setDownloadClicked(false), [updateStatus.state])
+  // Same idea for "Restart to install" — quitAndInstall() takes a moment to
+  // actually tear the app down, leaving a window for a double-click to fire
+  // it twice (see updater.ts's installTriggered guard, the authoritative
+  // fix across all 3 surfaces).
+  const [installClicked, setInstallClicked] = useState(false)
   const [showDeleteRepo, setShowDeleteRepo] = useState(false)
   const [deletingRepo, setDeletingRepo] = useState(false)
   const [deleteRepoError, setDeleteRepoError] = useState<string | null>(null)
@@ -512,7 +517,11 @@ function SettingsScreen({
               <Button
                 variant="primary"
                 style={{ height: 30, padding: '0 12px', fontSize: 12, flexShrink: 0, whiteSpace: 'nowrap' }}
-                onClick={() => window.api.updater.install()}
+                onClick={() => {
+                  setInstallClicked(true)
+                  window.api.updater.install()
+                }}
+                disabled={installClicked}
               >
                 {t.settings.restartToInstall}
               </Button>

@@ -80,6 +80,12 @@ function ToastCard({ toast, updateStatus, onDismiss, onAction, onOpenMain }: Pro
   const [paused, setPaused] = useState(false)
   const [remaining, setRemaining] = useState(duration)
   const rafRef = useRef<number | null>(null)
+  // Guards the 'downloaded' branch of handleActionClick below against firing
+  // installUpdate() twice — onDismiss() only starts the fade-out (see
+  // ToastStack's EXIT_MS), the card (and its button) stays clickable for
+  // another 150ms, same double-click window as updater.ts's own
+  // installTriggered guard covers for the other 2 surfaces.
+  const installClickedRef = useRef(false)
 
   // A phase change carries its own fresh duration (available -> downloading
   // has none at all; downloading -> downloaded gets the long READY_DURATION_MS)
@@ -131,6 +137,8 @@ function ToastCard({ toast, updateStatus, onDismiss, onAction, onOpenMain }: Pro
   function handleActionClick(e: React.MouseEvent): void {
     e.stopPropagation()
     if (updatePhase === 'downloaded') {
+      if (installClickedRef.current) return
+      installClickedRef.current = true
       // Not routed through onAction/'toast:action' — this button's meaning
       // (install, not download) only exists because of the live phase, not
       // the toast's own fixed kind (see toastWindow.ts's setInstallHandler).
@@ -224,11 +232,14 @@ const styles: Record<string, React.CSSProperties> = {
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap'
   },
+  // color/background deliberately NOT set inline — toast.css's .toast-dismiss
+  // rule owns the resting color, so its :hover rule (color+background) can
+  // actually win instead of being shadowed by an inline style (inline always
+  // beats a stylesheet regardless of specificity, cursor:pointer was firing
+  // fine, the color/background hover just never visibly applied).
   dismissBtn: {
     flexShrink: 0,
     padding: 4,
-    color: colors.text3,
-    background: 'none',
     border: 'none',
     borderRadius: 6,
     cursor: 'pointer',

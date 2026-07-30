@@ -20,6 +20,9 @@ function UpdateAvailableBanner({ status, onDismiss }: Props): React.JSX.Element 
   // downloadInFlight guard for the authoritative fix across all 3 surfaces).
   const [downloadClicked, setDownloadClicked] = useState(false)
   useEffect(() => setDownloadClicked(false), [status.state])
+  // Same idea for "Restart to install" (see updater.ts's installTriggered
+  // guard, the authoritative fix across all 3 surfaces).
+  const [installClicked, setInstallClicked] = useState(false)
 
   return (
     <div style={styles.wrap}>
@@ -47,7 +50,15 @@ function UpdateAvailableBanner({ status, onDismiss }: Props): React.JSX.Element 
         </Button>
       )}
       {status.state === 'downloaded' && (
-        <Button variant="primary" style={styles.actionBtn} onClick={() => window.api.updater.install()}>
+        <Button
+          variant="primary"
+          style={styles.actionBtn}
+          onClick={() => {
+            setInstallClicked(true)
+            window.api.updater.install()
+          }}
+          disabled={installClicked}
+        >
           {t.settings.restartToInstall}
         </Button>
       )}

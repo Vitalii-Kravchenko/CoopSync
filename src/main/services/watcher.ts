@@ -30,6 +30,7 @@ import {
   setHadAccess
 } from './backgroundState'
 import { addNotification } from './notificationStore'
+import { showToast } from './toastWindow'
 import { log } from './logger'
 import { parseAppError } from '../../shared/errors'
 import type { AutoSyncEvent, FriendSaveUpdate } from '../../shared/types'
@@ -63,8 +64,8 @@ const notifiedFriendPlaying = new Map<number, string>()
 
 /** Returns true (and marks it) only the first time this friend+game pairing
  *  hasn't already been notified about — both onPlaying (ipc.ts) and the
- *  launch-time check below must go through this before ever calling
- *  addNotification('friend-playing', ...). */
+ *  launch-time check below must go through this before ever showing the
+ *  'friend-playing' toast. */
 export function markFriendPlayingNotified(friendId: number, gameId: string): boolean {
   if (notifiedFriendPlaying.get(friendId) === gameId) return false
   notifiedFriendPlaying.set(friendId, gameId)
@@ -302,7 +303,11 @@ async function tick(
         if (alreadyThere) {
           const [friendId, info] = alreadyThere
           if (markFriendPlayingNotified(Number(friendId), game.appId)) {
-            addNotification('friend-playing', { login: info.login, game: game.name })
+            // alreadyPlaying: 'true' — I'm the one joining, they were
+            // already there. Toast-only (see ToastKind's doc comment): we
+            // only ever see this while actually in the game, so a
+            // permanent bell entry would be pointless.
+            showToast('friend-playing', { login: info.login, game: game.name, alreadyPlaying: 'true' })
           }
         }
         // The game just launched → first, download files missing locally

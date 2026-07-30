@@ -21,11 +21,11 @@ import type { ToastKind, ToastShowPayload } from '../../shared/types'
 // both need to call showToast() from here.
 
 // 420 card + room either side for the card's own shadow (theme.ts's sh3,
-// 28px blur) to fully fade before hitting the window's edge — 16px used to
-// be all the margin here, which is less than the blur radius itself, so the
-// shadow was getting hard-clipped by the window bounds instead of fading
-// out (Vitalii's "weird shadow left and right", 2026-07-30).
-const WIDTH = 420 + 30 * 2
+// 28px blur) to fully fade before hitting the window's edge. A blur radius
+// fades out over roughly 1.5x its own value, not 1x — 16px, then 30px, both
+// still left a visible hard edge on the left/right (Vitalii flagged it
+// twice, 2026-07-30). 40px is comfortably past that fade distance.
+const WIDTH = 420 + 40 * 2
 const BOTTOM_MARGIN = 22
 
 // A toast fired the instant the app starts (or, in dev, while the toast

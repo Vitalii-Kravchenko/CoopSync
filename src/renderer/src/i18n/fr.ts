@@ -255,7 +255,8 @@ export const fr: Translation = {
     folderRemovedBody: (game, folder) =>
       `« ${game} / ${folder} » a été retiré du groupe coop. Tes propres fichiers restent intacts.`,
     friendPlayingTitle: 'Un ami joue en ce moment',
-    friendPlayingBody: (login, game) => `${login} vient de lancer ${game}.`,
+    friendPlayingBody: (login, game, alreadyPlaying) =>
+      alreadyPlaying ? `${login} joue actuellement à ${game}.` : `${login} vient de lancer ${game}.`,
     restoreAction: 'Restaurer juste pour moi',
     restoring: 'Restauration…',
     restored: 'Restauré — se synchronise maintenant juste pour toi'

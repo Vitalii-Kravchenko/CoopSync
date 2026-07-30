@@ -242,7 +242,8 @@ export const zhCN: Translation = {
     folderRemovedTitle: '文件夹已从小组移除',
     folderRemovedBody: (game, folder) => `"${game} / ${folder}" 已从联机小组移除。你自己的文件未受影响。`,
     friendPlayingTitle: '好友正在游戏',
-    friendPlayingBody: (login, game) => `${login} 刚刚开始玩《${game}》。`,
+    friendPlayingBody: (login, game, alreadyPlaying) =>
+      alreadyPlaying ? `${login} 正在玩《${game}》。` : `${login} 刚刚开始玩《${game}》。`,
     restoreAction: '仅为自己恢复',
     restoring: '正在恢复…',
     restored: '已恢复——现在仅为你同步'

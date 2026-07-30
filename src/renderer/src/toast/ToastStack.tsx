@@ -7,6 +7,16 @@ import type { ToastShowPayload, UpdateStatus } from '../../../shared/types'
 // actually played, not before.
 const EXIT_MS = 150
 
+// Room around the 420px card for its own drop shadow (theme.ts's sh3, a 28px
+// blur) to fully fade before hitting the window's edge instead of getting
+// hard-clipped by it — a blur radius needs roughly 1.5x its own value to
+// fade to nothing, not 1x. sh3's y-offset is +10 (shifted down), so the
+// shadow reaches further below the card than above it — V_PAD_BOTTOM is
+// larger to match. Matches toastWindow.ts's WIDTH (420 + V_PAD_X * 2).
+const V_PAD_X = 40
+const V_PAD_TOP = 30
+const V_PAD_BOTTOM = 45
+
 // Root of the toast overlay window (see main/services/toastWindow.ts).
 // Owns the list of currently-visible toasts, reports its own rendered
 // height to main (so the otherwise-invisible transparent window can be
@@ -103,7 +113,15 @@ function ToastStack(): React.JSX.Element {
     const el = containerRef.current
     if (!el) return
     const ro = new ResizeObserver((entries) => {
-      const height = entries[0]?.contentRect.height ?? 0
+      // ResizeObserver's contentRect is the CONTENT box — it excludes this
+      // element's own padding (unlike the horizontal padding below, which
+      // doesn't affect height and so was never a problem). The window is
+      // sized to exactly this reported number with zero padding of its own,
+      // so the card's shadow needs its vertical room added back in by hand
+      // here, or it gets hard-clipped top and bottom by the window bounds
+      // (Vitalii's report, 2026-07-30) exactly like V_PAD_X below already
+      // covers for left/right.
+      const height = (entries[0]?.contentRect.height ?? 0) + V_PAD_TOP + V_PAD_BOTTOM
       window.toastApi.reportHeight(height)
     })
     ro.observe(el)
@@ -158,14 +176,12 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: 'column',
     alignItems: 'center',
     gap: 10,
-    // Horizontal only — matches toastWindow.ts's WIDTH (420 card + 30 each
-    // side, enough for the card's own shadow to fully fade instead of
-    // getting hard-clipped by the window edge). No vertical padding:
-    // ResizeObserver's contentRect excludes an element's own padding, and
-    // this container's measured height is what main uses to size the
-    // window — vertical padding here would get silently clipped rather than
-    // reported.
-    padding: '0 30px',
+    // Room for the shadow on all four sides (see V_PAD_* above) — the
+    // vertical amounts are ALSO added by hand to the height reported to
+    // main in the ResizeObserver callback above, since contentRect excludes
+    // this element's own padding and the window is sized to exactly that
+    // number with none of its own.
+    padding: `${V_PAD_TOP}px ${V_PAD_X}px ${V_PAD_BOTTOM}px`,
     width: '100%'
   }
 }

@@ -254,7 +254,8 @@ export const uk: Translation = {
     folderRemovedBody: (game, folder) =>
       `«${game} / ${folder}» видалено з коопу. Твої файли лишились на місці.`,
     friendPlayingTitle: 'Друг зараз грає',
-    friendPlayingBody: (login, game) => `${login} щойно запустив(ла) ${game}.`,
+    friendPlayingBody: (login, game, alreadyPlaying) =>
+      alreadyPlaying ? `${login} зараз грає в ${game}.` : `${login} щойно запустив(ла) ${game}.`,
     restoreAction: 'Відновити тільки для себе',
     restoring: 'Відновлюю…',
     restored: 'Відновлено — синкається тільки для тебе'

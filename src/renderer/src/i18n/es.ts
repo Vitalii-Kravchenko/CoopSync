@@ -254,7 +254,8 @@ export const es: Translation = {
     folderRemovedBody: (game, folder) =>
       `"${game} / ${folder}" se eliminó del grupo co-op. Tus propios archivos siguen intactos.`,
     friendPlayingTitle: 'Un amigo está jugando',
-    friendPlayingBody: (login, game) => `${login} acaba de iniciar ${game}.`,
+    friendPlayingBody: (login, game, alreadyPlaying) =>
+      alreadyPlaying ? `${login} está jugando ${game}.` : `${login} acaba de iniciar ${game}.`,
     restoreAction: 'Restaurar solo para mí',
     restoring: 'Restaurando…',
     restored: 'Restaurado — ahora se sincroniza solo para ti'

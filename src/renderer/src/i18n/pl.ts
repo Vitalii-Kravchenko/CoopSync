@@ -254,7 +254,8 @@ export const pl: Translation = {
     folderRemovedBody: (game, folder) =>
       `„${game} / ${folder}" zostało usunięte z grupy coop. Twoje pliki zostały nietknięte.`,
     friendPlayingTitle: 'Znajomy właśnie gra',
-    friendPlayingBody: (login, game) => `${login} właśnie uruchomił(a) ${game}.`,
+    friendPlayingBody: (login, game, alreadyPlaying) =>
+      alreadyPlaying ? `${login} właśnie gra w ${game}.` : `${login} właśnie uruchomił(a) ${game}.`,
     restoreAction: 'Przywróć tylko dla mnie',
     restoring: 'Przywracanie…',
     restored: 'Przywrócono — synchronizuje się teraz tylko dla ciebie'

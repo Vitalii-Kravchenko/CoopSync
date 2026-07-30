@@ -254,7 +254,8 @@ export const ptBR: Translation = {
     folderRemovedBody: (game, folder) =>
       `"${game} / ${folder}" foi removida do grupo co-op. Seus próprios arquivos continuam intactos.`,
     friendPlayingTitle: 'Um amigo está jogando',
-    friendPlayingBody: (login, game) => `${login} acabou de iniciar ${game}.`,
+    friendPlayingBody: (login, game, alreadyPlaying) =>
+      alreadyPlaying ? `${login} está jogando ${game}.` : `${login} acabou de iniciar ${game}.`,
     restoreAction: 'Restaurar só para mim',
     restoring: 'Restaurando…',
     restored: 'Restaurado — sincronizando agora só para você'

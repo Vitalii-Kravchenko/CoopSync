@@ -61,7 +61,7 @@ export function describeNotification(
     case 'friend-playing':
       return {
         title: t.notifications.friendPlayingTitle,
-        body: t.notifications.friendPlayingBody(params.login, params.game)
+        body: t.notifications.friendPlayingBody(params.login, params.game, params.alreadyPlaying === 'true')
       }
   }
 }

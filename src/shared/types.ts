@@ -268,12 +268,17 @@ export type AppNotificationKind =
   | 'access-revoked' // params: { host }
   | 'game-removed' // params: { game, appId } — game is now orphaned (see CustomGame.orphaned), Restore action re-syncs it personal-only
   | 'folder-removed' // params: { game, folder, appId, folderId } — an extra folder (CustomGame.extraFolders) went orphaned, same Restore idea one level down
-  | 'friend-playing' // params: { login, game } — a mutual friend just launched a game we both sync (see presenceService.ts's onPlaying)
 
-/** Same events as the bell (AppNotificationKind) plus one that's toast-only —
- *  a friend's save arriving is transient, worth a popup but not a permanent
- *  bell entry the way "significant" events are. */
-export type ToastKind = AppNotificationKind | 'save-uploaded' // params: { login, game, version }
+/** Same events as the bell (AppNotificationKind) plus two that are toast-only —
+ *  a friend's save arriving, or a friend's play session, are both transient,
+ *  worth a popup but not a permanent bell entry the way "significant" events
+ *  are: we only ever see either while actively looking at the game in
+ *  question anyway, so a bell entry would just be a stale echo of something
+ *  already gone by the time it's read (Vitalii's call, 2026-07-30). */
+export type ToastKind =
+  | AppNotificationKind
+  | 'save-uploaded' // params: { login, game, version }
+  | 'friend-playing' // params: { login, game, alreadyPlaying } — a mutual friend and I are playing the same game right now (see presenceService.ts's onPlaying). alreadyPlaying: 'true' when I'm the one joining and they were already there — the body reads "X is playing Y" instead of "X just started Y", since from my side nothing just "happened"
 
 /** One popup shown in the OS-level toast window (see
  *  main/services/toastWindow.ts) — replaces the native Notification API

@@ -279,9 +279,12 @@ export interface Translation {
     gameRemovedBody: (game: string) => string
     folderRemovedTitle: string
     folderRemovedBody: (game: string, folder: string) => string
-    /** A mutual friend just launched a game we both sync. */
+    /** A mutual friend and I are playing the same game right now. alreadyPlaying
+     *  is true when I'm the one joining and they were already there — the
+     *  wording flips from "just started" to "is playing" since nothing just
+     *  "happened" from my side of that. */
     friendPlayingTitle: string
-    friendPlayingBody: (login: string, game: string) => string
+    friendPlayingBody: (login: string, game: string, alreadyPlaying: boolean) => string
     /** Action button on the game-removed/folder-removed notification —
      *  keeps the local copy, re-syncs it just for the clicker (see
      *  CustomGame.orphaned/personal). */

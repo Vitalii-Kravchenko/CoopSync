@@ -254,7 +254,8 @@ export const ru: Translation = {
     folderRemovedBody: (game, folder) =>
       `«${game} / ${folder}» удалена из кооп-группы. Твои собственные файлы не тронуты.`,
     friendPlayingTitle: 'Друг сейчас играет',
-    friendPlayingBody: (login, game) => `${login} только что запустил(а) ${game}.`,
+    friendPlayingBody: (login, game, alreadyPlaying) =>
+      alreadyPlaying ? `${login} сейчас играет в ${game}.` : `${login} только что запустил(а) ${game}.`,
     restoreAction: 'Восстановить только для себя',
     restoring: 'Восстанавливаю…',
     restored: 'Восстановлено — синхронизируется теперь только для тебя'

@@ -53,7 +53,7 @@ import {
 } from './services/watcher'
 import { markSeen } from './services/notifyState'
 import { forgetPending } from './services/backgroundState'
-import { getNotifications, markRead, markAllRead, clearAll, addNotification } from './services/notificationStore'
+import { getNotifications, markRead, markAllRead, clearAll } from './services/notificationStore'
 import { READY_GAMES } from './games/catalog'
 import { resolveSavePath, isCustomSavePath, setSavePathOverride } from './games/savePath'
 import {
@@ -238,7 +238,7 @@ function startPresenceIfConfigured(win: BrowserWindow): void {
       // whether it's toast/bell-worthy (gameId null clears both just as much
       // as a real id sets them).
       win.webContents.send('presence:playing', { id, login, gameId, gameName })
-      // The toast/bell notification is gated much tighter (Vitalii's call,
+      // The toast notification is gated much tighter (Vitalii's call,
       // 2026-07-30): only when it's about a game *I* am also playing right
       // now — otherwise every game a friend happens to touch would interrupt
       // me regardless of relevance. Going back to null is just the badge
@@ -256,9 +256,12 @@ function startPresenceIfConfigured(win: BrowserWindow): void {
       // markFriendPlayingNotified also guards against watcher.ts's own
       // launch-time "already there" check firing for the exact same join
       // (see its doc comment) — without it, a friend's periodic presence
-      // bootstrap re-send could double this notification.
+      // bootstrap re-send could double this notification. Toast-only, no
+      // bell entry (see ToastKind's doc comment) — and alreadyPlaying:
+      // 'false' since THEY just launched, a fresh thing that "just happened"
+      // from my side (see watcher.ts's own alreadyPlaying: 'true' case).
       if (markFriendPlayingNotified(id, gameId)) {
-        addNotification('friend-playing', { login, game: gameName })
+        showToast('friend-playing', { login, game: gameName, alreadyPlaying: 'false' })
       }
     },
     getFriendIds: computeFriendIds,

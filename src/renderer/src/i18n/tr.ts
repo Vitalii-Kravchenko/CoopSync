@@ -255,7 +255,8 @@ export const tr: Translation = {
     folderRemovedBody: (game, folder) =>
       `"${game} / ${folder}" co-op grubundan kaldırıldı. Kendi dosyaların dokunulmadan duruyor.`,
     friendPlayingTitle: 'Bir arkadaşın şu an oynuyor',
-    friendPlayingBody: (login, game) => `${login} az önce ${game} oyununu başlattı.`,
+    friendPlayingBody: (login, game, alreadyPlaying) =>
+      alreadyPlaying ? `${login} şu anda ${game} oynuyor.` : `${login} az önce ${game} oyununu başlattı.`,
     restoreAction: 'Sadece benim için geri yükle',
     restoring: 'Geri yükleniyor…',
     restored: 'Geri yüklendi — artık sadece senin için senkronize ediliyor'

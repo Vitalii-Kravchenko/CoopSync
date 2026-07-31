@@ -56,6 +56,8 @@ export const fr: Translation = {
     setUp: 'Configurer',
     friendPlayingBadge: (login) => `${login} joue`,
     brokenVersionBadge: 'Marqué comme corrompu — ne pas télécharger',
+    experimentalBadge: 'Expérimental',
+    experimentalTooltip: "Nous vérifions encore auprès de vrais joueurs si les réglages personnels sont bien séparés pour ce jeu",
   },
   addGame: {
     title: 'Ajouter un jeu',
@@ -279,6 +281,12 @@ export const fr: Translation = {
     lockWarningTitle: 'Conflit de sauvegarde possible',
     lockWarningBody: (login, game) =>
       `${login} joue peut-être aussi à ${game} en ce moment — jouer en même temps peut parfois provoquer un conflit de synchronisation.`,
+    experimentalConfirmTitle: 'Petite vérification',
+    experimentalConfirmBody: (game) => `La synchronisation de ${game} s'est bien passée ?`,
+    experimentalConfirmYes: 'Ça marche bien',
+    experimentalConfirmNo: "J'ai trouvé un problème",
+    experimentalThanksTitle: 'Merci !',
+    experimentalThanksBody: 'Ta réponse aide à améliorer CoopSync.',
     restoreAction: 'Restaurer juste pour moi',
     restoring: 'Restauration…',
     restored: 'Restauré — se synchronise maintenant juste pour toi',
@@ -402,12 +410,18 @@ export const fr: Translation = {
     sending: 'Envoi…',
     success: 'Envoyé ! Merci pour ton retour.',
     gameSearchPlaceholder: 'Rechercher le jeu sur Steam...',
+    myGamesSearchPlaceholder: 'Rechercher parmi tes jeux...',
     gameSearchEmpty: 'Aucun résultat',
     gameRequired: "Choisis d'abord un jeu",
     commentOptionalPlaceholder: 'Commentaire supplémentaire (facultatif)',
     maxGamesReached: (max) => `Maximum ${max} jeux par demande`,
     addAnotherGame: 'Ajouter un autre jeu',
-    removeGame: 'Retirer'
+    removeGame: 'Retirer',
+    addScreenshot: 'Ajouter une capture d’écran',
+    removeScreenshot: 'Retirer la capture d’écran',
+    tooManyScreenshots: (max) => `Tu peux joindre jusqu’à ${max} captures d’écran`,
+    screenshotBadType: 'Format de fichier non pris en charge — utilise PNG, JPEG ou WebP',
+    screenshotTooBig: 'Fichier trop volumineux (8 Mo max)'
   },
   errors: {
     NOT_LOGGED_IN: () => "Connecte-toi d'abord avec GitHub",

@@ -78,6 +78,8 @@ export interface DetectedGame {
 export interface CatalogGame {
   appId: string
   name: string
+  /** See InstalledGame.experimental / catalog.ts's SupportedGame.experimental. */
+  experimental?: boolean
 }
 
 /** A cloud-sync client already syncing a save folder on its own — see
@@ -118,6 +120,10 @@ export interface InstalledGame {
    *  failed (no login/repo/internet at the time) — the cover still shows
    *  on this PC, but a co-op partner won't see it until a retry succeeds. */
   coverSyncFailed?: boolean
+  /** True while this game's shared/personal file split is still unconfirmed
+   *  by real co-op sessions — see catalog.ts's SupportedGame.experimental.
+   *  Only meaningful when supported is true. */
+  experimental?: boolean
 }
 
 /** A user-added game not in CoopSync's built-in catalog — appId is a
@@ -298,6 +304,7 @@ export type ToastKind =
   | 'save-uploaded' // params: { login, game, version }
   | 'friend-playing' // params: { login, game, alreadyPlaying } — a mutual friend and I are playing the same game right now (see presenceService.ts's onPlaying). alreadyPlaying: 'true' when I'm the one joining and they were already there — the body reads "X is playing Y" instead of "X just started Y", since from my side nothing just "happened"
   | 'lock-warning' // params: { login, game, since } — repo lock-file fallback for the same warning (see sync.ts's checkAndClaimGameLock) that works even without the signaling server; since is carried for potential future use but not shown in the current copy
+  | 'experimental-confirm' // params: { gameId, game } — a sync just finished for an experimental (catalog.ts's SupportedGame.experimental) game; asks "все працює?" — see experimentalConfirm.ts. Two equal-weight action buttons (yes/no), not the usual single action + dismiss ×
 
 /** One popup shown in the OS-level toast window (see
  *  main/services/toastWindow.ts) — replaces the native Notification API
@@ -461,6 +468,24 @@ export interface SteamSearchResult {
  *  in the UI and on the Worker side). */
 export const MAX_GAME_REQUESTS = 3
 
+/** Max screenshots attachable to a 'bug' report, and the max raw (pre-base64)
+ *  size of each — enforced both in the UI and on the Worker side (a direct
+ *  POST bypassing the app is always possible). Keeps the email a reasonable
+ *  size regardless — Resend's own total-email-size ceiling is generous
+ *  (~40MB), this is about not sending someone a needlessly huge inbox item. */
+export const MAX_SCREENSHOTS = 3
+export const MAX_SCREENSHOT_BYTES = 8 * 1024 * 1024
+
+/** One screenshot attached to a 'bug' report — read client-side via
+ *  FileReader, sent as base64 (content has no "data:...;base64," prefix —
+ *  stripped before this is built) through main -> Worker -> Resend's
+ *  `attachments` field. */
+export interface SupportScreenshot {
+  filename: string
+  content: string
+  mimeType: string
+}
+
 /** A user's message sent to my email via the Worker proxy. */
 export interface SupportRequest {
   category: SupportCategory
@@ -468,6 +493,8 @@ export interface SupportRequest {
   message: string
   /** Games chosen from Steam search — only for the 'game-request' category, up to MAX_GAME_REQUESTS. */
   games?: SteamSearchResult[]
+  /** Screenshots attached to a 'bug' report, up to MAX_SCREENSHOTS. */
+  screenshots?: SupportScreenshot[]
 }
 
 /** Presence server connection state (see ROADMAP.md §1 — a progressive

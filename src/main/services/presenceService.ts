@@ -117,6 +117,16 @@ export function notifyPlayingState(gameId: string | null): void {
   send({ t: 'playing', gameId })
 }
 
+/** Tell the server this user confirmed an experimental game works for them
+ *  (see experimentalConfirm.ts — only called once, on the 3rd consecutive
+ *  "так"). Best-effort like the two above: if presence isn't connected right
+ *  now this confirmation is simply lost, same tolerance the rest of this
+ *  file already has for save:pushed/playing — not worth a retry queue for a
+ *  progressive-enhancement counter. */
+export function notifyGameConfirmed(gameId: string): void {
+  send({ t: 'confirmGame', gameId })
+}
+
 function send(msg: Record<string, unknown>): void {
   if (ws && ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify(msg))

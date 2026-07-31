@@ -101,7 +101,8 @@ import {
 import { mintPresenceToken } from './services/presenceJwt'
 import { sendSupportMessage } from './services/support'
 import { checkForUpdates, downloadUpdate, quitAndInstall } from './services/updater'
-import { showToast, setActionHandler, setInstallHandler } from './services/toastWindow'
+import { showToast, setActionHandler, setInstallHandler, setConfirmHandler } from './services/toastWindow'
+import { recordExperimentalAnswer } from './services/experimentalConfirm'
 import { setActiveScreen } from './services/windowState'
 import type {
   AuthStatus,
@@ -350,6 +351,14 @@ export function registerIpcHandlers(): void {
   // finishes (see ToastCard) — a dedicated channel, not routed through the
   // action dispatch above (see toastWindow.ts's setInstallHandler doc comment).
   setInstallHandler(() => quitAndInstall())
+  // 'experimental-confirm' toast's так/є-проблеми answer (see
+  // experimentalConfirm.ts). "Є проблеми" also opens the Support modal
+  // pre-filled — reuses presenceWindow as the main window reference (always
+  // set once logged in, same as this toast's own trigger requires).
+  setConfirmHandler((gameId, gameName, answer) => {
+    recordExperimentalAnswer(gameId, answer)
+    if (answer === 'no') presenceWindow?.webContents.send('support:open-prefilled', gameId, gameName)
+  })
 
   // One-time cleanup: pre-0.9.41 versions kept a separate zero-scope
   // presence token (presence-auth.bin, its own device flow) — obsolete now
@@ -559,7 +568,7 @@ export function registerIpcHandlers(): void {
 
   // Catalog of games READY for sync (for the "All supported" section and search).
   ipcMain.handle('games:catalog', (): CatalogGame[] =>
-    READY_GAMES.map((g) => ({ appId: g.appId, name: g.name }))
+    READY_GAMES.map((g) => ({ appId: g.appId, name: g.name, experimental: g.experimental }))
   )
 
   // Search across the whole Steam store (for "Support" → "I want a game added").

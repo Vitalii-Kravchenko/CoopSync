@@ -84,6 +84,10 @@ export interface Translation {
     /** Overlay badge on the poster when a mutual friend is playing this game right now. */
     friendPlayingBadge: (login: string) => string
     brokenVersionBadge: string
+    /** Short poster badge for a supported game whose shared/personal file
+     *  split isn't confirmed yet — see catalog.ts's SupportedGame.experimental. */
+    experimentalBadge: string
+    experimentalTooltip: string
   }
   addGame: {
     title: string
@@ -308,6 +312,15 @@ export interface Translation {
      *  server, e.g. when the other player isn't connected to presence. */
     lockWarningTitle: string
     lockWarningBody: (login: string, game: string) => string
+    /** 'experimental-confirm' toast — see catalog.ts's SupportedGame.experimental. */
+    experimentalConfirmTitle: string
+    experimentalConfirmBody: (game: string) => string
+    experimentalConfirmYes: string
+    experimentalConfirmNo: string
+    /** Shown on the SAME toast for a few seconds after answering "так" —
+     *  see ToastCard.tsx's `thanked` state. */
+    experimentalThanksTitle: string
+    experimentalThanksBody: string
     /** Action button on the game-removed/folder-removed notification —
      *  keeps the local copy, re-syncs it just for the clicker (see
      *  CustomGame.orphaned/personal). */
@@ -431,12 +444,23 @@ export interface Translation {
     sending: string
     success: string
     gameSearchPlaceholder: string
+    /** Search input placeholder for attaching a game to a 'bug' report —
+     *  searches Vitalii's own already-synced games, not the Steam catalog
+     *  (unlike gameSearchPlaceholder above, used by 'game-request'). */
+    myGamesSearchPlaceholder: string
     gameSearchEmpty: string
     gameRequired: string
     commentOptionalPlaceholder: string
     maxGamesReached: (max: number) => string
     addAnotherGame: string
     removeGame: string
+    /** 'bug' category only (Vitalii's request, 2026-07-30) — see
+     *  SupportModal.tsx's handleScreenshotFiles/MAX_SCREENSHOTS. */
+    addScreenshot: string
+    removeScreenshot: string
+    tooManyScreenshots: (max: number) => string
+    screenshotBadType: string
+    screenshotTooBig: string
   }
   /** Локалізовані тексти для кодів помилок з main-процесу (shared/errors.ts). */
   errors: Record<ErrorCode, (params: Record<string, string>) => string>

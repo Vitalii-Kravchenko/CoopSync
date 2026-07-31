@@ -29,6 +29,7 @@ export async function sendSupportMessage(request: SupportRequest): Promise<void>
       category: request.category,
       message,
       games: request.games,
+      screenshots: request.screenshots,
       sender,
       // Context for diagnostics — no personal data, just version/platform.
       appVersion: app.getVersion(),

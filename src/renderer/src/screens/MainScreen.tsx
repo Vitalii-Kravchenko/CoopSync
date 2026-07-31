@@ -463,6 +463,7 @@ function MainScreen({
                 broken={syncStatuses[g.appId]?.broken}
                 busy={syncing === g.appId}
                 friendPlayingLogin={friendPlayingByGame[g.appId]}
+                experimental={g.experimental}
                 onUpload={() => handleSync(g.appId, 'upload')}
                 onDownload={() => handleSync(g.appId, 'download')}
                 onOpenDetails={() =>
@@ -501,6 +502,7 @@ function MainScreen({
                     broken={syncStatuses[g.appId]?.broken}
                     busy={syncing === g.appId}
                     friendPlayingLogin={friendPlayingByGame[g.appId]}
+                    experimental={g.experimental}
                     onUpload={() => handleSync(g.appId, 'upload')}
                     onDownload={() => handleSync(g.appId, 'download')}
                     onOpenDetails={() => setSelectedGame({ appId: g.appId, name: g.name })}

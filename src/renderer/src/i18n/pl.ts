@@ -56,6 +56,8 @@ export const pl: Translation = {
     setUp: 'Skonfiguruj',
     friendPlayingBadge: (login) => `Gra: ${login}`,
     brokenVersionBadge: 'Oznaczone jako zepsute — nie pobieraj',
+    experimentalBadge: 'Eksperymentalne',
+    experimentalTooltip: 'Wciąż potwierdzamy z prawdziwymi graczami, czy ustawienia osobiste są poprawnie rozdzielone dla tej gry',
   },
   addGame: {
     title: 'Dodaj grę',
@@ -278,6 +280,12 @@ export const pl: Translation = {
     lockWarningTitle: 'Możliwy konflikt zapisu',
     lockWarningBody: (login, game) =>
       `${login} może właśnie też grać w ${game} — jednoczesna gra czasem powoduje konflikt synchronizacji.`,
+    experimentalConfirmTitle: 'Szybkie pytanie',
+    experimentalConfirmBody: (game) => `Czy synchronizacja ${game} przebiegła dobrze?`,
+    experimentalConfirmYes: 'Działa dobrze',
+    experimentalConfirmNo: 'Znalazłem problem',
+    experimentalThanksTitle: 'Dzięki!',
+    experimentalThanksBody: 'Twoja odpowiedź pomaga ulepszać CoopSync.',
     restoreAction: 'Przywróć tylko dla mnie',
     restoring: 'Przywracanie…',
     restored: 'Przywrócono — synchronizuje się teraz tylko dla ciebie',
@@ -401,12 +409,18 @@ export const pl: Translation = {
     sending: 'Wysyłam…',
     success: 'Wysłano! Dzięki za zgłoszenie.',
     gameSearchPlaceholder: 'Szukaj gry na Steam...',
+    myGamesSearchPlaceholder: 'Szukaj wśród swoich gier...',
     gameSearchEmpty: 'Nic nie znaleziono',
     gameRequired: 'Najpierw wybierz grę',
     commentOptionalPlaceholder: 'Dodatkowy komentarz (opcjonalnie)',
     maxGamesReached: (max) => `Maksymalnie ${max} gry na jedno zgłoszenie`,
     addAnotherGame: 'Dodaj kolejną grę',
-    removeGame: 'Usuń'
+    removeGame: 'Usuń',
+    addScreenshot: 'Dodaj zrzut ekranu',
+    removeScreenshot: 'Usuń zrzut ekranu',
+    tooManyScreenshots: (max) => `Możesz dołączyć maksymalnie ${max} zrzuty ekranu`,
+    screenshotBadType: 'Nieobsługiwany format pliku — użyj PNG, JPEG lub WebP',
+    screenshotTooBig: 'Plik jest za duży (maks. 8 MB)'
   },
   errors: {
     NOT_LOGGED_IN: () => 'Najpierw zaloguj się przez GitHub',

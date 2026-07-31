@@ -34,6 +34,7 @@ import {
 } from './backgroundState'
 import { addNotification } from './notificationStore'
 import { showToast } from './toastWindow'
+import { shouldPromptExperimental, markExperimentalPromptShown } from './experimentalConfirm'
 import { log } from './logger'
 import { parseAppError } from '../../shared/errors'
 import type { AutoSyncEvent, FriendSaveUpdate } from '../../shared/types'
@@ -589,6 +590,24 @@ async function pushGameSaves(
       const ownDestination = personalLogin ? await readRemoteVersion(game.name, personalLogin) : undefined
       const version = explicitVersion ?? (await nextGameVersion(game.name, ownDestination))
       const result = await uploadGame(token, owner, game.appId, actor, undefined, version)
+
+      // Ask "все працює?" on ANY successful exit-time outcome — a real push
+      // OR "nothing changed, already synced" are both a legitimate completed
+      // enter→play→exit cycle worth confirming (Vitalii tested 3 launches in
+      // a row where the save content happened not to change between them —
+      // this used to only fire from the pushed:true branch below, so it
+      // silently never asked at all). Only the conflict-skip branch above
+      // this whole else (a real problem) or a thrown error (caught below)
+      // skip the prompt. Never mid-session, never this device's very first
+      // sync for the game (st.localVersion is the PRE-push value, fetched
+      // above — 0 means nothing was synced here before this push, so
+      // there's nothing yet for the user to have actually verified —
+      // Vitalii's call, 2026-07-30).
+      if (game.experimental && !midSession && (st?.localVersion ?? 0) > 0 && shouldPromptExperimental(game.appId)) {
+        markExperimentalPromptShown(game.appId)
+        showToast('experimental-confirm', { gameId: game.appId, game: game.name })
+      }
+
       if (result.pushed === false) {
         // The local and cloud content hashes matched — nothing was actually
         // uploaded (we played, but didn't save/change the save, or the

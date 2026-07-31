@@ -21,10 +21,12 @@ const toastApi = {
     ipcRenderer.on('toast:show', listener)
     return () => ipcRenderer.removeListener('toast:show', listener)
   },
-  /** Tell main the stack's current rendered height, in px, so the
+  /** Tell main the stack's current rendered width+height, in px, so the
    *  (otherwise invisible/transparent) window can be resized+repositioned
-   *  to exactly hug its content, bottom-center anchored. */
-  reportHeight: (height: number): void => ipcRenderer.send('toast:resize', height),
+   *  to exactly hug its content, bottom-center anchored — width included
+   *  since 2026-07-30 (cards no longer wrap/truncate text, they grow to fit
+   *  instead, so the window itself must grow to match). */
+  reportSize: (width: number, height: number): void => ipcRenderer.send('toast:resize', width, height),
   /** The stack is empty — hide the window entirely (nothing left to click
    *  through even though it's transparent). */
   reportEmpty: (): void => ipcRenderer.send('toast:hide'),
@@ -39,6 +41,12 @@ const toastApi = {
   /** Clicked "Install update" on the toast once a download it's tracking
    *  live finished — see toastWindow.ts's setInstallHandler. */
   installUpdate: (): void => ipcRenderer.send('toast:install-update'),
+  /** Answered an 'experimental-confirm' toast's "так"/"є проблеми" — see
+   *  toastWindow.ts's setConfirmHandler. Its own tiny channel rather than
+   *  overloading `action` above, same reasoning as installUpdate: two
+   *  equal-weight answers instead of one action + implicit dismiss. */
+  confirmExperimental: (gameId: string, gameName: string, answer: 'yes' | 'no'): void =>
+    ipcRenderer.send('toast:confirm-experimental', gameId, gameName, answer),
   /** Live auto-update state, same 'updater:status' broadcast every window
    *  gets — lets the update-available toast track a download in progress
    *  instead of staying frozen with whatever it showed when it first

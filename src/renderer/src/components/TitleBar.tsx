@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { colors, fonts, radii, shadows } from '../theme'
 import { useI18n } from '../i18n'
 import { Logo, SupportIcon } from './icons'
@@ -6,7 +6,7 @@ import Avatar from './Avatar'
 import WindowControls from './WindowControls'
 import SupportModal from './SupportModal'
 import NotificationBell from './NotificationBell'
-import type { AuthUser } from '../../../shared/types'
+import type { AuthUser, SteamSearchResult } from '../../../shared/types'
 
 interface Props {
   user: AuthUser | null
@@ -19,6 +19,20 @@ interface Props {
 function TitleBar({ user, avatarDataUrl }: Props): React.JSX.Element {
   const { t } = useI18n()
   const [supportOpen, setSupportOpen] = useState(false)
+  // "Є проблеми" on an experimental-confirm toast — main brings this window
+  // forward and asks for the Support modal to open with this game
+  // pre-attached (poster+name+id, same as picking one in "Хочу гру" —
+  // Vitalii's request, 2026-07-30) instead of typed-out text (see
+  // ipc.ts's setConfirmHandler / toastWindow.ts's showWindowCb).
+  const [supportGame, setSupportGame] = useState<SteamSearchResult | undefined>(undefined)
+  useEffect(
+    () =>
+      window.api.onOpenSupport((gameId, gameName) => {
+        setSupportGame({ appId: gameId, name: gameName })
+        setSupportOpen(true)
+      }),
+    []
+  )
 
   return (
     <>
@@ -56,7 +70,15 @@ function TitleBar({ user, avatarDataUrl }: Props): React.JSX.Element {
         </div>
       </div>
 
-      {supportOpen && <SupportModal onClose={() => setSupportOpen(false)} />}
+      {supportOpen && (
+        <SupportModal
+          initialGame={supportGame}
+          onClose={() => {
+            setSupportOpen(false)
+            setSupportGame(undefined)
+          }}
+        />
+      )}
     </>
   )
 }

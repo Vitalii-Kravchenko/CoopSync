@@ -18,10 +18,19 @@ interface SteamGame {
   imageUrl?: string
 }
 
+// Screenshot attached to a 'bug' report — content is base64, no
+// "data:...;base64," prefix (the app strips it before sending).
+interface Screenshot {
+  filename?: string
+  content?: string
+  mimeType?: string
+}
+
 interface SupportPayload {
   category?: string
   message?: string
   games?: SteamGame[]
+  screenshots?: Screenshot[]
   sender?: string
   appVersion?: string
   platform?: string
@@ -35,6 +44,13 @@ const MAX_MESSAGE_LENGTH = 4000
 // at once. Checked here, not just in the app's UI, because a direct POST
 // bypassing the app is also possible.
 const MAX_GAME_REQUESTS = 3
+// Same reasoning as MAX_GAME_REQUESTS above, for 'bug' screenshots — see
+// shared/types.ts's MAX_SCREENSHOTS/MAX_SCREENSHOT_BYTES (must stay in sync,
+// this Worker can't import from the app). Base64 inflates raw bytes by
+// ~4/3 — checked against the DECODED length, not the wire string length.
+const MAX_SCREENSHOTS = 3
+const MAX_SCREENSHOT_BYTES = 8 * 1024 * 1024
+const ALLOWED_SCREENSHOT_MIME = new Set(['image/png', 'image/jpeg', 'image/webp'])
 // How many requests are allowed from a single IP per window — so no one can
 // flood the inbox directly, bypassing the app.
 const RATE_LIMIT_MAX = 10
@@ -132,6 +148,12 @@ function sanitizeHeader(value: string): string {
   return value.replace(/[\r\n]+/g, ' ').trim()
 }
 
+// Rough sanity check, not a full decode — good enough to reject obviously
+// malformed/garbage input from a direct POST before it ever reaches Resend.
+function isValidBase64(value: string): boolean {
+  return value.length > 0 && value.length % 4 === 0 && /^[A-Za-z0-9+/]+={0,2}$/.test(value)
+}
+
 // Category badge color — purely cosmetic in the email, matched to the app's
 // palette (cyan/violet is the brand pair, danger/warning are semantic).
 function categoryColor(category: string): { fg: string; bg: string } {
@@ -190,12 +212,20 @@ function buildEmailHtml(
   category: string,
   message: string,
   games: SteamGame[],
-  sender: string
+  sender: string,
+  screenshotCount: number
 ): string {
   const { fg, bg } = categoryColor(category)
   const badge = `<span style="display:inline-block;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:${fg};background:${bg};font-family:Arial,Helvetica,sans-serif">${categoryLabel(category)}</span>`
   const headline = `<div style="font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:700;color:#1a1a1a;margin:14px 0 4px">${escapeHtml(actionHeadline(category, sender, games))}</div>`
   const gamesHtml = games.length > 0 ? `<div style="margin-top:16px">${games.map(gameBlockHtml).join('')}</div>` : ''
+  // The screenshots themselves ride as real email attachments (see
+  // fetch()'s attachments field below) — this is just a text pointer so a
+  // reader scanning the body knows to check for them.
+  const screenshotsNote =
+    screenshotCount > 0
+      ? `<div style="margin-top:14px;font-family:Arial,Helvetica,sans-serif;font-size:12.5px;color:#5b6270">📎 ${screenshotCount} ${screenshotCount === 1 ? 'скріншот' : 'скріншоти'} у вкладенні</div>`
+      : ''
 
   return `
   <div style="background:#f3f4f6;padding:32px 16px;font-family:Arial,Helvetica,sans-serif">
@@ -206,6 +236,7 @@ function buildEmailHtml(
         ${headline}
         ${gamesHtml}
         ${commentBlockHtml(message)}
+        ${screenshotsNote}
         <div style="height:1px;background:#eef0f2;margin:22px 0 16px"></div>
         <div style="font-family:'Courier New',monospace;font-size:11px;color:#8a8f98;line-height:1.7">
           CoopSync ${escapeHtml(payload.appVersion ?? '?')} · ${escapeHtml(payload.platform ?? '?')} · ${escapeHtml(payload.language ?? '?')}
@@ -215,12 +246,21 @@ function buildEmailHtml(
   </div>`
 }
 
-function buildEmailText(category: string, message: string, games: SteamGame[], sender: string): string {
+function buildEmailText(
+  category: string,
+  message: string,
+  games: SteamGame[],
+  sender: string,
+  screenshotCount: number
+): string {
   const lines = [actionHeadline(category, sender, games)]
   for (const g of games) {
     lines.push(`— ${g.name}: https://store.steampowered.com/app/${g.appId}`)
   }
   if (message) lines.push('', 'Коментар:', message)
+  if (screenshotCount > 0) {
+    lines.push('', `📎 ${screenshotCount} ${screenshotCount === 1 ? 'скріншот' : 'скріншоти'} у вкладенні`)
+  }
   return lines.join('\n')
 }
 
@@ -254,6 +294,23 @@ export default {
     const games = (payload.games ?? [])
       .filter((g) => !!g?.appId && !!g?.name)
       .slice(0, MAX_GAME_REQUESTS)
+    // Only 'bug' ever carries screenshots (see SupportModal.tsx) — a direct
+    // POST for another category sneaking them in just gets them dropped
+    // rather than rejecting the whole request over it.
+    const screenshots =
+      category === 'bug'
+        ? (payload.screenshots ?? [])
+            .filter(
+              (s) =>
+                !!s?.filename &&
+                !!s?.content &&
+                !!s?.mimeType &&
+                ALLOWED_SCREENSHOT_MIME.has(s.mimeType) &&
+                isValidBase64(s.content) &&
+                Math.floor((s.content.length * 3) / 4) <= MAX_SCREENSHOT_BYTES
+            )
+            .slice(0, MAX_SCREENSHOTS)
+        : []
 
     const contentOk = category === 'game-request' ? games.length > 0 : !!message
     if (!ALLOWED_CATEGORIES.has(category) || !contentOk) {
@@ -279,8 +336,13 @@ export default {
         from: 'CoopSync <onboarding@resend.dev>',
         to: [env.TO_EMAIL],
         subject,
-        html: buildEmailHtml(payload, category, message, games, sender),
-        text: buildEmailText(category, message, games, sender)
+        html: buildEmailHtml(payload, category, message, games, sender, screenshots.length),
+        text: buildEmailText(category, message, games, sender, screenshots.length),
+        // Resend's own attachment shape: filename + base64 content, no
+        // "data:...;base64," prefix (already stripped client-side).
+        ...(screenshots.length > 0
+          ? { attachments: screenshots.map((s) => ({ filename: s.filename, content: s.content })) }
+          : {})
       })
     })
 

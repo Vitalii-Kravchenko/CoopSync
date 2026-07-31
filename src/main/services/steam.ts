@@ -101,9 +101,10 @@ export function detectGames(): DetectedGame[] {
 export function detectAllInstalled(): InstalledGame[] {
   const installed = getInstalledGames()
   const readyIds = new Set(READY_GAMES.map((g) => g.appId))
+  const experimentalIds = new Set(READY_GAMES.filter((g) => g.experimental).map((g) => g.appId))
   const steamGames = [...installed.entries()]
     .filter(([appId, name]) => isRealGame(appId, name))
-    .map(([appId, name]) => ({ appId, name, supported: readyIds.has(appId) }))
+    .map(([appId, name]) => ({ appId, name, supported: readyIds.has(appId), experimental: experimentalIds.has(appId) }))
   const customGames = listCustomGames().map((g) => ({
     appId: g.appId,
     name: g.name,

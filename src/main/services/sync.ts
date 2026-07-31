@@ -228,7 +228,12 @@ async function doEnsureRepo(token: string, owner: string, retried = false): Prom
   }
 }
 
-function findGame(appId: string): { name: string; savePath: string; saveFilePattern?: RegExp } {
+function findGame(appId: string): {
+  name: string
+  savePath: string
+  saveFilePattern?: RegExp
+  personalFilePattern?: RegExp
+} {
   const g = getSyncableGames().find((x) => x.appId === appId)
   if (!g) throw makeAppError('GAME_NOT_SUPPORTED')
   const savePath = resolveSavePath(g)
@@ -237,7 +242,7 @@ function findGame(appId: string): { name: string; savePath: string; saveFilePatt
   // never offers Upload/Download for 'needs-setup' games, but guard here too
   // rather than let mkdir/existsSync('') below fail with a raw fs exception.
   if (!savePath) throw makeAppError('SAVE_FOLDER_NOT_FOUND')
-  return { name: g.name, savePath, saveFilePattern: g.saveFilePattern }
+  return { name: g.name, savePath, saveFilePattern: g.saveFilePattern, personalFilePattern: g.personalFilePattern }
 }
 
 // ANY game (catalog or custom — see settingsStore.ts's personalGameIds doc
@@ -523,6 +528,57 @@ async function setLocalVersion(appId: string, version: number): Promise<void> {
   await writeFile(localVersionsPath(), JSON.stringify(all, null, 2))
 }
 
+// --- Personal settings split ---
+// Some catalog games keep per-player preference files (keybinds, graphics/
+// audio options, UI state) in the SAME physical folder as the shared world
+// saves — see SupportedGame.personalFilePattern's doc comment (catalog.ts).
+// These must never reach a co-op partner, but should still follow this one
+// player between their own devices. Reuses mainContentDir/remoteMetaPath's
+// existing personal-login branch under a synthetic "<gameName>__settings"
+// name — that name is never a real game, so it can never collide with the
+// game's own main/main-personal split (the whole-game "only for me" toggle),
+// and always keys off `actor` regardless of that toggle's state. No new
+// UI/status surface: this rides along silently inside uploadGame/downloadGame,
+// so every existing trigger (manual buttons, watcher.ts's launch/exit
+// autosync) picks it up automatically.
+function settingsGameName(gameName: string): string {
+  return `${gameName}__settings`
+}
+
+async function uploadPersonalSettings(
+  game: { name: string; savePath: string; personalFilePattern?: RegExp },
+  actor: string
+): Promise<void> {
+  if (!game.personalFilePattern || !existsSync(game.savePath)) return
+  const name = settingsGameName(game.name)
+  const dest = mainContentDir(name, actor)
+  const localHash = await folderHash(game.savePath, game.personalFilePattern)
+  if (existsSync(dest)) {
+    const remoteHash = await folderHash(dest, game.personalFilePattern)
+    if (localHash === remoteHash) return // nothing changed since the last push
+  }
+  await rm(dest, { recursive: true, force: true })
+  await copyFiltered(game.savePath, dest, game.personalFilePattern)
+  const newVersion = await nextGameVersion(name, await readRemoteVersion(name, actor))
+  await writeRemoteMeta(name, newVersion, actor, actor)
+  await git(['add', '-A'])
+  const status = await git(['status', '--porcelain'])
+  if (!status.trim()) return // meta write alone didn't change anything trackable
+  await git([...identityFlags(actor), 'commit', '-m', `sync: ${game.name} personal settings (${actor})`])
+  await git(['push', 'origin', 'main'])
+}
+
+async function downloadPersonalSettings(
+  game: { name: string; savePath: string; personalFilePattern?: RegExp },
+  actor: string
+): Promise<void> {
+  if (!game.personalFilePattern) return
+  const dest = mainContentDir(settingsGameName(game.name), actor)
+  if (!existsSync(dest)) return
+  await mkdir(game.savePath, { recursive: true })
+  await copyFiltered(dest, game.savePath, game.personalFilePattern)
+}
+
 /** Upload the game's saves to GitHub (push). Bumps the version.
  * `owner` — whose repo (the sync target, for join this is the host); `actor`
  * — who's actually pressing the button right now (for join this is NOT
@@ -547,6 +603,12 @@ export async function uploadGame(
   await ensureRepo(token, owner)
   const game = findGame(appId)
   if (!existsSync(game.savePath)) throw makeAppError('SAVE_FOLDER_NOT_FOUND')
+
+  // Independent of the world push below (own hash/version, own commit) —
+  // runs unconditionally so a settings-only change still gets picked up even
+  // when the world itself didn't change. See this file's "Personal settings
+  // split" section for why this can never collide with the world content.
+  await uploadPersonalSettings(game, actor)
 
   const personalLogin = personalLoginFor(appId, actor)
   const dest = mainContentDir(game.name, personalLogin)
@@ -1735,6 +1797,11 @@ export async function downloadGame(
   await ensureRepo(token, owner)
   const game = findGame(appId)
   const personalLogin = personalLoginFor(appId, actor)
+
+  // Own bucket, own existence check — a fresh device may have world saves
+  // in the cloud but no personal settings pushed yet (or vice versa), so this
+  // must never gate on / be gated by the world's own NO_CLOUD_SAVES check below.
+  await downloadPersonalSettings(game, actor)
 
   const src = mainContentDir(game.name, personalLogin)
   if (!existsSync(src)) throw makeAppError('NO_CLOUD_SAVES')

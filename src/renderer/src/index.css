@@ -418,6 +418,22 @@ body {
   cursor: not-allowed;
 }
 
+/* Screenshot thumbnail's remove "×" (SupportModal.tsx) — sits on top of
+   arbitrary image content, so unlike icon-btn-plain's transparent rest
+   state, this needs a real background for legibility. Overrides
+   icon-btn-plain's color/background here (source order, same specificity)
+   rather than setting them inline on the element — an inline style would
+   permanently block the :hover rule below from ever winning, same reasoning
+   as .toast-dismiss elsewhere. */
+.icon-btn-plain.screenshot-remove-btn {
+  color: #edf1fa;
+  background: rgba(6, 8, 13, 0.75);
+}
+.icon-btn-plain.screenshot-remove-btn:hover:not(:disabled) {
+  color: #ff6b7c;
+  background: rgba(255, 107, 124, 0.25);
+}
+
 /* Clickable summary strip of the shared storage (Friends tab) — a full-width
    button that opens the repo on GitHub. Hover lifts the border to accent, like
    .icon-btn, but keeps the surface calm since it's informational first. */

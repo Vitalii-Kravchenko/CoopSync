@@ -56,6 +56,8 @@ export const tr: Translation = {
     setUp: 'Kur',
     friendPlayingBadge: (login) => `${login} oynuyor`,
     brokenVersionBadge: 'Bozuk olarak işaretlendi — indirme',
+    experimentalBadge: 'Deneysel',
+    experimentalTooltip: 'Bu oyun için kişisel ayarların doğru ayrıldığını gerçek oyuncularla hâlâ doğruluyoruz',
   },
   addGame: {
     title: 'Oyun ekle',
@@ -279,6 +281,12 @@ export const tr: Translation = {
     lockWarningTitle: 'Olası kayıt çakışması',
     lockWarningBody: (login, game) =>
       `${login} şu anda ${game} oynuyor olabilir — aynı anda oynamak bazen senkronizasyon çakışmasına yol açabilir.`,
+    experimentalConfirmTitle: 'Kısa bir soru',
+    experimentalConfirmBody: (game) => `${game} için senkronizasyon iyi çalıştı mı?`,
+    experimentalConfirmYes: 'İyi çalışıyor',
+    experimentalConfirmNo: 'Bir sorun buldum',
+    experimentalThanksTitle: 'Teşekkürler!',
+    experimentalThanksBody: 'Cevabın CoopSync\'i daha iyi hale getirmeye yardımcı oluyor.',
     restoreAction: 'Sadece benim için geri yükle',
     restoring: 'Geri yükleniyor…',
     restored: 'Geri yüklendi — artık sadece senin için senkronize ediliyor',
@@ -402,12 +410,18 @@ export const tr: Translation = {
     sending: 'Gönderiliyor…',
     success: 'Gönderildi! Geri bildirimin için teşekkürler.',
     gameSearchPlaceholder: "Steam'de oyunu ara...",
+    myGamesSearchPlaceholder: 'Oyunların arasında ara...',
     gameSearchEmpty: 'Hiçbir şey bulunamadı',
     gameRequired: 'Önce bir oyun seç',
     commentOptionalPlaceholder: 'Ek yorum (isteğe bağlı)',
     maxGamesReached: (max) => `Bir istekte en fazla ${max} oyun eklenebilir`,
     addAnotherGame: 'Başka bir oyun ekle',
-    removeGame: 'Kaldır'
+    removeGame: 'Kaldır',
+    addScreenshot: 'Ekran görüntüsü ekle',
+    removeScreenshot: 'Ekran görüntüsünü kaldır',
+    tooManyScreenshots: (max) => `En fazla ${max} ekran görüntüsü ekleyebilirsin`,
+    screenshotBadType: 'Desteklenmeyen dosya türü — PNG, JPEG veya WebP kullan',
+    screenshotTooBig: 'Dosya çok büyük (maks. 8 MB)'
   },
   errors: {
     NOT_LOGGED_IN: () => 'Önce GitHub ile giriş yap',

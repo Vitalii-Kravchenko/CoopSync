@@ -20,13 +20,18 @@ import type { ToastKind, ToastShowPayload } from '../../shared/types'
 // below) to avoid a circular import, since updater.ts and notificationStore.ts
 // both need to call showToast() from here.
 
-// 420 card + room either side for the card's own shadow (theme.ts's sh3,
-// 28px blur) to fully fade before hitting the window's edge. A blur radius
-// fades out over roughly 1.5x its own value, not 1x — 16px, then 30px, both
-// still left a visible hard edge on the left/right (Vitalii flagged it
-// twice, 2026-07-30). 40px is comfortably past that fade distance.
-const WIDTH = 420 + 40 * 2
-const BOTTOM_MARGIN = 22
+// The window's width is now DYNAMIC — it resizes (and recenters) to match
+// whatever ToastCard.tsx's own fit-content card actually renders at,
+// reported live via 'toast:resize' (see reposition below). This is only the
+// INITIAL width the window is created with, before any real content has
+// been measured — matches ToastCard.tsx's own card minWidth (340) + the
+// same shadow padding either side (V_PAD_X in ToastStack.tsx). Cards no
+// longer wrap or truncate their text on any language (Vitalii's request,
+// 2026-07-30) — they grow instead, and the window grows with them.
+const DEFAULT_WIDTH = 340 + 40 * 2
+// Nudged down from 22 (Vitalii's request, 2026-07-30) — still enough room
+// for the shadow below the card, just closer to the screen edge.
+const BOTTOM_MARGIN = 14
 
 // A toast fired the instant the app starts (or, in dev, while the toast
 // window's own bundle is still being cold-transformed by Vite for the
@@ -51,15 +56,18 @@ let win: BrowserWindow | null = null
 // requested, not that React has actually mounted and is ready to receive.
 let rendererReady = false
 let readyQueue: Array<() => void> = []
-// Only ever grows (a new toast arriving) or resets to 1 (the stack went
-// fully empty) — deliberately NEVER shrinks mid-stack. Windows visibly
-// flickers/flashes a transparent frameless window's content on setBounds,
-// and shrinking on every single dismissal was causing the REST of the
-// stack to flicker each time one toast disappeared. Only resizing on
-// growth (or the one shrink-to-empty reset) means setBounds fires far less
-// often, and only when there's genuinely new content filling the frame
-// rather than existing content being disturbed.
+// Only ever grows (a new toast arriving, or a wider one) or resets on the
+// stack going fully empty — deliberately NEVER shrinks mid-stack. Windows
+// visibly flickers/flashes a transparent frameless window's content on
+// setBounds, and shrinking on every single dismissal (or every time a
+// narrower toast is the only one left) was causing the REST of the stack to
+// flicker each time one toast disappeared. Only resizing on growth (or the
+// one shrink-to-empty reset) means setBounds fires far less often, and only
+// when there's genuinely new content filling the frame rather than existing
+// content being disturbed. Width joined this same grow-only treatment
+// 2026-07-30, when cards stopped having a fixed width.
 let lastReportedHeight = 0
+let lastReportedWidth = 0
 
 // Registered by ipc.ts (has downloadUpdate/restoreOrphanedCustomGame/
 // restoreOrphanedFolder already in scope) and index.ts (has the actual
@@ -73,6 +81,11 @@ let showWindowCb: (() => void) | null = null
 // as a dedicated round-trip than teaching the generic action dispatch about
 // a kind that isn't really a ToastKind.
 let installHandler: (() => void) | null = null
+// Wired by ipc.ts to experimentalConfirm.recordExperimentalAnswer — its own
+// channel for the same reason as installHandler above: 'experimental-confirm'
+// carries two equal-weight answers, not the single action+params shape
+// actionHandler expects.
+let confirmHandler: ((gameId: string, gameName: string, answer: 'yes' | 'no') => void) | null = null
 
 export function setActionHandler(fn: (kind: ToastKind, params: Record<string, string>) => void): void {
   actionHandler = fn
@@ -80,6 +93,10 @@ export function setActionHandler(fn: (kind: ToastKind, params: Record<string, st
 
 export function setInstallHandler(fn: () => void): void {
   installHandler = fn
+}
+
+export function setConfirmHandler(fn: (gameId: string, gameName: string, answer: 'yes' | 'no') => void): void {
+  confirmHandler = fn
 }
 
 export function setToastShowWindowCallback(fn: () => void): void {
@@ -105,9 +122,10 @@ function ensureWindow(): BrowserWindow {
   rendererReady = false
   readyQueue = []
   lastReportedHeight = 0
+  lastReportedWidth = 0
 
   win = new BrowserWindow({
-    width: WIDTH,
+    width: DEFAULT_WIDTH,
     height: 1,
     show: false,
     frame: false,
@@ -163,19 +181,26 @@ function ensureWindow(): BrowserWindow {
       }
     }
   })
-  ipcMain.on('toast:resize', (event, height: number) => {
+  ipcMain.on('toast:resize', (event, width: number, height: number) => {
     if (BrowserWindow.fromWebContents(event.sender) !== w) return
-    // Grow-only — see lastReportedHeight's doc comment above.
-    if (height <= lastReportedHeight) return
-    lastReportedHeight = height
-    reposition(w, height)
+    // Grow-only, per axis — see lastReportedWidth/Height's doc comment above.
+    const nextWidth = Math.max(width, lastReportedWidth)
+    const nextHeight = Math.max(height, lastReportedHeight)
+    if (nextWidth === lastReportedWidth && nextHeight === lastReportedHeight) return
+    lastReportedWidth = nextWidth
+    lastReportedHeight = nextHeight
+    reposition(w, nextWidth, nextHeight)
   })
   ipcMain.on('toast:hide', (event) => {
     if (BrowserWindow.fromWebContents(event.sender) !== w) return
     log('toast: hide reported (shrinking to 1px, staying visible)')
     // Deliberately NOT w.hide() — see showInactive()'s doc comment above.
+    // Width resets too (not just height) — otherwise the NEXT toast, even a
+    // narrower one, would be stuck inheriting whatever the widest toast in
+    // the previous, now-fully-dismissed stack happened to be.
     lastReportedHeight = 1
-    reposition(w, 1)
+    lastReportedWidth = 0
+    reposition(w, DEFAULT_WIDTH, 1)
   })
   ipcMain.on('toast:open-main', (event) => {
     if (BrowserWindow.fromWebContents(event.sender) !== w) return
@@ -199,15 +224,29 @@ function ensureWindow(): BrowserWindow {
     if (BrowserWindow.fromWebContents(event.sender) !== w) return
     installHandler?.()
   })
+  ipcMain.on(
+    'toast:confirm-experimental',
+    (event, gameId: string, gameName: string, answer: 'yes' | 'no') => {
+      if (BrowserWindow.fromWebContents(event.sender) !== w) return
+      confirmHandler?.(gameId, gameName, answer)
+      // "так" stays quiet in the tray — nothing to show. "є проблеми" needs
+      // the main window up so the pre-filled Support modal is actually
+      // visible (see ipc.ts's setConfirmHandler wiring).
+      if (answer === 'no') showWindowCb?.()
+    }
+  )
 
   return win
 }
 
-function reposition(w: BrowserWindow, height: number): void {
+function reposition(w: BrowserWindow, width: number, height: number): void {
   const { workArea } = screen.getPrimaryDisplay()
-  const x = Math.round(workArea.x + (workArea.width - WIDTH) / 2)
+  // Recomputed from the CURRENT reported width every time (not a fixed
+  // constant) — the window recenters itself as it grows/shrinks with
+  // whatever the widest current toast actually needs (2026-07-30).
+  const x = Math.round(workArea.x + (workArea.width - width) / 2)
   const y = Math.round(workArea.y + workArea.height - BOTTOM_MARGIN - height)
-  w.setBounds({ x, y, width: WIDTH, height: Math.max(1, Math.round(height)) })
+  w.setBounds({ x, y, width: Math.max(1, Math.round(width)), height: Math.max(1, Math.round(height)) })
 }
 
 export function showToast(kind: ToastKind, params: Record<string, string>): void {

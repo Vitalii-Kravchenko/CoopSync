@@ -56,6 +56,8 @@ export const uk: Translation = {
     setUp: 'Налаштувати',
     friendPlayingBadge: (login) => `Грає ${login}`,
     brokenVersionBadge: 'Позначено як зіпсоване — не завантажуй',
+    experimentalBadge: 'На випробуванні',
+    experimentalTooltip: 'Ще перевіряємо з реальними гравцями, чи правильно розділені особисті налаштування для цієї гри',
   },
   addGame: {
     title: 'Додати гру',
@@ -278,6 +280,12 @@ export const uk: Translation = {
     lockWarningTitle: 'Можливий конфлікт сейву',
     lockWarningBody: (login, game) =>
       `${login}, можливо, теж зараз грає в ${game} — одночасна гра іноді призводить до конфлікту при синхронізації.`,
+    experimentalConfirmTitle: 'Швидке питання',
+    experimentalConfirmBody: (game) => `Все нормально синхронізувалось для ${game}?`,
+    experimentalConfirmYes: 'Все працює',
+    experimentalConfirmNo: 'Є проблема',
+    experimentalThanksTitle: 'Дякуємо!',
+    experimentalThanksBody: 'Твоя відповідь допомагає покращити CoopSync.',
     restoreAction: 'Відновити тільки для себе',
     restoring: 'Відновлюю…',
     restored: 'Відновлено — синкається тільки для тебе',
@@ -401,12 +409,18 @@ export const uk: Translation = {
     sending: 'Надсилаю…',
     success: 'Надіслано! Дякую за звернення.',
     gameSearchPlaceholder: 'Пошук гри в Steam...',
+    myGamesSearchPlaceholder: 'Пошук серед твоїх ігор...',
     gameSearchEmpty: 'Нічого не знайдено',
     gameRequired: 'Спершу обери гру',
     commentOptionalPlaceholder: 'Додатковий коментар (необов’язково)',
     maxGamesReached: (max) => `Максимум ${max} гри за одне звернення`,
     addAnotherGame: 'Додати ще гру',
-    removeGame: 'Прибрати'
+    removeGame: 'Прибрати',
+    addScreenshot: 'Додати скріншот',
+    removeScreenshot: 'Прибрати скріншот',
+    tooManyScreenshots: (max) => `Можна додати максимум ${max} скріншоти`,
+    screenshotBadType: 'Непідтримуваний формат файлу — використай PNG, JPEG або WebP',
+    screenshotTooBig: 'Файл завеликий (максимум 8 МБ)'
   },
   errors: {
     NOT_LOGGED_IN: () => 'Спершу залогінься в GitHub',

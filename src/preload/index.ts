@@ -378,7 +378,16 @@ const api = {
   /** App version (from package.json). */
   getAppVersion: (): Promise<string> => ipcRenderer.invoke('app:get-version'),
   /** Copy text to the clipboard. */
-  copyToClipboard: (text: string): Promise<void> => ipcRenderer.invoke('clipboard:write', text)
+  copyToClipboard: (text: string): Promise<void> => ipcRenderer.invoke('clipboard:write', text),
+  /** Main asks the Support modal to open with a game pre-attached (appId +
+   *  name — GamePoster resolves the cover art itself, no imageUrl needed)
+   *  — sent when the user clicked "є проблеми" on an experimental-confirm
+   *  toast (see ipc.ts's setConfirmHandler / toastWindow.ts's showWindowCb). */
+  onOpenSupport: (callback: (gameId: string, gameName: string) => void): (() => void) => {
+    const listener = (_e: unknown, gameId: string, gameName: string): void => callback(gameId, gameName)
+    ipcRenderer.on('support:open-prefilled', listener)
+    return () => ipcRenderer.removeListener('support:open-prefilled', listener)
+  }
 }
 
 contextBridge.exposeInMainWorld('api', api)

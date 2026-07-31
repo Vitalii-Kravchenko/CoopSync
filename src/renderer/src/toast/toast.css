@@ -111,6 +111,44 @@ body {
   outline-color: #b6bfd2;
 }
 
+/* experimental-confirm's two answer buttons — color-only hover, no
+   movement (Vitalii's explicit call, 2026-07-30: not a "jump/lift", just a
+   color change, same spirit as the card-hover/dismiss/action rules above). */
+.toast-dual-yes {
+  transition: filter 120ms ease;
+}
+.toast-dual-yes:hover {
+  filter: brightness(1.08);
+}
+.toast-dual-yes:active {
+  filter: brightness(0.94);
+}
+.toast-dual-yes:focus-visible {
+  outline: 2px solid #5aa9ff;
+  outline-offset: 2px;
+}
+/* Resting color/border live HERE (not inline) so :hover can actually win —
+   same reasoning as .toast-dismiss above. */
+.toast-dual-no {
+  color: #b6bfd2;
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.1);
+  transition:
+    color 120ms ease,
+    background 120ms ease,
+    border-color 120ms ease;
+}
+.toast-dual-no:hover,
+.toast-dual-no:focus-visible {
+  color: #edf1fa;
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.24);
+}
+.toast-dual-no:focus-visible {
+  outline: 2px solid #b6bfd2;
+  outline-offset: 2px;
+}
+
 /* Entrance/exit — the toast's OWN motion (independent of the no-movement
    hover rule above). New toast slides up + fades in; a dismissed one just
    fades out in place (the flex gap collapses once it's actually removed

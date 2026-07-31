@@ -56,6 +56,8 @@ export const es: Translation = {
     setUp: 'Configurar',
     friendPlayingBadge: (login) => `${login} está jugando`,
     brokenVersionBadge: 'Marcado como dañado — no lo descargues',
+    experimentalBadge: 'Experimental',
+    experimentalTooltip: 'Todavía estamos confirmando con jugadores reales si los ajustes personales están bien separados para este juego',
   },
   addGame: {
     title: 'Añadir un juego',
@@ -278,6 +280,12 @@ export const es: Translation = {
     lockWarningTitle: 'Posible conflicto de partida',
     lockWarningBody: (login, game) =>
       `${login} también podría estar jugando a ${game} ahora mismo — jugar al mismo tiempo a veces causa un conflicto de sincronización.`,
+    experimentalConfirmTitle: 'Pregunta rápida',
+    experimentalConfirmBody: (game) => `¿La sincronización de ${game} funcionó bien?`,
+    experimentalConfirmYes: 'Funciona bien',
+    experimentalConfirmNo: 'Encontré un problema',
+    experimentalThanksTitle: '¡Gracias!',
+    experimentalThanksBody: 'Tu respuesta ayuda a mejorar CoopSync.',
     restoreAction: 'Restaurar solo para mí',
     restoring: 'Restaurando…',
     restored: 'Restaurado — ahora se sincroniza solo para ti',
@@ -401,12 +409,18 @@ export const es: Translation = {
     sending: 'Enviando…',
     success: '¡Enviado! Gracias por tu comentario.',
     gameSearchPlaceholder: 'Buscar el juego en Steam...',
+    myGamesSearchPlaceholder: 'Buscar entre tus juegos...',
     gameSearchEmpty: 'No se encontró nada',
     gameRequired: 'Elige un juego primero',
     commentOptionalPlaceholder: 'Comentario adicional (opcional)',
     maxGamesReached: (max) => `Máximo ${max} juegos por solicitud`,
     addAnotherGame: 'Añadir otro juego',
-    removeGame: 'Quitar'
+    removeGame: 'Quitar',
+    addScreenshot: 'Añadir captura de pantalla',
+    removeScreenshot: 'Quitar captura de pantalla',
+    tooManyScreenshots: (max) => `Puedes adjuntar hasta ${max} capturas de pantalla`,
+    screenshotBadType: 'Formato de archivo no compatible — usa PNG, JPEG o WebP',
+    screenshotTooBig: 'El archivo es demasiado grande (máx. 8 MB)'
   },
   errors: {
     NOT_LOGGED_IN: () => 'Primero inicia sesión con GitHub',

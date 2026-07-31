@@ -54,6 +54,8 @@ export const en: Translation = {
     setUp: 'Set up',
     friendPlayingBadge: (login) => `${login} is playing`,
     brokenVersionBadge: "Marked as broken — don't download",
+    experimentalBadge: 'Experimental',
+    experimentalTooltip: 'Still confirming with real players whether personal settings are split correctly for this game',
   },
   addGame: {
     title: 'Add a game',
@@ -276,6 +278,12 @@ export const en: Translation = {
     lockWarningTitle: 'Possible save conflict',
     lockWarningBody: (login, game) =>
       `${login} may also be playing ${game} right now — playing at the same time can sometimes cause a sync conflict.`,
+    experimentalConfirmTitle: 'Quick check',
+    experimentalConfirmBody: (game) => `Everything synced fine for ${game}?`,
+    experimentalConfirmYes: 'Works fine',
+    experimentalConfirmNo: 'Found a problem',
+    experimentalThanksTitle: 'Thanks!',
+    experimentalThanksBody: 'Your answer helps make CoopSync better.',
     restoreAction: 'Restore just for me',
     restoring: 'Restoring…',
     restored: 'Restored — now syncing just for you',
@@ -399,12 +407,18 @@ export const en: Translation = {
     sending: 'Sending…',
     success: "Sent! Thanks for the feedback.",
     gameSearchPlaceholder: 'Search for the game on Steam...',
+    myGamesSearchPlaceholder: 'Search your games...',
     gameSearchEmpty: 'Nothing found',
     gameRequired: 'Pick a game first',
     commentOptionalPlaceholder: 'Additional comment (optional)',
     maxGamesReached: (max) => `You can add up to ${max} games per request`,
     addAnotherGame: 'Add another game',
-    removeGame: 'Remove'
+    removeGame: 'Remove',
+    addScreenshot: 'Add screenshot',
+    removeScreenshot: 'Remove screenshot',
+    tooManyScreenshots: (max) => `You can attach up to ${max} screenshots`,
+    screenshotBadType: 'Unsupported file type — use PNG, JPEG, or WebP',
+    screenshotTooBig: 'File is too large (max 8 MB)'
   },
   errors: {
     NOT_LOGGED_IN: () => 'Sign in with GitHub first',

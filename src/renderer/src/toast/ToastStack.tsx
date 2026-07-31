@@ -7,12 +7,14 @@ import type { ToastShowPayload, UpdateStatus } from '../../../shared/types'
 // actually played, not before.
 const EXIT_MS = 150
 
-// Room around the 420px card for its own drop shadow (theme.ts's sh3, a 28px
-// blur) to fully fade before hitting the window's edge instead of getting
+// Room around the card for its own drop shadow (theme.ts's sh3, a 28px blur)
+// to fully fade before hitting the window's edge instead of getting
 // hard-clipped by it — a blur radius needs roughly 1.5x its own value to
 // fade to nothing, not 1x. sh3's y-offset is +10 (shifted down), so the
 // shadow reaches further below the card than above it — V_PAD_BOTTOM is
-// larger to match. Matches toastWindow.ts's WIDTH (420 + V_PAD_X * 2).
+// larger to match. Added on both sides of the MEASURED content width/height
+// before reporting to main (see the ResizeObserver below) — matches
+// toastWindow.ts's own window-sizing math.
 const V_PAD_X = 40
 const V_PAD_TOP = 30
 const V_PAD_BOTTOM = 45
@@ -95,6 +97,24 @@ function ToastStack(): React.JSX.Element {
     window.toastApi.openMain()
   }, [])
 
+  // experimental-confirm's two equal-weight buttons — deliberately NOT
+  // routed through the generic `action` above (which also brings the main
+  // window forward and is keyed only by kind+params): "є проблеми" needs to
+  // open the main window AND the Support modal pre-filled — see
+  // toastWindow.ts's setConfirmHandler and ipc.ts's wiring — so it dismisses
+  // right away same as any other action click. "так" does NOT dismiss here
+  // — ToastCard switches the SAME card to a short thank-you message
+  // (Vitalii's request, 2026-07-30) and calls onDismiss itself once that's
+  // done, so dismissing it immediately here would cut the thank-you off
+  // before it ever showed.
+  const dualAnswer = useCallback(
+    (toast: ToastShowPayload, answer: 'yes' | 'no'): void => {
+      window.toastApi.confirmExperimental(toast.params.gameId ?? '', toast.params.game ?? '', answer)
+      if (answer === 'no') dismiss(toast.id)
+    },
+    [dismiss]
+  )
+
   // Main says the download started from a different surface (Settings/the
   // Games-tab banner) — drop any toast of that kind, it's stale now (see
   // toastWindow.ts's dismissToastsOfKind doc comment).
@@ -114,15 +134,18 @@ function ToastStack(): React.JSX.Element {
     if (!el) return
     const ro = new ResizeObserver((entries) => {
       // ResizeObserver's contentRect is the CONTENT box — it excludes this
-      // element's own padding (unlike the horizontal padding below, which
-      // doesn't affect height and so was never a problem). The window is
-      // sized to exactly this reported number with zero padding of its own,
-      // so the card's shadow needs its vertical room added back in by hand
-      // here, or it gets hard-clipped top and bottom by the window bounds
-      // (Vitalii's report, 2026-07-30) exactly like V_PAD_X below already
-      // covers for left/right.
+      // element's own padding, so the card's shadow room (V_PAD_*) has to be
+      // added back in by hand here for both axes, or it gets hard-clipped by
+      // the window bounds (Vitalii's report, 2026-07-30). Width, not just
+      // height, is now reported too — styles.stack below is fit-content (not
+      // 100%), so its measured contentRect.width IS the widest current
+      // toast's own natural width, exactly what the window needs to resize
+      // (and recenter) to (see toastWindow.ts's reposition) — cards no
+      // longer wrap or truncate their text, they just grow instead
+      // (Vitalii's request, 2026-07-30).
+      const width = (entries[0]?.contentRect.width ?? 0) + V_PAD_X * 2
       const height = (entries[0]?.contentRect.height ?? 0) + V_PAD_TOP + V_PAD_BOTTOM
-      window.toastApi.reportHeight(height)
+      window.toastApi.reportSize(width, height)
     })
     ro.observe(el)
     return () => ro.disconnect()
@@ -143,6 +166,7 @@ function ToastStack(): React.JSX.Element {
               onDismiss={dismiss}
               onAction={action}
               onOpenMain={openMain}
+              onDualAnswer={dualAnswer}
             />
           </div>
         ))}
@@ -152,37 +176,41 @@ function ToastStack(): React.JSX.Element {
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  // Fills the whole window (see toast.html/toast.css's height:100% chain)
-  // and pins its one child to the BOTTOM — the window only ever GROWS
-  // immediately and shrinks back down later (toastWindow.ts's grow-only
-  // resize, to avoid flicker), so its actual height often exceeds what the
-  // current toasts need. Any leftover space this creates should show up as
-  // a gap ABOVE the toasts, not push them away from the bottom edge
-  // they're meant to stay anchored to.
+  // Fills the whole window (see toast.html/toast.css's height:100% chain),
+  // pins its one child to the BOTTOM (the window only ever GROWS immediately
+  // and shrinks back down later — toastWindow.ts's grow-only resize, to
+  // avoid flicker — so its actual height/width often exceed what the
+  // current toasts need; leftover space should show as a gap ABOVE/beside
+  // the toasts, not push them off their bottom-center anchor), and centers
+  // it horizontally — stack below is fit-content width now (not 100%), so
+  // this alignItems is what actually keeps it centered in the window.
   anchor: {
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'flex-end',
+    alignItems: 'center',
     width: '100%',
     height: '100%'
   },
   // The measured element (containerRef/ResizeObserver) — deliberately NOT
-  // height:100% like its parent above: its natural, content-driven height
-  // is exactly what main needs reported to size the window correctly. A
-  // stretched height here would just report back the window's own current
-  // (possibly stale/oversized) height instead of the toasts' real size.
+  // 100%/height:100% like its parent above: its natural, content-driven
+  // size (the widest current toast's own width, and the stack's total
+  // height) is exactly what main needs reported to size+recenter the window
+  // correctly. A stretched size here would just report back the window's
+  // own current (possibly stale/oversized) size instead of the toasts' real
+  // size — see this file's ResizeObserver.
   stack: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     gap: 10,
-    // Room for the shadow on all four sides (see V_PAD_* above) — the
-    // vertical amounts are ALSO added by hand to the height reported to
-    // main in the ResizeObserver callback above, since contentRect excludes
-    // this element's own padding and the window is sized to exactly that
-    // number with none of its own.
+    // Room for the shadow on all four sides (see V_PAD_* above) — ALSO
+    // added by hand to the width/height reported to main in the
+    // ResizeObserver callback above, since contentRect excludes this
+    // element's own padding and the window is sized to exactly that number
+    // with none of its own.
     padding: `${V_PAD_TOP}px ${V_PAD_X}px ${V_PAD_BOTTOM}px`,
-    width: '100%'
+    width: 'fit-content'
   }
 }
 

@@ -56,6 +56,8 @@ export const ru: Translation = {
     setUp: 'Настроить',
     friendPlayingBadge: (login) => `Играет ${login}`,
     brokenVersionBadge: 'Помечено как сломанное — не скачивай',
+    experimentalBadge: 'На испытании',
+    experimentalTooltip: 'Ещё проверяем с реальными игроками, правильно ли разделены личные настройки для этой игры',
   },
   addGame: {
     title: 'Добавить игру',
@@ -278,6 +280,12 @@ export const ru: Translation = {
     lockWarningTitle: 'Возможный конфликт сейва',
     lockWarningBody: (login, game) =>
       `${login}, возможно, тоже сейчас играет в ${game} — одновременная игра иногда приводит к конфликту синхронизации.`,
+    experimentalConfirmTitle: 'Короткий вопрос',
+    experimentalConfirmBody: (game) => `Синхронизация ${game} прошла нормально?`,
+    experimentalConfirmYes: 'Всё работает',
+    experimentalConfirmNo: 'Есть проблема',
+    experimentalThanksTitle: 'Спасибо!',
+    experimentalThanksBody: 'Твой ответ помогает улучшать CoopSync.',
     restoreAction: 'Восстановить только для себя',
     restoring: 'Восстанавливаю…',
     restored: 'Восстановлено — синхронизируется теперь только для тебя',
@@ -401,12 +409,18 @@ export const ru: Translation = {
     sending: 'Отправляю…',
     success: 'Отправлено! Спасибо за обращение.',
     gameSearchPlaceholder: 'Поиск игры в Steam...',
+    myGamesSearchPlaceholder: 'Поиск среди твоих игр...',
     gameSearchEmpty: 'Ничего не найдено',
     gameRequired: 'Сначала выбери игру',
     commentOptionalPlaceholder: 'Дополнительный комментарий (необязательно)',
     maxGamesReached: (max) => `Максимум ${max} игры за одно обращение`,
     addAnotherGame: 'Добавить ещё игру',
-    removeGame: 'Убрать'
+    removeGame: 'Убрать',
+    addScreenshot: 'Добавить скриншот',
+    removeScreenshot: 'Убрать скриншот',
+    tooManyScreenshots: (max) => `Можно прикрепить максимум ${max} скриншота`,
+    screenshotBadType: 'Неподдерживаемый формат файла — используй PNG, JPEG или WebP',
+    screenshotTooBig: 'Файл слишком большой (максимум 8 МБ)'
   },
   errors: {
     NOT_LOGGED_IN: () => 'Сначала войди через GitHub',

@@ -39,6 +39,10 @@ interface Props {
   /** Login of a mutual friend currently playing this game right now (see
    *  presenceService.ts's onPlaying / MainScreen's friendPlayingByGame). */
   friendPlayingLogin?: string
+  /** Shared/personal file split not yet confirmed by real co-op sessions —
+   *  see catalog.ts's SupportedGame.experimental. Only meaningful when
+   *  supported is true. */
+  experimental?: boolean
   onUpload?: () => void
   onDownload?: () => void
   /** Open the game's own detail screen (its own sync history, future restore points). */
@@ -149,6 +153,7 @@ function GameCard({
   broken,
   busy,
   friendPlayingLogin,
+  experimental,
   onUpload,
   onDownload,
   onOpenDetails
@@ -207,6 +212,12 @@ function GameCard({
           <div style={styles.brokenWarning} title={t.gameCard.brokenVersionBadge}>
             <AlertTriangleIcon size={12} color={colors.danger} />
             <span style={styles.brokenWarningText}>{t.gameCard.brokenVersionBadge}</span>
+          </div>
+        )}
+
+        {playable && experimental && (
+          <div style={styles.experimentalBadge} title={t.gameCard.experimentalTooltip}>
+            <span style={styles.experimentalText}>{t.gameCard.experimentalBadge}</span>
           </div>
         )}
 
@@ -475,6 +486,29 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 10.5,
     fontWeight: 600,
     color: colors.danger,
+    letterSpacing: '.02em',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap'
+  },
+  experimentalBadge: {
+    position: 'absolute',
+    bottom: 8,
+    left: 8,
+    maxWidth: 'calc(100% - 16px)',
+    display: 'inline-flex',
+    alignItems: 'center',
+    height: 22,
+    padding: '0 9px',
+    borderRadius: radii.pill,
+    background: 'rgba(6,8,13,.78)',
+    border: `1px solid ${colors.warning}`
+  },
+  experimentalText: {
+    fontFamily: fonts.display,
+    fontSize: 10.5,
+    fontWeight: 600,
+    color: colors.warning,
     letterSpacing: '.02em',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
